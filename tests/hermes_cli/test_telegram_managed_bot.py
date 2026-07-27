@@ -140,7 +140,7 @@ class TestCreatePairing:
         )
         post.assert_called_once_with(
             "https://api.example.com/v1/telegram/pairings",
-            json={"bot_name": "Hermes Agent"},
+            json={"bot_name": "Kova Agent"},
             timeout=10.0,
         )
 

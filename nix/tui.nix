@@ -1,4 +1,4 @@
-# nix/tui.nix — Hermes TUI (Ink/React) compiled with tsc and bundled
+# nix/tui.nix — Kova TUI (Ink/React) compiled with tsc and bundled
 { pkgs, hermesNpmLib, ... }:
 let
   npm = hermesNpmLib.mkNpmPassthru {

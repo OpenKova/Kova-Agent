@@ -1,5 +1,5 @@
 """
-Timezone-aware clock for Hermes.
+Timezone-aware clock for Kova.
 
 Provides a single ``now()`` helper that returns a timezone-aware datetime
 based on the user's configured IANA timezone (e.g. ``Asia/Kolkata``).

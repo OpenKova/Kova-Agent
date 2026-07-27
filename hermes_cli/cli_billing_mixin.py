@@ -853,7 +853,7 @@ class CLIBillingMixin:
             _cprint(f"  {_d('Remote spending is off for this org.')}")
             self._billing_portal_hint(
                 state,
-                reason="A billing admin can turn it on from the portal's Hermes Agent page to add funds here.",
+                reason="A billing admin can turn it on from the portal's Kova Agent page to add funds here.",
             )
             return
 
@@ -968,7 +968,7 @@ class CLIBillingMixin:
             _cprint(f"  💳 {_d('Remote spending is off for this org.')}")
             self._billing_portal_hint(
                 state,
-                reason="A billing admin can turn it on from the portal's Hermes Agent page before adding funds.",
+                reason="A billing admin can turn it on from the portal's Kova Agent page before adding funds.",
             )
             return False
         return True
@@ -1109,7 +1109,7 @@ class CLIBillingMixin:
                 _cprint(f"  {_d('Your card saved on the portal will be charged.')}")
         print(f"  {'─' * 41}")
         _consent = (
-            "By confirming, you allow Nous Research to charge your card."
+            "By confirming, you allow Kova AI to charge your card."
         )
         _cprint(f"  {_d(_consent)}")
 
@@ -1241,7 +1241,7 @@ class CLIBillingMixin:
             print("  💳 No card on file — top up and manage billing on the portal.")
         elif code in ("cli_billing_disabled", "remote_spending_disabled") or \
                 getattr(exc, "code", None) == "remote_spending_disabled":
-            print("  Remote spending is off for this account — a billing admin can turn it on from the portal's Hermes Agent page.")
+            print("  Remote spending is off for this account — a billing admin can turn it on from the portal's Kova Agent page.")
         elif code == "role_required":
             print("  Adding funds needs an org admin/owner. Ask an admin, or manage on the portal.")
         elif code == "idempotency_conflict":
@@ -1318,7 +1318,7 @@ class CLIBillingMixin:
 
         fresh = build_billing_state()
         if not (fresh.logged_in and fresh.cli_billing_enabled):
-            print("  Remote Spending is allowed for this terminal, but it's still off for this org. A billing admin can turn it on from the portal's Hermes Agent page, then run /topup again.")
+            print("  Remote Spending is allowed for this terminal, but it's still off for this org. A billing admin can turn it on from the portal's Kova Agent page, then run /topup again.")
             self._billing_portal_hint(fresh)
             return
 
@@ -1479,7 +1479,7 @@ class CLIBillingMixin:
 
         print()
         _ar_consent = (
-            f"By confirming, you authorize Nous Research to charge {card.masked} "
+            f"By confirming, you authorize Kova AI to charge {card.masked} "
             f"whenever your balance reaches {format_money(threshold_amt)}. "
             f"Turn off any time here or on the portal."
         )

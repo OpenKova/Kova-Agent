@@ -1,12 +1,12 @@
 ---
-title: "Hermes Agent Skill Authoring — Author in-repo SKILL"
-sidebar_label: "Hermes Agent Skill Authoring"
+title: "Kova Agent Skill Authoring — Author in-repo SKILL"
+sidebar_label: "Kova Agent Skill Authoring"
 description: "Author in-repo SKILL"
 ---
 
 {/* This page is auto-generated from the skill's SKILL.md by website/scripts/generate-skill-docs.py. Edit the source SKILL.md, not this page. */}
 
-# Hermes Agent Skill Authoring
+# Kova Agent Skill Authoring
 
 Author in-repo SKILL.md files: frontmatter and structure.
 
@@ -17,7 +17,7 @@ Author in-repo SKILL.md files: frontmatter and structure.
 | Source | Bundled (installed by default) |
 | Path | `skills/software-development/hermes-agent-skill-authoring` |
 | Version | `1.1.0` |
-| Author | Hermes Agent |
+| Author | Kova Agent |
 | License | MIT |
 | Platforms | linux, macos, windows |
 | Tags | `skills`, `authoring`, `hermes-agent`, `conventions`, `skill-md` |
@@ -62,7 +62,7 @@ Peer-matched shape used by every skill under `skills/software-development/`:
 name: my-skill-name               # lowercase, hyphens, ≤64 chars (MAX_NAME_LENGTH)
 description: Use when <trigger>. <one-line behavior>.
 version: 1.1.0
-author: Hermes Agent
+author: Kova Agent
 license: MIT
 metadata:
   hermes:
