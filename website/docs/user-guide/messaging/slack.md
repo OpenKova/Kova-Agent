@@ -1,12 +1,12 @@
 ---
 sidebar_position: 4
 title: "Slack"
-description: "Set up Hermes Agent as a Slack bot using Socket Mode"
+description: "Set up Kova Agent as a Slack bot using Socket Mode"
 ---
 
 # Slack Setup
 
-Connect Hermes Agent to Slack as a bot using Socket Mode. Socket Mode uses WebSockets instead of
+Connect Kova Agent to Slack as a bot using Socket Mode. Socket Mode uses WebSockets instead of
 public HTTP endpoints, so your Hermes instance doesn't need to be publicly accessible — it works
 behind firewalls, on your laptop, or on a private server.
 
@@ -68,7 +68,7 @@ Mode — all at once.
 1. Go to [https://api.slack.com/apps](https://api.slack.com/apps)
 2. Click **Create New App**
 3. Choose **From scratch**
-4. Enter an app name (e.g., "Hermes Agent") and select your workspace
+4. Enter an app name (e.g., "Kova Agent") and select your workspace
 5. Click **Create App**
 
 You'll land on the app's **Basic Information** page. Continue with
@@ -244,7 +244,7 @@ suppresses those incomplete-turn warnings from the thread and keeps the diagnost
 After starting the gateway, you need to **invite the bot** to any channel where you want it to respond:
 
 ```
-/invite @Hermes Agent
+/invite @Kova Agent
 ```
 
 The bot will **not** automatically join channels. You must invite it to each channel individually.
@@ -375,7 +375,7 @@ Understanding how Hermes behaves in different contexts:
 | Context | Behavior |
 |---------|----------|
 | **DMs** | Bot responds to every message — no @mention needed |
-| **Channels** | Bot **only responds when @mentioned** (e.g., `@Hermes Agent what time is it?`). In channels, Hermes replies in a thread attached to that message. |
+| **Channels** | Bot **only responds when @mentioned** (e.g., `@Kova Agent what time is it?`). In channels, Hermes replies in a thread attached to that message. |
 | **Threads** | If you @mention Hermes inside an existing thread, it replies in that same thread. Once the bot has an active session in a thread, **subsequent replies in that thread do not require @mention** — the bot follows the conversation naturally. |
 
 :::tip
@@ -634,7 +634,7 @@ How `mentions` mode gates:
 - Human messages are unaffected; normal mention gating applies to them.
 - Hermes always ignores its own messages, in every mode, to prevent self-echo loops.
 
-`mentions` is the recommended mode for bot-to-bot collaboration: each agent must explicitly summon the other per turn. Avoid `all` unless every peer bot's own reply policy is loop-safe — two bots that answer everything will answer each other forever. Detection covers labeled bot messages (`bot_id`, `subtype: bot_message`), app-originated events, and unlabeled bot *users* (probed via `users.info`), so peer Hermes agents are filtered consistently across workspaces.
+`mentions` is the recommended mode for bot-to-bot collaboration: each agent must explicitly summon the other per turn. Avoid `all` unless every peer bot's own reply policy is loop-safe — two bots that answer everything will answer each other forever. Detection covers labeled bot messages (`bot_id`, `subtype: bot_message`), app-originated events, and unlabeled bot *users* (probed via `users.info`), so peer Kova Agents are filtered consistently across workspaces.
 
 For strict multi-bot deployments, pair with `require_mention: true` and `strict_mention: true` — see the smoke-check profile below.
 
@@ -803,7 +803,7 @@ cron job results, and other proactive notifications. To find a channel ID:
 SLACK_HOME_CHANNEL=C01234567890
 ```
 
-Make sure the bot has been **invited to the channel** (`/invite @Hermes Agent`).
+Make sure the bot has been **invited to the channel** (`/invite @Kova Agent`).
 
 ### Cron delivery targeting
 
@@ -936,13 +936,13 @@ Notes:
 | Problem | Solution |
 |---------|----------|
 | Bot doesn't respond to DMs | Verify `message.im` is in your event subscriptions and the app is reinstalled |
-| Bot works in DMs but not in channels | **Most common issue.** Add `message.channels` and `message.groups` to event subscriptions, reinstall the app, and invite the bot to the channel with `/invite @Hermes Agent` |
+| Bot works in DMs but not in channels | **Most common issue.** Add `message.channels` and `message.groups` to event subscriptions, reinstall the app, and invite the bot to the channel with `/invite @Kova Agent` |
 | Bot doesn't respond to @mentions in channels | 1) Check `message.channels` event is subscribed. 2) Bot must be invited to the channel. 3) Ensure `channels:history` scope is added. 4) Reinstall the app after scope/event changes |
 | Bot ignores messages in private channels | Add both the `message.groups` event subscription and `groups:history` scope, then reinstall the app and `/invite` the bot |
 | Bot doesn't respond in group DMs (multi-person DMs) | Add the `message.mpim` event subscription and the `mpim:history` scope (plus `mpim:read`), then **reinstall** the app. Without `message.mpim`, Slack never delivers group-DM messages to the bot — even though 1:1 DMs work. |
 | "Sending messages to this app has been turned off" in DMs | Enable the **Messages Tab** in App Home settings (see Step 5) |
 | "not_authed" or "invalid_auth" errors | Regenerate your Bot Token and App Token, update `.env` |
-| Bot responds but can't post in a channel | Invite the bot to the channel with `/invite @Hermes Agent` |
+| Bot responds but can't post in a channel | Invite the bot to the channel with `/invite @Kova Agent` |
 | Bot can chat but can't read uploaded images/files | Add `files:read`, then **reinstall** the app. Hermes now surfaces attachment access diagnostics in-chat when Slack returns scope/auth/permission failures. |
 | `missing_scope` error | Add the required scope in OAuth & Permissions, then **reinstall** the app |
 | Socket disconnects frequently | Check your network; Bolt auto-reconnects but unstable connections cause lag |
@@ -958,7 +958,7 @@ If the bot isn't working in channels, verify **all** of the following:
 4. ✅ `channels:history` scope is added (for public channels)
 5. ✅ `groups:history` scope is added (for private channels)
 6. ✅ App was **reinstalled** after adding scopes/events
-7. ✅ Bot was **invited** to the channel (`/invite @Hermes Agent`)
+7. ✅ Bot was **invited** to the channel (`/invite @Kova Agent`)
 8. ✅ You are **@mentioning** the bot in your message
 
 ---
