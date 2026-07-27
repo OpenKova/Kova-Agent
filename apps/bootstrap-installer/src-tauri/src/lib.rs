@@ -1,4 +1,4 @@
-//! Hermes Setup — Tauri entrypoint.
+//! Kova Setup — Tauri entrypoint.
 //!
 //! Spawns a single window pointed at the React frontend (apps/bootstrap-installer/src/).
 //! All install-time work lives in `bootstrap.rs` and is invoked through the Tauri
@@ -99,11 +99,11 @@ pub fn run() {
     let _guard = paths::init_logging();
 
     let mode = AppMode::from_args(std::env::args().skip(1));
-    // Escape hatch: `--reinstall`/`--repair` forces the installer UI even when
-    // Hermes is already installed, so users can re-run setup to repair a broken
-    // install instead of the launcher fast path silently relaunching the app.
+            // Escape hatch: `--reinstall`/`--repair` forces the installer UI even when
+            // Kova is already installed, so users can re-run setup to repair a broken
+            // install instead of the launcher fast path silently relaunching the app.
     let force_setup = force_setup_from_args(std::env::args().skip(1));
-    tracing::info!(?mode, force_setup, "Hermes installer starting");
+    tracing::info!(?mode, force_setup, "Kova installer starting");
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -114,17 +114,17 @@ pub fn run() {
         .setup(move |app| {
             use tauri::Manager;
             // Launcher fast path (macOS only): a bare ("Install") launch when
-            // Hermes is already installed should NOT show the installer or
+            // Kova is already installed should NOT show the installer or
             // rebuild — it should just open the app, so the /Applications
-            // "Hermes" doubles as a normal launcher (first run installs, every
+            // "Kova" doubles as a normal launcher (first run installs, every
             // later run launches instantly). The window is kept hidden until
             // here via `"visible": false` so this path never flashes a window.
             //
             // Gated to macOS deliberately: on Windows/Linux the installer keeps
             // its existing behavior (Windows users relaunch via the Start
-            // Menu/Desktop "Hermes" shortcuts that install.ps1 creates, and a
+            // Menu/Desktop "Kova" shortcuts that install.ps1 creates, and a
             // reliable detached relaunch there needs the DETACHED_PROCESS +
-            // startup-grace handling used by launch_hermes_desktop — out of
+            // startup-grace handling used by launch_kova_desktop — out of
             // scope here). So this is a pure no-op on non-macOS.
             //
             // `--reinstall`/`--repair` opts out so a broken install can be
@@ -138,7 +138,7 @@ pub fn run() {
                             // before we exit (mirrors launch_hermes_desktop).
                             std::thread::sleep(std::time::Duration::from_millis(200));
                             tracing::info!(
-                                "hermes already installed — relaunched desktop; exiting installer"
+                                "kova already installed — relaunched desktop; exiting installer"
                             );
                             app.handle().exit(0);
                             return Ok(());
@@ -182,7 +182,7 @@ pub fn run() {
             paths::open_log_dir,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running Hermes Setup");
+        .expect("error while running Kova Setup");
 }
 
 #[cfg(test)]

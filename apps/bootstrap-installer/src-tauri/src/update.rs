@@ -1,6 +1,6 @@
 //! Update orchestration.
 //!
-//! Driven when the installer is launched as `Hermes-Setup.exe --update` (see
+//! Driven when the installer is launched as `Kova-Setup.exe --update` (see
 //! `AppMode` in lib.rs). The desktop app hands off to us — it exits, then we:
 //!
 //!   1. wait for the old Hermes desktop process to fully exit (so both the
@@ -165,7 +165,7 @@ async fn run_update(app: AppHandle) -> Result<()> {
 
     let hermes = resolve_hermes(&install_root).ok_or_else(|| {
         let msg = format!(
-            "Could not find the hermes CLI under {}. Is Hermes installed? \
+            "Could not find the kova CLI under {}. Is Kova installed? \
              Re-run the installer to repair the install.",
             install_root.display()
         );
@@ -293,7 +293,7 @@ async fn run_update(app: AppHandle) -> Result<()> {
             emit_stage(&app, "update", StageState::Succeeded, Some(update_ms), None);
         }
         Some(code) if code == UPDATE_EXIT_CONCURRENT => {
-            let msg = "Hermes is still running. Close all Hermes windows and try \
+            let msg = "Kova is still running. Close all Kova windows and try \
                        the update again."
                 .to_string();
             emit_stage(
@@ -313,8 +313,8 @@ async fn run_update(app: AppHandle) -> Result<()> {
             return Err(anyhow!(msg));
         }
         other => {
-            let msg = format!(
-                "hermes update failed (exit {:?}). See {} for details.",
+    let msg = format!(
+        "kova update failed (exit {:?}). See {} for details.",
                 other,
                 crate::paths::hermes_home()
                     .join("logs")
@@ -386,7 +386,7 @@ async fn run_update(app: AppHandle) -> Result<()> {
     if rebuild.exit_code != Some(0) {
         let msg = format!(
             "Rebuilding the desktop app failed (exit {:?}). The update was \
-             applied but the app could not be rebuilt; run `hermes desktop` \
+             applied but the app could not be rebuilt; run `kova desktop` \
              from a terminal to see the error.",
             rebuild.exit_code
         );
@@ -460,7 +460,7 @@ async fn run_update(app: AppHandle) -> Result<()> {
                 &app,
                 None,
                 LogStream::Stderr,
-                &format!("[update] could not auto-launch desktop: {err}. Launch Hermes manually."),
+                &format!("[update] could not auto-launch desktop: {err}. Launch Kova manually."),
             );
         }
     } else if let Err(err) =
@@ -473,7 +473,7 @@ async fn run_update(app: AppHandle) -> Result<()> {
             &app,
             None,
             LogStream::Stdout,
-            &format!("[update] could not auto-launch desktop: {err}. Launch Hermes manually."),
+            &format!("[update] could not auto-launch desktop: {err}. Launch Kova manually."),
         );
     }
 
@@ -508,7 +508,7 @@ pub(crate) async fn wait_for_install_locks_free(install_root: &Path, app: &AppHa
                 Some(stage),
                 LogStream::Stdout,
                 &format!(
-                    "[handoff] Hermes still holding install files ({}); force-killing stragglers…",
+                    "[handoff] Kova still holding install files ({}); force-killing stragglers…",
                     format_locked_paths(&locked)
                 ),
             );
@@ -516,12 +516,12 @@ pub(crate) async fn wait_for_install_locks_free(install_root: &Path, app: &AppHa
             tokio::time::sleep(Duration::from_millis(800)).await;
             let locked_after_kill = locked_paths(&lock_targets);
             if locked_after_kill.is_empty() {
-                emit_log(
-                    app,
-                    Some(stage),
-                    LogStream::Stdout,
-                    "[handoff] install files freed after force-kill",
-                );
+    emit_log(
+        &app,
+        Some(stage),
+        LogStream::Stdout,
+        "[handoff] waiting for Kova to exit…",
+    );
             } else {
                 emit_log(
                     app,

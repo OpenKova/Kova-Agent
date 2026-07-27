@@ -156,7 +156,7 @@ pub async fn get_bootstrap_status(
     })
 }
 
-/// Spawn the locally-built Hermes desktop binary, then close the installer
+/// Spawn the locally-built Kova desktop binary, then close the installer
 /// window. Caller resolves the binary path from `install_root`.
 ///
 /// Returns Err with a human-readable message if the binary doesn't exist
@@ -170,14 +170,14 @@ pub async fn launch_hermes_desktop(
     let install_root = PathBuf::from(install_root);
     let exe_path = resolve_hermes_desktop_exe(&install_root).ok_or_else(|| {
         format!(
-            "Couldn't find a built Hermes desktop at {}. The desktop build step \
-             may have been skipped or failed. Run `hermes desktop` from a \
+            "Couldn't find a built Kova desktop at {}. The desktop build step \
+             may have been skipped or failed. Run `kova desktop` from a \
              terminal to build and launch it.",
             install_root.join("apps").join("desktop").join("release").display()
         )
     })?;
 
-    tracing::info!(?exe_path, "launching Hermes desktop");
+    tracing::info!(?exe_path, "launching Kova desktop");
 
     // Detach from us — the installer is about to exit. On macOS launch the
     // bundle through LaunchServices instead of exec'ing Contents/MacOS/Hermes
@@ -265,7 +265,7 @@ pub(crate) fn hermes_is_installed(install_root: &std::path::Path) -> bool {
 /// installer UI.
 pub(crate) fn spawn_installed_desktop(install_root: &std::path::Path) -> std::io::Result<()> {
     let exe = resolve_hermes_desktop_exe(install_root).ok_or_else(|| {
-        std::io::Error::new(std::io::ErrorKind::NotFound, "no built Hermes desktop app")
+        std::io::Error::new(std::io::ErrorKind::NotFound, "no built Kova desktop app")
     })?;
     let mut cmd = desktop_launch_command_std(&exe, install_root);
     #[cfg(target_os = "windows")]
@@ -644,13 +644,13 @@ async fn run_bootstrap(
         .unwrap_or_else(|| crate::paths::hermes_home().to_string_lossy().into_owned());
     let install_root = PathBuf::from(&hermes_home).join("hermes-agent");
 
-    // Copy ourselves to HERMES_HOME/hermes-setup.exe so the desktop app can
+    // Copy ourselves to KOVA_HOME/kova-setup.exe so the desktop app can
     // re-invoke us with `--update` and shortcuts have a stable target. This is
     // a one-shot install concern; an `--update` re-invocation no-ops because
     // we're already running from that path. Best-effort — a failure here must
     // not fail an otherwise-successful install.
     if let Err(err) = crate::paths::copy_self_to_hermes_home() {
-        tracing::warn!(?err, "failed to copy installer into HERMES_HOME (non-fatal)");
+        tracing::warn!(?err, "failed to copy installer into KOVA_HOME (non-fatal)");
         emit_log(&format!(
             "[bootstrap] warning: could not stage updater binary: {err}"
         ));
