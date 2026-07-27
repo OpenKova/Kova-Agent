@@ -494,7 +494,7 @@ class HermesConsoleEngine:
 
         try:
             tokens = _split_line(raw_line)
-            if tokens and tokens[0] == "hermes":
+            if tokens and tokens[0] in {"hermes", "kova"}:
                 tokens = tokens[1:]
             if not tokens:
                 return self._help_result()

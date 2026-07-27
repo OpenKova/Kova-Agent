@@ -4429,21 +4429,30 @@ def _load_mcp_config() -> Dict[str, dict]:
     ``os.environ`` (which includes ``~/.hermes/.env`` loaded at startup).
     """
     try:
-        from hermes_cli.config import load_config
         from utils import env_var_enabled as _env_enabled
 
         if _env_enabled("HERMES_SAFE_MODE"):
             return {}
-        config = load_config()
+        config: Dict[str, Any] = {}
+        for _cfg_mod in ("kova_cli.config", "hermes_cli.config"):
+            try:
+                _load_config = __import__(_cfg_mod, fromlist=["load_config"]).load_config
+                _candidate = _load_config()
+                if isinstance(_candidate, dict):
+                    config = _candidate
+                    break
+            except Exception:
+                continue
         servers = config.get("mcp_servers")
         if not servers or not isinstance(servers, dict):
             return {}
         # Ensure .env vars are available for interpolation
-        try:
-            from hermes_cli.env_loader import load_hermes_dotenv
-            load_hermes_dotenv()
-        except Exception:
-            pass
+        for _env_mod in ("kova_cli.env_loader", "hermes_cli.env_loader"):
+            try:
+                __import__(_env_mod, fromlist=["load_hermes_dotenv"]).load_hermes_dotenv()
+                break
+            except Exception:
+                continue
         safe_servers: Dict[str, dict] = {}
         for name, cfg in _filter_suspicious_mcp_servers(servers).items():
             interpolated = _interpolate_env_vars(cfg)

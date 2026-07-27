@@ -130,6 +130,11 @@ def get_hermes_home() -> Path:
     return _hermes_home_from_env()
 
 
+def get_kova_home() -> Path:
+    """Backward-compatible alias for Kova naming."""
+    return get_hermes_home()
+
+
 def get_process_hermes_home() -> Path:
     """Return the Kova home for the running process, ignoring task overrides.
 
@@ -658,6 +663,11 @@ def display_hermes_home() -> str:
         return "~/" + str(home.relative_to(Path.home()))
     except ValueError:
         return str(home)
+
+
+def display_kova_home() -> str:
+    """Backward-compatible alias for Kova naming."""
+    return display_hermes_home()
 
 
 def secure_parent_dir(path: Path) -> None:

@@ -3489,11 +3489,11 @@ def _format_aux_current(task_cfg: dict) -> str:
     model = str(task_cfg.get("model") or "").strip()
     if base_url:
         short = base_url.replace("https://", "").replace("http://", "").rstrip("/")
-        return f"custom ({short})" + (f" Â· {model}" if model else "")
+        return f"custom ({short})" + (f" · {model}" if model else "")
     if provider == "auto":
-        return "auto" + (f" Â· {model}" if model else "")
+        return "auto" + (f" · {model}" if model else "")
     if model:
-        return f"{provider} Â· {model}"
+        return f"{provider} · {model}"
     return provider
 
 
@@ -8185,14 +8185,14 @@ def _format_concurrent_instances_message(
 ) -> str:
     """Build a human-readable explanation + remediation hint for the user."""
     shim = scripts_dir / "hermes.exe"
-    lines = ["âœ— Another hermes.exe is running:"]
+    lines = ["✗ Another hermes.exe is running:"]
     for pid, name in matches:
         lines.append(f"    PID {pid}  {name}")
     lines.append("")
     lines.append(f"  Updating now would fail to overwrite {shim} because")
     lines.append("  Windows blocks REPLACE on a running executable.")
     lines.append("")
-    lines.append("  Close Kova Desktop, exit any open `hermes` REPLs, and")
+    lines.append("  Close Hermes Desktop, exit any open `hermes` REPLs, and")
     lines.append("  stop the gateway (`kova gateway stop`) before retrying.")
     lines.append("")
     if matches:
@@ -11464,7 +11464,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
             # Tt2021). Apply it silently and say what actually happened.
             print()
             print(
-                f"  â„¹ Updating config format (v{current_ver} â†’ v{latest_ver})â€¦"
+                f"  ℹ Updating config format (v{current_ver} → v{latest_ver})…"
             )
             try:
                 migrate_config(interactive=False, quiet=True)

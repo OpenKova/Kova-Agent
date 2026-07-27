@@ -26,3 +26,6 @@ kova.log
 *.code-workspace
 target/
 Cargo.lock
+.web_ui_build.lock
+.hermes-bootstrap-complete
+.install_method

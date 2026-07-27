@@ -6557,11 +6557,16 @@ def _get_auxiliary_task_config(task: str) -> Dict[str, Any]:
     """
     if not task:
         return {}
-    try:
-        from hermes_cli.config import load_config
-        config = load_config()
-    except ImportError:
-        return {}
+    config: dict[str, Any] = {}
+    for _cfg_mod in ("kova_cli.config", "hermes_cli.config"):
+        try:
+            _load_config = __import__(_cfg_mod, fromlist=["load_config"]).load_config
+            _candidate = _load_config()
+            if isinstance(_candidate, dict):
+                config = _candidate
+                break
+        except Exception:
+            continue
     aux = config.get("auxiliary", {}) if isinstance(config, dict) else {}
     task_config = aux.get(task, {}) if isinstance(aux, dict) else {}
     if not isinstance(task_config, dict):
@@ -6570,19 +6575,22 @@ def _get_auxiliary_task_config(task: str) -> Dict[str, Any]:
     # Layer plugin-declared defaults underneath user config so
     # ctx.register_auxiliary_task(defaults={...}) takes effect without
     # forcing the user to write config.yaml entries.
-    try:
-        from hermes_cli.plugins import get_plugin_auxiliary_tasks
-        for _entry in get_plugin_auxiliary_tasks():
-            if _entry.get("key") == task:
-                _defaults = _entry.get("defaults") or {}
-                if isinstance(_defaults, dict):
-                    merged = dict(_defaults)
-                    merged.update(task_config)
-                    return merged
-                break
-    except Exception:
-        # Plugin discovery failure must not break aux task config reads.
-        pass
+    for _plugins_mod in ("kova_cli.plugins", "hermes_cli.plugins"):
+        try:
+            _get_plugin_tasks = __import__(
+                _plugins_mod, fromlist=["get_plugin_auxiliary_tasks"]
+            ).get_plugin_auxiliary_tasks
+            for _entry in _get_plugin_tasks():
+                if _entry.get("key") == task:
+                    _defaults = _entry.get("defaults") or {}
+                    if isinstance(_defaults, dict):
+                        merged = dict(_defaults)
+                        merged.update(task_config)
+                        return merged
+                    break
+        except Exception:
+            # Plugin discovery failure must not break aux task config reads.
+            continue
 
     return task_config
 
