@@ -21,7 +21,7 @@ use tokio::sync::Mutex;
 /// How the installer was invoked. Resolved once from the process args in
 /// `run()` and exposed to the frontend via `get_mode` so it can route to the
 /// install flow (first-run onboarding) or the update flow (driven by the
-/// desktop app handing off via `Hermes-Setup.exe --update`).
+/// desktop app handing off via `Kova-Setup.exe --update`).
 ///
 /// Bare launch (double-click, first-run) => Install.
 /// `--update` (spawned by the desktop's "Update" button) => Update.
@@ -113,6 +113,9 @@ pub fn run() {
         .manage(Arc::new(AppState::new(mode)))
         .setup(move |app| {
             use tauri::Manager;
+            // The window starts hidden (`visible: false` in tauri.conf.json) and
+            // the webview sets a white background via CSS before we call show().
+            // This prevents the default blue flash on Windows.
             // Launcher fast path (macOS only): a bare ("Install") launch when
             // Kova is already installed should NOT show the installer or
             // rebuild — it should just open the app, so the /Applications

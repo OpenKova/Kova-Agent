@@ -43,15 +43,15 @@ param(
 
     # --- Desktop GUI build (opt-in) ---
     # When set, install.ps1 includes Stage-Desktop in the manifest and
-    # builds apps/desktop into a launchable Hermes.exe.
+    # builds apps/desktop into a launchable Kova.exe.
     #
     # Why opt-in:
-    #   * Hermes-Setup.exe (the signed Tauri bootstrap installer) passes
+    #   * Kova-Setup.exe (the signed Tauri bootstrap installer) passes
     #     -IncludeDesktop so a user who installed via the GUI ends up
     #     with a launchable desktop binary.
     #   * The Electron desktop's own bootstrap-runner.ts runs install.ps1
-    #     from inside an already-launched Hermes.exe; if THAT recursively
-    #     built apps/desktop it would try to overwrite the live Hermes.exe
+    #     from inside an already-launched Kova.exe; if THAT recursively
+    #     built apps/desktop it would try to overwrite the live Kova.exe
     #     on disk and fail. The recursive path omits the flag.
     #   * The canonical CLI one-liner (irm | iex) omits the flag too;
     #     terminal users don't need a desktop binary built for them, and
@@ -2798,7 +2798,7 @@ function Try-RestoreElectronDist {
 }
 
 function Install-Desktop {
-    # Build apps/desktop into a launchable Hermes.exe. Only called from
+    # Build apps/desktop into a launchable Kova.exe. Only called from
     # Stage-Desktop, which is itself only included in the manifest when
     # -IncludeDesktop was passed to install.ps1.
     #
@@ -2811,7 +2811,7 @@ function Install-Desktop {
     # produces the unpacked binary at apps/desktop/release/<os>-unpacked/.
     #
     # The Tauri bootstrap installer's launch_hermes_desktop command
-    # resolves apps/desktop/release/win-unpacked/Hermes.exe directly,
+    # resolves apps/desktop/release/win-unpacked/Kova.exe directly,
     # so an "unpacked" build (electron-builder --dir) is enough -- we
     # don't need to produce an NSIS/MSI artifact here.
 
@@ -2912,7 +2912,7 @@ function Install-Desktop {
     # 2. Build apps/desktop. `npm run pack` runs:
     #      assert-root-install + write-build-stamp + stage-native-deps +
     #      tsc -b + vite build + electron-builder --dir
-    # The --dir mode produces an unpacked Hermes.exe in
+    # The --dir mode produces an unpacked Kova.exe in
     # apps/desktop/release/win-unpacked/ without bundling NSIS/MSI;
     # we don't need a distributable installer artifact, just a
     # launchable binary the Tauri installer can spawn.
@@ -2922,8 +2922,8 @@ function Install-Desktop {
     # apps/desktop/package.json's build.win block, electron-builder never
     # invokes signtool and therefore never fetches/extracts winCodeSign
     # (whose macOS symlinks crash 7-Zip on non-admin Windows -- a dead end we
-    # are NOT trying to work around). The Hermes icon + product name are
-    # stamped onto Hermes.exe by our own rcedit step (Set-DesktopExeIdentity)
+    # are NOT trying to work around). The Kova icon + product name are
+    # stamped onto Kova.exe by our own rcedit step (Set-DesktopExeIdentity)
     # AFTER this build, completely decoupled from electron-builder signing.
     #
     # WIN_CSC_LINK and WIN_CSC_KEY_PASSWORD explicitly cleared as
@@ -3039,8 +3039,8 @@ function Install-Desktop {
     # 3. Sanity-check the produced binary. Probe both arches so this works
     # on x64 and arm64 build machines.
     $exeCandidates = @(
-        "$desktopDir\release\win-unpacked\Hermes.exe",
-        "$desktopDir\release\win-arm64-unpacked\Hermes.exe"
+        "$desktopDir\release\win-unpacked\Kova.exe",
+        "$desktopDir\release\win-arm64-unpacked\Kova.exe"
     )
     $found = $false
     $desktopExe = $null
@@ -3053,10 +3053,10 @@ function Install-Desktop {
         }
     }
     if (-not $found) {
-        throw "Desktop build completed but no Hermes.exe was found under $desktopDir\release\*-unpacked\"
+        throw "Desktop build completed but no Kova.exe was found under $desktopDir\release\*-unpacked\"
     }
 
-    # 3b. The Hermes icon + identity are stamped onto Hermes.exe by the
+    # 3b. The Kova icon + identity are stamped onto Kova.exe by the
     #     electron-builder `afterPack` hook (apps/desktop/scripts/after-pack.mjs)
     #     during `npm run pack` above -- for every build, so the installer's
     #     --update rebuild stays branded too. No separate stamp step needed here.
@@ -3082,7 +3082,7 @@ function Install-Desktop {
     }
 
     # 4. Create Start Menu + Desktop shortcuts pointing DIRECTLY at the packed
-    #    Hermes.exe. We deliberately do NOT point them at `hermes desktop`: that
+    #    Kova.exe. We deliberately do NOT point them at `kova desktop`: that
     #    command rebuilds (npm install + electron-builder) on every launch,
     #    which would cost minutes each time. The packed exe is the consumer --
     #    launching it directly is instant, and updates flow through the

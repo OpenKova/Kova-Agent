@@ -3,7 +3,7 @@
 //! Driven when the installer is launched as `Kova-Setup.exe --update` (see
 //! `AppMode` in lib.rs). The desktop app hands off to us — it exits, then we:
 //!
-//!   1. wait for the old Hermes desktop process to fully exit (so both the
+//!   1. wait for the old Kova desktop process to fully exit (so both the
 //!      venv shim and packaged app.asar are free; otherwise `hermes update`
 //!      or repair bootstrap can race locked files),
 //!   2. run `hermes update --yes --gateway` (Python/repo update; this does NOT
@@ -149,7 +149,7 @@ async fn run_update(app: AppHandle) -> Result<()> {
     // Mutual exclusion (#50238): publish an "update in progress" marker for the
     // entire duration of this update. A desktop instance the user relaunches
     // mid-update consults this before spawning its own local backend — without
-    // it, that backend re-locks the venv shim, our `force_kill_other_hermes`
+    // it, that backend re-locks the venv shim, our `force_kill_other_kova`
     // straggler-cleanup kills it, and the relaunch/kill cycle loops. The guard
     // removes the marker on every exit path (incl. early returns / panics).
     let _update_marker = UpdateMarkerGuard::acquire(crate::paths::update_in_progress_marker());
@@ -230,7 +230,7 @@ async fn run_update(app: AppHandle) -> Result<()> {
     // already exited and waited for the install locks to clear before launching
     // us, and wait_for_install_locks_free below force-kills any straggler — so by the
     // time `hermes update` runs there is no legitimate hermes.exe to protect,
-    // and the guard would only produce a false "Hermes is still running" stop.
+    // and the guard would only produce a false "Kova is still running" stop.
     //
     // NOTE: --force does NOT bypass the venv-python holder guard (that needs
     // an explicit `--force-venv`, which we deliberately do not pass). Our lock
@@ -238,7 +238,7 @@ async fn run_update(app: AppHandle) -> Result<()> {
     // python holding a native .pyd (a user terminal, an unmanaged gateway)
     // could still be alive here — mutating the venv under it would strand the
     // install half-updated. If that guard fires, it exits 2 and the match arm
-    // below surfaces the correct "close all Hermes windows" message.
+    // below surfaces the correct "close all Kova windows" message.
     update_args.push("--force".into());
     update_args.push("--branch".into());
     update_args.push(update_branch);
@@ -266,7 +266,7 @@ async fn run_update(app: AppHandle) -> Result<()> {
     // second `hermes update` runs clean because the now-current module is loaded
     // from the start. Rather than make the parked user click Update twice (and
     // stare at a scary crash first), retry once automatically. Skip the retry
-    // for the concurrent-instance guard (exit 2) — that's a "close Hermes" state
+    // for the concurrent-instance guard (exit 2) — that's a "close Kova" state
     // a retry can't fix.
     if !matches!(update.exit_code, Some(0) | Some(UPDATE_EXIT_CONCURRENT)) {
         emit_log(
@@ -487,7 +487,7 @@ pub(crate) async fn wait_for_install_locks_free(install_root: &Path, app: &AppHa
     let lock_targets = install_lock_probe_paths(install_root);
     let deadline = Instant::now() + DESKTOP_EXIT_WAIT;
 
-    emit_log(app, Some(stage), LogStream::Stdout, "[handoff] waiting for Hermes to exit…");
+    emit_log(app, Some(stage), LogStream::Stdout, "[handoff] waiting for Kova to exit…");
 
     loop {
         let locked = locked_paths(&lock_targets);
@@ -495,13 +495,13 @@ pub(crate) async fn wait_for_install_locks_free(install_root: &Path, app: &AppHa
             return;
         }
         if Instant::now() >= deadline {
-            // Last resort: a backend hermes.exe (or the desktop Hermes.exe
+            // Last resort: a backend hermes.exe (or the desktop Kova.exe
             // itself) is still holding one of the update-sensitive files. The
             // desktop should have reaped its tree before handing off, but
             // SIGTERM races / detached grandchildren / AV handles can leave a
             // straggler. Rather than "proceed anyway" straight into uv's
             // "Access is denied" or install.ps1's locked app.asar failure,
-            // force-kill every Hermes.exe except ourselves, then give the OS a
+            // force-kill every Kova.exe except ourselves, then give the OS a
             // beat to unload the image.
             emit_log(
                 app,
@@ -512,7 +512,7 @@ pub(crate) async fn wait_for_install_locks_free(install_root: &Path, app: &AppHa
                     format_locked_paths(&locked)
                 ),
             );
-            force_kill_other_hermes();
+            force_kill_other_kova();
             tokio::time::sleep(Duration::from_millis(800)).await;
             let locked_after_kill = locked_paths(&lock_targets);
             if locked_after_kill.is_empty() {
@@ -554,8 +554,8 @@ fn desktop_app_payload_paths(install_root: &Path) -> Vec<PathBuf> {
         ]
     } else if cfg!(target_os = "macos") {
         vec![
-            release.join("mac").join("Hermes.app").join("Contents").join("Resources").join("app.asar"),
-            release.join("mac-arm64").join("Hermes.app").join("Contents").join("Resources").join("app.asar"),
+            release.join("mac").join("Kova.app").join("Contents").join("Resources").join("app.asar"),
+            release.join("mac-arm64").join("Kova.app").join("Contents").join("Resources").join("app.asar"),
         ]
     } else {
         vec![release.join("linux-unpacked").join("resources").join("app.asar")]
@@ -570,10 +570,10 @@ fn format_locked_paths(paths: &[PathBuf]) -> String {
     paths.iter().map(|p| p.display().to_string()).collect::<Vec<_>>().join(", ")
 }
 
-/// Force-kill any `hermes.exe` other than this process. Windows-only; a no-op
+/// Force-kill any `kova.exe` other than this process. Windows-only; a no-op
 /// elsewhere (POSIX has no mandatory-lock contention). We can't selectively
 /// target "the backend" by PID here — the desktop already exited and we never
-/// knew its children — so we kill the whole `hermes.exe` image tree via
+/// knew its children — so we kill the whole `kova.exe` image tree via
 /// taskkill, excluding our own PID.
 ///
 /// Safe w.r.t. our own update child: this runs inside the install-lock wait,
@@ -581,10 +581,10 @@ fn format_locked_paths(paths: &[PathBuf]) -> String {
 /// desktop the user relaunches mid-update will NOT have spawned a backend —
 /// `startHermes()` in the desktop gates local-backend startup on our
 /// update-in-progress marker and parks until we finish (#50238). So the only
-/// hermes.exe images here are stragglers from the old desktop — exactly what
+/// kova.exe images here are stragglers from the old desktop — exactly what
 /// we want gone. (`/FI PID ne <self>` also spares this Tauri process, though it
-/// isn't named hermes.exe.)
-fn force_kill_other_hermes() {
+/// isn't named kova.exe.)
+fn force_kill_other_kova() {
     if !cfg!(target_os = "windows") {
         return;
     }
@@ -597,7 +597,7 @@ fn force_kill_other_hermes() {
                 "/F",
                 "/T",
                 "/IM",
-                "hermes.exe",
+                "kova.exe",
                 "/FI",
                 &format!("PID ne {my_pid}"),
             ])
@@ -821,7 +821,7 @@ async fn install_macos_app_update(
 
     let rebuilt_app = crate::bootstrap::resolve_hermes_desktop_app(install_root).ok_or_else(|| {
         anyhow!(
-            "desktop rebuild succeeded but no Hermes.app was found under {}",
+            "desktop rebuild succeeded but no Kova.app was found under {}",
             install_root.join("apps").join("desktop").join("release").display()
         )
     })?;
@@ -1193,8 +1193,8 @@ mod tests {
     #[test]
     fn parses_only_app_targets() {
         assert_eq!(
-            target_app_from_args(["--update", "--target-app", "/Applications/Hermes.app"]),
-            Some(PathBuf::from("/Applications/Hermes.app"))
+            target_app_from_args(["--update", "--target-app", "/Applications/Kova.app"]),
+            Some(PathBuf::from("/Applications/Kova.app"))
         );
         assert_eq!(target_app_from_args(["--target-app", "/tmp/not-an-app"]), None);
     }
@@ -1202,7 +1202,7 @@ mod tests {
     // Helpers for the swap tests: make a throwaway dir tree we can rename.
     fn unique_tmp_dir(tag: &str) -> PathBuf {
         let base = std::env::temp_dir().join(format!(
-            "hermes-swap-test-{tag}-{}-{}",
+            "kova-swap-test-{tag}-{}-{}",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
@@ -1221,9 +1221,9 @@ mod tests {
     #[tokio::test]
     async fn swap_installs_new_bundle_and_cleans_up() {
         let base = unique_tmp_dir("ok");
-        let target = base.join("Hermes.app");
-        let tmp = base.join("Hermes.app.hermes-update-new");
-        let old = base.join("Hermes.app.hermes-update-old");
+        let target = base.join("Kova.app");
+        let tmp = base.join("Kova.app.kova-update-new");
+        let old = base.join("Kova.app.kova-update-old");
         write_marker(&target, "OLD");
         write_marker(&tmp, "NEW");
 
@@ -1251,9 +1251,9 @@ mod tests {
         //  - `old` is a NON-EMPTY dir  -> rename(target, old) fails
         //  - `tmp` does not exist       -> rename(tmp, target) fails
         let base = unique_tmp_dir("fail");
-        let target = base.join("Hermes.app");
-        let tmp = base.join("Hermes.app.hermes-update-new"); // intentionally absent
-        let old = base.join("Hermes.app.hermes-update-old");
+        let target = base.join("Kova.app");
+        let tmp = base.join("Kova.app.kova-update-new"); // intentionally absent
+        let old = base.join("Kova.app.kova-update-old");
         write_marker(&target, "OLD");
         write_marker(&old, "OCCUPIED"); // non-empty => rename(target,old) fails
 
@@ -1274,9 +1274,9 @@ mod tests {
         // Move-aside succeeds but installing the staged bundle fails (tmp
         // absent). The original must be rolled back from `old` to `target`.
         let base = unique_tmp_dir("rollback");
-        let target = base.join("Hermes.app");
-        let tmp = base.join("Hermes.app.hermes-update-new"); // absent
-        let old = base.join("Hermes.app.hermes-update-old");
+        let target = base.join("Kova.app");
+        let tmp = base.join("Kova.app.kova-update-new"); // absent
+        let old = base.join("Kova.app.kova-update-old");
         write_marker(&target, "OLD");
 
         let result = swap_in_new_bundle(&tmp, &target, &old).await;
