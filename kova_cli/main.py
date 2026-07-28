@@ -5498,9 +5498,9 @@ def _desktop_packaged_executable(desktop_dir: Path) -> Optional[Path]:
         ]
     else:
         candidates = [
-            release_dir / "linux-unpacked" / "hermes",
+            release_dir / "linux-unpacked" / "kova",
             release_dir / "linux-unpacked" / "Kova",
-            release_dir / "linux-arm64-unpacked" / "hermes",
+            release_dir / "linux-arm64-unpacked" / "kova",
             release_dir / "linux-arm64-unpacked" / "Kova",
         ]
 
