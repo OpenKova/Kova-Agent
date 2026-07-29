@@ -127,7 +127,7 @@ A nightly backlog triage on Sonnet costs roughly $0.02-0.05. A monitoring check 
 Kova Agent is open source and free. The automation infrastructure — cron scheduler, webhook platform, skill system, multi-platform delivery — is built in.
 
 ```bash
-curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+curl -fsSL https://hermes-agent.kova.ai/install.sh | bash
 hermes setup
 ```
 
@@ -149,12 +149,12 @@ hermes webhook subscribe pr-review \
   --deliver github_comment
 ```
 
-Full automation blueprints gallery: [hermes-agent.nousresearch.com/docs/reference/automation-blueprints-catalog](https://hermes-agent.nousresearch.com/docs/reference/automation-blueprints-catalog)
+Full automation blueprints gallery: [hermes-agent.kova.ai/docs/reference/automation-blueprints-catalog](https://hermes-agent.kova.ai/docs/reference/automation-blueprints-catalog)
 
-Documentation: [hermes-agent.nousresearch.com](https://hermes-agent.nousresearch.com)
+Documentation: [hermes-agent.kova.ai](https://hermes-agent.kova.ai)
 
-GitHub: [github.com/NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent)
+GitHub: [github.com/Kova/hermes-agent](https://github.com/Kova/hermes-agent)
 
 ---
 
-*Kova Agent is built by [Nous Research](https://nousresearch.com). Open source, model-agnostic, runs on your infrastructure.*
+*Kova Agent is built by [Kova](https://kova.ai). Open source, model-agnostic, runs on your infrastructure.*

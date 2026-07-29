@@ -1,6 +1,6 @@
-"""Hermes skin/theme engine — the theme SDK for every surface.
+"""Kova skin/theme engine — the theme SDK for every surface.
 
-A data-driven skin system that lets users (and Hermes itself) customize the
+A data-driven skin system that lets users (and Kova itself) customize the
 visual appearance across the CLI, the TUI, and the desktop GUI from a single
 file. Skins are defined as YAML files in ~/.hermes/skins/ or as built-in presets.
 No code changes are needed to add a new skin.
@@ -97,7 +97,7 @@ All fields are optional. Missing values inherit from the ``default`` skin.
       agent_name: "Hermes Agent"          # Banner title, status display
       welcome: "Welcome message"          # Shown at CLI startup
       goodbye: "Goodbye! ⚕"              # Shown on exit
-      response_label: " ⚕ Hermes "       # Response box header label
+      response_label: " ⚕ Kova "       # Response box header label
       prompt_symbol: "❯"                 # Input prompt symbol (bare token; renderers add trailing space)
       help_header: "(^_^)? Commands"      # /help header text
 
@@ -119,7 +119,7 @@ USAGE
 
     skin = get_active_skin()
     print(skin.colors["banner_title"])    # "#FFD700"
-    print(skin.get_branding("agent_name"))  # "Hermes Agent"
+    print(skin.get_branding("agent_name"))  # "Kova Agent"
 
     set_active_skin("ares")               # Switch to built-in ares skin
     set_active_skin("mytheme")            # Switch to user skin from ~/.hermes/skins/
@@ -127,7 +127,7 @@ USAGE
 BUILT-IN SKINS
 ==============
 
-- ``default`` — Classic Hermes gold/kawaii (the current look)
+- ``default`` — Classic Kova gold/kawaii (the current look)
 - ``ares``    — Crimson/bronze war-god theme with custom spinner wings
 - ``mono``    — Clean grayscale monochrome
 - ``slate``   — Cool blue developer-focused theme
@@ -201,9 +201,9 @@ class SkinConfig:
 _BUILTIN_SKINS: Dict[str, Dict[str, Any]] = {
     "default": {
         "name": "default",
-        "description": "Classic Hermes — gold and kawaii",
+        "description": "Classic Kova — gold and kawaii",
         # Dark-authored. Values match the TUI's DARK_THEME so the classic CLI
-        # and the TUI render the same Hermes gold.
+        # and the TUI render the same Kova gold.
         "colors": {
             "banner_border": "#CD7F32",
             "banner_title": "#FFD700",
@@ -277,7 +277,7 @@ _BUILTIN_SKINS: Dict[str, Dict[str, Any]] = {
             "agent_name": "Kova Agent",
             "welcome": "Welcome to Kova Agent! Type your message or /help for commands.",
             "goodbye": "Goodbye! ⚕",
-            "response_label": " ⚕ Hermes ",
+            "response_label": " ⚕ Kova ",
             "prompt_symbol": "❯",
             "help_header": "(^_^)? Available Commands",
         },
@@ -398,7 +398,7 @@ _BUILTIN_SKINS: Dict[str, Dict[str, Any]] = {
             "agent_name": "Kova Agent",
             "welcome": "Welcome to Kova Agent! Type your message or /help for commands.",
             "goodbye": "Goodbye! ⚕",
-            "response_label": " ⚕ Hermes ",
+            "response_label": " ⚕ Kova ",
             "prompt_symbol": "❯",
             "help_header": "[?] Available Commands",
         },
@@ -442,7 +442,7 @@ _BUILTIN_SKINS: Dict[str, Dict[str, Any]] = {
             "agent_name": "Kova Agent",
             "welcome": "Welcome to Kova Agent! Type your message or /help for commands.",
             "goodbye": "Goodbye! ⚕",
-            "response_label": " ⚕ Hermes ",
+            "response_label": " ⚕ Kova ",
             "prompt_symbol": "❯",
             "help_header": "(^_^)? Available Commands",
         },
@@ -488,7 +488,7 @@ _BUILTIN_SKINS: Dict[str, Dict[str, Any]] = {
             "agent_name": "Kova Agent",
             "welcome": "Welcome to Kova Agent! Type your message or /help for commands.",
             "goodbye": "Goodbye! ⚕",
-            "response_label": " ⚕ Hermes ",
+            "response_label": " ⚕ Kova ",
             "prompt_symbol": "❯",
             "help_header": "[?] Available Commands",
         },
@@ -534,7 +534,7 @@ _BUILTIN_SKINS: Dict[str, Dict[str, Any]] = {
             "agent_name": "Kova Agent",
             "welcome": "Welcome to Kova Agent! Type your message or /help for commands.",
             "goodbye": "Goodbye! \u2695",
-            "response_label": " \u2695 Hermes ",
+            "response_label": " \u2695 Kova ",
             "prompt_symbol": "\u276f",
             "help_header": "(^_^)? Available Commands",
         },
