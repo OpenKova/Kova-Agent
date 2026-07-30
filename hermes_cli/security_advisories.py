@@ -21,9 +21,9 @@ Design goals:
 
 The check is invoked from three places:
 
-1. ``hermes doctor`` (and ``hermes doctor --ack <id>``)
+1. ``kova doctor`` (and ``hermes doctor --ack <id>``)
 2. CLI startup banner (one short line, then full guidance via
-   ``hermes doctor``)
+   ``kova doctor``)
 3. Gateway startup (logged to gateway.log; first interactive message gets
    a one-line operator banner)
 
@@ -404,7 +404,7 @@ def hits_due_for_banner(
 
 
 def render_doctor_section(hits: list[AdvisoryHit]) -> tuple[bool, list[str]]:
-    """Render the security-advisory section for ``hermes doctor``.
+    """Render the security-advisory section for ``kova doctor``.
 
     Returns ``(has_problems, lines)``. Caller is responsible for printing
     with whatever color scheme it uses.

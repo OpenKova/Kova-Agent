@@ -33,7 +33,7 @@ def build_login_parser(subparsers, *, cmd_login: Callable) -> None:
         "login",
         description=(
             "Deprecated. Use `hermes auth` to manage credentials, "
-            "`hermes model` to select a provider, or `hermes setup` for full setup."
+            "`hermes model` to select a provider, or `kova setup` for full setup."
         ),
     )
     # No ``choices=`` on purpose — the handler is a deprecation notice that

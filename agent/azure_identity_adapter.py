@@ -268,7 +268,7 @@ def has_azure_identity_credentials(scope: Optional[str] = None,
 
     Runs ``credential.get_token(scope)`` under a thread-based timeout so
     a slow token service can't hang the caller. Returns False on any
-    error — never raises. Use for ``hermes doctor`` /
+    error — never raises. Use for ``kova doctor`` /
     ``hermes auth status`` / wizard preflight.
 
     ``allow_install``: when True (default) and ``azure-identity`` is not
@@ -321,7 +321,7 @@ def describe_active_credential(config: Optional[EntraIdentityConfig] = None,
     """Return diagnostic info about the active credential chain.
 
     Best-effort: runs ``get_token()`` and inspects what came back.
-    Designed for ``hermes doctor`` and the wizard preflight — never
+    Designed for ``kova doctor`` and the wizard preflight — never
     raises, returns ``{"ok": False, "error": ...}`` on failure.
 
     ``allow_install``: when True (default) and ``azure-identity`` is not
