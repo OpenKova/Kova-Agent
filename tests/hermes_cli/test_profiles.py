@@ -874,14 +874,14 @@ class TestWrapperScript:
 
     def test_creates_sh_on_posix(self, profile_env, monkeypatch):
         monkeypatch.setattr("sys.platform", "darwin")
-        monkeypatch.setattr("hermes_cli.profiles.shutil.which", lambda name: "/opt/hermes/bin/hermes")
+        monkeypatch.setattr("hermes_cli.profiles.shutil.which", lambda name: "/opt/hermes/bin/kova")
         from hermes_cli.profiles import create_wrapper_script
         wrapper = create_wrapper_script("mybot")
         assert wrapper is not None
         assert wrapper.name == "mybot"
         content = wrapper.read_text()
         assert content.startswith("#!/bin/sh")
-        assert "exec /opt/hermes/bin/hermes -p mybot" in content
+        assert "exec /opt/hermes/bin/kova -p mybot" in content
 
     def test_creates_bat_on_windows(self, profile_env, monkeypatch):
         monkeypatch.setattr("sys.platform", "win32")
@@ -891,7 +891,7 @@ class TestWrapperScript:
         assert wrapper.name == "mybot.bat"
         content = wrapper.read_text()
         assert "@echo off" in content
-        assert "hermes -p mybot" in content
+        assert "kova -p mybot" in content
         assert "%*" in content
 
     def test_remove_finds_bat_on_windows(self, profile_env, monkeypatch):
@@ -989,7 +989,7 @@ class TestWrapperScriptSecurity:
         wrapper = create_wrapper_script("mybot", target="coder")
         assert wrapper is not None
         assert wrapper.resolve().is_relative_to(_get_wrapper_dir().resolve())
-        assert 'hermes -p coder "$@"' in wrapper.read_text()
+        assert 'kova -p coder "$@"' in wrapper.read_text()
 
 
 # ===================================================================
@@ -1691,7 +1691,7 @@ class TestEdgeCases:
             json.dumps(
                 {
                     "pid": live_pid,
-                    "kind": "hermes-gateway",
+                    "kind": "kova-gateway",
                     "argv": ["hermes", "gateway", "run"],
                     "start_time": gw_status._get_process_start_time(live_pid),
                     "gateway_state": "running",
@@ -1727,7 +1727,7 @@ class TestEdgeCases:
             json.dumps(
                 {
                     "pid": os.getpid(),
-                    "kind": "hermes-gateway",
+                    "kind": "kova-gateway",
                     "argv": ["hermes", "gateway", "run"],
                     "gateway_state": "stopped",
                 }
@@ -1759,7 +1759,7 @@ class TestEdgeCases:
             json.dumps(
                 {
                     "pid": 139,
-                    "kind": "hermes-gateway",
+                    "kind": "kova-gateway",
                     "argv": ["hermes", "gateway", "run"],
                     "gateway_state": "running",
                     "active_agents": 0,
@@ -1791,7 +1791,7 @@ class TestEdgeCases:
             json.dumps(
                 {
                     "pid": 139,
-                    "kind": "hermes-gateway",
+                    "kind": "kova-gateway",
                     "argv": ["hermes", "gateway", "run"],
                     "start_time": 1000,
                     "gateway_state": "running",
@@ -1805,7 +1805,7 @@ class TestEdgeCases:
             "gateway.status._pid_exists", return_value=True
         ), patch("gateway.status._get_process_start_time", return_value=1000), patch(
             "gateway.status._read_process_cmdline",
-            return_value="hermes -p coder gateway run --replace",
+            return_value="kova -p coder gateway run --replace",
         ):
             assert _check_gateway_running(coder_home) is True
 

@@ -266,7 +266,7 @@ def test_console_status_hides_cli_next_step_footer(
     assert result.status == "ok"
     assert "Sessions" in result.output
     assert "Active: 3 session(s)" in result.output
-    assert "hermes doctor" not in result.output
+    assert "kova doctor" not in result.output
     assert "kova setup" not in result.output
     assert "\u2500" not in result.output
 
@@ -296,7 +296,7 @@ def test_console_status_hides_osc_linked_cli_next_step_footer(
     assert result.status == "ok"
     assert "Sessions" in result.output
     assert "Active: 3 session(s)" in result.output
-    assert "hermes doctor" not in result.output
+    assert "kova doctor" not in result.output
     assert "kova setup" not in result.output
     assert "https://example.test" not in result.output
     assert "\u2500" not in result.output

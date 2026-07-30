@@ -82,7 +82,7 @@ def test_explicit_replace_takeover_reacquires_lock_once(adapter):
     """Initial explicit --replace may hand off and re-acquire once (#65176)."""
     existing = {
         "pid": 4242,
-        "kind": "hermes-gateway",
+        "kind": "kova-gateway",
         "argv": ["hermes", "gateway", "run"],
         "start_time": 123,
     }
@@ -110,7 +110,7 @@ def test_normal_connect_conflict_never_attempts_takeover(adapter):
     """A normal start/reconnect cannot evict the current token holder."""
     existing = {
         "pid": 5555,
-        "kind": "hermes-gateway",
+        "kind": "kova-gateway",
         "argv": ["hermes", "gateway", "run"],
         "start_time": 123,
     }
@@ -136,7 +136,7 @@ def test_failed_explicit_takeover_consumes_authority(adapter):
     """A failed handoff is not retried by a later acquire on the same adapter."""
     existing = {
         "pid": 7777,
-        "kind": "hermes-gateway",
+        "kind": "kova-gateway",
         "argv": ["hermes", "gateway", "run"],
         "start_time": 456,
     }

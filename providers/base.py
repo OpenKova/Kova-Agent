@@ -32,7 +32,7 @@ def _profile_user_agent() -> str:
         from hermes_cli import __version__ as _ver  # lazy: avoid layer cycle at import time
         return f"hermes-cli/{_ver}"
     except Exception:
-        return "hermes-cli"
+        return "kova-cli"
 
 
 @dataclass

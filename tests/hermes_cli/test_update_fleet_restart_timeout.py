@@ -33,7 +33,7 @@ class TestFleetRestartTimeoutIsolation:
             "hermes-gateway-xiaomo5",
             "hermes-gateway-xiaomo6",
             "hermes-gateway-xiaomo7",
-            "hermes-gateway",
+            "kova-gateway",
         ]
         restarted: list[str] = []
         failed: list[str] = []
@@ -65,7 +65,7 @@ class TestFleetRestartTimeoutIsolation:
             "hermes-gateway-xiaomo4",
             "hermes-gateway-xiaomo6",
             "hermes-gateway-xiaomo7",
-            "hermes-gateway",
+            "kova-gateway",
         ]
         assert set(restarted) | set(failed) == set(units)
         assert timeout_cmds == [
@@ -96,7 +96,7 @@ class TestFleetRestartTimeoutIsolation:
 
         with pytest.raises(RuntimeError, match="not a timeout"):
             _for_each_systemd_gateway_unit(
-                _list_units_stdout(["hermes-gateway"]),
+                _list_units_stdout(["kova-gateway"]),
                 process_unit=process_unit,
                 on_unit_timeout=lambda *_: pytest.fail("timeout handler must not run"),
             )

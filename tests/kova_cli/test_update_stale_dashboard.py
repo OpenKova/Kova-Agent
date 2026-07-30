@@ -345,15 +345,15 @@ class TestKillStaleDashboardPosix:
 
         def fake_run(args, *a, **kw):
             calls.append(list(args))
-            if args == ["systemctl", "--user", "list-unit-files", "hermes-dashboard.service", "--no-legend", "--no-pager"]:
+            if args == ["systemctl", "--user", "list-unit-files", "kova-dashboard.service", "--no-legend", "--no-pager"]:
                 return MagicMock(returncode=0, stdout="", stderr="")
             if args[:2] == ["systemctl", "list-unit-files"]:
-                return MagicMock(returncode=0, stdout="hermes-dashboard.service enabled enabled\n", stderr="")
+                return MagicMock(returncode=0, stdout="kova-dashboard.service enabled enabled\n", stderr="")
             if args[:2] == ["systemctl", "is-active"]:
                 return MagicMock(returncode=0, stdout="active\n", stderr="")
             if args[:2] == ["systemctl", "is-enabled"]:
                 return MagicMock(returncode=0, stdout="enabled\n", stderr="")
-            if args == ["systemctl", "restart", "hermes-dashboard.service"]:
+            if args == ["systemctl", "restart", "kova-dashboard.service"]:
                 return MagicMock(returncode=0, stdout="", stderr="")
             raise AssertionError(f"unexpected subprocess.run call: {args}")
 
@@ -363,7 +363,7 @@ class TestKillStaleDashboardPosix:
              patch("os.kill") as kill:
             _kill_stale_dashboard_processes(restart_managed=True)
 
-        assert ["systemctl", "restart", "hermes-dashboard.service"] in calls
+        assert ["systemctl", "restart", "kova-dashboard.service"] in calls
         find_pids.assert_not_called()
         kill.assert_not_called()
 
@@ -377,13 +377,13 @@ class TestKillStaleDashboardPosix:
 
         def fake_run(args, *a, **kw):
             calls.append(list(args))
-            if args == ["systemctl", "--user", "list-unit-files", "hermes-dashboard.service", "--no-legend", "--no-pager"]:
-                return MagicMock(returncode=0, stdout="hermes-dashboard.service enabled enabled\n", stderr="")
-            if args == ["systemctl", "--user", "is-active", "hermes-dashboard.service"]:
+            if args == ["systemctl", "--user", "list-unit-files", "kova-dashboard.service", "--no-legend", "--no-pager"]:
+                return MagicMock(returncode=0, stdout="kova-dashboard.service enabled enabled\n", stderr="")
+            if args == ["systemctl", "--user", "is-active", "kova-dashboard.service"]:
                 return MagicMock(returncode=0, stdout="active\n", stderr="")
-            if args == ["systemctl", "--user", "is-enabled", "hermes-dashboard.service"]:
+            if args == ["systemctl", "--user", "is-enabled", "kova-dashboard.service"]:
                 return MagicMock(returncode=0, stdout="enabled\n", stderr="")
-            if args == ["systemctl", "--user", "restart", "hermes-dashboard.service"]:
+            if args == ["systemctl", "--user", "restart", "kova-dashboard.service"]:
                 return MagicMock(returncode=0, stdout="", stderr="")
             raise AssertionError(f"unexpected subprocess.run call: {args}")
 
@@ -393,10 +393,10 @@ class TestKillStaleDashboardPosix:
             _kill_stale_dashboard_processes(restart_managed=True)
 
         assert calls == [
-            ["systemctl", "--user", "list-unit-files", "hermes-dashboard.service", "--no-legend", "--no-pager"],
-            ["systemctl", "--user", "is-active", "hermes-dashboard.service"],
-            ["systemctl", "--user", "is-enabled", "hermes-dashboard.service"],
-            ["systemctl", "--user", "restart", "hermes-dashboard.service"],
+            ["systemctl", "--user", "list-unit-files", "kova-dashboard.service", "--no-legend", "--no-pager"],
+            ["systemctl", "--user", "is-active", "kova-dashboard.service"],
+            ["systemctl", "--user", "is-enabled", "kova-dashboard.service"],
+            ["systemctl", "--user", "restart", "kova-dashboard.service"],
         ]
         assert all(call[:1] != ["sudo"] and call[:2] != ["systemctl"] for call in calls)
         find_pids.assert_not_called()
@@ -409,13 +409,13 @@ class TestKillStaleDashboardPosix:
 
         def fake_run(args, *a, **kw):
             calls.append(list(args))
-            if args == ["systemctl", "--user", "list-unit-files", "hermes-dashboard.service", "--no-legend", "--no-pager"]:
-                return MagicMock(returncode=0, stdout="hermes-dashboard.service enabled enabled\n", stderr="")
-            if args[-2:] == ["is-active", "hermes-dashboard.service"]:
+            if args == ["systemctl", "--user", "list-unit-files", "kova-dashboard.service", "--no-legend", "--no-pager"]:
+                return MagicMock(returncode=0, stdout="kova-dashboard.service enabled enabled\n", stderr="")
+            if args[-2:] == ["is-active", "kova-dashboard.service"]:
                 return MagicMock(returncode=0, stdout="active\n", stderr="")
-            if args[-2:] == ["is-enabled", "hermes-dashboard.service"]:
+            if args[-2:] == ["is-enabled", "kova-dashboard.service"]:
                 return MagicMock(returncode=0, stdout="enabled\n", stderr="")
-            if args[-2:] == ["restart", "hermes-dashboard.service"]:
+            if args[-2:] == ["restart", "kova-dashboard.service"]:
                 return MagicMock(returncode=1, stdout="", stderr="user manager unavailable")
             raise AssertionError(f"unexpected subprocess.run call: {args}")
 
@@ -424,25 +424,25 @@ class TestKillStaleDashboardPosix:
              patch("os.kill") as kill:
             _kill_stale_dashboard_processes(restart_managed=True)
 
-        assert calls[-1] == ["systemctl", "--user", "restart", "hermes-dashboard.service"]
-        assert not any(call[:1] == ["sudo"] or call == ["systemctl", "restart", "hermes-dashboard.service"] for call in calls)
+        assert calls[-1] == ["systemctl", "--user", "restart", "kova-dashboard.service"]
+        assert not any(call[:1] == ["sudo"] or call == ["systemctl", "restart", "kova-dashboard.service"] for call in calls)
         find_pids.assert_not_called()
         kill.assert_not_called()
 
     def test_managed_dashboard_restart_failure_does_not_raw_kill(self, capsys):
         """If systemd restart cannot run, print the fix and do not kill the PID."""
         def fake_run(args, *a, **kw):
-            if args == ["systemctl", "--user", "list-unit-files", "hermes-dashboard.service", "--no-legend", "--no-pager"]:
+            if args == ["systemctl", "--user", "list-unit-files", "kova-dashboard.service", "--no-legend", "--no-pager"]:
                 return MagicMock(returncode=0, stdout="", stderr="")
             if args[:2] == ["systemctl", "list-unit-files"]:
-                return MagicMock(returncode=0, stdout="hermes-dashboard.service enabled enabled\n", stderr="")
+                return MagicMock(returncode=0, stdout="kova-dashboard.service enabled enabled\n", stderr="")
             if args[:2] == ["systemctl", "is-active"]:
                 return MagicMock(returncode=0, stdout="active\n", stderr="")
             if args[:2] == ["systemctl", "is-enabled"]:
                 return MagicMock(returncode=0, stdout="enabled\n", stderr="")
-            if args == ["systemctl", "restart", "hermes-dashboard.service"]:
+            if args == ["systemctl", "restart", "kova-dashboard.service"]:
                 return MagicMock(returncode=1, stdout="", stderr="Interactive authentication required.\n")
-            if args == ["sudo", "-n", "systemctl", "restart", "hermes-dashboard.service"]:
+            if args == ["sudo", "-n", "systemctl", "restart", "kova-dashboard.service"]:
                 return MagicMock(returncode=1, stdout="", stderr="a password is required\n")
             raise AssertionError(f"unexpected subprocess.run call: {args}")
 

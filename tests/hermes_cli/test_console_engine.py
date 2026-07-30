@@ -255,8 +255,8 @@ def test_console_status_hides_cli_next_step_footer(
         print()
         rule = "\u2500" * 60
         print(f"\x1b[2m{rule}\x1b[0m")
-        print("\x1b[2m  Run 'hermes doctor' for detailed diagnostics\x1b[0m")
-        print("\x1b[2m  Run 'hermes setup' to configure\x1b[0m")
+        print("\x1b[2m  Run 'kova doctor' for detailed diagnostics\x1b[0m")
+        print("\x1b[2m  Run 'kova setup' to configure\x1b[0m")
         print()
 
     monkeypatch.setattr(status_mod, "show_status", fake_show_status)
@@ -266,8 +266,8 @@ def test_console_status_hides_cli_next_step_footer(
     assert result.status == "ok"
     assert "Sessions" in result.output
     assert "Active: 3 session(s)" in result.output
-    assert "hermes doctor" not in result.output
-    assert "hermes setup" not in result.output
+    assert "kova doctor" not in result.output
+    assert "kova setup" not in result.output
     assert "\u2500" not in result.output
 
 
@@ -285,8 +285,8 @@ def test_console_status_hides_osc_linked_cli_next_step_footer(
         print("Active: 3 session(s)")
         print()
         print(osc_link("\u2500" * 60))
-        print(osc_link("  Run 'hermes doctor' for detailed diagnostics"))
-        print(osc_link("  Run 'hermes setup' to configure"))
+        print(osc_link("  Run 'kova doctor' for detailed diagnostics"))
+        print(osc_link("  Run 'kova setup' to configure"))
         print()
 
     monkeypatch.setattr(status_mod, "show_status", fake_show_status)
@@ -296,8 +296,8 @@ def test_console_status_hides_osc_linked_cli_next_step_footer(
     assert result.status == "ok"
     assert "Sessions" in result.output
     assert "Active: 3 session(s)" in result.output
-    assert "hermes doctor" not in result.output
-    assert "hermes setup" not in result.output
+    assert "kova doctor" not in result.output
+    assert "kova setup" not in result.output
     assert "https://example.test" not in result.output
     assert "\u2500" not in result.output
 
