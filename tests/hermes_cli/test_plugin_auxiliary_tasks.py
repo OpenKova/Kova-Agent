@@ -44,16 +44,20 @@ def patched_manager(monkeypatch):
     Restored automatically after the test by monkeypatch.
     """
     from hermes_cli import plugins as plugins_mod
+    from kova_cli import plugins as kova_plugins_mod
 
     fresh = PluginManager()
     fresh._discovered = True
     monkeypatch.setattr(plugins_mod, "_PLUGIN_MANAGER", fresh, raising=False)
+    monkeypatch.setattr(kova_plugins_mod, "_PLUGIN_MANAGER", fresh, raising=False)
 
     def _stub_get_manager() -> PluginManager:
         return fresh
 
     monkeypatch.setattr(plugins_mod, "get_plugin_manager", _stub_get_manager)
     monkeypatch.setattr(plugins_mod, "_ensure_plugins_discovered", _stub_get_manager)
+    monkeypatch.setattr(kova_plugins_mod, "get_plugin_manager", _stub_get_manager)
+    monkeypatch.setattr(kova_plugins_mod, "_ensure_plugins_discovered", _stub_get_manager)
     yield fresh
 
 
