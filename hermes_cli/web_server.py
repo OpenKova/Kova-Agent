@@ -9847,7 +9847,7 @@ _OAUTH_PROVIDER_CATALOG: tuple[Dict[str, Any], ...] = (
         # containers, and desktop installs without requiring a reachable
         # 127.0.0.1 callback.
         "flow": "device_code",
-        "cli_command": "hermes auth add xai-oauth",
+        "cli_command": "kova auth add xai-oauth",
         "docs_url": "https://hermes-agent.nousresearch.com/docs/guides/xai-grok-oauth",
         "status_fn": None,  # dispatched via auth.get_xai_oauth_auth_status
     },

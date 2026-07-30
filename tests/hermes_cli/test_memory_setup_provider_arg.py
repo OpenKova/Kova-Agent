@@ -47,7 +47,7 @@ class TestMemorySetupProviderRouting:
         memory_setup.cmd_setup_provider("notaprovider")
         out = capsys.readouterr().out
         assert "not found" in out
-        assert "hermes memory setup" in out
+        assert "kova memory setup" in out
 
 
 class TestInstallDependenciesRunner:

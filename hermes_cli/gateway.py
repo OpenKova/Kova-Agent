@@ -6441,7 +6441,7 @@ def gateway_setup():
                 print_info("  WSL detected but systemd is not running.")
                 print_info("  Run in foreground: hermes gateway run")
                 print_info(
-                    "  For persistence:   tmux new -s hermes 'hermes gateway run'"
+                    "  For persistence:   tmux new -s hermes 'kova gateway run'"
                 )
                 print_info(
                     "  To enable systemd: add systemd=true to /etc/wsl.conf, then 'wsl --shutdown'"
@@ -6748,7 +6748,7 @@ def _gateway_command_inner(args):
                     "  Consider running in foreground instead: hermes gateway run"
                 )
                 print_info(
-                    "  Or use tmux/screen for persistence: tmux new -s hermes 'hermes gateway run'"
+                    "  Or use tmux/screen for persistence: tmux new -s hermes 'kova gateway run'"
                 )
                 print()
             # Honor CLI flags (--start-now / --no-start-now, --start-on-login /
@@ -6801,7 +6801,7 @@ def _gateway_command_inner(args):
                 "  hermes gateway run                              # direct foreground"
             )
             print(
-                "  tmux new -s hermes 'hermes gateway run'         # persistent via tmux"
+                "  tmux new -s hermes 'kova gateway run'         # persistent via tmux"
             )
             print(
                 "  nohup hermes gateway run > ~/.hermes/logs/gateway.log 2>&1 &  # background"
@@ -6920,7 +6920,7 @@ def _gateway_command_inner(args):
                 "  hermes gateway run                              # direct foreground"
             )
             print(
-                "  tmux new -s hermes 'hermes gateway run'         # persistent via tmux"
+                "  tmux new -s hermes 'kova gateway run'         # persistent via tmux"
             )
             print(
                 "  nohup hermes gateway run > ~/.hermes/logs/gateway.log 2>&1 &  # background"
@@ -7275,7 +7275,7 @@ def _gateway_command_inner(args):
                     )
                 elif is_wsl():
                     print(
-                        "  tmux new -s hermes 'hermes gateway run'         # persistent via tmux"
+                        "  tmux new -s hermes 'kova gateway run'         # persistent via tmux"
                     )
                     print(
                         "  nohup hermes gateway run > ~/.hermes/logs/gateway.log 2>&1 &  # background"

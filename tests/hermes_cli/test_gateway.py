@@ -329,7 +329,7 @@ def test_run_gateway_refuses_existing_process_before_importing_gateway_run(monke
     assert calls == []
     out = capsys.readouterr().out
     assert "Another gateway instance is already running (PID 17907)" in out
-    assert "hermes gateway run --replace" in out
+    assert "kova gateway run --replace" in out
 
 
 def test_run_gateway_replace_skips_existing_process_preflight(monkeypatch):
