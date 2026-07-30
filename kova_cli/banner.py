@@ -68,13 +68,13 @@ HERMES_AGENT_LOGO = """[bold #FFD700]Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€
 [#CD7F32]Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â  Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â  Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â  Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â  Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â         Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â  Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â  Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â   Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â[/]"""
 
 HERMES_CADUCEUS = """[#CD7F32]Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â¡â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â¡â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬[/]
-[#CD7F32]Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â£â‚¬Ã¢Â£Â´Ã¢Â£Â¿Ã¢Â£Â¿Ã¢Â£Â·Ã¢Â¡â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â¢â‚¬Ã¢Â£Â´Ã¢Â£Â¿Ã¢Â£Â¿Ã¢Â£Â·Ã¢Â£â€žÃ¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬[/]
-[#FFBF00]Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â£Â Ã¢Â£Â¾Ã¢Â Â¿Ã¢Â â€¹Ã¢Â ÂÃ¢Â â‚¬Ã¢Â â‚¬Ã¢Â â„¢Ã¢Â¢Â·Ã¢Â£Â´Ã¢Â Â¿Ã¢Â â€¹Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â€°Ã¢Â Â»Ã¢Â£Â·Ã¢Â£â€žÃ¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬[/]
+[#CD7F32]Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â£â‚¬Ã¢Â£Â´Ã¢Â£Â¿Ã¢Â£Â¿Ã¢Â£·Ã¢Â¡â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â¢â‚¬Ã¢Â£Â´Ã¢Â£Â¿Ã¢Â£Â¿Ã¢Â£·Ã¢Â£â€žÃ¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬[/]
+[#FFBF00]Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â£Â Ã¢Â£Â¾Ã¢Â Â¿Ã¢Â â€¹Ã¢Â ÂÃ¢Â â‚¬Ã¢Â â‚¬Ã¢Â â„¢Ã¢Â¢·Ã¢Â£Â´Ã¢Â Â¿Ã¢Â â€¹Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â€°Ã¢Â Â»Ã¢Â£·Ã¢Â£â€žÃ¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬[/]
 [#FFBF00]Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â£Â´Ã¢Â¡Â¿Ã¢Â ÂÃ¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â¢Â»Ã¢Â£Â¿Ã¢Â£â€ Ã¢Â â‚¬[/]
 [#FFD700]Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â£Â¼Ã¢Â¡Å¸Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â£Â»Ã¢Â£Â§[/]
 [#FFD700]Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â£Â¿Ã¢Â¡â€¡Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â¢Â¸Ã¢Â£Â¿[/]
 [#FFBF00]Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â Â¹Ã¢Â£Â¿Ã¢Â£â€žÃ¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â£Â Ã¢Â£Â¿Ã¢Â Â[/]
-[#FFBF00]Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â Ë†Ã¢Â Â»Ã¢Â£Â·Ã¢Â£â€žÃ¢Â¡â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â¢â‚¬Ã¢Â£Â Ã¢Â£Â¾Ã¢Â Â¿Ã¢Â ÂÃ¢Â â‚¬[/]
+[#FFBF00]Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â Ë†Ã¢Â Â»Ã¢Â£·Ã¢Â£â€žÃ¢Â¡â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â¢â‚¬Ã¢Â£Â Ã¢Â£Â¾Ã¢Â Â¿Ã¢Â ÂÃ¢Â â‚¬[/]
 [#CD7F32]Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â€°Ã¢Â â€ºÃ¢Â Â¿Ã¢Â Â¶Ã¢Â£Â¶Ã¢Â£Â¶Ã¢Â£Â¶Ã¢Â£Â¶Ã¢Â£Â¶Ã¢Â Â¶Ã¢Â Â¿Ã¢Â Â¿Ã¢Â â€ºÃ¢Â â€°Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬[/]
 [#CD7F32]Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬[/]"""
 
@@ -359,7 +359,7 @@ def get_git_banner_state(repo_dir: Optional[Path] = None) -> Optional[dict]:
     ``kova_cli/build_info.py``) and return it as a frozen
     ``upstream == local`` state with ``ahead=0``.  A built image is by
     definition pinned to one commit, so "ahead" is always zero and the
-    banner correctly shows ``Ã‚Â· upstream <sha>`` with no carried-commits
+    banner correctly shows ``Ã‚· upstream <sha>`` with no carried-commits
     annotation.
     """
     repo_dir = repo_dir or _resolve_repo_dir()
@@ -463,10 +463,10 @@ def format_banner_version_label() -> str:
     ahead = int(state.get("ahead") or 0)
 
     if ahead <= 0 or upstream == local:
-        return f"{base} Ã‚Â· upstream {upstream}"
+        return f"{base} Ã‚· upstream {upstream}"
 
     carried_word = "commit" if ahead == 1 else "commits"
-    return f"{base} Ã‚Â· upstream {upstream} Ã‚Â· local {local} (+{ahead} carried {carried_word})"
+    return f"{base} Ã‚· upstream {upstream} Ã‚· local {local} (+{ahead} carried {carried_word})"
 
 
 # =========================================================================
@@ -621,17 +621,17 @@ def build_welcome_banner(console: "Console", model: str, cwd: str,
             agg_label = ""
         if len(preset_name) > 28:
             preset_name = preset_name[:25] + "..."
-        agg_str = f" [dim {dim}]Ã‚Â·[/] [dim {dim}]agg {agg_label}[/]" if agg_label else ""
-        ctx_str = f" [dim {dim}]Ã‚Â·[/] [dim {dim}]{_format_context_length(context_length)} context[/]" if context_length else ""
-        left_lines.append(f"[{accent}]MoA: {preset_name}[/]{agg_str}{ctx_str} [dim {dim}]Ã‚Â·[/] [dim {dim}]Kova[/]")
+        agg_str = f" [dim {dim}]Ã‚·[/] [dim {dim}]agg {agg_label}[/]" if agg_label else ""
+        ctx_str = f" [dim {dim}]Ã‚·[/] [dim {dim}]{_format_context_length(context_length)} context[/]" if context_length else ""
+        left_lines.append(f"[{accent}]MoA: {preset_name}[/]{agg_str}{ctx_str} [dim {dim}]Ã‚·[/] [dim {dim}]Kova[/]")
     else:
         model_short = model.split("/")[-1] if "/" in model else model
         if model_short.endswith(".gguf"):
             model_short = model_short[:-5]
         if len(model_short) > 28:
             model_short = model_short[:25] + "..."
-        ctx_str = f" [dim {dim}]Ã‚Â·[/] [dim {dim}]{_format_context_length(context_length)} context[/]" if context_length else ""
-        left_lines.append(f"[{accent}]{model_short}[/]{ctx_str} [dim {dim}]Ã‚Â·[/] [dim {dim}]Kova[/]")
+        ctx_str = f" [dim {dim}]Ã‚·[/] [dim {dim}]{_format_context_length(context_length)} context[/]" if context_length else ""
+        left_lines.append(f"[{accent}]{model_short}[/]{ctx_str} [dim {dim}]Ã‚·[/] [dim {dim}]Kova[/]")
 
     if os.getenv("HERMES_YOLO_MODE"):
         left_lines.append(f"[bold red]Ã¢Å¡Â  YOLO mode[/] [dim {dim}]Ã¢â‚¬â€ all approval prompts bypassed[/]")
@@ -811,7 +811,7 @@ def build_welcome_banner(console: "Console", model: str, cwd: str,
     except Exception:
         pass  # Never break the banner over a profiles.py bug
 
-    right_lines.append(f"[dim {dim}]{' Ã‚Â· '.join(summary_parts)}[/]")
+    right_lines.append(f"[dim {dim}]{' Ã‚· '.join(summary_parts)}[/]")
 
     # Update check Ã¢â‚¬â€ use prefetched result if available
     try:

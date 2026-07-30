@@ -275,7 +275,7 @@ class CLICommandsMixin:
         for p in running:
             cmd = p.get("command", "")[:80]
             up = format_uptime_short(p.get("uptime_seconds", 0))
-            _cprint(f"    {p.get('session_id', '?')} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· {up} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· {cmd}")
+            _cprint(f"    {p.get('session_id', '?')} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚· {up} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚· {cmd}")
 
         if finished:
             _cprint(f"  Recently finished: {len(finished)}")
@@ -292,8 +292,8 @@ class CLICommandsMixin:
             for d in delegations:
                 goal = (d.get("goal") or "")[:60]
                 _cprint(
-                    f"    {d.get('delegation_id', '?')} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· "
-                    f"{d.get('status', '?')} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· {goal}"
+                    f"    {d.get('delegation_id', '?')} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚· "
+                    f"{d.get('status', '?')} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚· {goal}"
                 )
 
         agent_running = getattr(self, "_agent_running", False)
@@ -1816,7 +1816,7 @@ class CLICommandsMixin:
                 f"[dim]-[/] {_escape(desc)} [dim]({skill_count} skills)[/]"
             )
             for s in info.get("skills", []):
-                ChatConsole().print(f"        [dim]ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· {_escape(s)}[/]")
+                ChatConsole().print(f"        [dim]ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚· {_escape(s)}[/]")
         _cprint(
             f"\n  {_DIM}Invoke a bundle with /<slug>. "
             f"Manage with `hermes bundles`.{_RST}"
