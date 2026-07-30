@@ -1,4 +1,4 @@
-"""Tests for ``hermes debug`` CLI command and debug utilities."""
+"""Tests for ``kova debug`` CLI command and debug utilities."""
 
 import os
 import urllib.error
@@ -947,7 +947,7 @@ class TestScheduleAutoDelete:
 
     The new implementation is stateless: it records pending deletions to
     ``~/.hermes/pastes/pending.json`` and lets ``_sweep_expired_pastes``
-    handle the DELETE requests synchronously on the next ``hermes debug``
+    handle the DELETE requests synchronously on the next ``kova debug``
     invocation.
     """
 
@@ -1316,7 +1316,7 @@ class TestShareIncludesAutoDelete:
 class TestBuildDebugShare:
     """The shared core that returns structured paste URLs (not printed text).
 
-    Backs both ``hermes debug share`` (CLI) and ``POST /api/ops/debug-share``
+    Backs both ``kova debug share`` (CLI) and ``POST /api/ops/debug-share``
     (dashboard). The dashboard renders ``urls`` as real, copyable links, so the
     contract here is the return value, not stdout.
     """
@@ -1636,7 +1636,7 @@ class TestDebugSlashCommand:
 
 
 class TestShareConsentGate:
-    """`hermes debug share` requires explicit consent before uploading.
+    """`kova debug share` requires explicit consent before uploading.
 
     Uses SimpleNamespace rather than MagicMock so ``args.yes`` is a real
     ``False`` — a MagicMock auto-provides a truthy ``.yes`` and would silently

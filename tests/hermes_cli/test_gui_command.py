@@ -1,4 +1,4 @@
-"""Tests for ``hermes gui`` desktop launcher wiring."""
+"""Tests for ``kova gui`` desktop launcher wiring."""
 
 from __future__ import annotations
 

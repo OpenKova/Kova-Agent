@@ -1,4 +1,4 @@
-"""hermes claw ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â OpenClaw migration commands.
+"""kova claw ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â OpenClaw migration commands.
 
 Usage:
     hermes claw migrate              # Preview then migrate (always shows preview first)
@@ -552,7 +552,7 @@ def _cmd_migrate(args):
 
     # Source directory is left untouched ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â archiving is not the migration
     # tool's responsibility.  Users who want to clean up can run
-    # 'hermes claw cleanup' separately.
+    # 'kova claw cleanup' separately.
 
 
 def _cmd_cleanup(args):

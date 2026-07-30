@@ -434,7 +434,7 @@ def _rule_triage_aux_unavailable(task, events, runs, now, cfg) -> list[Diagnosti
             label=f"Configure {primary_slot}",
             payload={
                 "command": (
-                    f"hermes config set {primary_slot}.provider auto"
+                    f"kova config set {primary_slot}.provider auto"
                 )
             },
             suggested=True,
@@ -446,7 +446,7 @@ def _rule_triage_aux_unavailable(task, events, runs, now, cfg) -> list[Diagnosti
             label=f"Or configure fallback {fallback_slot}",
             payload={
                 "command": (
-                    f"hermes config set {fallback_slot}.provider auto"
+                    f"kova config set {fallback_slot}.provider auto"
                 )
             },
         ))
@@ -454,7 +454,7 @@ def _rule_triage_aux_unavailable(task, events, runs, now, cfg) -> list[Diagnosti
         actions.append(DiagnosticAction(
             kind="cli_hint",
             label=f"Specify manually: hermes kanban specify {task_id}",
-            payload={"command": f"hermes kanban specify {task_id}"},
+            payload={"command": f"kova kanban specify {task_id}"},
         ))
 
     return [Diagnostic(
@@ -583,13 +583,13 @@ def _rule_repeated_failures(task, events, runs, now, cfg) -> list[Diagnostic]:
         actions.append(DiagnosticAction(
             kind="cli_hint",
             label=f"Verify profile: hermes -p {assignee} doctor",
-            payload={"command": f"hermes -p {assignee} doctor"},
+            payload={"command": f"kova -p {assignee} doctor"},
             suggested=True,
         ))
         actions.append(DiagnosticAction(
             kind="cli_hint",
             label=f"Fix profile auth: hermes -p {assignee} auth",
-            payload={"command": f"hermes -p {assignee} auth"},
+            payload={"command": f"kova -p {assignee} auth"},
         ))
     elif most_recent_outcome in {"timed_out", "crashed"}:
         # Worker got off the ground but died. Logs are the right place
@@ -852,7 +852,7 @@ def _rule_block_unblock_cycling(task, events, runs, now, cfg) -> list[Diagnostic
         actions.append(DiagnosticAction(
             kind="cli_hint",
             label=f"Check block reasons: hermes kanban events {task_id}",
-            payload={"command": f"hermes kanban events {task_id}"},
+            payload={"command": f"kova kanban events {task_id}"},
             suggested=True,
         ))
     return [Diagnostic(

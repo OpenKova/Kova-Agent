@@ -1,4 +1,4 @@
-"""hermes webhook — manage dynamic webhook subscriptions from the CLI.
+"""kova webhook — manage dynamic webhook subscriptions from the CLI.
 
 Usage:
     hermes webhook subscribe <name> [options]
@@ -138,7 +138,7 @@ def _require_webhook_enabled() -> bool:
 
 
 def webhook_command(args):
-    """Entry point for 'hermes webhook' subcommand."""
+    """Entry point for 'kova webhook' subcommand."""
     sub = getattr(args, "webhook_action", None)
 
     if not sub:

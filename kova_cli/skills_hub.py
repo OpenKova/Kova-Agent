@@ -494,7 +494,7 @@ def do_browse(page: int = 1, page_size: int = 20, source: str = "all",
         c.print(f"  [yellow]⚡ Slow sources skipped: {', '.join(timed_out)} "
                 f"— run again for cached results[/]")
 
-    c.print("[dim]Tip: 'hermes skills inspect <identifier>' to preview, "
+    c.print("[dim]Tip: 'kova skills inspect <identifier>' to preview, "
             "'kova skills install <identifier>' to install, "
             "'kova skills search <query>' to search deeper[/]\n")
 

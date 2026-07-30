@@ -745,7 +745,7 @@ def build_debug_share(
 
     if redact:
         logger.info(
-            "hermes debug share: applied force-mode redaction to log snapshots before upload"
+            "kova debug share: applied force-mode redaction to log snapshots before upload"
         )
 
     report = bundle["report"]
@@ -918,7 +918,7 @@ def _run_debug_share_nous(args, *, log_lines: int, redact: bool) -> None:
     bundle = collect_share_bundle(log_lines=log_lines, redact=redact)
     if redact:
         logger.info(
-            "hermes debug share --nous: applied force-mode redaction before upload"
+            "kova debug share --nous: applied force-mode redaction before upload"
         )
     blob = build_nous_bundle(bundle, redact=redact)
 
@@ -960,7 +960,7 @@ def run_debug_delete(args):
     urls = getattr(args, "urls", [])
     if not urls:
         print("Usage: hermes debug delete <url> [<url> ...]")
-        print("  Deletes paste.rs pastes uploaded by 'hermes debug share'.")
+        print("  Deletes paste.rs pastes uploaded by 'kova debug share'.")
         return
 
     for url in urls:

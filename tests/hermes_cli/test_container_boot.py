@@ -62,7 +62,7 @@ def _make_profile(
     p.mkdir(parents=True)
     if config:
         # SOUL.md is what the reconciler keys on — it's always seeded by
-        # `hermes profile create`. See container_boot._render_run_script.
+        # `kova profile create`. See container_boot._render_run_script.
         (p / "SOUL.md").write_text("# fake profile\n")
     if state is not None or desired_state is not None:
         payload: dict[str, object] = {"timestamp": 1234567890}
@@ -535,7 +535,7 @@ def test_missing_profiles_root_still_registers_default_slot(
     reconciliation should still register a gateway-default slot for
     the root profile and return without raising. Previously this
     returned an empty list; the default slot is now always present
-    so `hermes gateway start` (no -p) has somewhere to land."""
+    so `kova gateway start` (no -p) has somewhere to land."""
     scandir = tmp_path / "run-service"; scandir.mkdir()
     actions = reconcile_profile_gateways(
         hermes_home=tmp_path, scandir=scandir, dry_run=False,
@@ -667,7 +667,7 @@ def test_default_slot_always_registered_on_empty_home(tmp_path: Path) -> None:
 def test_default_slot_run_script_omits_profile_flag(tmp_path: Path) -> None:
     """The default slot's run script must NOT pass `-p default` —
     that would resolve to $HERMES_HOME/profiles/default/ instead of
-    the root profile. It must call `hermes gateway run` directly."""
+    the root profile. It must call `kova gateway run` directly."""
     scandir = tmp_path / "run-service"; scandir.mkdir()
 
     reconcile_profile_gateways(
@@ -889,7 +889,7 @@ def test_profiles_default_subdir_is_skipped_with_warning(
         # Bare subcommand (docker run ... dashboard ...).
         ("dashboard",),
         ("dashboard", "--host", "127.0.0.1", "--no-open"),
-        # Through s6 /init + the main-wrapper that re-execs `hermes`.
+        # Through s6 /init + the main-wrapper that re-execs `kova`.
         ("/init", "/opt/hermes/docker/main-wrapper.sh", "dashboard"),
         (
             "/init",
@@ -899,7 +899,7 @@ def test_profiles_default_subdir_is_skipped_with_warning(
             "127.0.0.1",
             "--no-open",
         ),
-        # Wrapper that kept the explicit `hermes` argv0.
+        # Wrapper that kept the explicit `kova` argv0.
         ("/init", "/opt/hermes/docker/main-wrapper.sh", "hermes", "dashboard"),
         # s6-overlay v3: PID 1 is s6-svscan, so the role is read off the
         # rc.init-launched process whose argv is

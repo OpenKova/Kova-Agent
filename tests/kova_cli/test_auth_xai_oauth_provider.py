@@ -1157,7 +1157,7 @@ def test_login_xai_oauth_relogin_clears_suppression_and_reseeds(tmp_path, monkey
 
     Pre-fix: ``auth_remove_command`` set ``["device_code"]`` suppression but
     only ``auth_add_command`` cleared it — the ``kova model`` re-login path did
-    not. So after remove -> re-login the seed kept skipping and ``hermes auth
+    not. So after remove -> re-login the seed kept skipping and ``kova auth
     list`` showed no xAI entry even though the agent still worked via the
     singleton fallback. The fix calls ``unsuppress_credential_source`` on
     explicit interactive login success.
@@ -1919,7 +1919,7 @@ def test_pool_sync_back_preserves_active_provider(tmp_path, monkeypatch):
     using it on the sync-back path means every xAI/Codex/Nous refresh in a
     multi-provider setup silently overrides the user's chosen active
     provider (visible to ``kova auth status``, ``kova setup``, and the
-    ``hermes`` no-arg dispatcher).  Pin the ``set_active=False`` contract so
+    ``kova`` no-arg dispatcher).  Pin the ``set_active=False`` contract so
     no future refactor regresses to the legacy semantic."""
     from agent.credential_pool import load_pool
 

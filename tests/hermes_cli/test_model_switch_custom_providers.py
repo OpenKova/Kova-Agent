@@ -1,6 +1,6 @@
 """Regression tests for /model support of config.yaml custom_providers.
 
-The terminal `hermes model` flow already exposes `custom_providers`, but the
+The terminal `kova model` flow already exposes `custom_providers`, but the
 shared slash-command pipeline (`/model` in CLI/gateway/Telegram) historically
 only looked at `providers:`.
 """
@@ -344,7 +344,7 @@ def test_custom_provider_no_key_singular_model_still_probes_live_models(monkeypa
     """A singular ``model:`` is the active selection, not an explicit catalog.
 
     No-key local endpoints such as Ollama and llama.cpp should still be probed
-    so /model matches the terminal ``hermes model`` flow.
+    so /model matches the terminal ``kova model`` flow.
     """
     monkeypatch.setattr("agent.models_dev.fetch_models_dev", lambda: {})
     monkeypatch.setattr(providers_mod, "HERMES_OVERLAYS", {})

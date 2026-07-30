@@ -580,7 +580,7 @@ def build_alias_map() -> dict[str, str]:
     if not wrapper_dir.is_dir():
         return result
     is_windows = sys.platform == "win32"
-    prefix = "hermes -p "
+    prefix = "kova -p "
 
     for entry in sorted(wrapper_dir.iterdir()):
         if not entry.is_file():

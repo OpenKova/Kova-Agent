@@ -469,7 +469,7 @@ class TestSecretRedactionInDisplay:
 # ---------------------------------------------------------------------------
 
 class TestSchemaValidation:
-    """#34067: ``hermes config set`` must not report bare success for
+    """#34067: ``kova config set`` must not report bare success for
     unrecognized keys. The key IS written (arbitrary keys are supported —
     top-level scalars bridge into os.environ for skills/external apps), but
     a post-write notice warns that Hermes may never read it and suggests the
@@ -641,7 +641,7 @@ class TestDisplaySkinTouch:
 
     The gateway's skin watcher broadcasts ``skin.changed`` on a signature move
     of (active name, skin-file mtime). Re-affirming the already-configured skin
-    (`hermes config set display.skin X` while it is already X — the recovery
+    (`kova config set display.skin X` while it is already X — the recovery
     path when a surface missed the original activation) moves NEITHER part, so
     without the touch the explicit apply is invisible to every live surface.
     """

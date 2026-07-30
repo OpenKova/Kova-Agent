@@ -8,8 +8,8 @@ import pytest
 
 from hermes_cli.toolset_validation import validate_platform_toolsets
 
-# A representative set of real toolset names. `hermes` is deliberately absent —
-# that is the corruption #38798 reported (`hermes-cli` rewritten to `hermes`).
+# A representative set of real toolset names. `kova` is deliberately absent —
+# that is the corruption #38798 reported (`hermes-cli` rewritten to `kova`).
 _KNOWN = {
     "hermes-cli",
     "hermes-telegram",
@@ -82,7 +82,7 @@ def test_all_invalid_reports_each_and_the_zero_state():
 
 def test_real_validate_toolset_treats_hermes_cli_valid_and_hermes_invalid():
     # Ties the helper to reality: the canonical registry check agrees that
-    # `hermes-cli` is the real toolset and `hermes` is not (the #38798 crux).
+    # `hermes-cli` is the real toolset and `kova` is not (the #38798 crux).
     from toolsets import validate_toolset
 
     assert validate_toolset("hermes-cli") is True

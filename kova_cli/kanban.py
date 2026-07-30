@@ -2535,7 +2535,7 @@ def _cmd_daemon(args: argparse.Namespace) -> int:
     # casually — intentional.
     if not getattr(args, "force", False):
         print(
-            "hermes kanban daemon: DEPRECATED — the dispatcher now runs\n"
+            "kova kanban daemon: DEPRECATED — the dispatcher now runs\n"
             "inside the gateway. To use kanban:\n"
             "\n"
             "    kova gateway start       # starts the gateway + embedded dispatcher\n"

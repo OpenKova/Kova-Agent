@@ -598,7 +598,7 @@ def test_gateway_start_ignores_legacy_platform_selector(monkeypatch):
 def test_gateway_restart_on_windows_without_service_uses_detached_backend(monkeypatch):
     """Windows manual restart must not fall back to foreground run_gateway().
 
-    A Telegram-hosted agent may run `hermes gateway restart` via the terminal
+    A Telegram-hosted agent may run `kova gateway restart` via the terminal
     tool. The generic manual fallback stops the gateway and then calls
     run_gateway() in the same foreground subprocess; on Windows that subprocess
     can be reaped when its gateway parent is terminated, leaving the gateway

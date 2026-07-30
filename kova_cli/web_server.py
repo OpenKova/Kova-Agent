@@ -3880,7 +3880,7 @@ def _gateway_subcommand(profile: Optional[str], verb: str) -> List[str]:
 
 
 def _gateway_display_command(profile: Optional[str], verb: str) -> str:
-    return " ".join(["hermes", *_gateway_subcommand(profile, verb)])
+    return " ".join(["kova", *_gateway_subcommand(profile, verb)])
 
 
 # Kept in sync with the corresponding frontend validation in ChannelsPage.tsx.
@@ -19175,7 +19175,7 @@ def _merged_plugins_hub() -> Dict[str, Any]:
                     entry = registry.get_entry(tname)
                     if entry and entry.check_fn and not entry.check_fn():
                         auth_required = True
-                        auth_command = f"hermes auth {name}"
+                        auth_command = f"kova auth {name}"
                         break
             except Exception:
                 pass

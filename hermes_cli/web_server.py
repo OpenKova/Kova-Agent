@@ -3880,7 +3880,7 @@ def _gateway_subcommand(profile: Optional[str], verb: str) -> List[str]:
 
 
 def _gateway_display_command(profile: Optional[str], verb: str) -> str:
-    return " ".join(["hermes", *_gateway_subcommand(profile, verb)])
+    return " ".join(["kova", *_gateway_subcommand(profile, verb)])
 
 
 # Kept in sync with the corresponding frontend validation in ChannelsPage.tsx.
@@ -10053,7 +10053,7 @@ def _build_oauth_catalog() -> list[Dict[str, Any]]:
                 "id": d.slug,
                 "name": d.label,
                 "flow": "external",
-                "cli_command": f"hermes auth add {d.slug}",
+                "cli_command": f"kova auth add {d.slug}",
                 "docs_url": d.signup_url or "",
                 "status_fn": None,
             })
@@ -14712,7 +14712,7 @@ def _resolve_profile_dir(name: str) -> Path:
 def _profile_setup_command(name: str) -> str:
     """Return the shell command used to configure a profile in the CLI."""
     _resolve_profile_dir(name)
-    return "hermes setup" if name == "default" else f"{name} setup"
+    return "kova setup" if name == "default" else f"{name} setup"
 
 
 def _write_profile_model(profile_dir: Path, provider: str, model: str) -> None:
@@ -19175,7 +19175,7 @@ def _merged_plugins_hub() -> Dict[str, Any]:
                     entry = registry.get_entry(tname)
                     if entry and entry.check_fn and not entry.check_fn():
                         auth_required = True
-                        auth_command = f"hermes auth {name}"
+                        auth_command = f"kova auth {name}"
                         break
             except Exception:
                 pass

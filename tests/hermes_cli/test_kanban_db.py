@@ -2872,7 +2872,7 @@ def test_session_id_compose_with_tenant_filter(kanban_home):
 # Shared-board path resolution (issue #19348)
 #
 # The kanban board is a cross-profile coordination primitive: a worker
-# spawned with `hermes -p <profile>` must read/write the same kanban.db
+# spawned with `kova -p <profile>` must read/write the same kanban.db
 # as the dispatcher that claimed the task. These tests exercise the
 # path-resolution layer directly and would have caught the regression
 # where `kanban_db_path()` resolved to the active profile's HERMES_HOME.
@@ -2947,7 +2947,7 @@ class TestSharedBoardPaths:
         dispatcher_ws = kb.workspaces_root()
         dispatcher_log = kb.worker_log_path("t_handoff")
 
-        # Worker's perspective (profile activated by `hermes -p coder`).
+        # Worker's perspective (profile activated by `kova -p coder`).
         monkeypatch.setenv("HERMES_HOME", str(profile_home))
         worker_db = kb.kanban_db_path()
         worker_ws = kb.workspaces_root()
@@ -3433,7 +3433,7 @@ def test_migrate_add_optional_columns_tolerates_concurrent_migration(kanban_home
 # ---------------------------------------------------------------------------
 # Dispatcher spawn invocation — _resolve_hermes_argv()
 #
-# Workers spawned by the dispatcher must use a `hermes` invocation that does
+# Workers spawned by the dispatcher must use a `kova` invocation that does
 # not depend on PATH being set up correctly. cron jobs, systemd User= services,
 # launchd jobs, and other detached processes routinely run with a stripped
 # $PATH that doesn't include the venv's bin/, so a bare `["hermes", ...]`
@@ -3444,7 +3444,7 @@ def test_migrate_add_optional_columns_tolerates_concurrent_migration(kanban_home
 
 
 def test_resolve_hermes_argv_prefers_path_shim(monkeypatch):
-    """When `hermes` is on PATH, use the shim — preserves familiar ps output."""
+    """When `kova` is on PATH, use the shim — preserves familiar ps output."""
     import shutil
     import hermes_cli.kanban_db as kb
 
@@ -3558,8 +3558,8 @@ def test_resolve_hermes_argv_hermes_bin_unresolved_bare_name_falls_back(monkeypa
 def test_resolve_hermes_argv_falls_back_to_module_form_when_no_path_shim(monkeypatch):
     """When the shim is not on PATH, fall back to `python -m hermes_cli.main`.
 
-    Pins the correct module name (NOT `hermes` — there is no top-level
-    `hermes` package). Regression for #23198: the original PR shipped
+    Pins the correct module name (NOT `kova` — there is no top-level
+    `kova` package). Regression for #23198: the original PR shipped
     `python -m hermes` which fails with `No module named hermes` on every
     invocation.
     """

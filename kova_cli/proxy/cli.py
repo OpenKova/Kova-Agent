@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 def _print_aiohttp_missing() -> None:
     print(
-        "hermes proxy requires aiohttp. Run `kova setup` to install it.",
+        "kova proxy requires aiohttp. Run `kova setup` to install it.",
         file=sys.stderr,
     )
 
@@ -117,7 +117,7 @@ def cmd_proxy(args: Any) -> int:
         return cmd_proxy_list_providers(args)
     # No subcommand → print short help.
     print(
-        "hermes proxy — local OpenAI-compatible proxy that attaches your\n"
+        "kova proxy — local OpenAI-compatible proxy that attaches your\n"
         "OAuth-authenticated provider credentials to outbound requests.\n"
         "\n"
         "Subcommands:\n"

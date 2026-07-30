@@ -72,7 +72,7 @@ def _install_example_plugin(_isolate_hermes_home):
     # An installed-but-not-enabled user plugin has its API mount skipped
     # and its assets 404'd — which is the whole point of the gate. These
     # fixtures exist to exercise the *serving* paths, so opt the example
-    # plugin in exactly as a real operator would with `hermes plugins
+    # plugin in exactly as a real operator would with `kova plugins
     # enable example`.
     from hermes_cli.config import load_config, save_config
     _cfg = load_config()
@@ -2864,7 +2864,7 @@ class TestWebServerEndpoints:
         as a provider card, even when it has no hand entry in OPTIONAL_ENV_VARS.
 
         Regression for the GUI⇄CLI drift: openai-api, kilocode, novita,
-        tencent-tokenhub, copilot were configurable via `hermes model` but
+        tencent-tokenhub, copilot were configurable via `kova model` but
         invisible in the desktop Providers → API keys tab.
         """
         from hermes_cli.provider_catalog import provider_catalog
@@ -3039,7 +3039,7 @@ class TestWebServerEndpoints:
 
     def test_ops_import_passes_force_flag(self, tmp_path, monkeypatch):
         """force=True must append --force so the spawned non-interactive
-        `hermes import` doesn't auto-abort at the overwrite prompt."""
+        `kova import` doesn't auto-abort at the overwrite prompt."""
         import hermes_cli.web_server as ws
 
         archive = tmp_path / "backup.zip"
@@ -3767,7 +3767,7 @@ class TestWebServerEndpoints:
         self, monkeypatch
     ):
         """A live in-flight gateway restart is reused instead of spawning a
-        second racing ``hermes gateway restart`` child (e.g. when a stale
+        second racing ``kova gateway restart`` child (e.g. when a stale
         cached frontend also fires its own restart call)."""
         import hermes_cli.web_server as ws
 
@@ -3968,7 +3968,7 @@ class TestWebServerEndpoints:
         assert seen_encodings == {"index": "utf-8", "css": "utf-8"}
 
     def test_headless_serve_disables_spa_even_with_a_dist(self, monkeypatch, tmp_path):
-        """`hermes serve` (HERMES_SERVE_HEADLESS) must NOT serve the SPA even
+        """`kova serve` (HERMES_SERVE_HEADLESS) must NOT serve the SPA even
         when a built dist is present — only the API/WS surface is reachable."""
         from fastapi import FastAPI
         from starlette.testclient import TestClient
@@ -4190,7 +4190,7 @@ class TestWebServerEndpoints:
         """A custom endpoint that requires auth must persist model.api_key (where
         the runtime reads it) AND register a named custom_providers entry so the
         endpoint reappears as a ready row in the picker — matching the
-        ``hermes model`` custom flow. Regression for the desktop loop where a
+        ``kova model`` custom flow. Regression for the desktop loop where a
         keyed custom endpoint could never be configured from the GUI."""
         from hermes_cli.config import load_config
 
@@ -4644,7 +4644,7 @@ class TestWebServerEndpoints:
 
     def test_recommended_default_nous_honors_free_tier(self, monkeypatch):
         """For a free-tier Nous user, the recommended default must be a free
-        model (mirroring `hermes model`), not the first curated paid entry."""
+        model (mirroring `kova model`), not the first curated paid entry."""
         import hermes_cli.models as models_mod
 
         monkeypatch.setattr(models_mod, "get_curated_nous_model_ids", lambda: ["paid/expensive", "free/cheap"])
@@ -5241,7 +5241,7 @@ class TestNewEndpoints:
         assert wrapper_path.exists()
         lines = [line.strip() for line in wrapper_path.read_text().splitlines() if line.strip()]
         if is_windows:
-            assert lines == ["@echo off", "hermes -p writer %*"]
+            assert lines == ["@echo off", "kova -p writer %*"]
         else:
             assert lines == ["#!/bin/sh", 'exec /opt/hermes/bin/kova -p writer "$@"']
 
@@ -8653,7 +8653,7 @@ class TestDashboardPluginManifestExtensions:
 # /api/pty WebSocket — terminal bridge for the dashboard "Chat" tab.
 #
 # These tests drive the endpoint with a tiny fake command (typically ``cat``
-# or ``sh -c 'printf …'``) instead of the real ``hermes --tui`` binary.  The
+# or ``sh -c 'printf …'``) instead of the real ``kova --tui`` binary.  The
 # endpoint resolves its argv through ``_resolve_chat_argv``, so tests
 # monkeypatch that hook.
 # ---------------------------------------------------------------------------

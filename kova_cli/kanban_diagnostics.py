@@ -454,7 +454,7 @@ def _rule_triage_aux_unavailable(task, events, runs, now, cfg) -> list[Diagnosti
         actions.append(DiagnosticAction(
             kind="cli_hint",
             label=f"Specify manually: hermes kanban specify {task_id}",
-            payload={"command": f"hermes kanban specify {task_id}"},
+            payload={"command": f"kova kanban specify {task_id}"},
         ))
 
     return [Diagnostic(
@@ -599,7 +599,7 @@ def _rule_repeated_failures(task, events, runs, now, cfg) -> list[Diagnostic]:
             actions.append(DiagnosticAction(
                 kind="cli_hint",
                 label=f"Check logs: hermes kanban log {task_id}",
-                payload={"command": f"hermes kanban log {task_id}"},
+                payload={"command": f"kova kanban log {task_id}"},
                 suggested=True,
             ))
     actions.extend(_generic_recovery_actions(
@@ -714,7 +714,7 @@ def _rule_repeated_crashes(task, events, runs, now, cfg) -> list[Diagnostic]:
         actions.append(DiagnosticAction(
             kind="cli_hint",
             label=f"Check logs: hermes kanban log {task_id}",
-            payload={"command": f"hermes kanban log {task_id}"},
+            payload={"command": f"kova kanban log {task_id}"},
             suggested=True,
         ))
     running = _task_field(task, "status") == "running"
@@ -852,7 +852,7 @@ def _rule_block_unblock_cycling(task, events, runs, now, cfg) -> list[Diagnostic
         actions.append(DiagnosticAction(
             kind="cli_hint",
             label=f"Check block reasons: hermes kanban events {task_id}",
-            payload={"command": f"hermes kanban events {task_id}"},
+            payload={"command": f"kova kanban events {task_id}"},
             suggested=True,
         ))
     return [Diagnostic(
@@ -972,7 +972,7 @@ def _rule_stranded_in_ready(task, events, runs, now, cfg) -> list[Diagnostic]:
         DiagnosticAction(
             kind="cli_hint",
             label="Check dispatcher status",
-            payload={"command": "hermes kanban diagnostics"},
+            payload={"command": "kova kanban diagnostics"},
         ),
     ]
 

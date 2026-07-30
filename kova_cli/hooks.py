@@ -1,4 +1,4 @@
-"""hermes hooks — inspect and manage shell-script hooks.
+"""kova hooks — inspect and manage shell-script hooks.
 
 Usage::
 

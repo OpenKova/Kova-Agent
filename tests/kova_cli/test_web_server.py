@@ -3039,7 +3039,7 @@ class TestWebServerEndpoints:
 
     def test_ops_import_passes_force_flag(self, tmp_path, monkeypatch):
         """force=True must append --force so the spawned non-interactive
-        `hermes import` doesn't auto-abort at the overwrite prompt."""
+        `kova import` doesn't auto-abort at the overwrite prompt."""
         import kova_cli.web_server as ws
 
         archive = tmp_path / "backup.zip"

@@ -1168,9 +1168,9 @@ class TestResetBundledSkill:
 class TestNoBundledSkillsOptOut:
     """The .no-bundled-skills marker makes sync_skills() a no-op.
 
-    This is what `hermes profile create --no-skills` (named profiles) and the
+    This is what `kova profile create --no-skills` (named profiles) and the
     installer's `--no-skills` flag (default ~/.hermes) rely on so bundled
-    skills are never seeded at install time NOR re-injected by `hermes update`.
+    skills are never seeded at install time NOR re-injected by `kova update`.
     """
 
     def _setup_bundled(self, tmp_path):
@@ -1221,7 +1221,7 @@ class TestNoBundledSkillsOptOut:
 
 
 class TestOptOutToggleAndRemove:
-    """`hermes skills opt-out/opt-in` core: marker toggle + safe removal."""
+    """`kova skills opt-out/opt-in` core: marker toggle + safe removal."""
 
     def _setup_bundled(self, tmp_path):
         bundled = tmp_path / "bundled"

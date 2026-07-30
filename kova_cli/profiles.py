@@ -415,7 +415,7 @@ def check_alias_collision(name: str) -> Optional[str]:
             if existing_path == str(expected):
                 try:
                     content = expected.read_text()
-                    if "hermes -p" in content:
+                    if "kova -p" in content:
                         return None  # it's our wrapper, safe to overwrite
                 except Exception:
                     pass
@@ -497,7 +497,7 @@ def remove_wrapper_script(name: str) -> bool:
             try:
                 # Verify it's our wrapper before removing
                 content = wrapper_path.read_text()
-                if "hermes -p" in content:
+                if "kova -p" in content:
                     wrapper_path.unlink()
                     return True
             except Exception:

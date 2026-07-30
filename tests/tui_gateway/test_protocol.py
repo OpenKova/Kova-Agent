@@ -2113,7 +2113,7 @@ def test_slow_completion_does_not_block_fast_handler(completion_method, server):
 
 
 def test_skin_live_switch_end_to_end(server, tmp_path, monkeypatch):
-    """Real config + skin files: activating a skin (as `hermes config set` does)
+    """Real config + skin files: activating a skin (as `kova config set` does)
     makes the per-tool reconcile broadcast skin.changed with the resolved palette.
     Exercises _load_cfg → _skin_sig → resolve_skin → _emit with no mocks in between."""
     import hermes_cli.skin_engine as skin_engine
@@ -2135,7 +2135,7 @@ def test_skin_live_switch_end_to_end(server, tmp_path, monkeypatch):
     server._broadcast_skin_if_changed()
     emitted.clear()
 
-    # Activate midnight, as `hermes config set display.skin midnight` would.
+    # Activate midnight, as `kova config set display.skin midnight` would.
     time.sleep(0.01)  # ensure the config mtime moves
     (tmp_path / "config.yaml").write_text("display:\n  skin: midnight\n")
     server._broadcast_skin_if_changed()

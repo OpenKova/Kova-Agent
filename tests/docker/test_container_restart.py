@@ -10,7 +10,7 @@ These tests stand up a container with a named volume, create profiles
 inside it in various gateway states, restart the container, and
 assert the reconciler did the right thing.
 
-Every ``docker exec`` here runs as the unprivileged ``hermes`` user
+Every ``docker exec`` here runs as the unprivileged ``kova`` user
 (via :func:`docker_exec` / :func:`docker_exec_sh` in conftest); see
 the conftest module docstring.
 """
@@ -214,7 +214,7 @@ def test_live_gateway_autostarts_after_real_restart_without_manual_state_stamp(
 
     # Real restart — Docker sends SIGTERM to PID 1; s6 propagates it to the
     # supervised gateway. No planned-stop marker is written (this is not an
-    # operator `hermes gateway stop`), so the shutdown is signal-initiated.
+    # operator `kova gateway stop`), so the shutdown is signal-initiated.
     _docker("restart", container, timeout=60).check_returncode()
 
     log = _wait_for_reconcile_log_mention(container, "live", deadline_s=30.0)

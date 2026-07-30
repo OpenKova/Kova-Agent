@@ -57,17 +57,17 @@ class TestGatewayLifecyclePattern:
     @pytest.mark.parametrize("text", [
         "restart the server application",
         "hermes cron list",
-        "hermes update",
+        "kova update",
         "hermes config set model claude",
         "echo 'just a normal cron job'",
         "run the backup script",
         "gateway is running fine",
-        # `hermes gateway start` is benign — starting a gateway from inside a
+        # `kova gateway start` is benign — starting a gateway from inside a
         # gateway is a no-op / "already running", and a legit cron job may
         # start a sibling profile's gateway. Only restart/stop/kill are the
         # foot-gun (#30719 lists only those).
         "kova gateway start",
-        "hermes gateway start --all",
+        "kova gateway start --all",
         # Tightened launchctl/systemctl branches: ops on NON-gateway hermes
         # services must not be falsely blocked (the old `.*hermes` matched any
         # hermes token).
@@ -411,7 +411,7 @@ class TestLifecycleGuardModule:
         script to slip through."""
         from cron.lifecycle_guard import GatewayLifecycleBlocked, check_gateway_lifecycle
         script = tmp_path / "ops.sh"
-        script.write_text("hermes gateway stop\n")
+        script.write_text("kova gateway stop\n")
         with pytest.raises(GatewayLifecycleBlocked):
             check_gateway_lifecycle("daily ops job", str(script))
 

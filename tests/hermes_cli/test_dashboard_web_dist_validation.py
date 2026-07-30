@@ -1,4 +1,4 @@
-"""Regression tests: `hermes dashboard` validates HERMES_WEB_DIST before serving.
+"""Regression tests: `kova dashboard` validates HERMES_WEB_DIST before serving.
 
 A custom HERMES_WEB_DIST without --skip-build previously skipped BOTH the
 build and any validation, so the server started and served 404s with no
@@ -385,7 +385,7 @@ def test_standalone_dashboard_clears_inherited_serve_headless(
 
 
 def test_headless_serve_reasserts_serve_headless(main_mod, monkeypatch):
-    """`hermes serve` must still set HERMES_SERVE_HEADLESS after the clear."""
+    """`kova serve` must still set HERMES_SERVE_HEADLESS after the clear."""
     _wire_common(main_mod, monkeypatch)
     monkeypatch.delenv("HERMES_DESKTOP", raising=False)
     monkeypatch.delenv("HERMES_WEB_DIST", raising=False)

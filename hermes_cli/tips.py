@@ -73,7 +73,7 @@ TIPS = [
     "hermes chat --checkpoints enables filesystem snapshots before every destructive file change.",
     "hermes --yolo bypasses all dangerous command approval prompts for the entire session.",
     "hermes chat --source telegram tags the session for filtering in hermes sessions list.",
-    "hermes -p work chat runs under a specific profile without changing your default.",
+    "kova -p work chat runs under a specific profile without changing your default.",
 
     # --- CLI Subcommands ---
     "hermes doctor --fix diagnoses and auto-repairs config and dependency issues.",
@@ -96,7 +96,7 @@ TIPS = [
     "hermes backup creates a zip backup of your entire Hermes home directory.",
     "hermes profile create coder creates an isolated profile that becomes its own command.",
     "hermes profile create work --clone copies your current config and keys to a new profile.",
-    "hermes update syncs new bundled skills to ALL profiles automatically.",
+    "kova update syncs new bundled skills to ALL profiles automatically.",
     "kova gateway install sets up Hermes as a system service (systemd/launchd).",
     "hermes memory setup lets you configure an external memory provider (Honcho, Mem0, etc.).",
     "hermes webhook subscribe creates event-driven webhook routes with HMAC validation.",
@@ -266,7 +266,7 @@ TIPS = [
     "hermes auth add nous or hermes auth add openai-codex sets up OAuth-based providers.",
     "The API server supports both Chat Completions and Responses API with server-side state.",
     "tool_preview_length: 0 in config shows full file paths in the spinner's activity feed.",
-    "hermes status --deep runs deeper diagnostic checks across all components.",
+    "kova status --deep runs deeper diagnostic checks across all components.",
 
     # --- Hidden Gems & Power-User Tricks ---
     "Cron jobs can attach a Python script (--script) whose stdout is injected into the prompt as context.",

@@ -175,7 +175,7 @@ def relaunch(
     The Windows-correct pattern is: spawn the child with ``subprocess.run``
     (which routes through ``cmd.exe`` via ``shell=False`` + PATHEXT resolution),
     wait for it to exit, then propagate its exit code via ``sys.exit``.
-    That's functionally equivalent — the user sees "hermes exited, then
+    That's functionally equivalent — the user sees "kova exited, then
     new hermes started" — just with two PIDs in play instead of one.
     """
     new_argv = build_relaunch_argv(

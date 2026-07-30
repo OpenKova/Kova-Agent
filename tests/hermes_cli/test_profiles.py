@@ -396,7 +396,7 @@ class TestCreateProfile:
 # ===================================================================
 
 class TestNoSkillsOptOut:
-    """Tests for `hermes profile create --no-skills` and the opt-out marker."""
+    """Tests for `kova profile create --no-skills` and the opt-out marker."""
 
     def test_no_skills_writes_marker_and_skips_seeding(self, profile_env):
         profile_dir = create_profile("orchestrator", no_alias=True, no_skills=True)
@@ -434,7 +434,7 @@ class TestNoSkillsOptOut:
 
     def test_seed_profile_skills_respects_marker(self, profile_env):
         """seed_profile_skills() must no-op on opted-out profiles even when
-        called directly (e.g. by `hermes update`'s all-profile sync loop)."""
+        called directly (e.g. by `kova update`'s all-profile sync loop)."""
         profile_dir = create_profile("orchestrator", no_alias=True, no_skills=True)
 
         # Call seed_profile_skills() directly — it should NOT invoke subprocess,
@@ -506,7 +506,7 @@ class TestNoSkillsOptOut:
 # ===================================================================
 
 class TestBackfillProfileEnvs:
-    """Tests for backfill_profile_envs() — the `hermes update` pass that
+    """Tests for backfill_profile_envs() — the `kova update` pass that
     gives pre-#44792 profiles (created before .env seeding) their own
     .env, copied from the default install so credentials don't break."""
 
@@ -1740,7 +1740,7 @@ class TestEdgeCases:
 
     def test_gateway_running_check_rejects_pid_reused_by_other_profile(self, profile_env):
         """Regression (user report): the dashboard showed a NAMED profile's
-        gateway green while ``hermes -p <name> gateway status`` showed it
+        gateway green while ``kova -p <name> gateway status`` showed it
         stopped.
 
         Per-profile Docker supervision: a named profile (``coder``) left a

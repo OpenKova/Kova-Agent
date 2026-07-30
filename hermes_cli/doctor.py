@@ -2539,8 +2539,8 @@ def run_doctor(args):
                         continue
                     try:
                         content = wrapper.read_text()
-                        if "hermes -p" in content:
-                            _m = _re.search(r"hermes -p (\S+)", content)
+                        if "kova -p" in content or "hermes -p" in content:
+                            _m = _re.search(r"(?:kova|hermes) -p (\S+)", content)
                             if _m and not profile_exists(_m.group(1)):
                                 check_warn(f"Orphan alias: {wrapper.name} → profile '{_m.group(1)}' no longer exists")
                     except Exception:

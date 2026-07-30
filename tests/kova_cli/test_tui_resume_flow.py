@@ -1539,7 +1539,7 @@ def test_oneshot_rejects_disabled_mcp_toolset(monkeypatch, capsys):
     valid, error = _validate_explicit_toolsets("mcp-off")
 
     assert valid is None
-    assert error == "hermes -z: --toolsets did not contain any valid toolsets.\n"
+    assert error == "kova -z: --toolsets did not contain any valid toolsets.\n"
     err = capsys.readouterr().err
     assert "ignoring disabled MCP servers" in err
     assert "mcp-off" in err

@@ -310,8 +310,8 @@ def test_console_help_uses_cli_subcommand_summaries():
     assert "Show all tools and their enabled/disabled status" in help_text
     assert "Remove an MCP server" in help_text
     assert "Check pet setup + terminal graphics support" in help_text
-    assert "Run `hermes skills list`" not in help_text
-    assert "Run `hermes tools list`" not in help_text
+    assert "Run `kova skills list`" not in help_text
+    assert "Run `kova tools list`" not in help_text
 
 
 def test_console_help_table_keeps_long_summaries_compact():

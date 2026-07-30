@@ -15,7 +15,7 @@ class TestCoalesceSessionNameArgs:
         ) == ["-c", "Pokemon Agent Dev"]
 
     def test_continue_long_form_multiword(self):
-        """hermes --continue Pokemon Agent Dev"""
+        """kova --continue Pokemon Agent Dev"""
         assert _coalesce_session_name_args(
             ["--continue", "Pokemon", "Agent", "Dev"]
         ) == ["--continue", "Pokemon Agent Dev"]
@@ -62,7 +62,7 @@ class TestCoalesceSessionNameArgs:
         ) == ["-r", "My Session Name"]
 
     def test_resume_long_form_multiword(self):
-        """hermes --resume My Session Name"""
+        """kova --resume My Session Name"""
         assert _coalesce_session_name_args(
             ["--resume", "My", "Session", "Name"]
         ) == ["--resume", "My Session Name"]

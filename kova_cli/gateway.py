@@ -181,7 +181,7 @@ def _get_parent_pid(pid: int) -> int | None:
     older implementation shelled out to ``ps -o ppid= -p <pid>``, which
     silently fails on Windows (no ``ps``) so the ancestor walk terminated
     at self — the caller's dedup / exclude logic then couldn't distinguish
-    "hermes CLI that invoked this scan" from "real gateway process".
+    "kova CLI that invoked this scan" from "real gateway process".
     """
     if pid <= 1:
         return None
@@ -5555,7 +5555,7 @@ def _setup_standard_platform(platform: dict):
                 else:
                     access_choices = [
                         "Enable open access (anyone can message the bot)",
-                        "Use DM pairing (unknown users request access, you approve with 'hermes pairing approve')",
+                        "Use DM pairing (unknown users request access, you approve with 'kova pairing approve')",
                         "Skip for now (bot will deny all users until configured)",
                     ]
                     default_access_idx = 1

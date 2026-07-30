@@ -7430,7 +7430,7 @@ def _save_model_choice(model_id: str) -> None:
 
 def login_command(args) -> None:
     """Deprecated: use 'kova model' or 'kova setup' instead."""
-    print("The 'hermes login' command has been removed.")
+    print("The 'kova login' command has been removed.")
     print("Use 'kova auth' to manage credentials,")
     print("'kova model' to select a provider, or 'kova setup' for full setup.")
     raise SystemExit(0)

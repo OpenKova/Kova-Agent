@@ -58,7 +58,7 @@ def _validate_explicit_toolsets(toolsets: object = None) -> tuple[list[str] | No
     try:
         from toolsets import validate_toolset
     except Exception as exc:
-        return None, f"hermes -z: failed to validate --toolsets: {exc}\n"
+        return None, f"kova -z: failed to validate --toolsets: {exc}\n"
 
     built_in = [name for name in normalized if validate_toolset(name)]
     unresolved = [name for name in normalized if name not in built_in]
@@ -111,7 +111,7 @@ def _validate_explicit_toolsets(toolsets: object = None) -> tuple[list[str] | No
     valid = built_in + mcp_valid
 
     if unknown:
-        sys.stderr.write(f"hermes -z: ignoring unknown --toolsets entries: {', '.join(unknown)}\n")
+        sys.stderr.write(f"kova -z: ignoring unknown --toolsets entries: {', '.join(unknown)}\n")
     if disabled:
         sys.stderr.write(
             "hermes -z: ignoring disabled MCP servers (set enabled: true in config.yaml to use): "
@@ -271,7 +271,7 @@ def run_oneshot(
             _write_usage_file(usage_file, result, failure=repr(failure))
             raise failure
         _write_usage_file(usage_file, result, failure=str(failure))
-        real_stderr.write(f"hermes -z: agent failed: {failure}\n")
+        real_stderr.write(f"kova -z: agent failed: {failure}\n")
         real_stderr.flush()
         return 1
 

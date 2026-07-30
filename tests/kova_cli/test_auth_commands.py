@@ -893,7 +893,7 @@ def test_clear_provider_auth_removes_provider_pool_entries(tmp_path, monkeypatch
 
 
 def test_logout_resets_codex_config_when_auth_state_already_cleared(tmp_path, monkeypatch, capsys):
-    """`hermes logout --provider openai-codex` must still clear model.provider.
+    """`kova logout --provider openai-codex` must still clear model.provider.
 
     Users can end up with auth.json already cleared but config.yaml still set to
     openai-codex.  Previously logout reported no auth state and left the agent
@@ -922,7 +922,7 @@ def test_logout_resets_codex_config_when_auth_state_already_cleared(tmp_path, mo
 
 
 def test_logout_defaults_to_configured_codex_when_no_active_provider(tmp_path, monkeypatch, capsys):
-    """Bare `hermes logout` should target configured Codex if auth has no active provider."""
+    """Bare `kova logout` should target configured Codex if auth has no active provider."""
     hermes_home = tmp_path / "hermes"
     monkeypatch.setenv("HERMES_HOME", str(hermes_home))
     _write_auth_store(tmp_path, {"version": 1, "providers": {}, "credential_pool": {}})
