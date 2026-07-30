@@ -1236,7 +1236,7 @@ class CLIBillingMixin:
                    else "You stopped this terminal's spending.")
             print(f"  🔴 {who} Reconnect to restore — run `kova portal` to re-authorize.")
         elif isinstance(exc, BillingSessionRevoked) or code == "session_revoked":
-            print("  🔴 Your session was logged out. Run `hermes portal` to log in again.")
+            print("  🔴 Your session was logged out. Run `kova portal` to log in again.")
         elif code == "no_payment_method":
             print("  💳 No card on file — top up and manage billing on the portal.")
         elif code in ("cli_billing_disabled", "remote_spending_disabled") or \

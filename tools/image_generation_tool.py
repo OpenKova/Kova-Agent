@@ -1077,7 +1077,7 @@ def _build_no_backend_setup_message() -> str:
         )
     lines.append(
         "  3. Configure a different image_gen provider via `hermes tools` "
-        "→ Image Generation (run `hermes plugins list` to see installed "
+        "→ Image Generation (run `kova plugins list` to see installed "
         "backends)"
     )
     return "\n".join(lines)
@@ -1315,7 +1315,7 @@ def _dispatch_to_plugin_provider(
             "image": None,
             "error": (
                 f"image_gen.provider='{configured}' is set but no plugin "
-                f"registered that name. Run `hermes plugins list` to see "
+                f"registered that name. Run `kova plugins list` to see "
                 f"available image gen backends."
             ),
             "error_type": "provider_not_registered",

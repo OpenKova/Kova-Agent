@@ -619,7 +619,7 @@ class OnePasswordSource(SecretSource):
             if isinstance(cfg, dict):
                 token_env = str(cfg.get("service_account_token_env") or token_env)
             return (
-                "Run `hermes secrets onepassword token` to paste a fresh "
+                "Run `kova secrets onepassword token` to paste a fresh "
                 f"service-account token ({token_env}), or `op signin` for an "
                 "interactive session."
             )

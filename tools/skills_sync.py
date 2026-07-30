@@ -600,7 +600,7 @@ def sync_skills(quiet: bool = False) -> dict:
                         print(
                             f"  ⚠ {skill_name}: bundled version shipped but you "
                             f"already have a local skill by this name — yours "
-                            f"was kept. Run `hermes skills reset {skill_name}` "
+                            f"was kept. Run `kova skills reset {skill_name}` "
                             f"to replace it with the bundled version."
                         )
                 else:

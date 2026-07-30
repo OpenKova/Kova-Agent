@@ -268,13 +268,13 @@ def _cmd_doctor(args) -> int:
 
     ok = True
     if not pets:
-        _print("  → no pets installed. Run: hermes pets install boba")
+        _print("  → no pets installed. Run: kova pets install boba")
         ok = False
     elif active is None:
-        _print("  → active pet unresolved. Run: hermes pets select <slug>")
+        _print("  → active pet unresolved. Run: kova pets select <slug>")
         ok = False
     elif not enabled:
-        _print("  → pet display is disabled. Run: hermes pets select " + active.slug)
+        _print("  → pet display is disabled. Run: kova pets select " + active.slug)
 
     try:
         import PIL  # noqa: F401

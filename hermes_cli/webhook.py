@@ -143,7 +143,7 @@ def webhook_command(args):
 
     if not sub:
         print("Usage: hermes webhook {subscribe|list|remove|test}")
-        print("Run 'hermes webhook --help' for details.")
+        print("Run 'kova webhook --help' for details.")
         return
 
     if not _require_webhook_enabled():

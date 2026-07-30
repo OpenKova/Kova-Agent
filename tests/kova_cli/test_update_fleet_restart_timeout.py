@@ -79,7 +79,7 @@ class TestFleetRestartTimeoutIsolation:
             "\n".join(
                 [
                     "ssh.service loaded active running",
-                    "hermes-gateway-coder.service loaded active running",
+                    "kova-gateway-coder.service loaded active running",
                     "not-a-service loaded active running",
                     "",
                 ]
@@ -88,7 +88,7 @@ class TestFleetRestartTimeoutIsolation:
             on_unit_timeout=lambda *_: pytest.fail("unexpected timeout"),
         )
 
-        assert seen == ["hermes-gateway-coder"]
+        assert seen == ["kova-gateway-coder"]
 
     def test_process_errors_other_than_timeout_still_propagate(self):
         def process_unit(_svc_name: str) -> None:

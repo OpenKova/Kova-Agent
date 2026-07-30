@@ -259,7 +259,7 @@ def run_doctor(
     if not binary:
         looked_for = driver_cmd or "cua-driver (PATH and canonical install paths)"
         print(f"cua-driver: not installed (looked for {looked_for!r}).")
-        print("  Run: hermes computer-use install")
+        print("  Run: kova computer-use install")
         return 2
 
     try:

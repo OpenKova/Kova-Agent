@@ -858,7 +858,7 @@ def run_debug_share(args):
         )
     except RuntimeError as exc:
         print(f"\nUpload failed: {exc}", file=sys.stderr)
-        print("\nRun `hermes debug share --local` to print the report instead.\n")
+        print("\nRun `kova debug share --local` to print the report instead.\n")
         sys.exit(1)
 
     # Print results
@@ -930,7 +930,7 @@ def _run_debug_share_nous(args, *, log_lines: int, redact: bool) -> None:
             f"\nNous upload failed: {exc}\n"
             "\nThe Nous diagnostics service may be unavailable or not yet "
             "provisioned.\n"
-            "Run `hermes debug share --local` to print the report instead, "
+            "Run `kova debug share --local` to print the report instead, "
             "or `hermes debug share` to upload to a public paste service.\n",
             file=sys.stderr,
         )

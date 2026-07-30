@@ -950,7 +950,7 @@ def kanban_command(args: argparse.Namespace) -> int:
         else:
             print(
                 "usage: hermes kanban <action> [options]\n"
-                "Run 'hermes kanban --help' for the full list of actions.",
+                "Run 'kova kanban --help' for the full list of actions.",
                 file=sys.stderr,
             )
         return 0

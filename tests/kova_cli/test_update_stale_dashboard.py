@@ -369,7 +369,7 @@ class TestKillStaleDashboardPosix:
 
         out = capsys.readouterr().out
         assert "Restarting managed dashboard service" in out
-        assert "✓ restarted hermes-dashboard.service" in out
+        assert "✓ restarted kova-dashboard.service" in out
 
     def test_user_scope_restart_never_falls_back_to_system_or_sudo(self, capsys):
         """A user unit is discovered and restarted through ``systemctl --user``."""
@@ -401,7 +401,7 @@ class TestKillStaleDashboardPosix:
         assert all(call[:1] != ["sudo"] and call[:2] != ["systemctl"] for call in calls)
         find_pids.assert_not_called()
         kill.assert_not_called()
-        assert "✓ restarted hermes-dashboard.service" in capsys.readouterr().out
+        assert "✓ restarted kova-dashboard.service" in capsys.readouterr().out
 
     def test_user_scope_restart_failure_does_not_try_system_or_sudo(self):
         """A failed user-manager restart remains fail-closed and never raw-kills."""
@@ -456,9 +456,9 @@ class TestKillStaleDashboardPosix:
         kill.assert_not_called()
 
         out = capsys.readouterr().out
-        assert "failed to restart hermes-dashboard.service" in out
+        assert "failed to restart kova-dashboard.service" in out
         assert "not raw-killing its PID" in out
-        assert "sudo systemctl restart hermes-dashboard.service" in out
+        assert "sudo systemctl restart kova-dashboard.service" in out
 
 
 class TestKillStaleDashboardWindows:

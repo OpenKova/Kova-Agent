@@ -854,7 +854,7 @@ def _reauth_oauth_server(name: str, server_config: dict) -> bool:
             print(color("          client_id: \"<your-oauth-client-id>\"", Colors.DIM))
             print(color("          client_secret: \"<your-oauth-client-secret>\"", Colors.DIM))
             print()
-            _info("Then re-run `hermes mcp login " + name + "`.")
+            _info("Then re-run `kova mcp login " + name + "`.")
             return False
         if tools:
             _success(f"Authenticated — {len(tools)} tool(s) available")

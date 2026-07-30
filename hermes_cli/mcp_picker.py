@@ -258,7 +258,7 @@ def _print_rows_text(rows: List[_Row]) -> None:
         print()
         for name, _, msg in future:
             print(color(
-                f"  ⚠ '{name}' requires a newer Hermes — run `hermes update` "
+                f"  ⚠ '{name}' requires a newer Hermes — run `kova update` "
                 "to install this entry.",
                 Colors.YELLOW,
             ))
@@ -310,7 +310,7 @@ def install_by_name(identifier: str) -> int:
     if entry is None:
         print(color(
             f"  ✗ '{identifier}' is not in the catalog. "
-            "Run `hermes mcp catalog` to see available entries.",
+            "Run `kova mcp catalog` to see available entries.",
             Colors.RED,
         ))
         return 1

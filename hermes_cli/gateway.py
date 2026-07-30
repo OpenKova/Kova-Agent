@@ -1720,7 +1720,7 @@ def _windows_gateway_should_absorb_console_controls() -> bool:
 # Service Configuration
 # =============================================================================
 
-_SERVICE_BASE = "hermes-gateway"
+_SERVICE_BASE = "kova-gateway"
 SERVICE_DESCRIPTION = "Kova Agent Gateway - Messaging Platform Integration"
 
 
@@ -2193,7 +2193,7 @@ def remove_legacy_hermes_units(
         return 0, [p for _, p, _ in legacy]
 
     if interactive and not prompt_yes_no("Remove these legacy units?", True):
-        print("Skipped. Run again with: hermes gateway migrate-legacy")
+        print("Skipped. Run again with: kova gateway migrate-legacy")
         return 0, [p for _, p, _ in legacy]
 
     removed = 0
@@ -4516,7 +4516,7 @@ def launchd_status(deep: bool = False):
         print("✓ Service definition matches the current Kova install")
     else:
         print("⚠ Service definition is stale relative to the current Kova install")
-        print("  Run: hermes gateway start")
+        print("  Run: kova gateway start")
 
     if service_listed:
         if launchd_pid is not None:
@@ -4532,7 +4532,7 @@ def launchd_status(deep: bool = False):
                 print("  Cron jobs will fire. Stop with: hermes gateway stop")
             else:
                 print("✗ No fallback process is running")
-                print("  Run: hermes gateway start")
+                print("  Run: kova gateway start")
             print("  ⚠ Auto-start at login and auto-restart on crash are NOT available.")
         else:
             print("✓ Gateway service is registered with launchd")
@@ -4542,7 +4542,7 @@ def launchd_status(deep: bool = False):
     else:
         print("✗ Gateway service is not loaded")
         print("  Service definition exists locally but launchd has not loaded it.")
-        print("  Run: hermes gateway start")
+        print("  Run: kova gateway start")
         if fallback_pid:
             print(f"  Note: a detached gateway process is running (PID {fallback_pid})")
 
@@ -5726,7 +5726,7 @@ def _setup_weixin():
 
     if not check_weixin_requirements():
         print_error("  Missing dependencies: Weixin needs aiohttp and cryptography.")
-        print_info("  Install them, then rerun `hermes gateway setup`.")
+        print_info("  Install them, then rerun `kova gateway setup`.")
         return
 
     print()
@@ -6459,7 +6459,7 @@ def gateway_setup():
                 print_info("  Run in foreground: hermes gateway run")
     else:
         print()
-        print_info("No platforms configured. Run 'hermes gateway setup' when ready.")
+        print_info("No platforms configured. Run 'kova gateway setup' when ready.")
 
     print()
 

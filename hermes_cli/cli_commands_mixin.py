@@ -2773,7 +2773,7 @@ class CLICommandsMixin:
         ]
         raw = self._prompt_text_input_modal(
             title="⚕  Update Kova Agent",
-            detail="This will exit the current session and run `hermes update`.",
+            detail="This will exit the current session and run `kova update`.",
             choices=choices,
         )
         if raw is None:

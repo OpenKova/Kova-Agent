@@ -882,7 +882,7 @@ def install_cua_driver(upgrade: bool = False) -> bool:
             "    /Applications is not writable; skipping cua-driver refresh."
         )
         _print_info(
-            "    Run `hermes computer-use install --upgrade` from an admin account to update it."
+            "    Run `kova computer-use install --upgrade` from an admin account to update it."
         )
         return bool(binary)
 
@@ -2014,7 +2014,7 @@ def _get_platform_tools(
             _warned_invalid_platform_toolsets.add(platform)
             logger.warning(
                 "platform '%s' has no valid toolsets configured (unknown "
-                "name(s): %s) - tools will be unavailable. Run `hermes tools` "
+                "name(s): %s) - tools will be unavailable. Run `kova tools` "
                 "to reconfigure. See issue #38798.",
                 platform,
                 ", ".join(_named),

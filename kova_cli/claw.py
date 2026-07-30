@@ -307,7 +307,7 @@ def claw_command(args):
         print("  migrate          Migrate settings from OpenClaw to Kova")
         print("  cleanup          Archive leftover OpenClaw directories after migration")
         print()
-        print("Run 'hermes claw <command> --help' for options.")
+        print("Run 'kova claw <command> --help' for options.")
 
 
 def _cmd_migrate(args):

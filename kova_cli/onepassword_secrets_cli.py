@@ -356,7 +356,7 @@ def cmd_token(args: argparse.Namespace) -> int:
     if not op_cfg.get("enabled"):
         console.print(
             "[yellow]Note: the 1Password integration is currently disabled — "
-            "run `hermes secrets onepassword setup` to turn it on.[/yellow]"
+            "run `kova secrets onepassword setup` to turn it on.[/yellow]"
         )
     return 0
 

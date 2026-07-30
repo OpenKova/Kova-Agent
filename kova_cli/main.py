@@ -2903,7 +2903,7 @@ def cmd_whatsapp(args):
         print()
         print("  Or install as a service: kova gateway install")
     else:
-        print("âš  Pairing may not have completed. Run 'hermes whatsapp' to try again.")
+        print("âš  Pairing may not have completed. Run 'kova whatsapp' to try again.")
 
 
 def cmd_whatsapp_cloud(args):
@@ -4490,7 +4490,7 @@ def cmd_slack(args):
             "  manifest   Generate a Slack app manifest with every gateway\n"
             "             command registered as a native slash\n"
             "\n"
-            "Run `hermes slack manifest -h` for details.",
+            "Run `kova slack manifest -h` for details.",
             file=sys.stderr,
         )
         return 1
@@ -14999,7 +14999,7 @@ def main():
                     if st and st.get("update_available"):
                         latest = st.get("latest_version") or "?"
                         print(f"  â¬† Update available: cua-driver {latest}.")
-                        print("    Run: hermes computer-use install --upgrade")
+                        print("    Run: kova computer-use install --upgrade")
                     elif st:
                         print("  âœ“ Up to date.")
                     else:
@@ -15009,7 +15009,7 @@ def main():
                     print("  Refresh to latest: hermes computer-use install --upgrade")
                 return
             print("cua-driver: not installed")
-            print("  Run: hermes computer-use install")
+            print("  Run: kova computer-use install")
             return
         if action == "doctor":
             from tools.computer_use.doctor import run_doctor
@@ -15035,7 +15035,7 @@ def main():
                     print(f"Computer Use is not supported on {st['platform']}.")
                     sys.exit(1)
                 if not st["installed"]:
-                    print("cua-driver: not installed. Run: hermes computer-use install")
+                    print("cua-driver: not installed. Run: kova computer-use install")
                     sys.exit(1)
                 glyph = lambda v: "âœ…" if v is True else ("âŒ" if v is False else "â€¢")  # noqa: E731
                 print(f"cua-driver: {st['version'] or 'installed'} ({st['platform']})")
@@ -16288,7 +16288,7 @@ def main():
     #
     # The canonical name is "desktop"; "gui" is kept as a deprecated alias
     # for one release. The Kova-Setup.exe success screen tells users to
-    # run `hermes desktop` from a terminal, so the canonical name needs
+    # run `kova desktop` from a terminal, so the canonical name needs
     # to be the one that appears in --help (argparse promotes the primary
     # name; aliases stay hidden).
     # =========================================================================

@@ -40,7 +40,7 @@ class TestGatewayLifecyclePattern:
         "launchctl unload ~/Library/LaunchAgents/ai.hermes.gateway.plist",
         "launchctl stop ai.hermes.gateway",
         "systemctl restart hermes-gateway",
-        "systemctl stop hermes-gateway.service",
+        "systemctl stop kova-gateway.service",
         "systemctl start hermes-gateway",
     ])
     def test_service_manager_commands(self, text):
@@ -313,7 +313,7 @@ class TestTerminalToolGatewayLifecycleGuard:
     @pytest.mark.parametrize("cmd", [
         "systemctl restart hermes-gateway",
         "systemctl --user restart hermes-gateway",
-        "systemctl stop hermes-gateway.service",
+        "systemctl stop kova-gateway.service",
         "hermes gateway restart",
         "launchctl kickstart gui/501/ai.hermes.gateway",
         "pkill -f hermes.*gateway",

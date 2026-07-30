@@ -777,14 +777,14 @@ def apply_bitwarden_secrets(
     if not access_token:
         result.error = (
             f"secrets.bitwarden.enabled is true but {access_token_env} is "
-            "not set.  Run `hermes secrets bitwarden setup`."
+            "not set.  Run `kova secrets bitwarden setup`."
         )
         return result
 
     if not project_id:
         result.error = (
             "secrets.bitwarden.project_id is empty.  "
-            "Run `hermes secrets bitwarden setup`."
+            "Run `kova secrets bitwarden setup`."
         )
         return result
 
@@ -793,7 +793,7 @@ def apply_bitwarden_secrets(
     if binary is None:
         result.error = (
             "bws binary not available and auto-install is disabled.  "
-            "Run `hermes secrets bitwarden setup` to install."
+            "Run `kova secrets bitwarden setup` to install."
         )
         return result
 
@@ -909,7 +909,7 @@ class BitwardenSource(SecretSource):
         if not access_token:
             result.error = (
                 f"secrets.bitwarden.enabled is true but {access_token_env} is "
-                "not set.  Run `hermes secrets bitwarden setup`."
+                "not set.  Run `kova secrets bitwarden setup`."
             )
             result.error_kind = ErrorKind.NOT_CONFIGURED
             return result
@@ -918,7 +918,7 @@ class BitwardenSource(SecretSource):
         if not project_id:
             result.error = (
                 "secrets.bitwarden.project_id is empty.  "
-                "Run `hermes secrets bitwarden setup`."
+                "Run `kova secrets bitwarden setup`."
             )
             result.error_kind = ErrorKind.NOT_CONFIGURED
             return result
@@ -929,7 +929,7 @@ class BitwardenSource(SecretSource):
         if binary is None:
             result.error = (
                 "bws binary not available and auto-install is disabled.  "
-                "Run `hermes secrets bitwarden setup` to install."
+                "Run `kova secrets bitwarden setup` to install."
             )
             result.error_kind = ErrorKind.BINARY_MISSING
             return result
@@ -978,7 +978,7 @@ class BitwardenSource(SecretSource):
     def remediation(self, kind, cfg: dict) -> str:
         if kind in (ErrorKind.AUTH_FAILED, ErrorKind.AUTH_EXPIRED):
             return (
-                "Run `hermes secrets bitwarden token` to paste a fresh access "
+                "Run `kova secrets bitwarden token` to paste a fresh access "
                 "token (create one in the Bitwarden web app: Secrets Manager → "
                 "Machine accounts → Access tokens).  Wrong region?  Re-run "
                 "`hermes secrets bitwarden setup` and pick EU/self-hosted."
