@@ -1302,7 +1302,7 @@ class TestGatewayProtection:
         assert "stop/restart" in desc
 
     def test_hermes_gateway_stop_detected(self):
-        cmd = "hermes gateway stop"
+        cmd = "kova gateway stop"
         dangerous, key, desc = detect_dangerous_command(cmd)
         assert dangerous is True
         assert "gateway" in desc.lower()
@@ -1332,7 +1332,7 @@ class TestGatewayProtection:
         assert dangerous is False
 
     def test_hermes_gateway_start_not_flagged(self):
-        cmd = "hermes gateway start"
+        cmd = "kova gateway start"
         dangerous, key, desc = detect_dangerous_command(cmd)
         assert dangerous is False
 

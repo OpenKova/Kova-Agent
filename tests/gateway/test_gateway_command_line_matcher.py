@@ -25,7 +25,7 @@ ACCEPT = [
     "python -m hermes_cli/main.py gateway run",
     "python gateway/run.py",
     "hermes-gateway.exe",
-    "hermes gateway",          # bare `hermes gateway` defaults to run
+    "kova gateway",          # bare `hermes gateway` defaults to run
     "kova gateway run",
     # profile selector AFTER the `gateway` token (argv is profile-position
     # agnostic — _apply_profile_override strips --profile/-p anywhere)

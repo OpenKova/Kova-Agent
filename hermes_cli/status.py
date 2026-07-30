@@ -501,7 +501,7 @@ def show_status(args):
         if snapshot.has_process_service_mismatch:
             print("  Service:      installed but not managing the current running gateway")
         elif _is_termux() and not snapshot.gateway_pids:
-            print("  Start with:   hermes gateway")
+            print("  Start with:   kova gateway")
             print("  Note:         Android may stop background jobs when Termux is suspended")
         elif snapshot.service_installed and not snapshot.service_running:
             print("  Service:      installed but stopped")

@@ -668,7 +668,7 @@ def _print_setup_summary(config: dict, hermes_home):
     print(color("🚀 Ready to go!", Colors.CYAN, Colors.BOLD))
     print()
     print(f"   {color('hermes', Colors.GREEN)}              Start chatting")
-    print(f"   {color('hermes gateway', Colors.GREEN)}      Start messaging gateway")
+    print(f"   {color('kova gateway', Colors.GREEN)}      Start messaging gateway")
     print(f"   {color('kova doctor', Colors.GREEN)}       Check for issues")
     print()
 
@@ -2162,7 +2162,7 @@ def setup_gateway(config: dict):
                 print_info("  You can install later: kova gateway install")
                 if supports_systemd and os.geteuid() == 0:  # windows-footgun: ok — guarded by supports_systemd (Linux only)
                     print_info("  Or as a boot-time service: kova gateway install --system")
-                print_info("  Or run in foreground:  hermes gateway")
+                print_info("  Or run in foreground:  kova gateway")
         else:
             from hermes_constants import is_container
             if is_container():

@@ -6344,7 +6344,7 @@ def gateway_setup():
                         gateway_windows.restart()
                     else:
                         stop_profile_gateway()
-                        print_info("Start manually: hermes gateway")
+                        print_info("Start manually: kova gateway")
                 except UserSystemdUnavailableError as e:
                     print_error("  Restart failed — user systemd not reachable:")
                     for line in str(e).splitlines():
@@ -6737,7 +6737,7 @@ def _gateway_command_inner(args):
         run_as_user = getattr(args, "run_as_user", None)
         if is_termux():
             print("Gateway service installation is not supported on Termux.")
-            print("Run manually: hermes gateway")
+            print("Run manually: kova gateway")
             sys.exit(1)
         if supports_systemd_services():
             if is_wsl():
@@ -6902,7 +6902,7 @@ def _gateway_command_inner(args):
             print(
                 "Gateway service start is not supported on Termux because there is no system service manager."
             )
-            print("Run manually: hermes gateway")
+            print("Run manually: kova gateway")
             sys.exit(1)
         if supports_systemd_services():
             systemd_start(system=system)

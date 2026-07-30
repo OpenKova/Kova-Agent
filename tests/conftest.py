@@ -685,7 +685,7 @@ def _live_system_guard(request, monkeypatch):
         "hermes_cli.main gateway",
         "hermes_cli/main.py gateway",
         "gateway/run.py",
-        "hermes gateway",
+        "kova gateway",
     )
     _MUTATING_VERBS = (
         "restart", "start", "stop", "kill", "reload",

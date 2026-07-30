@@ -26,8 +26,8 @@ class TestGatewayLifecyclePattern:
     """Verify the regex catches gateway lifecycle commands."""
 
     @pytest.mark.parametrize("text", [
-        "hermes gateway restart",
-        "hermes gateway stop",
+        "kova gateway restart",
+        "kova gateway stop",
         "hermes  gateway  restart",         # double spaces
         "Hermez Gateway Restart".lower().replace("z", "s"),  # case handled
         "HERMES GATEWAY RESTART",           # uppercase
@@ -66,7 +66,7 @@ class TestGatewayLifecyclePattern:
         # gateway is a no-op / "already running", and a legit cron job may
         # start a sibling profile's gateway. Only restart/stop/kill are the
         # foot-gun (#30719 lists only those).
-        "hermes gateway start",
+        "kova gateway start",
         "hermes gateway start --all",
         # Tightened launchctl/systemctl branches: ops on NON-gateway hermes
         # services must not be falsely blocked (the old `.*hermes` matched any
