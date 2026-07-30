@@ -1576,7 +1576,7 @@ def test_create_task_includes_warning_when_no_dispatcher(client, monkeypatch):
     # Force the dispatcher probe to report "not running".
     monkeypatch.setattr(
         "hermes_cli.kanban._check_dispatcher_presence",
-        lambda: (False, "No gateway is running — start `kova gateway start`."),
+        lambda: (False, "No gateway is running — start `hermes gateway start`."),
     )
     r = client.post(
         "/api/plugins/kanban/tasks",
