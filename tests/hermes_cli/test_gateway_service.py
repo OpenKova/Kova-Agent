@@ -217,7 +217,7 @@ class TestSystemdServiceRefresh:
     def test_run_gateway_refreshes_outdated_unit_on_boot(self, tmp_path, monkeypatch):
         """run_gateway() should refresh the systemd unit on boot so that
         restart settings take effect even when the process was respawned
-        via exit-code-75 (bypassing `hermes gateway restart`)."""
+        via exit-code-75 (bypassing `kova gateway restart`)."""
         unit_path = tmp_path / "kova-gateway.service"
         unit_path.write_text("old unit\n", encoding="utf-8")
 

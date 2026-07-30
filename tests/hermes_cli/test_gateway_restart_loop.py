@@ -39,9 +39,9 @@ class TestGatewayLifecyclePattern:
         "launchctl kickstart gui/501/ai.hermes.gateway",
         "launchctl unload ~/Library/LaunchAgents/ai.hermes.gateway.plist",
         "launchctl stop ai.hermes.gateway",
-        "systemctl restart hermes-gateway",
+        "systemctl restart kova-gateway",
         "systemctl stop kova-gateway.service",
-        "systemctl start hermes-gateway",
+        "systemctl start kova-gateway",
     ])
     def test_service_manager_commands(self, text):
         assert _contains_gateway_lifecycle_command(text), f"Should match: {text!r}"
@@ -282,7 +282,7 @@ class TestGatewaySelfTargetingGuard:
 class TestTerminalToolGatewayLifecycleGuard:
     """terminal_tool must refuse gateway lifecycle commands when _HERMES_GATEWAY=1.
 
-    Issue #37453: systemctl --user restart hermes-gateway runs as a child of the
+    Issue #37453: systemctl --user restart kova-gateway runs as a child of the
     gateway process.  When systemd delivers SIGTERM the gateway kills its own
     restart command mid-execution — the service may never restart.  The guard
     must fire before execution, unconditionally (force=True cannot bypass it).
@@ -311,10 +311,10 @@ class TestTerminalToolGatewayLifecycleGuard:
             monkeypatch.delenv("_HERMES_GATEWAY", raising=False)
 
     @pytest.mark.parametrize("cmd", [
-        "systemctl restart hermes-gateway",
-        "systemctl --user restart hermes-gateway",
+        "systemctl restart kova-gateway",
+        "systemctl --user restart kova-gateway",
         "systemctl stop kova-gateway.service",
-        "hermes gateway restart",
+        "kova gateway restart",
         "launchctl kickstart gui/501/ai.hermes.gateway",
         "pkill -f hermes.*gateway",
     ])
@@ -332,7 +332,7 @@ class TestTerminalToolGatewayLifecycleGuard:
         self._patch_env(monkeypatch, self._make_fake_env(), inside_gateway=True)
 
         result = json.loads(tt.terminal_tool(
-            command="systemctl restart hermes-gateway", force=True
+            command="systemctl restart kova-gateway", force=True
         ))
 
         assert result["exit_code"] == 1
@@ -373,12 +373,12 @@ class TestTerminalToolGatewayLifecycleGuard:
         self._patch_env(monkeypatch, _FakeEnv(), inside_gateway=False)
         monkeypatch.setattr(tt, "_check_all_guards", lambda cmd, env, **kwargs: {"approved": True})
 
-        result = json.loads(tt.terminal_tool(command="systemctl restart hermes-gateway"))
+        result = json.loads(tt.terminal_tool(command="systemctl restart kova-gateway"))
 
         # Outside the gateway the lifecycle guard doesn't block — the normal
         # approval flow handles it (here mocked as approved).
         assert result["exit_code"] == 0
-        assert calls == ["systemctl restart hermes-gateway"]
+        assert calls == ["systemctl restart kova-gateway"]
 
 
 # ---------------------------------------------------------------------------

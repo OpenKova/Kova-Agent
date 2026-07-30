@@ -677,7 +677,7 @@ def test_render_run_script_resets_home_before_exec() -> None:
     run_text = S6ServiceManager._render_run_script("coder", {})
 
     assert "export HOME=/opt/data" in run_text
-    assert "exec s6-setuidgid hermes hermes -p coder gateway run --replace" in run_text
+    assert "exec s6-setuidgid hermes kova -p coder gateway run --replace" in run_text
 
 
 def test_render_run_script_uses_replace_to_take_over_stale_holder() -> None:
