@@ -627,7 +627,7 @@ def _apply_profile_override() -> None:
     # run-script as HERMES_S6_SUPERVISED_CHILD=1) must NOT follow the sticky
     # active_profile. Each supervised slot has a fixed profile identity: named
     # slots pass ``-p <name>`` explicitly (handled in step 1 above), and the
-    # reserved ``gateway-default`` slot runs bare ``hermes gateway run`` to mean
+    # reserved ``gateway-default`` slot runs bare ``kova gateway run`` to mean
     # "the root HERMES_HOME profile". If the reserved default child read
     # active_profile here, switching the active profile (e.g. via the dashboard)
     # would silently redirect the default gateway into that profile — yielding a
@@ -2901,7 +2901,7 @@ def cmd_whatsapp(args):
             print("  Tip: Agent responses are prefixed with '⚕ Kova Agent'")
             print("  so you can tell them apart from your own messages.")
         print()
-        print("  Or install as a service: hermes gateway install")
+        print("  Or install as a service: kova gateway install")
     else:
         print("⚠ Pairing may not have completed. Run 'kova whatsapp' to try again.")
 
@@ -10452,7 +10452,7 @@ def _pause_windows_gateways_for_update() -> dict | None:
         if respawnable < len(unmapped_pids):
             # Some had no recoverable command line (psutil missing, access
             # denied, already gone): those still need a manual restart.
-            print("    Restart manually after update: hermes gateway run")
+            print("    Restart manually after update: kova gateway run")
 
     return {
         "resume_needed": True,
@@ -10471,7 +10471,7 @@ def _cold_start_windows_gateway_after_update() -> None:
     is installed, signalling the user wants a gateway. Unlike the relaunch
     paths — which watch an old PID and respawn once it exits — this is a direct
     fresh spawn via the same hidden-console + breakaway path that
-    ``hermes gateway start`` uses (``gateway_windows._spawn_detached``).
+    ``kova gateway start`` uses (``gateway_windows._spawn_detached``).
 
     Best-effort and idempotent: re-checks that nothing is running first so a
     concurrent start (e.g. the autostart entry firing) can't produce a
@@ -10556,7 +10556,7 @@ def _warn_incomplete_gateway_fleet_restart(failed_units: list) -> None:
         print(f"    - {name}")
     print("  Skipped units may still be running pre-update code (mixed")
     print("  sys.modules). Restart them manually, then verify:")
-    print("    hermes gateway status")
+    print("    kova gateway status")
     print("    systemctl --user restart <unit>   # user-scope")
     print("    sudo systemctl restart <unit>     # system-scope")
 
@@ -11910,7 +11910,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                         print(
                             f"  ⚠ systemctl timed out listing {scope}-scope "
                             f"gateway units ({exc.cmd if exc.cmd else 'unknown command'}). "
-                            f"Check the gateway with: hermes gateway status"
+                            f"Check the gateway with: kova gateway status"
                         )
                         continue
 
@@ -12090,7 +12090,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                         # the RestartSec backoff and leave the unit
                         # dead.  Clearing the failed state first makes
                         # the restart idempotent.  Mirrors the recovery
-                        # path in `hermes gateway restart`
+                        # path in `kova gateway restart`
                         # (`systemd_restart()`) as of PR #20949.
                         subprocess.run(
                             _manage_cmd + ["reset-failed", svc_name],
@@ -12295,7 +12295,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                 )
                 if unmapped_count:
                     print(f"  → Stopped {unmapped_count} manual gateway process(es)")
-                    print("    Restart manually: hermes gateway run")
+                    print("    Restart manually: kova gateway run")
                     if unmapped_count > 1:
                         print(
                             "    (or: hermes -p <profile> gateway run  for each profile)"
@@ -12385,7 +12385,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                 print("  hermes-gateway.service for the bot token and cause SIGTERM")
                 print("  flap loops. Remove them with:")
                 print()
-                print("    hermes gateway migrate-legacy")
+                print("    kova gateway migrate-legacy")
                 print()
                 print("  (add `sudo` if any are in system scope)")
         except Exception as e:

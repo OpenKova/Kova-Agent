@@ -2352,7 +2352,7 @@ def terminal_tool(
         # restart|stop targeting hermes-gateway) must never run inside the
         # gateway process itself. The restart would SIGTERM the gateway, which
         # kills this very subprocess before it can complete — the service may
-        # never restart. This mirrors the `hermes gateway restart` guard in
+        # never restart. This mirrors the `kova gateway restart` guard in
         # hermes_cli/gateway.py and the cron-path guard in hermes_cli/cron.py,
         # but applies unconditionally (force=True cannot help here).
         if os.environ.get("_HERMES_GATEWAY") == "1":

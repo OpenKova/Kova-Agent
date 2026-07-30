@@ -110,7 +110,7 @@ def _setup_hint() -> str:
   Webhook platform is not enabled. To set it up:
 
   1. Run the gateway setup wizard:
-     hermes gateway setup
+     kova gateway setup
 
   2. Or manually add to {_dhh}/config.yaml:
      platforms:
@@ -125,7 +125,7 @@ def _setup_hint() -> str:
      WEBHOOK_PORT=8644
      WEBHOOK_SECRET=your-global-secret
 
-  Then start the gateway: hermes gateway run
+  Then start the gateway: kova gateway run
 """
 
 
@@ -221,7 +221,7 @@ def _cmd_subscribe(args):
         print(f"  Script: {route['script']}")
     print("\n  Configure your service to POST to the URL above.")
     print("  Use the secret for HMAC-SHA256 signature validation.")
-    print("  The gateway must be running to receive events (hermes gateway run).\n")
+    print("  The gateway must be running to receive events (kova gateway run).\n")
 
 
 def _cmd_list(args):
@@ -304,4 +304,4 @@ def _cmd_test(args):
             print(f"  Response ({resp.status}): {body}")
     except Exception as e:
         print(f"  Error: {e}")
-        print("  Is the gateway running? (hermes gateway run)")
+        print("  Is the gateway running? (kova gateway run)")

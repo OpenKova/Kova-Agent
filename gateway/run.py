@@ -5349,7 +5349,7 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
         logger.warning(
             "%s paused after %d consecutive failures (%s) — "
             "fix the underlying issue then run `/platform resume %s` "
-            "to retry, or `hermes gateway restart` to restart the gateway.",
+            "to retry, or `kova gateway restart` to restart the gateway.",
             platform.value, info.get("attempts", 0),
             info["pause_reason"], platform.value,
         )
@@ -5762,7 +5762,7 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
 
         Cron already does this per job via ``get_fallback_chain``; the gateway
         previously froze ``self._fallback_model`` at process start, so a chain
-        configured (or changed) after ``hermes gateway`` was running never
+        configured (or changed) after ``kova gateway`` was running never
         reached messaging sessions even though the same process's cron jobs
         fell back correctly. Fixes #60955.
 
@@ -7049,7 +7049,7 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
 
         # On Windows there's no bash/setsid chain — spawn a tiny Python
         # watcher directly via sys.executable instead.  The watcher polls
-        # current_pid, waits for our exit, then runs `hermes gateway
+        # current_pid, waits for our exit, then runs `kova gateway
         # restart` with detach flags so the respawn survives the CLI
         # that triggered the /restart command closing its console.
         if sys.platform == "win32":
@@ -7110,13 +7110,13 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
             ).strip()
             watcher_env = os.environ.copy()
             # This watcher is intentionally outside the running gateway. If it
-            # inherits the gateway marker, `hermes gateway restart` refuses to
+            # inherits the gateway marker, `kova gateway restart` refuses to
             # run as a self-restart loop guard and the gateway stays stopped.
             watcher_env.pop("_HERMES_GATEWAY", None)
             project_root = Path(__file__).resolve().parent.parent
             # The watcher runs sys.executable (console python) under the
             # CREATE_NO_WINDOW detach kwargs below: it owns one hidden
-            # console, inherited by the `hermes gateway restart` child, so
+            # console, inherited by the `kova gateway restart` child, so
             # nothing flashes. Do NOT swap in GUI-subsystem pythonw.exe —
             # a console-less watcher forces every console-subsystem
             # descendant to allocate a visible conhost (#54220/#56747).
@@ -7193,7 +7193,7 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
             f"{cmd} gateway restart"
         )
         # Same marker scrub as the Windows watcher above: this watcher runs
-        # `hermes gateway restart` from outside the gateway, but it inherits
+        # `kova gateway restart` from outside the gateway, but it inherits
         # _HERMES_GATEWAY=1 from us, and the CLI's self-restart loop guard
         # refuses to run when that marker is set — silently (DEVNULL), so the
         # gateway stops and never comes back.
@@ -7744,7 +7744,7 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
                 logger.warning(
                     "Stale systemd unit detected: %s has TimeoutStopSec=%.0fs but "
                     "drain_timeout=%.0fs (expected >=%.0fs). systemd may SIGKILL the "
-                    "gateway mid-drain. Run `hermes gateway install --force` "
+                    "gateway mid-drain. Run `kova gateway install --force` "
                     "to regenerate the unit, or shorten agent.restart_drain_timeout.",
                     _alignment.get("unit", "(unknown)"),
                     _alignment["timeout_stop_sec"],
@@ -8003,7 +8003,7 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
         # SKIP suspension after a clean (graceful) shutdown — the previous
         # process already drained active agents, so sessions aren't stuck.
         # This prevents unwanted auto-resets after `hermes update`,
-        # `hermes gateway restart`, or `/restart`.
+        # `kova gateway restart`, or `/restart`.
         _clean_marker = _hermes_home / ".clean_shutdown"
         if _clean_marker.exists():
             logger.info("Previous gateway exited cleanly — skipping session suspension")
@@ -9736,7 +9736,7 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
             # suppresses auto-start, so the messaging channels silently stay
             # dark until the operator manually restarts (issue #42675).
             #
-            # An operator-initiated stop (`hermes gateway stop`,
+            # An operator-initiated stop (`kova gateway stop`,
             # systemd/launchd ExecStop, the s6 stop path, Ctrl+C) writes a
             # planned-stop marker BEFORE signalling, so it is classified as
             # a planned stop (not signal-initiated) and correctly persists
@@ -23262,7 +23262,7 @@ def _run_planned_stop_watcher(
 
     On Windows, ``asyncio.add_signal_handler`` raises NotImplementedError
     for SIGTERM/SIGINT, so the standard signal-driven shutdown path
-    never runs when ``hermes gateway stop`` signals the gateway. The
+    never runs when ``kova gateway stop`` signals the gateway. The
     consequence is that the drain loop is skipped — in-flight agent
     sessions are killed mid-turn and ``resume_pending`` is never set,
     so the next gateway boot has no idea those sessions need to be
@@ -23657,14 +23657,14 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
             hermes_home = str(get_hermes_home())
             logger.error(
                 "Another gateway instance is already running (PID %d, HERMES_HOME=%s). "
-                "Use 'hermes gateway restart' to replace it, or 'hermes gateway stop' first.",
+                "Use 'kova gateway restart' to replace it, or 'kova gateway stop' first.",
                 existing_pid, hermes_home,
             )
             print(
                 f"\n❌ Gateway already running (PID {existing_pid}).\n"
-                f"   Use 'hermes gateway restart' to replace it,\n"
-                f"   or 'hermes gateway stop' to kill it first.\n"
-                f"   Or use 'hermes gateway run --replace' to auto-replace.\n"
+                f"   Use 'kova gateway restart' to replace it,\n"
+                f"   or 'kova gateway stop' to kill it first.\n"
+                f"   Or use 'kova gateway run --replace' to auto-replace.\n"
             )
             return False
 
@@ -23745,7 +23745,7 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
         except Exception as e:
             logger.debug("Takeover marker check failed: %s", e)
 
-        # Planned stop check: service managers and `hermes gateway stop`
+        # Planned stop check: service managers and `kova gateway stop`
         # also send SIGTERM, which is indistinguishable from an unexpected
         # external kill unless the CLI marks it first. SIGINT comes from an
         # interactive Ctrl+C and is likewise an intentional foreground stop.
@@ -23858,12 +23858,12 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
         logger.info("Skipping signal handlers (not running in main thread).")
 
     # Windows fallback: asyncio.add_signal_handler raises NotImplementedError
-    # on Windows, so `hermes gateway stop`'s SIGTERM (which Python maps to
+    # on Windows, so `kova gateway stop`'s SIGTERM (which Python maps to
     # TerminateProcess on Windows) never invokes shutdown_signal_handler.
     # That means the drain loop never runs, mark_resume_pending never fires,
     # and sessions are silently lost across restarts (issue #33778).
     #
-    # The fix is a marker-polling thread: `hermes gateway stop` writes the
+    # The fix is a marker-polling thread: `kova gateway stop` writes the
     # planned-stop marker BEFORE killing, and this thread notices it and
     # drives the same shutdown path the signal handler would have.  Runs
     # on every platform (cheap, defensive) so non-signal-bearing
@@ -24067,7 +24067,7 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
     #   - hermes update killing the gateway mid-work
     #   - External kill commands
     #   - WSL2/container runtime sending unexpected signals
-    # `hermes gateway stop` and interactive Ctrl+C are handled above as
+    # `kova gateway stop` and interactive Ctrl+C are handled above as
     # planned stops and should not trigger service-manager revival.
     if _signal_initiated_shutdown and not runner._restart_requested:
         logger.info(

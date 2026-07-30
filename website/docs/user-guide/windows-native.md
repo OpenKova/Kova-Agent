@@ -39,13 +39,13 @@ No admin rights required. The installer goes to `%LOCALAPPDATA%\hermes\` and add
 | `-NoVenv` | off | Skip venv creation (advanced — you manage Python yourself) |
 | `-SkipSetup` | off | Skip the post-install `hermes setup` wizard |
 | `-HermesHome` | `%LOCALAPPDATA%\hermes` | Override data directory |
-| `-InstallDir` | `%LOCALAPPDATA%\hermes\hermes-agent` | Override code location |
+| `-InstallDir` | `%LOCALAPPDATA%\hermes\kova-agent` | Override code location |
 
 The installer auto-retries flaky git fetches and strips BOM from any downloaded `install.ps1` payload, so a UTF-8 BOM picked up during HTTP transit no longer breaks the `[scriptblock]::Create((irm ...))` form.
 
 ### Desktop installer (alternative)
 
-A thin GUI installer is also available — useful if you'd rather double-click an `.exe` than open PowerShell. Download Hermes Desktop, run the installer, and on first launch the GUI calls `install.ps1` under the hood to provision Python (via `uv`), Node, PortableGit, and the rest of the dependency bootstrap described below. After the first run, the desktop app and the PowerShell-installed `hermes` CLI share the same `%LOCALAPPDATA%\hermes\hermes-agent` install and `%LOCALAPPDATA%\hermes` data directory — switch between the GUI and the CLI freely.
+A thin GUI installer is also available — useful if you'd rather double-click an `.exe` than open PowerShell. Download Hermes Desktop, run the installer, and on first launch the GUI calls `install.ps1` under the hood to provision Python (via `uv`), Node, PortableGit, and the rest of the dependency bootstrap described below. After the first run, the desktop app and the PowerShell-installed `hermes` CLI share the same `%LOCALAPPDATA%\hermes\kova-agent` install and `%LOCALAPPDATA%\hermes` data directory — switch between the GUI and the CLI freely.
 
 Use the desktop installer when you want a familiar Windows install experience or you're handing Hermes to a non-developer; use the PowerShell one-liner when you're already in a terminal.
 
@@ -71,11 +71,11 @@ Top-to-bottom, in order:
 2. **Installs Python 3.11** via `uv`. No existing Python needed.
 3. **Installs Node.js 22** (winget if available, else a portable Node tarball unpacked under `%LOCALAPPDATA%\hermes\node`). Used for the browser tool and the WhatsApp bridge.
 4. **Installs portable Git** — if `git` is already on PATH the installer uses it; otherwise it downloads a trimmed, self-contained **PortableGit** (~45 MB, from the official `git-for-windows` release) to `%LOCALAPPDATA%\hermes\git`. No admin, no Windows installer registry, no interference with anything else on the box.
-5. **Clones the repo** to `%LOCALAPPDATA%\hermes\hermes-agent` and creates a virtualenv inside it.
+5. **Clones the repo** to `%LOCALAPPDATA%\hermes\kova-agent` and creates a virtualenv inside it.
 6. **Tiered `uv pip install`** — tries `.[all]` first, falls back to progressively smaller sets (`[messaging,dashboard,ext]` → `[messaging]` → `.`) if a `git+https` dep flakes on rate-limited GitHub. Prevents "single flake drops you to a bare install" failure mode.
 7. **Auto-installs messaging SDKs** keyed off `.env` — if `TELEGRAM_BOT_TOKEN` / `DISCORD_BOT_TOKEN` / `SLACK_BOT_TOKEN` / `SLACK_APP_TOKEN` / `WHATSAPP_ENABLED` are present, runs `python -m ensurepip --upgrade` and targeted `pip install` calls so each platform's SDK is actually importable.
 8. **Sets `HERMES_GIT_BASH_PATH`** to the resolved `bash.exe` so Hermes finds it deterministically in fresh shells.
-9. **Adds `%LOCALAPPDATA%\hermes\hermes-agent\venv\Scripts` to User PATH and sets `HERMES_HOME=%LOCALAPPDATA%\hermes`** — exposes the `hermes` command (and points it at your data dir) after you open a new terminal.
+9. **Adds `%LOCALAPPDATA%\hermes\kova-agent\venv\Scripts` to User PATH and sets `HERMES_HOME=%LOCALAPPDATA%\hermes`** — exposes the `hermes` command (and points it at your data dir) after you open a new terminal.
 10. **Runs `hermes setup`** — the normal first-run wizard (model, provider, toolsets). Skip with `-SkipSetup`.
 
 :::tip Skip provider hunting on Windows
@@ -202,7 +202,7 @@ Services require admin rights to install and tie the gateway's lifecycle to mach
 
 | Path | Contents |
 |---|---|
-| `%LOCALAPPDATA%\hermes\hermes-agent\` | Git checkout + venv. `venv\Scripts\hermes.exe` is the command added to User PATH. Safe to `Remove-Item -Recurse` and reinstall. |
+| `%LOCALAPPDATA%\hermes\kova-agent\` | Git checkout + venv. `venv\Scripts\hermes.exe` is the command added to User PATH. Safe to `Remove-Item -Recurse` and reinstall. |
 | `%LOCALAPPDATA%\hermes\git\` | PortableGit (only if the installer provisioned it). |
 | `%LOCALAPPDATA%\hermes\node\` | Portable Node.js (only if the installer provisioned it). |
 | `%LOCALAPPDATA%\hermes\bin\` | Hermes's managed `uv.exe` (the Python manager it uses for updates). |
@@ -224,12 +224,12 @@ The browser tool uses `agent-browser` (a Node helper) to drive Chromium. On Wind
 
 ### PATH after install
 
-The installer adds `%LOCALAPPDATA%\hermes\hermes-agent\venv\Scripts` to your **User PATH** via `[Environment]::SetEnvironmentVariable`. Existing terminals don't pick this up — open a new PowerShell window (or Windows Terminal tab) after installation. Close-and-reopen, don't `$env:PATH += …` by hand unless you know what you're doing.
+The installer adds `%LOCALAPPDATA%\hermes\kova-agent\venv\Scripts` to your **User PATH** via `[Environment]::SetEnvironmentVariable`. Existing terminals don't pick this up — open a new PowerShell window (or Windows Terminal tab) after installation. Close-and-reopen, don't `$env:PATH += …` by hand unless you know what you're doing.
 
 Verify:
 
 ```powershell
-Get-Command hermes        # should print C:\Users\<you>\AppData\Local\hermes\hermes-agent\venv\Scripts\hermes.exe
+Get-Command hermes        # should print C:\Users\<you>\AppData\Local\hermes\kova-agent\venv\Scripts\hermes.exe
 hermes --version
 ```
 
@@ -262,7 +262,7 @@ From PowerShell:
 hermes uninstall
 ```
 
-That's the clean path — removes the schtasks entry, Startup folder shortcut, `hermes.cmd` shim, deletes `%LOCALAPPDATA%\hermes\hermes-agent\`, and trims the User PATH. It leaves the rest of `%LOCALAPPDATA%\hermes\` alone (your config, auth, skills, sessions, logs) in case you're reinstalling.
+That's the clean path — removes the schtasks entry, Startup folder shortcut, `hermes.cmd` shim, deletes `%LOCALAPPDATA%\hermes\kova-agent\`, and trims the User PATH. It leaves the rest of `%LOCALAPPDATA%\hermes\` alone (your config, auth, skills, sessions, logs) in case you're reinstalling.
 
 To nuke everything:
 

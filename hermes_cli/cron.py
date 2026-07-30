@@ -91,8 +91,8 @@ def _warn_if_gateway_not_running() -> None:
         return
 
     print(color("  ⚠  Gateway is not running — jobs won't fire automatically.", Colors.YELLOW))
-    print(color("     Start it with: hermes gateway install", Colors.DIM))
-    print(color("                    sudo hermes gateway install --system  # Linux servers", Colors.DIM))
+    print(color("     Start it with: kova gateway install", Colors.DIM))
+    print(color("                    sudo kova gateway install --system  # Linux servers", Colors.DIM))
     print(color("     Check status:  hermes cron status", Colors.DIM))
 
 
@@ -273,7 +273,7 @@ def cron_status():
                 Colors.YELLOW,
             ))
             print(f"  PID: {', '.join(map(str, pids))}")
-            print("  Cron jobs may NOT be firing. Restart: hermes gateway restart")
+            print("  Cron jobs may NOT be firing. Restart: kova gateway restart")
         elif hb_age is not None and ok_age is not None and ok_age > STALE_AFTER:
             # Loop is alive (fresh heartbeat) but no tick has SUCCEEDED in a
             # long time → ticks are failing every iteration.
@@ -293,9 +293,9 @@ def cron_status():
         print(color("✗ Gateway is not running — cron jobs will NOT fire", Colors.RED))
         print()
         print("  To enable automatic execution:")
-        print("    hermes gateway install    # Install as a user service")
-        print("    sudo hermes gateway install --system  # Linux servers: boot-time system service")
-        print("    hermes gateway            # Or run in foreground")
+        print("    kova gateway install    # Install as a user service")
+        print("    sudo kova gateway install --system  # Linux servers: boot-time system service")
+        print("    kova gateway            # Or run in foreground")
 
     print()
 

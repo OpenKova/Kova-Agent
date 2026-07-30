@@ -148,7 +148,7 @@ _log = logging.getLogger(__name__)
 def _start_desktop_cron_ticker(stop_event: "threading.Event", interval: int = 60) -> None:
     """Tick the cron scheduler from inside the desktop dashboard backend.
 
-    The scheduler tick loop normally lives in ``hermes gateway run`` — but the
+    The scheduler tick loop normally lives in ``kova gateway run`` — but the
     desktop app spawns a ``hermes dashboard`` backend, not a gateway, so a cron
     a user creates in the app would never fire. We run the resolved cron
     scheduler provider here (no live adapters; delivery falls back to the
@@ -3798,7 +3798,7 @@ def _spawn_hermes_action(subcommand: List[str], name: str) -> subprocess.Popen:
     cmd = [_dashboard_spawn_executable(), "-m", "hermes_cli.main", *subcommand]
 
     # The dashboard runs *inside* the gateway process, so os.environ carries
-    # _HERMES_GATEWAY=1. Inheriting it makes a spawned `hermes gateway restart`
+    # _HERMES_GATEWAY=1. Inheriting it makes a spawned `kova gateway restart`
     # trip the in-process restart-loop guard and exit 1 — silently failing the
     # dashboard's auto-restart paths. The gateway's own restart watcher already
     # drops it (gateway/run.py); mirror that here (#52470).
@@ -3940,12 +3940,12 @@ def _validate_messaging_env_value(platform_id: str, key: str, value: str) -> Non
 
 
 def _spawn_gateway_restart(profile: Optional[str] = None) -> Tuple[subprocess.Popen, bool]:
-    """Spawn ``hermes gateway restart``, reusing an in-flight restart.
+    """Spawn ``kova gateway restart``, reusing an in-flight restart.
 
     Multiple dashboard paths can request a restart in quick succession
     (restart button double-click, or a stale cached frontend firing its own
     restart after the server already auto-restarted post-onboarding). Two
-    concurrent ``hermes gateway restart`` children race each other on the
+    concurrent ``kova gateway restart`` children race each other on the
     manual kill-and-start path, so reuse the live one instead.
 
     Returns ``(proc, reused)``.
@@ -3984,7 +3984,7 @@ def _restart_gateway_after_webhook_enable(profile: Optional[str] = None) -> dict
 
 @app.post("/api/gateway/restart")
 async def restart_gateway(profile: Optional[str] = None):
-    """Kick off a ``hermes gateway restart`` in the background."""
+    """Kick off a ``kova gateway restart`` in the background."""
     try:
         proc, _reused = _spawn_gateway_restart(profile)
     except HTTPException:
@@ -8218,11 +8218,11 @@ _MESSAGING_ENV_FALLBACKS: dict[str, dict[str, Any]] = {
         "password": True,
     },
     "WEIXIN_ACCOUNT_ID": {
-        "description": "iLink Bot account ID obtained through QR login in hermes gateway setup",
+        "description": "iLink Bot account ID obtained through QR login in kova gateway setup",
         "prompt": "iLink Bot account ID",
     },
     "WEIXIN_TOKEN": {
-        "description": "iLink Bot token obtained through QR login in hermes gateway setup",
+        "description": "iLink Bot token obtained through QR login in kova gateway setup",
         "prompt": "iLink Bot token",
         "password": True,
     },
@@ -13406,7 +13406,7 @@ async def set_webhook_enabled(name: str, body: WebhookEnabledToggle):
 #
 # restart + update already exist above; these complete the lifecycle so a
 # remote admin can bring the gateway up or down without shell access.  Both
-# spawn the real `hermes gateway <verb>` so behaviour matches the CLI exactly.
+# spawn the real `kova gateway <verb>` so behaviour matches the CLI exactly.
 # Status is already surfaced by /api/status (gateway_running/state/platforms).
 # ---------------------------------------------------------------------------
 

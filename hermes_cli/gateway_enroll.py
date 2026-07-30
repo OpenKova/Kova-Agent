@@ -1,4 +1,4 @@
-"""``hermes gateway enroll`` — enroll a self-hosted gateway with a relay connector.
+"""``kova gateway enroll`` — enroll a self-hosted gateway with a relay connector.
 
 The connector⇄gateway channel is authenticated (the gateway may be
 customer-managed and internet-exposed). This command is the gateway half of the
@@ -169,7 +169,7 @@ def cmd_gateway_enroll(args) -> None:
     # write anyway.
     if is_managed():
         print(
-            "✗ `hermes gateway enroll` is not available in a managed/hosted install.\n"
+            "✗ `kova gateway enroll` is not available in a managed/hosted install.\n"
             "  The relay gateway secret is provisioned by the hosting platform."
         )
         sys.exit(1)

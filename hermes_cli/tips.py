@@ -97,7 +97,7 @@ TIPS = [
     "hermes profile create coder creates an isolated profile that becomes its own command.",
     "hermes profile create work --clone copies your current config and keys to a new profile.",
     "hermes update syncs new bundled skills to ALL profiles automatically.",
-    "hermes gateway install sets up Hermes as a system service (systemd/launchd).",
+    "kova gateway install sets up Hermes as a system service (systemd/launchd).",
     "hermes memory setup lets you configure an external memory provider (Honcho, Mem0, etc.).",
     "hermes webhook subscribe creates event-driven webhook routes with HMAC validation.",
     "Save money: hermes tools disables unused tools, hermes skills config trims skills down.",
@@ -193,7 +193,7 @@ TIPS = [
 
     # --- Gateway & Messaging ---
     "Hermes runs on 21 messaging platforms: Telegram, Discord, Slack, WhatsApp, Signal, Matrix, IRC, Microsoft Teams, email, and more.",
-    "hermes gateway install sets it up as a system service that starts on boot.",
+    "kova gateway install sets it up as a system service that starts on boot.",
     "DingTalk uses Stream Mode — no webhooks or public URL needed.",
     "BlueBubbles brings iMessage to Hermes via a local macOS server.",
     "Webhook routes support HMAC validation, rate limiting, and event filtering.",

@@ -2157,24 +2157,24 @@ def setup_gateway(config: dict):
                             print_error(f"  Start failed: {e}")
                 except Exception as e:
                     print_error(f"  Install failed: {e}")
-                    print_info("  You can try manually: hermes gateway install")
+                    print_info("  You can try manually: kova gateway install")
             else:
-                print_info("  You can install later: hermes gateway install")
+                print_info("  You can install later: kova gateway install")
                 if supports_systemd and os.geteuid() == 0:  # windows-footgun: ok — guarded by supports_systemd (Linux only)
-                    print_info("  Or as a boot-time service: hermes gateway install --system")
+                    print_info("  Or as a boot-time service: kova gateway install --system")
                 print_info("  Or run in foreground:  hermes gateway")
         else:
             from hermes_constants import is_container
             if is_container():
                 print_info("Start the gateway to bring your bots online:")
-                print_info("   hermes gateway run          # Run as container main process")
+                print_info("   kova gateway run          # Run as container main process")
                 print_info("")
                 print_info("For automatic restarts, use a Docker restart policy:")
                 print_info("   docker run --restart unless-stopped ...")
                 print_info("   docker restart <container>  # Manual restart")
             else:
                 print_info("Start the gateway to bring your bots online:")
-                print_info("   hermes gateway              # Run in foreground")
+                print_info("   kova gateway              # Run in foreground")
 
         print_info("━" * 50)
 
