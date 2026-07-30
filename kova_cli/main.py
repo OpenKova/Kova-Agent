@@ -554,7 +554,7 @@ def _apply_profile_override() -> None:
         return None
 
     # 1. Check for explicit -p / --profile flag. Historically this worked even
-    # after the subcommand (`hermes chat -p coder`), so keep scanning broadly.
+    # after the subcommand (`kova chat -p coder`), so keep scanning broadly.
     # The exception is command-argv passthrough regions such as `mcp add --args`.
     value_flags = {
         "-z", "--oneshot",
@@ -11611,7 +11611,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
         # Most-recent curator run notice â€” show-once per run. Surfaces the
         # rename map (`old-name â†’ umbrella`) on the high-attention update
         # surface so users learn about consolidations without having to
-        # check `hermes curator status`. Self-stamps after printing so it
+        # check `kova curator status`. Self-stamps after printing so it
         # never repeats for the same run.
         try:
             _print_curator_recent_run_notice()
@@ -14748,7 +14748,7 @@ def main():
     # own argparse tree.  No hardcoded plugin commands in main.py.
     #
     # Skipped when the invocation is already targeting a known built-in
-    # subcommand â€” ``hermes --help``, ``hermes version``, ``kova logs``,
+    # subcommand â€” ``kova --help``, ``hermes version``, ``kova logs``,
     # etc.  This avoids eagerly importing every bundled plugin module
     # (google.cloud.pubsub_v1, aiohttp, grpc, PIL â€¦) which costs
     # 500-650ms on typical installs.

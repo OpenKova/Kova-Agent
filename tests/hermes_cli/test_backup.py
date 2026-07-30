@@ -51,11 +51,11 @@ def _make_hermes_tree(root: Path) -> None:
     (root / "profiles" / "coder" / "config.yaml").write_text("model:\n  provider: anthropic\n")
     (root / "profiles" / "coder" / ".env").write_text("ANTHROPIC_API_KEY=sk-ant-123\n")
 
-    # hermes-agent repo (should be EXCLUDED)
-    (root / "hermes-agent").mkdir(exist_ok=True)
-    (root / "hermes-agent" / "run_agent.py").write_text("# big file\n")
-    (root / "hermes-agent" / ".git").mkdir()
-    (root / "hermes-agent" / ".git" / "HEAD").write_text("ref: refs/heads/main\n")
+    # kova-agent repo (should be EXCLUDED)
+    (root / "kova-agent").mkdir(exist_ok=True)
+    (root / "kova-agent" / "run_agent.py").write_text("# big file\n")
+    (root / "kova-agent" / ".git").mkdir()
+    (root / "kova-agent" / ".git" / "HEAD").write_text("ref: refs/heads/main\n")
 
     # __pycache__ (should be EXCLUDED)
     (root / "plugins").mkdir(exist_ok=True)
@@ -84,8 +84,8 @@ def _symlink_file_or_skip(link: Path, target: Path) -> None:
 class TestShouldExclude:
     def test_excludes_hermes_agent(self):
         from hermes_cli.backup import _should_exclude
-        assert _should_exclude(Path("hermes-agent/run_agent.py"))
-        assert _should_exclude(Path("hermes-agent/.git/HEAD"))
+        assert _should_exclude(Path("kova-agent/run_agent.py"))
+        assert _should_exclude(Path("kova-agent/.git/HEAD"))
 
     def test_excludes_pycache(self):
         from hermes_cli.backup import _should_exclude
@@ -149,11 +149,11 @@ class TestShouldExclude:
         assert not _should_exclude(Path("logs/agent.log"))
 
     def test_includes_nested_hermes_agent_in_skills(self):
-        """skills/autonomous-ai-agents/hermes-agent/ must NOT be excluded —
-        only the root-level hermes-agent/ repo is skipped."""
+        """skills/autonomous-ai-agents/kova-agent/ must NOT be excluded —
+        only the root-level kova-agent/ repo is skipped."""
         from hermes_cli.backup import _should_exclude
-        assert not _should_exclude(Path("skills/autonomous-ai-agents/hermes-agent/SKILL.md"))
-        assert not _should_exclude(Path("skills/autonomous-ai-agents/hermes-agent/sub/item.txt"))
+        assert not _should_exclude(Path("skills/autonomous-ai-agents/kova-agent/SKILL.md"))
+        assert not _should_exclude(Path("skills/autonomous-ai-agents/kova-agent/sub/item.txt"))
 
     @pytest.mark.parametrize(
         "rel",
@@ -347,7 +347,7 @@ class TestBackup:
         assert all(d == str(out_zip.parent) for d in staged_dirs), staged_dirs
 
     def test_excludes_hermes_agent(self, tmp_path, monkeypatch):
-        """Backup does NOT include hermes-agent/ directory."""
+        """Backup does NOT include kova-agent/ directory."""
         hermes_home = tmp_path / ".hermes"
         hermes_home.mkdir()
         _make_hermes_tree(hermes_home)
@@ -363,8 +363,8 @@ class TestBackup:
 
         with zipfile.ZipFile(out_zip, "r") as zf:
             names = zf.namelist()
-            agent_files = [n for n in names if "hermes-agent" in n]
-            assert agent_files == [], f"hermes-agent files leaked into backup: {agent_files}"
+            agent_files = [n for n in names if "kova-agent" in n]
+            assert agent_files == [], f"kova-agent files leaked into backup: {agent_files}"
 
     def test_excludes_dependency_and_cache_trees(self, tmp_path, monkeypatch):
         """A plugin venv / site-packages / pip cache under HERMES_HOME must be
@@ -398,13 +398,13 @@ class TestBackup:
         assert "config.yaml" in names
 
     def test_includes_nested_hermes_agent_in_skills(self, tmp_path, monkeypatch):
-        """Backup includes skills/.../hermes-agent/ but NOT root hermes-agent/."""
+        """Backup includes skills/.../kova-agent/ but NOT root kova-agent/."""
         hermes_home = tmp_path / ".hermes"
         hermes_home.mkdir()
         _make_hermes_tree(hermes_home)
 
-        # Add a nested hermes-agent directory inside skills (like the real layout)
-        nested = hermes_home / "skills" / "autonomous-ai-agents" / "hermes-agent"
+        # Add a nested kova-agent directory inside skills (like the real layout)
+        nested = hermes_home / "skills" / "autonomous-ai-agents" / "kova-agent"
         nested.mkdir(parents=True)
         (nested / "SKILL.md").write_text("# Hermes Agent Skill\n")
         (nested / "sub").mkdir()
@@ -421,12 +421,12 @@ class TestBackup:
 
         with zipfile.ZipFile(out_zip, "r") as zf:
             names = zf.namelist()
-            # Root hermes-agent must be excluded
-            root_agent = [n for n in names if n.startswith("hermes-agent/")]
-            assert root_agent == [], f"root hermes-agent leaked: {root_agent}"
-            # Nested skill hermes-agent must be included
-            assert "skills/autonomous-ai-agents/hermes-agent/SKILL.md" in names
-            assert "skills/autonomous-ai-agents/hermes-agent/sub/item.txt" in names
+            # Root kova-agent must be excluded
+            root_agent = [n for n in names if n.startswith("kova-agent/")]
+            assert root_agent == [], f"root kova-agent leaked: {root_agent}"
+            # Nested skill kova-agent must be included
+            assert "skills/autonomous-ai-agents/kova-agent/SKILL.md" in names
+            assert "skills/autonomous-ai-agents/kova-agent/sub/item.txt" in names
 
     def test_excludes_pycache(self, tmp_path, monkeypatch):
         """Backup does NOT include __pycache__ dirs."""
@@ -908,8 +908,8 @@ class TestRoundTrip:
         assert (dst_home / "sessions" / "abc123.json").exists()
         assert (dst_home / "logs" / "agent.log").exists()
 
-        # hermes-agent should NOT be present
-        assert not (dst_home / "hermes-agent").exists()
+        # kova-agent should NOT be present
+        assert not (dst_home / "kova-agent").exists()
         # __pycache__ should NOT be present
         assert not (dst_home / "plugins" / "__pycache__").exists()
         # PID files should NOT be present
@@ -2060,8 +2060,8 @@ class TestPreUpdateBackup:
         assert "sessions/abc123.json" in names
         assert "skills/my-skill/SKILL.md" in names
         assert "profiles/coder/config.yaml" in names
-        # hermes-agent repo excluded
-        assert not any(n.startswith("hermes-agent/") for n in names)
+        # kova-agent repo excluded
+        assert not any(n.startswith("kova-agent/") for n in names)
         # __pycache__ excluded
         assert not any("__pycache__" in n for n in names)
         # pid files excluded
@@ -2390,7 +2390,7 @@ class TestPreMigrationBackup:
         assert ".env" in names
         assert "skills/my-skill/SKILL.md" in names
         # Same exclusions as the shared helper
-        assert not any(n.startswith("hermes-agent/") for n in names)
+        assert not any(n.startswith("kova-agent/") for n in names)
         assert not any("__pycache__" in n for n in names)
         assert "gateway.pid" not in names
 

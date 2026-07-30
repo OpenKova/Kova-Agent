@@ -66,7 +66,7 @@ class XAIGrokAdapter(UpstreamAdapter):
             if entry is None:
                 raise RuntimeError(
                     "No available xAI OAuth credentials found. Run "
-                    "`hermes auth reset xai-oauth` or re-authenticate with "
+                    "`kova auth reset xai-oauth` or re-authenticate with "
                     "`kova auth add xai-oauth --type oauth`."
                 )
 

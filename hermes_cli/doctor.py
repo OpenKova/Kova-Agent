@@ -755,7 +755,7 @@ def run_doctor(args):
         if is_sqlite_wal_reset_vulnerable():
             # Warn-only: Hermes already refuses to enable WAL on fresh DBs.
             # Do not append to ``issues`` — users often cannot change the
-            # SQLite embedded in python-build-standalone via `hermes update`.
+            # SQLite embedded in python-build-standalone via `kova update`.
             check_warn(
                 f"SQLite {_sqlite_ver} (WAL-reset bug)",
                 "(new shared DBs use DELETE; prefer 3.51.3+ / 3.50.7 / 3.44.6 — "
@@ -1728,7 +1728,7 @@ def run_doctor(args):
         elif _which_ab:
             # Found on PATH but won't run — almost always a dangling global
             # symlink left behind by agent-browser's npm postinstall after a
-            # `hermes update` wiped node_modules (issue #48521).
+            # `kova update` wiped node_modules (issue #48521).
             check_warn(
                 "agent-browser found but not runnable",
                 f"(broken symlink at {_which_ab}? run: npm install)",
@@ -2539,7 +2539,7 @@ def run_doctor(args):
                         continue
                     try:
                         content = wrapper.read_text()
-                        if "kova -p" in content or "hermes -p" in content:
+                        if "kova -p" in content or "kova -p" in content:
                             _m = _re.search(r"(?:kova|hermes) -p (\S+)", content)
                             if _m and not profile_exists(_m.group(1)):
                                 check_warn(f"Orphan alias: {wrapper.name} → profile '{_m.group(1)}' no longer exists")

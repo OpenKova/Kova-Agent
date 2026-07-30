@@ -3461,7 +3461,7 @@ async def get_system_stats():
 #
 # The curator periodically reviews skills (archive stale, prune, pin).  The
 # dashboard surfaces its state and the pause/resume/run-now controls that
-# `hermes curator` exposes.
+# `kova curator` exposes.
 # ---------------------------------------------------------------------------
 
 

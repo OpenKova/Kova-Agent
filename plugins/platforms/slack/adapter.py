@@ -1775,13 +1775,13 @@ class SlackAdapter(BasePlatformAdapter):
         if not raw_token:
             logger.error(
                 "[Slack] SLACK_BOT_TOKEN not set — this is a permanent config "
-                "error; set SLACK_BOT_TOKEN via `hermes gateway setup` "
+                "error; set SLACK_BOT_TOKEN via `kova gateway setup` "
                 "or in the active profile's ~/.hermes/.env file, then restart "
                 "the gateway.",
             )
             self._set_fatal_error(
                 "missing_slack_bot_token",
-                "SLACK_BOT_TOKEN not configured. Use `hermes gateway setup` "
+                "SLACK_BOT_TOKEN not configured. Use `kova gateway setup` "
                 "or add it to your active profile's ~/.hermes/.env file, "
                 "then restart the gateway.",
                 retryable=False,
@@ -1790,13 +1790,13 @@ class SlackAdapter(BasePlatformAdapter):
         if not app_token:
             logger.error(
                 "[Slack] SLACK_APP_TOKEN not set — this is a permanent config "
-                "error; set SLACK_APP_TOKEN via `hermes gateway setup` "
+                "error; set SLACK_APP_TOKEN via `kova gateway setup` "
                 "or in the active profile's ~/.hermes/.env file, then restart "
                 "the gateway.",
             )
             self._set_fatal_error(
                 "missing_slack_app_token",
-                "SLACK_APP_TOKEN not configured. Use `hermes gateway setup` "
+                "SLACK_APP_TOKEN not configured. Use `kova gateway setup` "
                 "or add it to your active profile's ~/.hermes/.env file, "
                 "then restart the gateway.",
                 retryable=False,
@@ -8896,7 +8896,7 @@ def interactive_setup() -> None:
             # new commands (e.g. /btw, /stop, ...) get registered in Slack.
             if prompt_yes_no(
                 "Regenerate the Slack app manifest with the latest command "
-                "list? (recommended after `hermes update`)",
+                "list? (recommended after `kova update`)",
                 True,
             ):
                 _write_slack_manifest_and_instruct()
@@ -9052,7 +9052,7 @@ def register(ctx) -> None:
         check_fn=check_slack_requirements,
         is_connected=_is_connected,
         required_env=["SLACK_BOT_TOKEN", "SLACK_APP_TOKEN"],
-        install_hint="Run `hermes setup` to install Slack support.",
+        install_hint="Run `kova setup` to install Slack support.",
         # Interactive setup wizard — replaces hermes_cli/setup.py::_setup_slack
         # and the static _PLATFORMS["slack"] dict in hermes_cli/gateway.py.
         setup_fn=interactive_setup,

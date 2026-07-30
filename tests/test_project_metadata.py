@@ -73,7 +73,7 @@ def test_lazy_installable_extras_excluded_from_all():
     for extra in lazy_covered_extras:
         offending = [
             spec for spec in all_extra_specs
-            if f"hermes-agent[{extra}]" in spec
+            if f"kova-agent[{extra}]" in spec
         ]
         assert not offending, (
             f"[{extra}] is in [all] but also in LAZY_DEPS. "
@@ -185,7 +185,7 @@ def test_dev_extra_excluded_from_all():
 
     assert "dev" in optional_dependencies
     assert not any(
-        spec == "hermes-agent[dev]"
+        spec == "kova-agent[dev]"
         for spec in optional_dependencies["all"]
     )
 
@@ -220,6 +220,6 @@ def test_nemo_relay_extra_uses_supported_official_distribution_range():
 
     assert optional_dependencies["nemo-relay"] == ["nemo-relay>=0.5,<1.0"]
     assert not any(
-        spec == "hermes-agent[nemo-relay]"
+        spec == "kova-agent[nemo-relay]"
         for spec in optional_dependencies["all"]
     )

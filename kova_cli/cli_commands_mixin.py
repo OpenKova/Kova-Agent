@@ -1508,7 +1508,7 @@ class CLICommandsMixin:
     def _handle_curator_command(self, cmd: str):
         """Handle /curator slash command.
 
-        Delegates to kova_cli.curator so the CLI and the `hermes curator`
+        Delegates to kova_cli.curator so the CLI and the `kova curator`
         subcommand share the same handler set.
         """
         import shlex

@@ -986,7 +986,7 @@ def test_stash_push_partial_removal_failure_continues_when_stash_created(
             return SimpleNamespace(
                 stdout="Saved working directory and index state\n",
                 stderr=(
-                    "warning: failed to remove packaging/homebrew/hermes-agent.rb: "
+                    "warning: failed to remove packaging/homebrew/kova-agent.rb: "
                     "Permission denied\n"
                 ),
                 returncode=1,
@@ -1058,7 +1058,7 @@ def test_stash_push_failure_with_preexisting_stash_unchanged_still_raises(
 def test_stash_apply_untracked_only_failure_detector():
     fn = hermes_main._stash_apply_failed_only_on_existing_untracked
     assert fn(
-        "packaging/homebrew/hermes-agent.rb already exists, no checkout\n"
+        "packaging/homebrew/kova-agent.rb already exists, no checkout\n"
         "error: could not restore untracked files from stash\n"
     ) is True
     # Tracked-apply failure lines must NOT be classified as benign.
@@ -1067,7 +1067,7 @@ def test_stash_apply_untracked_only_failure_detector():
         "\ttracked.txt\n"
         "Please commit your changes or stash them before you merge.\n"
         "Aborting\n"
-        "packaging/homebrew/hermes-agent.rb already exists, no checkout\n"
+        "packaging/homebrew/kova-agent.rb already exists, no checkout\n"
         "error: could not restore untracked files from stash\n"
     ) is False
     assert fn("") is False
@@ -1087,7 +1087,7 @@ def test_restore_treats_existing_untracked_only_failure_as_restored(
             return SimpleNamespace(
                 stdout="",
                 stderr=(
-                    "packaging/homebrew/hermes-agent.rb already exists, no checkout\n"
+                    "packaging/homebrew/kova-agent.rb already exists, no checkout\n"
                     "error: could not restore untracked files from stash\n"
                 ),
                 returncode=1,
@@ -1144,7 +1144,7 @@ def test_update_autostash_survives_undeletable_untracked_dir(tmp_path):
     (tmp_path / "tracked.txt").write_text("v2 local change\n")
     pkg = tmp_path / "packaging" / "homebrew"
     pkg.mkdir(parents=True)
-    (pkg / "hermes-agent.rb").write_text("formula\n")
+    (pkg / "kova-agent.rb").write_text("formula\n")
     os.chmod(pkg, 0o555)  # undeletable contents, like a root-owned dir
     try:
         stash_ref = hermes_main._stash_local_changes_if_needed(["git"], tmp_path)
@@ -1158,6 +1158,6 @@ def test_update_autostash_survives_undeletable_untracked_dir(tmp_path):
         )
         assert restored is True
         assert (tmp_path / "tracked.txt").read_text() == "v2 local change\n"
-        assert (pkg / "hermes-agent.rb").read_text() == "formula\n"
+        assert (pkg / "kova-agent.rb").read_text() == "formula\n"
     finally:
         os.chmod(pkg, 0o755)

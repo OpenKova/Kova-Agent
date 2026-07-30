@@ -130,7 +130,7 @@ class NousPortalAdapter(UpstreamAdapter):
             if not runtime_key:
                 raise RuntimeError(
                     "Nous Portal refresh did not return a usable inference JWT. "
-                    "Try `hermes auth add nous` to re-authenticate."
+                    "Try `kova auth add nous` to re-authenticate."
                 )
 
             # base_url returned by resolve_nous_runtime_credentials() already

@@ -239,7 +239,7 @@ class OpenAIImageGenProvider(ImageGenProvider):
             return error_response(
                 error=(
                     "OPENAI_API_KEY not set. Run `hermes tools` → Image "
-                    "Generation → OpenAI to configure, or `hermes setup` "
+                    "Generation → OpenAI to configure, or `kova setup` "
                     "to add the key."
                 ),
                 error_type="auth_required",

@@ -498,7 +498,7 @@ class FALVideoGenProvider(VideoGenProvider):
                 error=(
                     "No FAL backend available. Either set FAL_KEY "
                     "(run `hermes tools` → Video Generation → FAL to configure) "
-                    "or sign in to Nous (`hermes setup`) for managed gateway access."
+                    "or sign in to Nous (`kova setup`) for managed gateway access."
                 ),
                 error_type="auth_required",
                 provider="fal",

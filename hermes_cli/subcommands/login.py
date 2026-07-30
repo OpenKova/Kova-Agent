@@ -12,7 +12,7 @@ from typing import Callable
 def build_login_parser(subparsers, *, cmd_login: Callable) -> None:
     """Attach the deprecated ``login`` subcommand to ``subparsers``.
 
-    ``hermes login`` was removed in favor of ``hermes auth`` / ``hermes model``
+    ``hermes login`` was removed in favor of ``kova auth`` / ``hermes model``
     (the runtime handler in ``hermes_cli/auth.py::login_command`` just prints a
     deprecation message and exits).  The subparser is kept registered so that
     old scripts/aliases invoking ``hermes login [--flags]`` still receive the
@@ -20,7 +20,7 @@ def build_login_parser(subparsers, *, cmd_login: Callable) -> None:
     'login'`` error — but:
 
     - The subparser is registered WITHOUT a ``help=`` kwarg so the row is
-      omitted from ``hermes --help`` (argparse only lists subcommands that
+      omitted from ``kova --help`` (argparse only lists subcommands that
       have a help string).  This hides a command that no longer works (#24756)
       without the ``help=argparse.SUPPRESS`` ``==SUPPRESS==`` leak that
       argparse emits for a top-level subparser on Python 3.12+.
@@ -32,7 +32,7 @@ def build_login_parser(subparsers, *, cmd_login: Callable) -> None:
     login_parser = subparsers.add_parser(
         "login",
         description=(
-            "Deprecated. Use `hermes auth` to manage credentials, "
+            "Deprecated. Use `kova auth` to manage credentials, "
             "`hermes model` to select a provider, or `kova setup` for full setup."
         ),
     )

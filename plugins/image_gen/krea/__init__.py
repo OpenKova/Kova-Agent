@@ -346,7 +346,7 @@ class KreaImageGenProvider(ImageGenProvider):
                         "Generation → Krea to configure, get a key at "
                         "https://www.krea.ai/settings/api-tokens, or sign in to "
                         "a Nous account with the managed Krea gateway enabled "
-                        "(`hermes setup`)."
+                        "(`kova setup`)."
                     ),
                     error_type="auth_required",
                     provider="krea",

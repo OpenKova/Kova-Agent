@@ -4,8 +4,8 @@ Verifies that Hermes-managed provider, tool, and gateway env vars are
 stripped from subprocess environments so external CLIs are not silently
 misrouted or handed Hermes secrets.
 
-See: https://github.com/NousResearch/hermes-agent/issues/1002
-See: https://github.com/NousResearch/hermes-agent/issues/1264
+See: https://github.com/NousResearch/kova-agent/issues/1002
+See: https://github.com/NousResearch/kova-agent/issues/1264
 """
 
 import os
@@ -276,7 +276,7 @@ class TestActiveVenvMarkerStripping:
 
     def test_virtualenv_marker_stripped_end_to_end(self):
         result_env = _run_with_env(extra_os_env={
-            "VIRTUAL_ENV": "/home/user/.hermes/hermes-agent/venv",
+            "VIRTUAL_ENV": "/home/user/.hermes/kova-agent/venv",
         })
         assert "VIRTUAL_ENV" not in result_env
 

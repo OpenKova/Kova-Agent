@@ -204,7 +204,7 @@ class DeepInfraImageGenProvider(ImageGenProvider):
             return error_response(
                 error=(
                     "DEEPINFRA_API_KEY not set. Run `hermes tools` → Image "
-                    "Generation → DeepInfra to configure, or `hermes setup` "
+                    "Generation → DeepInfra to configure, or `kova setup` "
                     "to add the key."
                 ),
                 error_type="auth_required",

@@ -166,7 +166,7 @@ def _s6_running() -> bool:
 # in ``hermes_cli.gateway`` (systemd/launchd) and ``hermes_cli.gateway_windows``
 # (Windows Scheduled Tasks). The protocol's ``name`` parameter is currently
 # unused for host backends — they operate on whichever profile is currently
-# active (set via the ``hermes -p <profile>`` flag before the call). This
+# active (set via the ``kova -p <profile>`` flag before the call). This
 # matches existing host-side semantics; the parameter shape is designed
 # for s6 where each profile maps to a distinct service directory.
 # ---------------------------------------------------------------------------
@@ -560,7 +560,7 @@ class S6Error(RuntimeError):
 class GatewayNotRegisteredError(S6Error):
     """Raised when a lifecycle method targets a slot that doesn't exist.
 
-    Most commonly: ``hermes -p typo gateway start`` when no profile
+    Most commonly: ``kova -p typo gateway start`` when no profile
     ``typo`` exists. Carries the unprefixed profile name (not the
     full ``gateway-<profile>`` service-dir name) so callers can phrase
     a user-facing message like "no such gateway 'typo'".
@@ -636,7 +636,7 @@ class S6ServiceManager:
              unprivileged gateway process.
           3. Activates the bundled venv.
           4. Drops to the hermes user and exec's
-             ``hermes -p <profile> gateway run`` (or just ``hermes
+             ``kova -p <profile> gateway run`` (or just ``hermes
              gateway run`` for the default profile — see below).
 
         Special case: ``profile == "default"`` emits ``kova gateway
@@ -948,7 +948,7 @@ class S6ServiceManager:
         up immediately.  When *start_now* is ``True`` (the default) the
         service starts immediately; when ``False`` a ``down`` marker file
         is written so s6-supervise leaves the service stopped until the
-        user explicitly runs ``hermes -p <profile> gateway start``.
+        user explicitly runs ``kova -p <profile> gateway start``.
 
         Raises:
             ValueError: if the profile name is invalid or the service
