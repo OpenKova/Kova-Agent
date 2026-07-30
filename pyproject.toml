@@ -306,9 +306,9 @@ requires = ["setuptools>=77.0,<83"]
 build-backend = "setuptools.build_meta"
 
 [project.scripts]
-hermes = "hermes_cli.main:main"
-hermes-agent = "run_agent:main"
-hermes-acp = "acp_adapter.entry:main"
+kova = "hermes_cli.main:main"
+kova-agent = "run_agent:main"
+kova-acp = "acp_adapter.entry:main"
 
 [tool.setuptools]
 # Top-level single-file modules (not packages). Without this, uv2nix's

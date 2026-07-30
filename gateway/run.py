@@ -2913,7 +2913,8 @@ def _resolve_hermes_bin() -> Optional[list[str]]:
     """
     import shutil
 
-    hermes_bin = shutil.which("hermes")
+    # Check new kova binary first, fall back to legacy hermes
+    hermes_bin = shutil.which("kova") or shutil.which("hermes")
     if hermes_bin:
         return [hermes_bin]
 
@@ -17212,7 +17213,7 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
             if executor is None or getattr(executor, "_shutdown", False):
                 executor = concurrent.futures.ThreadPoolExecutor(
                     max_workers=10,
-                    thread_name_prefix="hermes-gateway",
+                    thread_name_prefix="kova-gateway",
                 )
                 self._executor = executor
             return executor

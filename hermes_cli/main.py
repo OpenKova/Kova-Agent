@@ -8056,10 +8056,10 @@ def _hermes_exe_shims(scripts_dir: Path) -> list[Path]:
     if not _is_windows():
         return []
 
-    names = set(_load_console_script_names()) or {"hermes", "hermes-agent", "hermes-acp"}
+    names = set(_load_console_script_names()) or {"kova", "kova-agent", "kova-acp"}
     # The gateway shim is not a [project.scripts] entry point, but older
     # update/install paths still rewrite and quarantine it.
-    names.add("hermes-gateway")
+    names.add("kova-gateway")
     return [scripts_dir / f"{name}.exe" for name in sorted(names)]
 
 
@@ -8076,7 +8076,7 @@ def _detect_concurrent_hermes_instances(
     ``[WinError 32]`` and uv inherits the lock.
 
     This helper enumerates processes whose ``exe`` matches one of the venv's
-    shims (``hermes.exe`` / ``hermes-gateway.exe``) and returns ``(pid,
+    shims (``kova.exe`` / ``kova-gateway.exe``) and returns ``(pid,
     process_name)`` pairs. The caller's own PID and its entire ancestor
     chain are excluded so the running ``hermes update`` invocation never
     reports itself — this matters on Windows where the setuptools .exe
@@ -8755,7 +8755,7 @@ def _install_python_dependencies_with_optional_fallback(
     By default this targets ``.[all]``; Termux callers can pass
     ``group='termux-all'`` to use the curated Android-compatible profile.
 
-    On Windows, pre-renames live ``hermes.exe`` / ``hermes-gateway.exe`` shims
+    On Windows, pre-renames live ``kova.exe`` / ``kova-gateway.exe`` shims
     in the venv Scripts dir before each install attempt so uv can write fresh
     copies (Windows blocks REPLACE on a running .exe but allows RENAME). See
     ``_quarantine_running_hermes_exe`` for the rationale.
