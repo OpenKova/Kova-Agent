@@ -2616,7 +2616,7 @@ def _validate_base_url(base_url: str) -> None:
     except ValueError as exc:
         raise RuntimeError(
             f"Malformed custom endpoint URL: {candidate!r}. "
-            "Run `hermes setup` or `hermes model` and enter a valid http(s) base URL."
+            "Run `kova setup` or `kova model` and enter a valid http(s) base URL."
         ) from exc
 
 
@@ -5238,7 +5238,7 @@ def resolve_provider_client(
         if client is None:
             logger.warning(
                 "resolve_provider_client: azure-foundry requested but "
-                "runtime resolution failed (run: hermes doctor for "
+                "runtime resolution failed (run: kova doctor for "
                 "diagnostics)"
             )
             return None, None
