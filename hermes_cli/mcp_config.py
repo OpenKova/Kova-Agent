@@ -451,7 +451,7 @@ def cmd_mcp_add(args):
     if not url and not command:
         _error("Must specify --url <endpoint>, --command <cmd>, or --preset <name>")
         _info("Examples:")
-        _info('  hermes mcp add ink --url "https://mcp.ml.ink/mcp"')
+        _info('  kova mcp add ink --url "https://mcp.ml.ink/mcp"')
         _info('  hermes mcp add github --command npx --args @modelcontextprotocol/server-github')
         _info('  hermes mcp add myserver --preset mypreset')
         return
@@ -1102,6 +1102,6 @@ def mcp_command(args):
         _info("hermes mcp list                               List configured servers")
         _info("hermes mcp test <name>                        Test connection")
         _info("hermes mcp configure <name>                   Toggle tools")
-        _info("hermes mcp login <name>                       Re-authenticate OAuth")
+        _info("kova mcp login <name>                       Re-authenticate OAuth")
         _info("hermes mcp reauth <name> | --all              Re-auth one or all OAuth servers")
         print()
