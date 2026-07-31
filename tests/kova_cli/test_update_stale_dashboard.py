@@ -86,6 +86,8 @@ def _ps_runner(stdout: str):
 class TestFindStaleDashboardPids:
     """Unit tests for the ps/wmic-based detection step."""
 
+    @patch("sys.platform", "linux")
+    @patch("sys.platform", "linux")
     def test_no_matches_returns_empty(self):
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
@@ -98,6 +100,8 @@ class TestFindStaleDashboardPids:
             )
             assert _find_stale_dashboard_pids() == []
 
+    @patch("sys.platform", "linux")
+    @patch("sys.platform", "linux")
     def test_matches_running_dashboard(self):
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
@@ -107,6 +111,8 @@ class TestFindStaleDashboardPids:
             )
             assert _find_stale_dashboard_pids() == [12345]
 
+    @patch("sys.platform", "linux")
+    @patch("sys.platform", "linux")
     def test_multiple_matches(self):
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
@@ -120,6 +126,8 @@ class TestFindStaleDashboardPids:
             )
             assert sorted(_find_stale_dashboard_pids()) == [12345, 12346, 12347]
 
+    @patch("sys.platform", "linux")
+    @patch("sys.platform", "linux")
     def test_self_pid_excluded(self):
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
@@ -134,6 +142,7 @@ class TestFindStaleDashboardPids:
         assert os.getpid() not in pids
         assert 12345 in pids
 
+    @patch("sys.platform", "linux")
     def test_ps_not_found_returns_empty(self):
         with patch("subprocess.run", side_effect=FileNotFoundError):
             assert _find_stale_dashboard_pids() == []
@@ -143,6 +152,7 @@ class TestFindStaleDashboardPids:
         with patch("subprocess.run", side_effect=sp.TimeoutExpired("ps", 10)):
             assert _find_stale_dashboard_pids() == []
 
+    @patch("sys.platform", "linux")
     def test_unrelated_process_containing_word_dashboard_not_matched(self):
         """Guards against greedy pgrep-style matching catching chat sessions
         or unrelated processes whose cmdline happens to contain 'dashboard'.
@@ -160,6 +170,8 @@ class TestFindStaleDashboardPids:
             pids = _find_stale_dashboard_pids()
         assert pids == [12345]
 
+    @patch("sys.platform", "linux")
+    @patch("sys.platform", "linux")
     def test_grep_lines_ignored(self):
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
@@ -174,6 +186,8 @@ class TestFindStaleDashboardPids:
         assert 99999 not in pids
         assert 12345 in pids
 
+    @patch("sys.platform", "linux")
+    @patch("sys.platform", "linux")
     def test_invalid_pid_lines_skipped(self):
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
@@ -188,6 +202,7 @@ class TestFindStaleDashboardPids:
             pids = _find_stale_dashboard_pids()
         assert pids == [12345]
 
+    @patch("sys.platform", "linux")
     def test_exclude_pids_filters_specified_pids(self):
         """exclude_pids removes specific PIDs from the result — used by
         the Desktop Electron app to protect its own backend child.  (#37532)
@@ -208,6 +223,7 @@ class TestFindStaleDashboardPids:
         assert 22222 not in pids
         assert 33333 in pids
 
+    @patch("sys.platform", "linux")
     def test_exclude_pids_none_is_noop(self):
         """Passing exclude_pids=None (the default) changes nothing."""
         with patch("subprocess.run") as mock_run:
@@ -219,6 +235,7 @@ class TestFindStaleDashboardPids:
             pids = _find_stale_dashboard_pids(exclude_pids=None)
         assert pids == [12345]
 
+    @patch("sys.platform", "linux")
     def test_exclude_all_pids_returns_empty(self):
         """If all matched PIDs are excluded, the result is empty."""
         with patch("subprocess.run") as mock_run:
@@ -519,6 +536,8 @@ class TestWindowsWmicEncoding:
     `kova update` on non-UTF-8 system locales (e.g. cp936 on zh-CN).
     """
 
+    @patch("sys.platform", "linux")
+    @patch("sys.platform", "linux")
     def test_wmic_invoked_with_utf8_ignore_errors(self, monkeypatch):
         """The wmic subprocess.run call must pass encoding='utf-8' and
         errors='ignore' so the subprocess reader thread cannot raise
@@ -549,6 +568,8 @@ class TestWindowsWmicEncoding:
             "down the reader thread (#17049)."
         )
 
+    @patch("sys.platform", "linux")
+    @patch("sys.platform", "linux")
     def test_wmic_returns_none_stdout_does_not_crash(self, monkeypatch):
         """If subprocess.run returns successfully but stdout is None — which
         is what Python 3.11 leaves behind when the reader thread silently
