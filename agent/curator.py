@@ -1023,7 +1023,7 @@ def _build_rename_summary(
           • docx-extraction → document-tools
           • flaky-thing — pruned (stale)
           • old-utility → spreadsheet-ops
-        full report: hermes curator status
+        full report: kova curator status
         keep an umbrella stable: hermes curator pin document-tools
 
     Cap is 10 entries so a 50-skill consolidation doesn't blow up
@@ -1077,7 +1077,7 @@ def _build_rename_summary(
         shown += 1
     if total > SHOW:
         lines.append(f"  … and {total - SHOW} more")
-    lines.append("full report: hermes curator status")
+    lines.append("full report: kova curator status")
     # Pin hint — only surface it when there's actually a destination skill
     # worth pinning. The umbrella skills that absorbed content are the natural
     # candidates: pinning one tells future curator runs to leave it alone.

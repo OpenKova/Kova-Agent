@@ -91,7 +91,7 @@ class TestIsBotMentioned:
         assert self.adapter._is_bot_mentioned("hey @hermes:example.org help")
 
     def test_localpart_in_body(self):
-        assert self.adapter._is_bot_mentioned("kova can you help?")
+        assert self.adapter._is_bot_mentioned("hermes can you help?")
 
     def test_localpart_case_insensitive(self):
         assert self.adapter._is_bot_mentioned("HERMES can you help?")
@@ -160,7 +160,7 @@ class TestStripMention:
     def test_localpart_preserved(self):
         """Bare localpart (no @) is preserved — avoids false positives in paths."""
         result = self.adapter._strip_mention("hermes help me")
-        assert result == "kova help me"
+        assert result == "hermes help me"
 
     def test_localpart_in_path_preserved(self):
         """Localpart inside a file path must not be damaged."""
@@ -394,7 +394,7 @@ async def test_dm_preserves_localpart_in_body(monkeypatch):
     await adapter._on_room_message(event)
     adapter.handle_message.assert_awaited_once()
     msg = adapter.handle_message.await_args.args[0]
-    assert msg.text == "kova help me"
+    assert msg.text == "hermes help me"
 
 
 @pytest.mark.asyncio

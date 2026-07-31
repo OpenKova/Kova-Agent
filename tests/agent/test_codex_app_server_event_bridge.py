@@ -392,12 +392,12 @@ class TestToolProgressDispatch:
         bridge(_item_started({
             "type": "webSearch",
             "id": "ws-1",
-            "query": "hermes agent docs",
+            "query": "kova agent docs",
         }))
         bridge(_item_completed({
             "type": "webSearch",
             "id": "ws-1",
-            "query": "hermes agent docs",
+            "query": "kova agent docs",
         }))
         calls = agent.tool_progress_callback.call_args_list
         assert [c.args[0] for c in calls] == ["tool.started", "tool.completed"]

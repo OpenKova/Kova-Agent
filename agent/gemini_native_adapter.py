@@ -108,7 +108,7 @@ def probe_gemini_tier(
                 json=payload,
                 headers={
                     "Content-Type": "application/json",
-                    "X-Goog-Api-Client": f"hermes-agent/{_HERMES_VERSION}",
+                    "X-Goog-Api-Client": f"kova-agent/{_HERMES_VERSION}",
                 },
             )
     except Exception as exc:
@@ -918,8 +918,8 @@ class GeminiNativeClient:
             # Include Hermes client context following Gemini's partner
             # integration guidance.
             # See https://ai.google.dev/gemini-api/docs/partner-integration
-            "User-Agent": f"hermes-agent/{_HERMES_VERSION} (gemini-native)",
-            "X-Goog-Api-Client": f"hermes-agent/{_HERMES_VERSION}",
+            "User-Agent": f"kova-agent/{_HERMES_VERSION} (gemini-native)",
+            "X-Goog-Api-Client": f"kova-agent/{_HERMES_VERSION}",
         }
         headers.update(self._default_headers)
         return headers

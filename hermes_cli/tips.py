@@ -94,8 +94,8 @@ TIPS = [
     "hermes completion bash >> ~/.bashrc enables tab completion for all commands and profiles.",
     "hermes logs -f follows agent.log in real time. --level WARNING --since 1h filters output.",
     "hermes backup creates a zip backup of your entire Hermes home directory.",
-    "hermes profile create coder creates an isolated profile that becomes its own command.",
-    "hermes profile create work --clone copies your current config and keys to a new profile.",
+    "kova profile create coder creates an isolated profile that becomes its own command.",
+    "kova profile create work --clone copies your current config and keys to a new profile.",
     "kova update syncs new bundled skills to ALL profiles automatically.",
     "kova gateway install sets up Hermes as a system service (systemd/launchd).",
     "hermes memory setup lets you configure an external memory provider (Honcho, Mem0, etc.).",
@@ -151,7 +151,7 @@ TIPS = [
 
     # --- Profiles ---
     "Each profile gets its own config, API keys, memory, sessions, skills, and cron jobs.",
-    "Profile names become shell commands — 'hermes profile create coder' creates the 'coder' command.",
+    "Profile names become shell commands — 'kova profile create coder' creates the 'coder' command.",
     "hermes profile export coder -o backup.tar.gz creates a portable profile archive.",
     "If two profiles accidentally share a bot token, the second gateway is blocked with a clear error.",
 
@@ -320,7 +320,7 @@ TIPS = [
     "When compression fails, further attempts are paused for 10 minutes to avoid API hammering.",
     "Long dangerous commands (>70 chars) get a 'view' option in the approval prompt to see the full text first.",
     "Audio level visualization shows ▁▂▃▄▅▆▇ bars during voice recording based on microphone RMS levels.",
-    "Profile names cannot collide with existing PATH binaries — 'hermes profile create ls' would be rejected.",
+    "Profile names cannot collide with existing PATH binaries — 'kova profile create ls' would be rejected.",
     "hermes profile create backup --clone-all copies everything (config, keys, SOUL.md, memories, skills, sessions).",
     "The voice record key is configurable via voice.record_key in config.yaml — not just Ctrl+B.",
     ".cursorrules and .cursor/rules/*.mdc files are auto-detected and loaded as project context.",

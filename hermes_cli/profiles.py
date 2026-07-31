@@ -1141,7 +1141,7 @@ def create_profile(
         try:
             (profile_dir / NO_BUNDLED_SKILLS_MARKER).write_text(
                 "This profile opted out of bundled-skill seeding "
-                "(`hermes profile create --no-skills`).\n"
+                "(`kova profile create --no-skills`).\n"
                 "Delete this file to re-enable sync on the next `kova update`.\n",
                 encoding="utf-8",
             )
@@ -1814,7 +1814,7 @@ def set_active_profile(name: str) -> None:
     if canon != "default" and not profile_exists(canon):
         raise FileNotFoundError(
             f"Profile '{canon}' does not exist. "
-            f"Create it with: hermes profile create {canon}"
+            f"Create it with: kova profile create {canon}"
         )
 
     path = _get_active_profile_path()
@@ -2219,7 +2219,7 @@ def resolve_profile_env(profile_name: str) -> str:
     if canon != "default" and not profile_dir.is_dir():
         raise FileNotFoundError(
             f"Profile '{canon}' does not exist. "
-            f"Create it with: hermes profile create {canon}"
+            f"Create it with: kova profile create {canon}"
         )
 
     return str(profile_dir)
