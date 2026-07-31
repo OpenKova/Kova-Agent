@@ -45,7 +45,7 @@ def register_cli(parser: argparse.ArgumentParser) -> None:
         help="First-time setup (device login + project + user + sidecar)",
     )
     p_setup.add_argument("--project-name", default=None,
-                         help="Project name (default: 'Hermes Agent')")
+                         help="Project name (default: 'Kova Agent')")
     p_setup.add_argument("--phone", default=None,
                          help="Your E.164 phone number (e.g. +15551234567)")
     p_setup.add_argument("--first-name", default=None)
@@ -141,7 +141,7 @@ def _cmd_setup(args: argparse.Namespace) -> int:
     else:
         print("[1/5] Reusing existing Photon token")
 
-    # 2. Find or create the "Hermes Agent" project.
+    # 2. Find or create the "Kova Agent" project.
     name = args.project_name or photon_auth.DEFAULT_PROJECT_NAME
     dashboard_id = photon_auth.load_dashboard_project_id()
     try:
@@ -312,8 +312,8 @@ def _cmd_status(_args: argparse.Namespace) -> int:
     node_bin = os.getenv("PHOTON_NODE_BIN") or shutil.which("node")
     sidecar_installed = (_SIDECAR_DIR / "node_modules").exists()
     print(f"  node binary         : {node_bin or '✗ missing (install Node 18+)'}")
-    print(f"  sidecar deps        : {'✓ installed' if sidecar_installed else '✗ run `hermes photon install-sidecar`'}")
-    print(f"  telemetry           : {'on' if _telemetry_enabled() else 'off'} (`hermes photon telemetry on|off`)")
+    print(f"  sidecar deps        : {'✓ installed' if sidecar_installed else '✗ run `kova photon install-sidecar`'}")
+    print(f"  telemetry           : {'on' if _telemetry_enabled() else 'off'} (`kova photon telemetry on|off`)")
     return 0
 
 
@@ -352,7 +352,7 @@ def _cmd_telemetry(args: argparse.Namespace) -> int:
     state = getattr(args, "state", None)
     if state is None:
         print(f"Photon telemetry: {'on' if _telemetry_enabled() else 'off'}")
-        print("  Toggle with `hermes photon telemetry on` / `hermes photon telemetry off`.")
+        print("  Toggle with `kova photon telemetry on` / `kova photon telemetry off`.")
         return 0
     try:
         from hermes_cli.config import save_env_value

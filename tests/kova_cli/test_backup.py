@@ -2253,7 +2253,7 @@ class TestRunPreUpdateBackup:
         assert "Pre-update snapshot" in out
         assert "Creating pre-update backup" in out
         assert "Saved:" in out
-        assert "hermes import" in out
+        assert "kova import" in out
         assert len(self._zips(hermes_home)) == 1
 
     def test_no_backup_flag_skips_everything(self, hermes_home, capsys):

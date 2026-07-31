@@ -115,7 +115,7 @@ def _probe_broken_packages() -> list[str]:
 def _run_repair_install(specs: list[str], project_root: Path) -> bool:
     """ensurepip + ``pip install --force-reinstall`` the given specs.
 
-    Streams nothing to stdout (``hermes acp`` speaks JSON-RPC on stdout);
+    Streams nothing to stdout (``kova acp`` speaks JSON-RPC on stdout);
     output is captured and replayed to stderr only on failure.  Never raises.
     """
     try:

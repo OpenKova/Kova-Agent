@@ -24,7 +24,7 @@ def pairing_command(args):
     elif action == "clear-pending":
         _cmd_clear_pending(store)
     else:
-        print("Usage: hermes pairing {list|approve|revoke|clear-pending}")
+        print("Usage: kova pairing {list|approve|revoke|clear-pending}")
         print("Run 'kova pairing --help' for details.")
 
 

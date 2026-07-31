@@ -66,7 +66,7 @@ def remove_path_from_shell_configs():
             
             for line in content.split('\n'):
                 # Skip the "# Kova Agent" comment and following line
-                if '# Kova Agent' in line or '# Hermes Agent' in line or '# hermes-agent' in line:
+                if '# Kova Agent' in line or '# Kova Agent' in line or '# hermes-agent' in line:
                     skip_next = True
                     continue
                 if skip_next and ('hermes' in line.lower() and 'PATH' in line):
@@ -399,7 +399,7 @@ def remove_hermes_env_vars_windows() -> list[str]:
 
 def remove_portable_tooling_windows(hermes_home: Path) -> list[Path]:
     """Delete PortableGit and Node installs the Windows installer created under
-    ``%LOCALAPPDATA%\\hermes\\``.  Only called on full uninstall; they're
+    ``%LOCALAPPDATA%\\kova\\``.  Only called on full uninstall; they're
     isolated from any system Git / Node so they cannot break other tools."""
     removed: list[Path] = []
     for sub in ("git", "node", "gateway-service"):
@@ -560,7 +560,7 @@ def run_gui_uninstall(args):
     print(color("└─────────────────────────────────────────────────────────┘", Colors.GREEN, Colors.BOLD))
     print()
     print("The Kova agent is still installed. Run 'kova' to use the CLI,")
-    print("or 'hermes uninstall' to remove the agent too.")
+    print("or 'kova uninstall' to remove the agent too.")
     print()
 
 
@@ -899,9 +899,9 @@ def _perform_uninstall(
         print()
         print("To reinstall later with your existing settings:")
         if _is_windows():
-            print(color("  iex (irm https://hermes-agent.nousresearch.com/install.ps1)", Colors.DIM))
+            print(color("  iex (irm https://kova-agent.nousresearch.com/install.ps1)", Colors.DIM))
         else:
-            print(color("  curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash", Colors.DIM))
+            print(color("  curl -fsSL https://kova-agent.nousresearch.com/install.sh | bash", Colors.DIM))
         print()
 
     if _is_windows():

@@ -472,7 +472,7 @@ def run_backup(args) -> None:
             print(f"  ... and {len(errors) - 10} more")
 
     if not errors:
-        print(f"\nRestore with: hermes import {out_path.name}")
+        print(f"\nRestore with: kova import {out_path.name}")
 
 
 # ---------------------------------------------------------------------------

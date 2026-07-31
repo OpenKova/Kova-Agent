@@ -152,7 +152,7 @@ class CLIAgentSetupMixin:
                 self.model = runtime_model
 
         # If model is still empty (e.g. user ran `kova auth add openai-codex`
-        # without `hermes model`), fall back to the provider's first catalog
+        # without `kova model`), fall back to the provider's first catalog
         # model so the API call doesn't fail with "model must be non-empty".
         if not self.model and resolved_provider:
             try:
@@ -279,7 +279,7 @@ class CLIAgentSetupMixin:
                     )
                 else:
                     _cprint(f"\033[1;31mSession not found: {self.session_id}{_RST}")
-                    _cprint(f"{_DIM}Use a session ID from a previous CLI run (hermes sessions list).{_RST}")
+                    _cprint(f"{_DIM}Use a session ID from a previous CLI run (kova sessions list).{_RST}")
                 return False
             # If the requested session is the (empty) head of a compression
             # chain, walk to the descendant that actually holds the messages.

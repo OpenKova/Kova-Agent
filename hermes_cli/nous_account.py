@@ -215,7 +215,7 @@ def format_nous_portal_entitlement_message(
             return (
                 f"Nous inference credentials are configured, but Hermes cannot verify "
                 f"your Nous Portal paid access for {capability}. Log in with "
-                f"`hermes model` to enable Portal-managed features. Billing and "
+                f"`kova model` to enable Portal-managed features. Billing and "
                 f"credits are managed at {billing_url}."
             )
         return (

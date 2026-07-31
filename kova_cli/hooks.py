@@ -28,7 +28,7 @@ def hooks_command(args) -> None:
     sub = getattr(args, "hooks_action", None)
 
     if not sub:
-        print("Usage: hermes hooks {list|test|revoke|doctor}")
+        print("Usage: kova hooks {list|test|revoke|doctor}")
         print("Run 'kova hooks --help' for details.")
         return
 
@@ -56,7 +56,7 @@ def _cmd_list(_args) -> None:
 
     if not specs:
         print("No shell hooks configured in ~/.hermes/config.yaml.")
-        print("See `hermes hooks --help` or")
+        print("See `kova hooks --help` or")
         print("    website/docs/user-guide/features/hooks.md")
         print("for the config schema and worked examples.")
         return

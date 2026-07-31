@@ -102,7 +102,7 @@ class TestCronCreateLifecycleBlock:
         args = Namespace(
             cron_command="create",
             schedule="30m",
-            prompt="Upgrade hermes then run hermes gateway restart",
+            prompt="Upgrade hermes then run kova gateway restart",
             name=None,
             deliver=None,
             repeat=None,

@@ -148,11 +148,11 @@ def reap_orphan_containers(
 
     Targets containers that match all of:
 
-    * ``label=hermes-agent=1`` (created by this codebase)
+    * ``label=kova-agent=1`` (created by this codebase)
     * ``status=exited`` (running containers are NEVER reaped — they may
       belong to a sibling Hermes process whose reuse path will pick them
       up; killing them would crash the sibling mid-command)
-    * (optional) ``label=hermes-profile=<profile_filter>`` (sweep only the
+    * (optional) ``label=kova-profile=<profile_filter>`` (sweep only the
       caller's profile by default; a hermes process in profile A must not
       tear down profile B's containers)
     * ``State.FinishedAt`` older than *max_age_seconds* ago (so a sibling
@@ -172,9 +172,9 @@ def reap_orphan_containers(
     pair.
     """
     docker = docker_exe or find_docker() or "docker"
-    filters = ["--filter", "label=hermes-agent=1", "--filter", "status=exited"]
+    filters = ["--filter", "label=kova-agent=1", "--filter", "status=exited"]
     if profile_filter:
-        filters.extend(["--filter", f"label=hermes-profile={_sanitize_label_value(profile_filter)}"])
+        filters.extend(["--filter", f"label=kova-profile={_sanitize_label_value(profile_filter)}"])
 
     try:
         listing = subprocess.run(
@@ -859,13 +859,16 @@ class DockerEnvironment(BaseEnvironment):
         # Labels make hermes-created containers identifiable to:
         #   * the orphan reaper (`hermes-agent=1` for the global sweep filter)
         #   * future cross-process reuse (`hermes-task-id`, `hermes-profile`)
-        #   * operators running `docker ps --filter label=hermes-agent=1`
+        #   * operators running `docker ps --filter label=kova-agent=1`
         # Values are limited to the safe character set defined by
         # _sanitize_label_value(); the active Hermes profile is captured at
         # container-start time and never changes for the container's lifetime.
         profile_name = _sanitize_label_value(_get_active_profile_name())
         task_label = _sanitize_label_value(task_id)
         label_args = [
+            "--label", "kova-agent=1",
+            "--label", f"kova-task-id={task_label}",
+            "--label", f"kova-profile={profile_name}",
             "--label", "hermes-agent=1",
             "--label", f"hermes-task-id={task_label}",
             "--label", f"hermes-profile={profile_name}",
@@ -877,6 +880,9 @@ class DockerEnvironment(BaseEnvironment):
         self._all_run_args = all_run_args
 
         self._labels = {
+            "kova-agent": "1",
+            "kova-task-id": task_label,
+            "kova-profile": profile_name,
             "hermes-agent": "1",
             "hermes-task-id": task_label,
             "hermes-profile": profile_name,
@@ -1106,8 +1112,8 @@ class DockerEnvironment(BaseEnvironment):
         self._container_id = None
 
         # 1. Try label-based reuse (another process may have recreated it).
-        task_label = self._labels.get("hermes-task-id", "")
-        profile_label = self._labels.get("hermes-profile", "")
+        task_label = self._labels.get("kova-task-id") or self._labels.get("hermes-task-id", "")
+        profile_label = self._labels.get("kova-profile") or self._labels.get("hermes-profile", "")
         existing = self._find_reusable_container(task_label, profile_label)
         if existing is not None:
             cid, state = existing
@@ -1284,9 +1290,9 @@ class DockerEnvironment(BaseEnvironment):
             result = subprocess.run(
                 [
                     self._docker_exe, "ps", "-a",
-                    "--filter", "label=hermes-agent=1",
-                    "--filter", f"label=hermes-task-id={task_label}",
-                    "--filter", f"label=hermes-profile={profile_label}",
+                    "--filter", "label=kova-agent=1",
+                    "--filter", f"label=kova-task-id={task_label}",
+                    "--filter", f"label=kova-profile={profile_label}",
                     "--format", "{{.ID}}\t{{.State}}",
                 ],
                 capture_output=True,

@@ -142,7 +142,7 @@ def webhook_command(args):
     sub = getattr(args, "webhook_action", None)
 
     if not sub:
-        print("Usage: hermes webhook {subscribe|list|remove|test}")
+        print("Usage: kova webhook {subscribe|list|remove|test}")
         print("Run 'kova webhook --help' for details.")
         return
 
@@ -228,7 +228,7 @@ def _cmd_list(args):
     subs = _load_subscriptions()
     if not subs:
         print("  No dynamic webhook subscriptions.")
-        print("  Create one with: hermes webhook subscribe <name>")
+        print("  Create one with: kova webhook subscribe <name>")
         return
 
     base_url = _get_webhook_base_url()

@@ -45,7 +45,7 @@ Examples:
     hermes --cli                  Force the classic REPL (overrides display.interface: tui)
     kova -c                     Resume the most recent session
     kova -c "my project"        Resume a session by name (latest in lineage)
-    hermes --resume <session_id>  Resume a specific session by ID
+    kova --resume <session_id>  Resume a specific session by ID
     kova setup                  Run setup wizard
     hermes logout                 Clear stored authentication
     kova auth add <provider>    Add a pooled credential

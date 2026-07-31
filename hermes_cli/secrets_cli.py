@@ -352,7 +352,7 @@ def cmd_status(args: argparse.Namespace) -> int:
         console.print(message)
 
     if not enabled:
-        console.print("\n  Run [cyan]hermes secrets bitwarden setup[/cyan] to enable.")
+        console.print("\n  Run [cyan]kova secrets bitwarden setup[/cyan] to enable.")
         return 0
     if not token_set:
         console.print(

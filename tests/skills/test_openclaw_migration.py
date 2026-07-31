@@ -48,12 +48,12 @@ def test_extract_markdown_entries_promotes_heading_context():
 
 ### Active Projects
 
-- Hermes Agent
+- Kova Agent
 """
     entries = mod.extract_markdown_entries(text)
     assert "Tyler Williams: Founder of VANTA Research" in entries
     assert "Tyler Williams: Timezone: America/Los_Angeles" in entries
-    assert "Tyler Williams > Active Projects: Hermes Agent" in entries
+    assert "Tyler Williams > Active Projects: Kova Agent" in entries
 
 
 def test_merge_entries_respects_limit_and_reports_overflow():
@@ -865,16 +865,16 @@ def test_rebrand_text_replaces_openclaw_variants():
     # All-lowercase matches → lowercase ``kova``; this preserves the
     # real filesystem path ``~/.hermes`` (Hermes home) when rebranding
     # memory entries that reference ``~/.openclaw`` or ``openclaw`` prose.
-    assert mod.rebrand_text("openclaw should always respond concisely") == "hermes should always respond concisely"
+    assert mod.rebrand_text("openclaw should always respond concisely") == "kova should always respond concisely"
 
 
 def test_rebrand_text_replaces_legacy_bot_names():
     mod = load_module()
     # Same case-preservation rule as above.
     assert mod.rebrand_text("ClawdBot remembers my timezone") == "Hermes remembers my timezone"
-    assert mod.rebrand_text("clawdbot prefers tabs") == "hermes prefers tabs"
+    assert mod.rebrand_text("clawdbot prefers tabs") == "kova prefers tabs"
     assert mod.rebrand_text("MoltBot was configured for Spanish") == "Hermes was configured for Spanish"
-    assert mod.rebrand_text("moltbot uses Python") == "hermes uses Python"
+    assert mod.rebrand_text("moltbot uses Python") == "kova uses Python"
 
 
 def test_rebrand_text_preserves_unrelated_content():

@@ -677,6 +677,9 @@ def test_labels_attribute_populated_after_init(monkeypatch):
 
     assert env._labels == {
         "kova-agent": "1",
+        "kova-task-id": "abc",
+        "kova-profile": "default",
+        "hermes-agent": "1",
         "hermes-task-id": "abc",
         "hermes-profile": "default",
     }
@@ -1352,7 +1355,7 @@ def test_reap_orphan_scopes_to_profile_filter_via_label(monkeypatch):
     ps_calls = [c for c in calls if isinstance(c[0], list) and c[0][1:2] == ["ps"]]
     assert ps_calls, "expected at least one docker ps call"
     flat = " ".join(ps_calls[0][0])
-    assert "label=hermes-profile=research-bot" in flat, (
+    assert "label=kova-profile=research-bot" in flat, (
         f"profile filter not applied to docker ps; got args: {ps_calls[0][0]}"
     )
     assert "label=kova-agent=1" in flat, (

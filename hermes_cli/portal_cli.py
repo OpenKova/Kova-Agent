@@ -1,6 +1,6 @@
-"""``hermes portal`` — the human-readable entry point for Nous Portal.
+"""``kova portal`` — the human-readable entry point for Nous Portal.
 
-Running ``hermes portal`` with no subcommand performs the one-shot Portal
+Running ``kova portal`` with no subcommand performs the one-shot Portal
 onboarding: OAuth login, pick a Nous model, switch the inference provider to
 Nous, and offer to enable the Tool Gateway. It is the friendly alias for
 ``kova auth add nous --type oauth`` (which still works), is identical to
@@ -28,7 +28,7 @@ from hermes_cli.config import load_config
 
 DEFAULT_PORTAL_URL = "https://portal.nousresearch.com"
 SUBSCRIPTION_URL = "https://portal.nousresearch.com/manage-subscription"
-DOCS_URL = "https://hermes-agent.nousresearch.com/docs/user-guide/features/tool-gateway"
+DOCS_URL = "https://kova-agent.nousresearch.com/docs/user-guide/features/tool-gateway"
 
 
 def _cmd_status(args) -> int:
@@ -58,7 +58,7 @@ def _cmd_status(args) -> int:
     else:
         print(f"  Auth:    {color('not logged in', Colors.YELLOW)}")
         print(f"  Sign up: {SUBSCRIPTION_URL}")
-        print("  Login:   hermes portal")
+        print("  Login:   kova portal")
 
     # Provider selection (independent of auth)
     model_cfg = config.get("model") if isinstance(config.get("model"), dict) else {}
@@ -66,7 +66,7 @@ def _cmd_status(args) -> int:
     if provider == "nous":
         print(f"  Model:   {color('✓ using Nous as inference provider', Colors.GREEN)}")
     elif provider:
-        print(f"  Model:   currently {provider} (switch with `hermes model`)")
+        print(f"  Model:   currently {provider} (switch with `kova model`)")
 
     # Tool Gateway routing
     print()
@@ -143,7 +143,7 @@ def _cmd_tools(args) -> int:
     print(color("  ────────────────────", Colors.MAGENTA))
 
     if not features.nous_auth_present:
-        print(color("  Not logged into Nous Portal — sign in with `hermes portal`.", Colors.YELLOW))
+        print(color("  Not logged into Nous Portal — sign in with `kova portal`.", Colors.YELLOW))
         print()
 
     label_width = max(len(label) for _, label, _ in catalog)
@@ -189,10 +189,10 @@ def _cmd_login(args) -> int:
 
 
 def portal_command(args) -> int:
-    """Top-level dispatch for `hermes portal <subcommand>`."""
+    """Top-level dispatch for `kova portal <subcommand>`."""
     sub = getattr(args, "portal_command", None)
     if sub in {None, "", "login"}:
-        # Default to the one-shot onboarding — `hermes portal` is the
+        # Default to the one-shot onboarding — `kova portal` is the
         # human-readable alias for `kova auth add nous --type oauth` /
         # `kova setup --portal`.
         return _cmd_login(args)
@@ -209,7 +209,7 @@ def portal_command(args) -> int:
 
 
 def add_parser(subparsers) -> None:
-    """Register `hermes portal` on the given argparse subparsers object."""
+    """Register `kova portal` on the given argparse subparsers object."""
     portal_parser = subparsers.add_parser(
         "portal",
         help="Set up Nous Portal (login, model pick, Tool Gateway); see also `portal info`",

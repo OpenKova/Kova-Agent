@@ -406,7 +406,7 @@ class TestBackup:
         # Add a nested kova-agent directory inside skills (like the real layout)
         nested = hermes_home / "skills" / "autonomous-ai-agents" / "kova-agent"
         nested.mkdir(parents=True)
-        (nested / "SKILL.md").write_text("# Hermes Agent Skill\n")
+        (nested / "SKILL.md").write_text("# Kova Agent Skill\n")
         (nested / "sub").mkdir()
         (nested / "sub" / "item.txt").write_text("nested content\n")
 
@@ -2253,7 +2253,7 @@ class TestRunPreUpdateBackup:
         assert "Pre-update snapshot" in out
         assert "Creating pre-update backup" in out
         assert "Saved:" in out
-        assert "hermes import" in out
+        assert "kova import" in out
         assert len(self._zips(hermes_home)) == 1
 
     def test_no_backup_flag_skips_everything(self, hermes_home, capsys):

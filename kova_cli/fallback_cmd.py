@@ -115,7 +115,7 @@ def cmd_fallback_list(args) -> None:  # noqa: ARG001
     if not chain:
         print("  No fallback providers configured.")
         print()
-        print("  Add one with:  hermes fallback add")
+        print("  Add one with:  kova fallback add")
         print()
         return
 
@@ -221,7 +221,7 @@ def cmd_fallback_add(args) -> None:
     print(f"  Added fallback: {_format_entry(new_entry)}")
     print(f"  Chain is now {len(chain)} {'entry' if len(chain) == 1 else 'entries'} long.")
     print()
-    print("  Run `kova fallback list` to view, or `hermes fallback remove` to delete.")
+    print("  Run `kova fallback list` to view, or `kova fallback remove` to delete.")
 
 
 def _restore_model_cfg(model_before: Any) -> None:

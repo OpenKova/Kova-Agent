@@ -204,7 +204,7 @@ def build_parser(parent_subparsers: argparse._SubParsersAction) -> argparse.Argu
             "Durable SQLite-backed task board shared across Hermes profiles. "
             "Tasks are claimed atomically, can depend on other tasks, and "
             "are executed by a named profile in an isolated workspace. "
-            "See https://hermes-agent.nousresearch.com/docs/user-guide/features/kanban "
+            "See https://kova-agent.nousresearch.com/docs/user-guide/features/kanban "
             "or docs/hermes-kanban-v1-spec.pdf for the full design."
         ),
     )
@@ -1212,7 +1212,7 @@ def _cmd_boards_list(args: argparse.Namespace) -> int:
         return 0
     # Human table: marker (•) for current, slug, display name, counts.
     if not boards:
-        print("(no boards — create one with `hermes kanban boards create <slug>`)")
+        print("(no boards — create one with `kova kanban boards create <slug>`)")
         return 0
     print(f"{'':2s}  {'SLUG':24s}  {'NAME':28s}  COUNTS")
     for b in boards:
@@ -1229,7 +1229,7 @@ def _cmd_boards_list(args: argparse.Namespace) -> int:
     print()
     print(f"Current board: {current}")
     if len(boards) > 1:
-        print("Switch boards with `hermes kanban boards switch <slug>`.")
+        print("Switch boards with `kova kanban boards switch <slug>`.")
     return 0
 
 
@@ -1259,7 +1259,7 @@ def _cmd_boards_create(args: argparse.Namespace) -> int:
         kb.set_current_board(meta["slug"])
         print(f"  Switched to {meta['slug']!r}.")
     else:
-        print(f"  Use `hermes kanban boards switch {meta['slug']}` to make it current.")
+        print(f"  Use `kova kanban boards switch {meta['slug']}` to make it current.")
     return 0
 
 

@@ -63,7 +63,7 @@ class TestExitSummaryResumeHint:
         with patch("hermes_cli.profiles.get_active_profile_name", return_value="dev"):
             cli_obj._print_exit_summary()
         out = capsys.readouterr().out
-        assert 'hermes -c "My Cool Session" -p dev' in out
+        assert 'kova -c "My Cool Session" -p dev' in out
         assert "kova --resume 20260524_000001_abc123 -p dev" in out
 
     def test_resume_hint_falls_back_when_profile_lookup_fails(self, capsys):

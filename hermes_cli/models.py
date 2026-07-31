@@ -105,7 +105,7 @@ def _codex_curated_models() -> list[str]:
     """Derive the openai-codex curated list from codex_models.py.
 
     Single source of truth: DEFAULT_CODEX_MODELS + forward-compat synthesis.
-    This keeps the gateway /model picker in sync with the CLI `hermes model`
+    This keeps the gateway /model picker in sync with the CLI `kova model`
     flow without maintaining a separate static list.
     """
     from hermes_cli.codex_models import DEFAULT_CODEX_MODELS, _add_forward_compat_models
@@ -1066,13 +1066,13 @@ def get_nous_recommended_aux_model(
 # Fields:
 #   slug        — internal provider ID (used in config.yaml, --provider flag)
 #   label       — short display name
-#   tui_desc    — longer description for the `hermes model` interactive picker
+#   tui_desc    — longer description for the `kova model` interactive picker
 # ---------------------------------------------------------------------------
 
 class ProviderEntry(NamedTuple):
     slug: str
     label: str
-    tui_desc: str   # detailed description for `hermes model` TUI
+    tui_desc: str   # detailed description for `kova model` TUI
 
 CANONICAL_PROVIDERS: list[ProviderEntry] = [
     ProviderEntry("nous",           "Nous Portal",              "Nous Portal (Everything your agent needs, 300+ models with bundled tool use)"),
@@ -1143,7 +1143,7 @@ _PROVIDER_LABELS["custom"] = "Custom endpoint"  # special case: not a named prov
 #
 # Some vendors expose several Hermes provider slugs (one per endpoint /
 # auth method: global API, China API, OAuth coding plan, ...). Listing every
-# slug as a top-level row in the interactive `hermes model` / setup wizard /
+# slug as a top-level row in the interactive `kova model` / setup wizard /
 # Telegram `/model` pickers makes that list long and noisy.
 #
 # These groups fold related slugs under one top-level row in INTERACTIVE
@@ -1185,7 +1185,7 @@ def provider_group_for_slug(slug: str) -> str:
 def group_providers(slugs):
     """Fold a flat ordered slug iterable into picker rows by provider group.
 
-    DISPLAY ONLY. Used by every interactive picker (``hermes model``, the
+    DISPLAY ONLY. Used by every interactive picker (``kova model``, the
     setup wizard, the Telegram ``/model`` keyboard) so grouping is identical
     across surfaces.
 
@@ -1388,7 +1388,7 @@ def pick_silent_default_model(model_ids: list[str], provider: str = "openrouter"
 #
 # This is deliberately a network-free lookup for the hot resolution path
 # (cache-only catalog read). The *interactive* default (GUI onboarding /
-# ``hermes model``) uses the richer free/paid-tier-aware resolver — see
+# ``kova model``) uses the richer free/paid-tier-aware resolver — see
 # ``get_recommended_default_model`` in hermes_cli/web_server.py and
 # ``partition_nous_models_by_tier`` — which can hit the Portal.
 _SILENT_DEFAULT_PROVIDERS: frozenset[str] = frozenset({"nous", "openrouter"})
@@ -1399,10 +1399,10 @@ def get_default_model_for_provider(provider: str) -> str:
 
     Used as a NON-INTERACTIVE fallback when a provider is configured but no
     model was ever selected (e.g. ``kova auth add openai-codex`` without
-    ``hermes model``, or a profile that sets ``provider`` with no ``model``).
+    ``kova model``, or a profile that sets ``provider`` with no ``model``).
 
     For most providers this is the first entry in ``_PROVIDER_MODELS`` — the
-    same model the ``hermes model`` picker offers first. For metered aggregators
+    same model the ``kova model`` picker offers first. For metered aggregators
     whose curated list is ordered most-capable-first, that entry is also the
     most EXPENSIVE one, so silently defaulting to it is a billing footgun.
     Those providers (``_SILENT_DEFAULT_PROVIDERS``) resolve through the
@@ -1944,7 +1944,7 @@ def list_available_providers() -> list[dict[str, str]]:
     Checks which providers have valid credentials configured.
 
     Derives the provider list from :data:`CANONICAL_PROVIDERS` (single
-    source of truth shared with ``hermes model``, ``/model``, etc.).
+    source of truth shared with ``kova model``, ``/model``, etc.).
     """
     # Derive display order from canonical list + custom
     provider_order = [p.slug for p in CANONICAL_PROVIDERS] + ["custom"]
@@ -2678,7 +2678,7 @@ def provider_model_ids(provider: Optional[str], *, force_refresh: bool = False) 
             # is 120+ entries of embeddings, whisper, tts, dall-e, moderation and
             # legacy chat models — none of which belong in the agent model picker.
             # For the default endpoint, intersect the live list with our curated
-            # agentic catalog so ``/model`` matches what ``hermes model`` shows.
+            # agentic catalog so ``/model`` matches what ``kova model`` shows.
             is_default_openai = base.rstrip("/") in (
                 "https://api.openai.com/v1",
                 "https://api.openai.com",

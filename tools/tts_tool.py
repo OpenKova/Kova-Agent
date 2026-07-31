@@ -1323,7 +1323,7 @@ def _generate_xai_tts(text: str, output_path: str, tts_config: Dict[str, Any]) -
     creds = resolve_xai_http_credentials()
     api_key = str(creds.get("api_key") or "").strip()
     if not api_key:
-        raise ValueError("No xAI credentials found. Configure xAI OAuth in `hermes model` or set XAI_API_KEY.")
+        raise ValueError("No xAI credentials found. Configure xAI OAuth in `kova model` or set XAI_API_KEY.")
 
     xai_config = tts_config.get("xai") or {}
     voice_id = str(xai_config.get("voice_id", DEFAULT_XAI_VOICE_ID)).strip() or DEFAULT_XAI_VOICE_ID
@@ -1864,7 +1864,7 @@ def _generate_gemini_tts(text: str, output_path: str, tts_config: Dict[str, Any]
         # Include Hermes client context following Gemini's partner
         # integration guidance:
         # https://ai.google.dev/gemini-api/docs/partner-integration
-        headers["X-Goog-Api-Client"] = f"hermes-agent/{_hermes_version}"
+        headers["X-Goog-Api-Client"] = f"kova-agent/{_hermes_version}"
 
     endpoint = f"{base_url}/models/{model}:generateContent"
     response = requests.post(

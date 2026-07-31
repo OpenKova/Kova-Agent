@@ -874,7 +874,7 @@ def run_debug_share(args):
     print(f"\n⏱  Pastes will auto-delete in {hours} hours.")
 
     # Manual delete fallback
-    print("To delete now:  hermes debug delete <url>")
+    print("To delete now:  kova debug delete <url>")
 
     print("\nShare these links with the Hermes team for support.")
 
@@ -959,7 +959,7 @@ def run_debug_delete(args):
     """Delete one or more paste URLs uploaded by /debug."""
     urls = getattr(args, "urls", [])
     if not urls:
-        print("Usage: hermes debug delete <url> [<url> ...]")
+        print("Usage: kova debug delete <url> [<url> ...]")
         print("  Deletes paste.rs pastes uploaded by 'kova debug share'.")
         return
 
@@ -995,7 +995,7 @@ def run_debug(args):
         run_debug_delete(args)
     else:
         # Default: show help
-        print("Usage: hermes debug <command>")
+        print("Usage: kova debug <command>")
         print()
         print("Commands:")
         print("  share    Upload debug report to a paste service and print URL")

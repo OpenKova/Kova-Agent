@@ -5079,7 +5079,7 @@ def _nous_shared_auth_dir() -> Path:
     ``<hermes-root>/shared/``, where ``<hermes-root>`` is what
     :func:`kova_constants.get_default_hermes_root` returns ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â so
     Linux/macOS classic installs land at ``~/.hermes/shared/``, native
-    Windows installs at ``%LOCALAPPDATA%\\hermes\\shared\\``, and
+    Windows installs at ``%LOCALAPPDATA%\\kova\\shared\\``, and
     Docker / custom ``HERMES_HOME`` deployments at
     ``<HERMES_HOME>/shared/``. Sits outside any named profile so all
     profiles under the same root share the store.

@@ -323,7 +323,7 @@ def do_search(query: str, source: str = "all", limit: int = 10,
         )
 
     c.print(table)
-    c.print("[dim]Use: hermes skills inspect <identifier> to preview, "
+    c.print("[dim]Use: kova skills inspect <identifier> to preview, "
             "kova skills install <identifier> to install "
             "(--json for scripting)[/]\n")
 
@@ -1212,9 +1212,9 @@ def do_list_modified(console: Optional[Console] = None,
     for entry in modified:
         c.print(f"  [yellow]~[/] {entry['name']}")
     c.print()
-    c.print("[dim]See changes:   hermes skills diff <name>[/]")
-    c.print("[dim]Resume updates: hermes skills reset <name>          (keep your copy, re-baseline)[/]")
-    c.print("[dim]Revert to stock: hermes skills reset <name> --restore[/]\n")
+    c.print("[dim]See changes:   kova skills diff <name>[/]")
+    c.print("[dim]Resume updates: kova skills reset <name>          (keep your copy, re-baseline)[/]")
+    c.print("[dim]Revert to stock: kova skills reset <name> --restore[/]\n")
 
 
 def do_diff(name: str, console: Optional[Console] = None) -> None:
@@ -1253,7 +1253,7 @@ def do_diff(name: str, console: Optional[Console] = None) -> None:
         else:  # binary
             c.print(f"[yellow]~ {entry['path']}:[/] binary file differs")
     c.print()
-    c.print(f"[dim]Revert with: hermes skills reset {name} --restore[/]\n")
+    c.print(f"[dim]Revert with: kova skills reset {name} --restore[/]\n")
 
 
 def do_opt_out(remove: bool = False,
@@ -1422,7 +1422,7 @@ def do_tap(action: str, repo: str = "", console: Optional[Console] = None) -> No
 
     elif action == "add":
         if not repo:
-            c.print("[bold red]Error:[/] Repo required. Usage: hermes skills tap add owner/repo\n")
+            c.print("[bold red]Error:[/] Repo required. Usage: kova skills tap add owner/repo\n")
             return
         if mgr.add(repo):
             c.print(f"[bold green]Added tap:[/] {repo}\n")
@@ -1431,7 +1431,7 @@ def do_tap(action: str, repo: str = "", console: Optional[Console] = None) -> No
 
     elif action == "remove":
         if not repo:
-            c.print("[bold red]Error:[/] Repo required. Usage: hermes skills tap remove owner/repo\n")
+            c.print("[bold red]Error:[/] Repo required. Usage: kova skills tap remove owner/repo\n")
             return
         if mgr.remove(repo):
             c.print(f"[bold green]Removed tap:[/] {repo}\n")
@@ -1757,16 +1757,16 @@ def skills_command(args) -> None:
         elif snap_action == "import":
             do_snapshot_import(args.input, force=getattr(args, "force", False))
         else:
-            _console.print("Usage: hermes skills snapshot [export|import]\n")
+            _console.print("Usage: kova skills snapshot [export|import]\n")
     elif action == "tap":
         tap_action = getattr(args, "tap_action", None)
         repo = getattr(args, "repo", "") or getattr(args, "name", "")
         if not tap_action:
-            _console.print("Usage: hermes skills tap [list|add|remove]\n")
+            _console.print("Usage: kova skills tap [list|add|remove]\n")
             return
         do_tap(tap_action, repo=repo)
     else:
-        _console.print("Usage: hermes skills [browse|search|install|inspect|list|list-modified|diff|check|update|audit|uninstall|reset|opt-out|opt-in|publish|snapshot|tap]\n")
+        _console.print("Usage: kova skills [browse|search|install|inspect|list|list-modified|diff|check|update|audit|uninstall|reset|opt-out|opt-in|publish|snapshot|tap]\n")
         _console.print("Run 'kova skills <command> --help' for details.\n")
 
 

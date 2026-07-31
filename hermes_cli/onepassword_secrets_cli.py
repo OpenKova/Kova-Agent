@@ -235,7 +235,7 @@ def cmd_status(args: argparse.Namespace) -> int:
         console.print(ref_table)
 
     if not enabled:
-        console.print("\n  Run [cyan]hermes secrets onepassword setup[/cyan] to enable.")
+        console.print("\n  Run [cyan]kova secrets onepassword setup[/cyan] to enable.")
         return 0
     if binary and not token_set:
         who = _op_whoami(binary, account)

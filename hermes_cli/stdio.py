@@ -197,7 +197,7 @@ def _augment_path_with_known_tools() -> None:
 
     Fixes the "User PATH was just updated but my process can't see it" gap on
     Windows.  When install.ps1 runs, it adds entries like
-    ``%LOCALAPPDATA%\\hermes\\git\\bin`` to the User PATH via
+    ``%LOCALAPPDATA%\\kova\\git\\bin`` to the User PATH via
     ``SetEnvironmentVariable(..., "User")``.  That write propagates to newly
     *spawned* processes only — already-running shells (including the one the
     user invokes ``hermes`` from right after install) retain their old PATH.
