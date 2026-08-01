@@ -8,7 +8,7 @@ def test_hermes_client_tag_includes_current_version():
     from hermes_cli import __version__
     from agent.portal_tags import hermes_client_tag
 
-    assert hermes_client_tag() == f"client=hermes-client-v{__version__}"
+    assert hermes_client_tag() == f"client=kova-client-v{__version__}"
 
 
 def test_hermes_client_tag_format():
@@ -16,7 +16,7 @@ def test_hermes_client_tag_format():
     from agent.portal_tags import hermes_client_tag
 
     tag = hermes_client_tag()
-    assert tag.startswith("client=hermes-client-v")
+    assert tag.startswith("client=kova-client-v")
     # No spaces, no commas — single tag value
     assert " " not in tag
     assert "," not in tag

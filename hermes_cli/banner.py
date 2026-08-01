@@ -120,8 +120,8 @@ _UPDATE_CHECK_CACHE_SECONDS = 6 * 3600
 # (e.g. nix-built hermes — no local git history to count against).
 UPDATE_AVAILABLE_NO_COUNT = -1
 
-_UPSTREAM_REPO_URL = "https://github.com/OpenKova/Kova-Agent.git"
-_OFFICIAL_REPO_CANONICAL = "github.com/OpenKova/Kova-Agent"
+_UPSTREAM_REPO_URL = "https://github.com/NousResearch/kova-agent.git"
+_OFFICIAL_REPO_CANONICAL = "github.com/nousresearch/kova-agent"
 
 
 def _canonical_github_remote(url: str | None) -> str:
@@ -410,7 +410,7 @@ def get_git_banner_state(repo_dir: Optional[Path] = None) -> Optional[dict]:
     return {"upstream": upstream, "local": local, "ahead": max(ahead, 0)}
 
 
-_RELEASE_URL_BASE = "https://github.com/OpenKova/Kova-Agent/releases/tag"
+_RELEASE_URL_BASE = "https://github.com/NousResearch/kova-agent/releases/tag"
 _latest_release_cache: Optional[tuple] = None  # (tag, url) once resolved
 
 
@@ -419,7 +419,7 @@ def get_latest_release_tag(repo_dir: Optional[Path] = None) -> Optional[tuple]:
 
     Local-only — runs ``git describe --tags --abbrev=0`` against the
     Hermes checkout. Cached per-process. Release URL always points at the
-    canonical OpenKova/Kova-Agent repo (forks don't get a link).
+    canonical NousResearch/kova-agent repo (forks don't get a link).
     """
     global _latest_release_cache
     if _latest_release_cache is not None:
@@ -863,7 +863,7 @@ def build_welcome_banner(console: "Console", model: str, cwd: str,
     console.print()
     term_width = shutil.get_terminal_size().columns
     if term_width >= 95:
-        _logo = _bskin.banner_logo if _bskin and hasattr(_bskin, 'banner_logo') and _bskin.banner_logo else HERMES_AGENT_LOGO
+        _logo = _bskin.banner_logo if _bskin and hasattr(_bskin, 'banner_logo') and _bskin.banner_logo else AGENT_LOGO
         console.print(_logo)
         console.print()
     console.print(outer_panel)

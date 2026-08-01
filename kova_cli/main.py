@@ -11464,7 +11464,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
             # Tt2021). Apply it silently and say what actually happened.
             print()
             print(
-                f"  â„¹ Updating config format (v{current_ver} â†’ v{latest_ver})â€¦"
+                f"  ℹ Updating config format (v{current_ver} → v{latest_ver})…"
             )
             try:
                 migrate_config(interactive=False, quiet=True)
