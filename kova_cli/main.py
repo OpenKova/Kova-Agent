@@ -10529,7 +10529,7 @@ def _for_each_systemd_gateway_unit(
             continue
         # list-units is already pattern-filtered, but keep the name gate so a
         # stray non-gateway line cannot enter the restart path.
-        if not unit.startswith("hermes-gateway"):
+        if not (unit.startswith("hermes-gateway") or unit.startswith("kova-gateway")):
             continue
         svc_name = unit.removesuffix(".service")
         try:
