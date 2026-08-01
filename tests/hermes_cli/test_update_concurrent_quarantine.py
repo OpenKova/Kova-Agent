@@ -357,7 +357,7 @@ def test_quarantine_succeeds_first_attempt(_winp, tmp_path):
     assert len(pairs) == 1
     orig, quarantine = pairs[0]
     assert orig == shim
-    assert quarantine.name.startswith("hermes.exe.old.")
+    assert quarantine.name.startswith("kova.exe.old.")
     assert quarantine.exists()
     assert not shim.exists()
 

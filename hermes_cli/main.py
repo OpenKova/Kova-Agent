@@ -6230,12 +6230,19 @@ def _find_stale_dashboard_pids(
         "hermes dashboard",
         "hermes_cli.main dashboard",
         "hermes_cli/main.py dashboard",
-        # The headless backend (`hermes serve`) is the same long-lived server
-        # under a different command name — the desktop app spawns it. Reap it
-        # on update for the same frontend/backend-mismatch reason.
+        "kova dashboard",
+        "kova_cli.main dashboard",
+        "kova_cli/main.py dashboard",
+        # The headless backend (`hermes serve` / `kova serve`) is the same
+        # long-lived server under a different command name — the desktop app
+        # spawns it. Reap it on update for the same frontend/backend-mismatch
+        # reason.
         "hermes serve",
         "hermes_cli.main serve",
         "hermes_cli/main.py serve",
+        "kova serve",
+        "kova_cli.main serve",
+        "kova_cli/main.py serve",
     ]
     self_pid = os.getpid()
     dashboard_pids: list[int] = []
@@ -6557,7 +6564,7 @@ def _format_time_ago(iso_ts: str) -> str:
         return "recently"
 
 
-_DASHBOARD_SYSTEMD_UNIT = "hermes-dashboard.service"
+_DASHBOARD_SYSTEMD_UNIT = "kova-dashboard.service"
 
 
 def _restart_managed_dashboard_service(
@@ -8060,6 +8067,11 @@ def _hermes_exe_shims(scripts_dir: Path) -> list[Path]:
     # The gateway shim is not a [project.scripts] entry point, but older
     # update/install paths still rewrite and quarantine it.
     names.add("kova-gateway")
+    # The desktop app spawns `hermes.EXE` as its backend child, so the
+    # concurrent-instance detector must recognize the legacy hermes launcher
+    # name alongside the kova shims.
+    names.add("hermes")
+    names.add("hermes-gateway")
     return [scripts_dir / f"{name}.exe" for name in sorted(names)]
 
 
@@ -8184,8 +8196,11 @@ def _format_concurrent_instances_message(
     matches: list[tuple[int, str]], scripts_dir: Path
 ) -> str:
     """Build a human-readable explanation + remediation hint for the user."""
-    shim = scripts_dir / "hermes.exe"
-    lines = ["✗ Another kova.exe is running:"]
+    # Use the actually-detected exe name (e.g. kova.exe or HERMES.EXE) rather
+    # than hardcoding one — the desktop may spawn either name.
+    exe_name = matches[0][1] if matches else "kova.exe"
+    shim = scripts_dir / exe_name
+    lines = [f"✗ Another {exe_name} is running:"]
     for pid, name in matches:
         lines.append(f"    PID {pid}  {name}")
     lines.append("")
@@ -10529,7 +10544,7 @@ def _for_each_systemd_gateway_unit(
             continue
         # list-units is already pattern-filtered, but keep the name gate so a
         # stray non-gateway line cannot enter the restart path.
-        if not unit.startswith("hermes-gateway"):
+        if not (unit.startswith("hermes-gateway") or unit.startswith("kova-gateway")):
             continue
         svc_name = unit.removesuffix(".service")
         try:
