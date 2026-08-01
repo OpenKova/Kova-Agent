@@ -11,7 +11,7 @@ a single tagged catalog at
 where each entry's ``metadata.tags`` declares its surface (``image-gen``
 here). ``list_models()`` filters that catalog via
 :func:`hermes_cli.models._fetch_deepinfra_models_by_tag` so newly added
-models show up in ``hermes tools`` automatically. No model ids are
+models show up in ``kova tools`` automatically. No model ids are
 hardcoded in this file — if a model is retired upstream, it disappears
 from hermes the next time the catalog is fetched, no patch required.
 
@@ -203,7 +203,7 @@ class DeepInfraImageGenProvider(ImageGenProvider):
         if not api_key:
             return error_response(
                 error=(
-                    "DEEPINFRA_API_KEY not set. Run `hermes tools` → Image "
+                    "DEEPINFRA_API_KEY not set. Run `kova tools` → Image "
                     "Generation → DeepInfra to configure, or `kova setup` "
                     "to add the key."
                 ),

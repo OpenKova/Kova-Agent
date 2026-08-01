@@ -1,7 +1,7 @@
 """Regression tests for _apply_profile_override HERMES_HOME guard (issue #22502).
 
 When HERMES_HOME is set to the hermes root (e.g. systemd hardcodes
-HERMES_HOME=/root/.hermes), _apply_profile_override must still read
+HERMES_HOME=/root/.kova), _apply_profile_override must still read
 active_profile and update HERMES_HOME to the profile directory.
 
 When HERMES_HOME is already a profile directory (.../profiles/<name>),
@@ -27,7 +27,7 @@ def _run_apply_profile_override(
     Returns the value of os.environ["HERMES_HOME"] after the call,
     or None if unset.
     """
-    hermes_root = tmp_path / ".hermes"
+    hermes_root = tmp_path / ".kova"
     hermes_root.mkdir(parents=True, exist_ok=True)
 
     if active_profile is not None:
@@ -41,6 +41,7 @@ def _run_apply_profile_override(
         monkeypatch.setenv("HERMES_HOME", hermes_home)
     else:
         monkeypatch.delenv("HERMES_HOME", raising=False)
+        monkeypatch.delenv("KOVA_HOME", raising=False)
 
     monkeypatch.setattr(sys, "argv", argv or ["hermes", "gateway", "start"])
 
@@ -61,14 +62,14 @@ class TestApplyProfileOverrideHermesHomeGuard:
     def test_hermes_home_at_root_with_active_profile_is_redirected(
         self, tmp_path, monkeypatch
     ):
-        """HERMES_HOME=/root/.hermes + active_profile=coder must redirect
+        """HERMES_HOME=/root/.kova + active_profile=coder must redirect
         HERMES_HOME to .../profiles/coder.
 
         Bug scenario from #22502: systemd sets HERMES_HOME to the hermes root
         and the user switches to a profile via `kova profile use`.
         Before the fix, the guard returned early and active_profile was ignored.
         """
-        hermes_root = tmp_path / ".hermes"
+        hermes_root = tmp_path / ".kova"
         hermes_root.mkdir(parents=True, exist_ok=True)
 
         result = _run_apply_profile_override(
@@ -94,7 +95,7 @@ class TestApplyProfileOverrideHermesHomeGuard:
         with HERMES_HOME already set to a specific profile must stay in that
         profile.
         """
-        hermes_root = tmp_path / ".hermes"
+        hermes_root = tmp_path / ".kova"
         profile_dir = hermes_root / "profiles" / "coder"
         profile_dir.mkdir(parents=True, exist_ok=True)
 
@@ -129,13 +130,14 @@ class TestApplyProfileOverrideHermesHomeGuard:
         """sudo elias ... should resolve `-p elias` under SUDO_USER, not root."""
         root_home = tmp_path / "root"
         user_home = tmp_path / "home" / "hermes"
-        profile_dir = user_home / ".hermes" / "profiles" / "elias"
+        profile_dir = user_home / ".kova" / "profiles" / "elias"
         profile_dir.mkdir(parents=True, exist_ok=True)
-        (root_home / ".hermes").mkdir(parents=True, exist_ok=True)
+        (root_home / ".kova").mkdir(parents=True, exist_ok=True)
 
         monkeypatch.setattr(Path, "home", lambda: root_home)
         monkeypatch.setenv("SUDO_USER", "hermes")
         monkeypatch.delenv("HERMES_HOME", raising=False)
+        monkeypatch.delenv("KOVA_HOME", raising=False)
         monkeypatch.setattr(os, "geteuid", lambda: 0, raising=False)
         monkeypatch.setattr(sys, "argv", ["hermes", "-p", "elias", "gateway", "install", "--system"])
 
@@ -151,11 +153,12 @@ class TestApplyProfileOverrideHermesHomeGuard:
 
     def test_hermes_home_unset_default_profile_no_redirect(self, tmp_path, monkeypatch):
         """active_profile=default must not redirect HERMES_HOME."""
-        hermes_root = tmp_path / ".hermes"
+        hermes_root = tmp_path / ".kova"
         hermes_root.mkdir(parents=True, exist_ok=True)
 
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
         monkeypatch.delenv("HERMES_HOME", raising=False)
+        monkeypatch.delenv("KOVA_HOME", raising=False)
         monkeypatch.setattr(sys, "argv", ["hermes", "gateway", "start"])
         (hermes_root / "active_profile").write_text("default")
 
@@ -172,7 +175,7 @@ class TestApplyProfileOverrideHermesHomeGuard:
         profile pre-parser must not interpret the Docker profile as a Hermes
         profile.
         """
-        hermes_root = tmp_path / ".hermes"
+        hermes_root = tmp_path / ".kova"
         hermes_root.mkdir(parents=True, exist_ok=True)
         argv = [
             "hermes",
@@ -191,6 +194,7 @@ class TestApplyProfileOverrideHermesHomeGuard:
 
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
         monkeypatch.delenv("HERMES_HOME", raising=False)
+        monkeypatch.delenv("KOVA_HOME", raising=False)
         monkeypatch.setattr(sys, "argv", list(argv))
 
         from kova_cli.main import _apply_profile_override
@@ -265,7 +269,7 @@ class TestSupervisedChildIgnoresStickyProfile:
         ``profiles``), and a sticky ``active_profile`` of another profile.
         The reserved default slot must stay on the root profile.
         """
-        hermes_root = tmp_path / ".hermes"
+        hermes_root = tmp_path / ".kova"
         hermes_root.mkdir(parents=True, exist_ok=True)
         (hermes_root / "active_profile").write_text("briefer")
         (hermes_root / "profiles" / "briefer").mkdir(parents=True, exist_ok=True)
@@ -305,7 +309,7 @@ class TestSupervisedChildIgnoresStickyProfile:
         """A supervised named-profile slot passes ``-p <name>`` explicitly;
         that must still resolve (the sentinel guard only skips the sticky
         active_profile fallback, never an explicit flag)."""
-        hermes_root = tmp_path / ".hermes"
+        hermes_root = tmp_path / ".kova"
         hermes_root.mkdir(parents=True, exist_ok=True)
         (hermes_root / "active_profile").write_text("briefer")
         (hermes_root / "profiles" / "briefer").mkdir(parents=True, exist_ok=True)
@@ -313,6 +317,7 @@ class TestSupervisedChildIgnoresStickyProfile:
 
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
         monkeypatch.delenv("HERMES_HOME", raising=False)
+        monkeypatch.delenv("KOVA_HOME", raising=False)
         monkeypatch.setenv("HERMES_S6_SUPERVISED_CHILD", "1")
         monkeypatch.setattr(sys, "argv", ["hermes", "-p", "coder", "gateway", "run"])
 

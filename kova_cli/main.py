@@ -272,7 +272,7 @@ def _config_default_interface_early() -> str:
         if home:
             cfg_path = os.path.join(home, "config.yaml")
         else:
-            cfg_path = os.path.join(os.path.expanduser("~"), ".hermes", "config.yaml")
+            cfg_path = os.path.join(os.path.expanduser("~"), ".kova", "config.yaml")
         if os.path.exists(cfg_path):
             import yaml as _yaml_iface
 
@@ -545,7 +545,7 @@ def _apply_profile_override() -> None:
         except Exception:
             return None
 
-        candidate = home / ".hermes" / "profiles" / name
+        candidate = home / ".kova" / "profiles" / name
         try:
             if candidate.is_dir():
                 return str(candidate)
@@ -1779,7 +1779,7 @@ def _ensure_tui_node() -> None:
     if not helper.is_file():
         return
 
-    hermes_home = os.environ.get("HERMES_HOME") or str(Path.home() / ".hermes")
+    hermes_home = os.environ.get("HERMES_HOME") or str(Path.home() / ".kova")
     try:
         # Helper writes logs to stderr; we ask bash to print `command -v node`
         # on stdout once ensure_node succeeds. Subshell PATH edits don't leak
@@ -2708,7 +2708,7 @@ def cmd_whatsapp(args):
         if choice == "1":
             save_env_value("WHATSAPP_MODE", "bot")
             wa_mode = "bot"
-            print("  âœ“ Mode: separate bot number")
+            print("  ✓ Mode: separate bot number")
             print()
             print("  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”")
             print("  â”‚  Getting a second number for the bot:           â”‚")
@@ -2725,13 +2725,13 @@ def cmd_whatsapp(args):
         else:
             save_env_value("WHATSAPP_MODE", "self-chat")
             wa_mode = "self-chat"
-            print("  âœ“ Mode: personal number (self-chat)")
+            print("  ✓ Mode: personal number (self-chat)")
     else:
         wa_mode = current_mode
         mode_label = (
             "separate bot number" if wa_mode == "bot" else "personal number (self-chat)"
         )
-        print(f"\nâœ“ Mode: {mode_label}")
+        print(f"\n✓ Mode: {mode_label}")
 
     # â”€â”€ Step 2: Mode is selected, will enable WhatsApp only after pairing â”€â”€
     # We intentionally don't write WHATSAPP_ENABLED=true here.  If the user
@@ -2744,12 +2744,12 @@ def cmd_whatsapp(args):
     # successful pairing) stay enabled â€” we just don't write it pre-emptively.
     print()
     if (get_env_value("WHATSAPP_ENABLED") or "").lower() == "true":
-        print("âœ“ WhatsApp is already enabled")
+        print("✓ WhatsApp is already enabled")
 
     # â”€â”€ Step 3: Allowed users â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     current_users = get_env_value("WHATSAPP_ALLOWED_USERS") or ""
     if current_users:
-        print(f"âœ“ Allowed users: {current_users}")
+        print(f"✓ Allowed users: {current_users}")
         try:
             response = input("\n  Update allowed users? [y/N] ").strip()
         except (EOFError, KeyboardInterrupt):
@@ -2763,7 +2763,7 @@ def cmd_whatsapp(args):
                 phone = input("  Your phone number (e.g. 15551234567): ").strip()
             if phone:
                 save_env_value("WHATSAPP_ALLOWED_USERS", phone.replace(" ", ""))
-                print(f"  âœ“ Updated to: {phone}")
+                print(f"  ✓ Updated to: {phone}")
     else:
         print()
         if wa_mode == "bot":
@@ -2775,7 +2775,7 @@ def cmd_whatsapp(args):
             phone = input("  Your phone number (e.g. 15551234567): ").strip()
         if phone:
             save_env_value("WHATSAPP_ALLOWED_USERS", phone.replace(" ", ""))
-            print(f"  âœ“ Allowed users set: {phone}")
+            print(f"  ✓ Allowed users set: {phone}")
         else:
             print("  âš  No allowlist â€” the agent will respond to ALL incoming messages")
 
@@ -2816,16 +2816,16 @@ def cmd_whatsapp(args):
             print("  âœ— npm install failed:")
             print(preview)
             return
-        print("  âœ“ Dependencies installed")
+        print("  ✓ Dependencies installed")
     else:
-        print("âœ“ Bridge dependencies already installed")
+        print("✓ Bridge dependencies already installed")
 
     # â”€â”€ Step 5: Check for existing session â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     session_dir = get_hermes_home() / "whatsapp" / "session"
     session_dir.mkdir(parents=True, exist_ok=True)
 
     if (session_dir / "creds.json").exists():
-        print("âœ“ Existing WhatsApp session found")
+        print("✓ Existing WhatsApp session found")
         try:
             response = input(
                 "\n  Re-pair? This will clear the existing session. [y/N] "
@@ -2835,7 +2835,7 @@ def cmd_whatsapp(args):
         if response.lower() in {"y", "yes"}:
             shutil.rmtree(session_dir, ignore_errors=True)
             session_dir.mkdir(parents=True, exist_ok=True)
-            print("  âœ“ Session cleared")
+            print("  ✓ Session cleared")
         else:
             # Existing pairing â€” ensure WHATSAPP_ENABLED reflects that.
             # (Older installs may have lost the env var; covers re-runs
@@ -2843,7 +2843,7 @@ def cmd_whatsapp(args):
             # was never set or got removed.)
             if (get_env_value("WHATSAPP_ENABLED") or "").lower() != "true":
                 save_env_value("WHATSAPP_ENABLED", "true")
-            print("\nâœ“ WhatsApp is configured and paired!")
+            print("\n✓ WhatsApp is configured and paired!")
             print("  Start the gateway with: kova gateway")
             return
 
@@ -2883,7 +2883,7 @@ def cmd_whatsapp(args):
         # and `kova gateway` skips it cleanly instead of paying a 30s
         # bridge timeout + queueing the platform for indefinite retries.
         save_env_value("WHATSAPP_ENABLED", "true")
-        print("âœ“ WhatsApp paired successfully!")
+        print("✓ WhatsApp paired successfully!")
         print()
         if wa_mode == "bot":
             print("  Next steps:")
@@ -4271,7 +4271,7 @@ def _prompt_api_key(pconfig, existing_key: str, provider_id: str = "") -> tuple:
     from kova_cli.env_loader import format_secret_source_suffix
 
     source_suffix = format_secret_source_suffix(key_env) if key_env else ""
-    print(f"  {pconfig.name} API key: {existing_key[:8]}... âœ“{source_suffix}")
+    print(f"  {pconfig.name} API key: {existing_key[:8]}... ✓{source_suffix}")
     if not key_env:
         # Nothing we can rewrite; just acknowledge and move on.
         print()
@@ -4357,7 +4357,7 @@ def _run_anthropic_oauth_flow(save_env_value):
             is_claude_code_token_valid(creds) or bool(creds.get("refreshToken"))
         ):
             use_anthropic_claude_code_credentials(save_fn=save_env_value)
-            print("  âœ“ Claude Code credentials linked.")
+            print("  ✓ Claude Code credentials linked.")
             from kova_constants import display_hermes_home as _dhh_fn
 
             print(
@@ -4376,7 +4376,7 @@ def _run_anthropic_oauth_flow(save_env_value):
             if _activate_claude_code_credentials_if_available():
                 return True
             save_anthropic_oauth_token(token, save_fn=save_env_value)
-            print("  âœ“ OAuth credentials saved.")
+            print("  ✓ OAuth credentials saved.")
             return True
 
         # Subprocess completed but no token auto-detected â€” ask user to paste
@@ -4394,7 +4394,7 @@ def _run_anthropic_oauth_flow(save_env_value):
             return False
         if manual_token:
             save_anthropic_oauth_token(manual_token, save_fn=save_env_value)
-            print("  âœ“ Setup-token saved.")
+            print("  ✓ Setup-token saved.")
             return True
 
         print("  âš  Could not detect saved credentials.")
@@ -4423,7 +4423,7 @@ def _run_anthropic_oauth_flow(save_env_value):
             return False
         if token:
             save_anthropic_oauth_token(token, save_fn=save_env_value)
-            print("  âœ“ Setup-token saved.")
+            print("  ✓ Setup-token saved.")
             return True
         print("  Cancelled â€” install Claude Code and try again.")
         return False
@@ -5333,7 +5333,7 @@ def _do_build_web_ui(web_dir: Path, *, fatal: bool = False) -> bool:
         if fatal:
             _say("  Run manually:  npm install --workspace web && npm run build -w web")
         return False
-    _say("  âœ“ Web UI built")
+    _say("  ✓ Web UI built")
     project_root = web_dir.parent.parent if web_dir.parent.name == "apps" else web_dir.parent
     _write_web_ui_build_stamp(project_root, web_dir)
     return True
@@ -6050,7 +6050,7 @@ def cmd_gui(args: argparse.Namespace):
         )
         if not build_needed:
             build_label = "source build" if source_mode else "packaged app"
-            print(f"âœ“ Desktop {build_label} is up to date (content stamp matches)")
+            print(f"✓ Desktop {build_label} is up to date (content stamp matches)")
         else:
             print("â†’ Installing desktop workspace dependencies...")
             # Put the Kova-managed Node on PATH so npm's child scripts (which
@@ -6165,13 +6165,13 @@ def cmd_gui(args: argparse.Namespace):
             if not _desktop_dist_exists(desktop_dir):
                 print(f"âœ— --build-only --source produced no dist at: {desktop_dir / 'dist'}")
                 sys.exit(1)
-            print(f"âœ“ Desktop source build ready at {desktop_dir / 'dist'} (not launching; --build-only)")
+            print(f"✓ Desktop source build ready at {desktop_dir / 'dist'} (not launching; --build-only)")
         elif packaged_executable is None:
             print(f"âœ— --build-only produced no launchable app at: {desktop_dir / 'release'}")
             print("  Expected an unpacked Electron app for the current OS.")
             sys.exit(1)
         else:
-            print(f"âœ“ Desktop packaged app ready: {packaged_executable} (not launching; --build-only)")
+            print(f"✓ Desktop packaged app ready: {packaged_executable} (not launching; --build-only)")
         return
 
     if source_mode:
@@ -6650,7 +6650,7 @@ def _restart_managed_dashboard_service(
             errors.append(f"{' '.join(command)}: {e}")
             continue
         if result.returncode == 0:
-            print(f"    âœ“ restarted {unit}")
+            print(f"    ✓ restarted {unit}")
             return True
         errors.append(
             f"{' '.join(command)}: {(result.stderr or result.stdout or '').strip()}"
@@ -6785,9 +6785,9 @@ def _kill_stale_dashboard_processes(
                 failed.append((pid, str(e)))
 
     for pid in killed:
-        print(f"    âœ“ stopped PID {pid}")
+        print(f"    ✓ stopped PID {pid}")
     for pid, err_msg in failed:
-        print(f"    âœ— failed to stop PID {pid}: {err_msg}")
+        print(f"    ✗ failed to stop PID {pid}: {err_msg}")
 
     if killed:
         print("  Restart the dashboard when you're ready:")
@@ -6928,7 +6928,7 @@ def _update_via_zip(args):
                 shutil.copy2(src, dst)
             update_count += 1
 
-        print(f"âœ“ Updated {update_count} items from ZIP")
+        print(f"✓ Updated {update_count} items from ZIP")
 
     except Exception as e:
         print(f"âœ— ZIP update failed: {e}")
@@ -6940,7 +6940,7 @@ def _update_via_zip(args):
     removed = _clear_bytecode_cache(PROJECT_ROOT)
     if removed:
         print(
-            f"  âœ“ Cleared {removed} stale __pycache__ director{'y' if removed == 1 else 'ies'}"
+            f"  ✓ Cleared {removed} stale __pycache__ director{'y' if removed == 1 else 'ies'}"
         )
 
     # Reinstall Python dependencies. Prefer .[all], but if one optional extra
@@ -7008,7 +7008,7 @@ def _update_via_zip(args):
         if result.get("cleaned"):
             print(f"  âˆ’ {len(result['cleaned'])} removed from manifest")
         if not result["copied"] and not result.get("updated"):
-            print("  âœ“ Skills are up to date")
+            print("  ✓ Skills are up to date")
     except Exception:
         pass
 
@@ -7018,7 +7018,7 @@ def _update_via_zip(args):
         from kova_cli.model_catalog import seed_cache_from_checkout
 
         if seed_cache_from_checkout(PROJECT_ROOT):
-            print("  âœ“ Model catalog cache refreshed from checkout")
+            print("  ✓ Model catalog cache refreshed from checkout")
     except Exception as e:
         logger.debug("Model catalog seed during zip update failed: %s", e)
 
@@ -7031,7 +7031,7 @@ def _update_via_zip(args):
         print("  Code and Python deps are updated, but the dashboard/TUI may")
         print("  be in a mixed state until the Node deps are rebuilt.")
     else:
-        print("âœ“ Update complete!")
+        print("✓ Update complete!")
     try:
         _print_curator_first_run_notice()
     except Exception as e:
@@ -7538,7 +7538,7 @@ def _sync_with_upstream_if_needed(git_cmd: list[str], cwd: Path) -> None:
             print("â†’ Adding upstream remote...")
             if _add_upstream_remote(git_cmd, cwd):
                 print(
-                    "  âœ“ Added upstream: https://github.com/NousResearch/kova-agent.git"
+                    "  ✓ Added upstream: https://github.com/NousResearch/kova-agent.git"
                 )
                 has_upstream = True
             else:
@@ -7588,7 +7588,7 @@ def _sync_with_upstream_if_needed(git_cmd: list[str], cwd: Path) -> None:
 
     # If upstream is not ahead, fork is up to date
     if upstream_ahead == 0:
-        print("  âœ“ Fork is up to date with upstream")
+        print("  ✓ Fork is up to date with upstream")
         return
 
     # origin/main is strictly behind upstream/main (can fast-forward)
@@ -7608,12 +7608,12 @@ def _sync_with_upstream_if_needed(git_cmd: list[str], cwd: Path) -> None:
         )
         return
 
-    print("  âœ“ Updated from upstream")
+    print("  ✓ Updated from upstream")
 
     # Try to sync fork back to origin
     print("â†’ Syncing fork...")
     if _sync_fork_with_upstream(git_cmd, cwd):
-        print("  âœ“ Fork synced with upstream")
+        print("  ✓ Fork synced with upstream")
     else:
         print(
             "  â„¹ Got updates from upstream but couldn't push to fork (no write access?)"
@@ -7838,7 +7838,7 @@ def _recover_lazy_refresh_marker_locked() -> None:
     status = _repair_venv_via_import_probes(install_prefix, env=install_env)
     if status in ("healthy", "repaired"):
         _clear_lazy_refresh_incomplete_marker()
-        print("âœ“ Lazy-refresh venv recovery confirmed â€” install is healthy again.")
+        print("✓ Lazy-refresh venv recovery confirmed â€” install is healthy again.")
         return
     if status == "indeterminate":
         print(
@@ -7919,7 +7919,7 @@ def _recover_core_update_marker_locked() -> None:
             )
 
         _clear_update_incomplete_marker()
-        print("âœ“ Dependency installation recovered â€” your install is healthy again.")
+        print("✓ Dependency installation recovered â€” your install is healthy again.")
     except Exception as exc:
         # Leave the marker in place so the next launch retries. Give the user
         # the exact manual recovery command in the meantime.
@@ -8627,7 +8627,7 @@ def _repair_venv_via_import_probes(
     if _repair_broken_lazy_refresh_imports(
         install_cmd_prefix, broken, env=env
     ):
-        print("  âœ“ Venv repair succeeded")
+        print("  ✓ Venv repair succeeded")
         return "repaired"
     manual = " ".join(
         shlex.quote(s) for s in _lazy_refresh_repair_specs(broken)
@@ -8700,7 +8700,7 @@ def _refresh_active_lazy_features(
     if refreshed:
         print(f"  â†‘ {len(refreshed)} refreshed: {', '.join(refreshed)}")
     if current:
-        print(f"  âœ“ {len(current)} already current")
+        print(f"  ✓ {len(current)} already current")
     if skipped:
         # Most common reason: security.allow_lazy_installs=false. Show one
         # line so the user knows why; not an error.
@@ -8789,7 +8789,7 @@ def _install_python_dependencies_with_optional_fallback(
 
     if installed_extras:
         print(
-            f"  âœ“ Reinstalled optional extras individually: {', '.join(installed_extras)}"
+            f"  ✓ Reinstalled optional extras individually: {', '.join(installed_extras)}"
         )
     if failed_extras:
         print(
@@ -8897,7 +8897,7 @@ def _verify_console_scripts_installed(
             "Workaround: python -m kova_cli.main <command>"
         )
     else:
-        print("  âœ“ All console entry points restored")
+        print("  ✓ All console entry points restored")
 
 
 def _verify_core_dependencies_installed(
@@ -9041,7 +9041,7 @@ def _verify_core_dependencies_installed(
 
     still_missing = _missing_deps()
     if not still_missing:
-        print("  âœ“ All declared core dependencies now installed")
+        print("  ✓ All declared core dependencies now installed")
         return
 
     # Last-ditch: install each remaining missing dep with its pin directly.
@@ -9080,7 +9080,7 @@ def _verify_core_dependencies_installed(
             "Run `kova update --force` after closing other hermes processes."
         )
     else:
-        print("  âœ“ All declared core dependencies now installed")
+        print("  ✓ All declared core dependencies now installed")
 
 
 def _resolve_install_target_python(
@@ -9430,7 +9430,7 @@ def _update_node_dependencies() -> list[str]:
     )
     if ws_result.returncode == 0:
         _record_npm_lockfile_hash(shared_hermes_root)
-        print("  âœ“ repo root + ui-tui, web workspaces (desktop skipped)")
+        print("  ✓ repo root + ui-tui, web workspaces (desktop skipped)")
         return []
 
     print("  âš  npm workspace install failed")
@@ -9800,7 +9800,7 @@ def _cmd_update_check(branch: str = "main", *, branch_explicit: bool = False):
             cwd=PROJECT_ROOT, capture_output=True, text=True,
         ).stdout.strip()
         if head_sha and target_sha and head_sha == target_sha:
-            print("âœ“ Already up to date.")
+            print("✓ Already up to date.")
         else:
             print(f"âš• Update available (behind {compare_branch}).")
             from kova_cli.config import recommended_update_command
@@ -9818,7 +9818,7 @@ def _cmd_update_check(branch: str = "main", *, branch_explicit: bool = False):
     behind = int(rev_result.stdout.strip())
 
     if behind == 0:
-        print("âœ“ Already up to date.")
+        print("✓ Already up to date.")
     else:
         commits_word = "commit" if behind == 1 else "commits"
         print(f"âš• Update available: {behind} {commits_word} behind {compare_branch}.")
@@ -9910,7 +9910,7 @@ def _ensure_fhs_path_guard() -> None:
         except OSError as e:
             print(f"  âš  Could not update {cfg}: {e}")
             continue
-        print(f"  âœ“ Added /usr/local/bin to PATH in {cfg}")
+        print(f"  ✓ Added /usr/local/bin to PATH in {cfg}")
         wrote_any = True
     if wrote_any:
         print("    (reload your shell or run 'source ~/.bashrc' to pick it up)")
@@ -10440,7 +10440,7 @@ def _pause_windows_gateways_for_update() -> dict | None:
             pass
 
     if profiles:
-        print(f"  âœ“ Paused gateway profile(s): {', '.join(sorted(profiles))}")
+        print(f"  ✓ Paused gateway profile(s): {', '.join(sorted(profiles))}")
     if force_killed:
         print(f"  â†’ Force-stopped {len(force_killed)} gateway process(es)")
 
@@ -10504,7 +10504,7 @@ def _cold_start_windows_gateway_after_update() -> None:
 
     if pid:
         print()
-        print(f"  âœ“ Starting Windows gateway after update (PID {pid})")
+        print(f"  ✓ Starting Windows gateway after update (PID {pid})")
 
 
 
@@ -10618,12 +10618,12 @@ def _resume_windows_gateways_after_update(token: dict | None) -> None:
 
     if relaunched:
         print()
-        print(f"  âœ“ Restarting Windows gateway profile(s): {', '.join(relaunched)}")
+        print(f"  ✓ Restarting Windows gateway profile(s): {', '.join(relaunched)}")
     if unmapped_relaunched:
         if not relaunched:
             print()
         print(
-            f"  âœ“ Restarting {unmapped_relaunched} unmapped Windows gateway process(es)"
+            f"  ✓ Restarting {unmapped_relaunched} unmapped Windows gateway process(es)"
         )
 
 
@@ -11049,12 +11049,12 @@ def _cmd_update_impl(args, gateway_mode: bool):
                 _clear_update_incomplete_marker()
                 healthy_after, detail_after = _venv_core_imports_healthy()
                 if healthy_after:
-                    print("âœ“ Dependencies repaired!")
+                    print("✓ Dependencies repaired!")
                 else:
                     print(f"âš  Venv still unhealthy after repair: {detail_after}")
                     print("  Close all Kova windows/gateways and re-run: kova update")
             else:
-                print("âœ“ Already up to date!")
+                print("✓ Already up to date!")
             _resume_windows_gateways_after_update(_windows_gateway_resume)
             return
 
@@ -11125,7 +11125,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                         text=True,
                     )
                     if rollback_result.returncode == 0:
-                        print("  âœ“ Rollback complete â€” your install is unchanged.")
+                        print("  ✓ Rollback complete â€” your install is unchanged.")
                         print("  Try ``kova update`` again later once a fix lands.")
                     else:
                         print("  âœ— Rollback failed. Recover manually with:")
@@ -11174,7 +11174,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
         removed = _clear_bytecode_cache(PROJECT_ROOT)
         if removed:
             print(
-                f"  âœ“ Cleared {removed} stale __pycache__ director{'y' if removed == 1 else 'ies'}"
+                f"  ✓ Cleared {removed} stale __pycache__ director{'y' if removed == 1 else 'ies'}"
             )
 
         # Fork upstream sync logic (only for main branch on forks)
@@ -11310,10 +11310,10 @@ def _cmd_update_impl(args, gateway_mode: bool):
                 from kova_constants import display_hermes_home as _dhh
                 print(f"  Full build log: {_dhh()}/logs/update.log")
             else:
-                print("  âœ“ Desktop app up to date")
+                print("  ✓ Desktop app up to date")
 
         print()
-        print("âœ“ Code updated!")
+        print("✓ Code updated!")
 
         # Seed the model-catalog disk cache from the freshly-pulled checkout.
         # The repo ships the canonical catalog at
@@ -11327,7 +11327,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
             from kova_cli.model_catalog import seed_cache_from_checkout
 
             if seed_cache_from_checkout(PROJECT_ROOT):
-                print("  âœ“ Model catalog cache refreshed from checkout")
+                print("  ✓ Model catalog cache refreshed from checkout")
         except Exception as e:
             logger.debug("Model catalog seed during update failed: %s", e)
 
@@ -11365,7 +11365,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
             if result.get("cleaned"):
                 print(f"  âˆ’ {len(result['cleaned'])} removed from manifest")
             if not result["copied"] and not result.get("updated"):
-                print("  âœ“ Skills are up to date")
+                print("  ✓ Skills are up to date")
         except Exception as e:
             logger.debug("Skills sync during update failed: %s", e)
 
@@ -11468,7 +11468,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
             )
             try:
                 migrate_config(interactive=False, quiet=True)
-                print("  âœ“ Config format updated (no new settings to configure)")
+                print("  ✓ Config format updated (no new settings to configure)")
             except Exception as _mig_err:
                 print(f"  âš ï¸  Config format update failed: {_mig_err}")
                 print("     Run 'kova config migrate' to retry.")
@@ -11547,14 +11547,14 @@ def _cmd_update_impl(args, gateway_mode: bool):
 
                 if results["env_added"] or results["config_added"]:
                     print()
-                    print("âœ“ Configuration updated!")
+                    print("✓ Configuration updated!")
                 if (gateway_mode or assume_yes or response == "auto") and missing_env:
                     print("  â„¹ API keys require manual entry: kova config migrate")
             else:
                 print()
                 print("Skipped. Run 'kova config migrate' later to configure.")
         else:
-            print("  âœ“ Configuration is up to date")
+            print("  ✓ Configuration is up to date")
 
         # Safety net: config-version migrations have been observed to leave
         # cron/jobs.json valid-but-empty, silently dropping every scheduled
@@ -11586,7 +11586,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
             print("  Code and Python deps are updated, but the dashboard/TUI may")
             print("  be in a mixed state until the Node deps are rebuilt.")
         else:
-            print("âœ“ Update complete!")
+            print("✓ Update complete!")
 
         # Search-index optimization notice (v23). Existing installs keep their
         # working search index untouched on update; the compact v23 layout â€”
@@ -12142,7 +12142,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                                     timeout=10.0,
                                 ):
                                     restarted_services.append(svc_name)
-                                    print(f"  âœ“ {svc_name} recovered on retry")
+                                    print(f"  ✓ {svc_name} recovered on retry")
                                 else:
                                     failed_or_stale_units.append(svc_name)
                                     _scope_flag = "--user " if scope == "user" else ""
@@ -12278,14 +12278,14 @@ def _cmd_update_impl(args, gateway_mode: bool):
             if restarted_services or killed_pids:
                 print()
                 for svc in restarted_services:
-                    print(f"  âœ“ Restarted {svc}")
+                    print(f"  ✓ Restarted {svc}")
                 if relaunched_profiles:
                     names = ", ".join(relaunched_profiles)
-                    print(f"  âœ“ Restarting manual gateway profile(s): {names}")
+                    print(f"  ✓ Restarting manual gateway profile(s): {names}")
                 if externally_supervised_profiles:
                     names = ", ".join(externally_supervised_profiles)
                     print(
-                        "  âœ“ Handed gateway profile(s) back to their external "
+                        "  ✓ Handed gateway profile(s) back to their external "
                         f"supervisor: {names}"
                     )
                 unmapped_count = (
@@ -12887,7 +12887,7 @@ def cmd_profile(args):
 
         if remove:
             if remove_wrapper_script(alias_name):
-                print(f"âœ“ Removed alias '{alias_name}'")
+                print(f"✓ Removed alias '{alias_name}'")
             else:
                 print(f"No alias '{alias_name}' found to remove.")
         else:
@@ -12899,7 +12899,7 @@ def cmd_profile(args):
                 alias_name, target=name if custom_name else None
             )
             if wrapper_path:
-                print(f"âœ“ Alias created: {wrapper_path}")
+                print(f"✓ Alias created: {wrapper_path}")
                 if not _is_wrapper_dir_in_path():
                     print(f"âš  {_get_wrapper_dir()} is not in your PATH.")
 
@@ -12921,7 +12921,7 @@ def cmd_profile(args):
         output = args.output or f"{name}.tar.gz"
         try:
             result_path = export_profile(name, output)
-            print(f"âœ“ Exported '{name}' to {result_path}")
+            print(f"✓ Exported '{name}' to {result_path}")
         except (ValueError, FileNotFoundError) as e:
             print(f"Error: {e}")
             sys.exit(1)
@@ -12934,7 +12934,7 @@ def cmd_profile(args):
                 args.archive, name=getattr(args, "import_name", None)
             )
             name = profile_dir.name
-            print(f"âœ“ Imported profile '{name}' at {profile_dir}")
+            print(f"✓ Imported profile '{name}' at {profile_dir}")
 
             # Offer to create alias
             collision = check_alias_collision(name)
@@ -12982,7 +12982,7 @@ def cmd_profile(args):
                 force=getattr(args, "force", False),
                 create_alias=getattr(args, "alias", False),
             )
-            print(f"\nâœ“ Installed '{plan.manifest.name}' v{plan.manifest.version}")
+            print(f"\n✓ Installed '{plan.manifest.name}' v{plan.manifest.version}")
             print(f"  Profile path: {plan.target_dir}")
             if plan.manifest.env_requires:
                 print(
@@ -13036,7 +13036,7 @@ def cmd_profile(args):
                     return
 
             plan = update_distribution(canon, force_config=force_config)
-            print(f"\nâœ“ Updated '{plan.manifest.name}' â†’ v{plan.manifest.version}")
+            print(f"\n✓ Updated '{plan.manifest.name}' â†’ v{plan.manifest.version}")
             if plan.has_cron:
                 print(
                     "  Cron files were refreshed.  Review with:  "
@@ -13138,7 +13138,7 @@ def _render_distribution_plan(plan) -> None:
                                 break
                     except OSError:
                         pass
-            status = "âœ“ set" if already else ("needs setting" if er.required else "â€”")
+            status = "✓ set" if already else ("needs setting" if er.required else "â€”")
             line = f"    â€¢ {er.name} ({tag}, {status})"
             if er.description:
                 line += f" â€” {er.description}"
@@ -13329,7 +13329,7 @@ def _maybe_setup_dashboard_auth_interactively(args) -> None:
         # disabled it isn't surprised.
         if ensure_basic_auth_plugin_enabled_in_config(cfg):
             print(
-                "  âœ“ Re-enabled the bundled 'basic' auth plugin "
+                "  ✓ Re-enabled the bundled 'basic' auth plugin "
                 "(was in plugins.disabled)"
             )
         save_config(cfg)
@@ -13348,7 +13348,7 @@ def _maybe_setup_dashboard_auth_interactively(args) -> None:
               "fail closed. Set the password again or restart the dashboard.")
 
     print()
-    print(f"  âœ“ Username/password auth configured (user: {username}).")
+    print(f"  ✓ Username/password auth configured (user: {username}).")
     print("    Saved to config.yaml under dashboard.basic_auth.")
     print("    Sign in at the dashboard with these credentials.")
     print()
@@ -13683,7 +13683,7 @@ def cmd_dashboard(args):
                 print("  Pre-build first:  npm install --workspace web && npm run build -w web")
                 print("  Or drop --skip-build to build automatically.")
                 sys.exit(1)
-            print("  âœ“ Recovery build produced a web dist")
+            print("  ✓ Recovery build produced a web dist")
         print(f"â†’ Skipping web UI build (--skip-build); using dist at {_dist_root}")
     else:
         # HERMES_WEB_DIST is set without --skip-build: the build is skipped
@@ -14204,7 +14204,7 @@ def cmd_memory(args):
             config["memory"] = {}
         config["memory"]["provider"] = ""
         save_config(config)
-        print("\n  âœ“ Memory provider: built-in only")
+        print("\n  ✓ Memory provider: built-in only")
         print("  Saved to config.yaml\n")
     elif sub == "reset":
         from kova_constants import get_hermes_home, display_hermes_home
@@ -14245,7 +14245,7 @@ def cmd_memory(args):
 
         for f, desc in existing:
             (mem_dir / f).unlink()
-            print(f"  âœ“ Deleted {f} ({desc})")
+            print(f"  ✓ Deleted {f} ({desc})")
 
         print(
             "\n  Memory reset complete. New sessions will start with a blank slate."
@@ -15001,7 +15001,7 @@ def main():
                         print(f"  â¬† Update available: cua-driver {latest}.")
                         print("    Run: kova computer-use install --upgrade")
                     elif st:
-                        print("  âœ“ Up to date.")
+                        print("  ✓ Up to date.")
                     else:
                         # Older driver (no check-update verb) or offline.
                         print("  Refresh to latest: kova computer-use install --upgrade")
@@ -15397,7 +15397,7 @@ def main():
                 return
             reason = _db_opens_cleanly(db_path)
             if reason is None:
-                print(f"âœ“ {db_path} opens cleanly â€” no repair needed.")
+                print(f"✓ {db_path} opens cleanly â€” no repair needed.")
                 return
             print(f"âœ— {db_path} does not open cleanly: {reason}")
             if getattr(args, "check_only", False):
@@ -15416,9 +15416,9 @@ def main():
                     n = SessionDB()._conn.execute(
                         "SELECT COUNT(*) FROM sessions"
                     ).fetchone()[0]
-                    print(f"âœ“ Repaired â€” {n} sessions recovered.")
+                    print(f"✓ Repaired â€” {n} sessions recovered.")
                 except Exception:
-                    print("âœ“ Repaired.")
+                    print("✓ Repaired.")
             else:
                 print(f"âœ— Repair failed: {report.get('error')}")
                 if report.get("backup_path"):
@@ -16192,7 +16192,7 @@ def main():
                 os.path.getsize(db_path) / (1024 * 1024) if db_path.exists() else 0.0
             )
             saved = before_mb - after_mb
-            print(f"\nâœ“ Search index optimized.")
+            print(f"\n✓ Search index optimized.")
             print(
                 f"  Database size: {before_mb:.1f} MB -> {after_mb:.1f} MB "
                 f"(reclaimed {saved:.1f} MB)"
