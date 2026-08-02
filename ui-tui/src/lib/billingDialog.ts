@@ -21,7 +21,7 @@ export function billingDialogCopy(block: BillingBlock): BillingDialogCopy {
       cancelLabel: 'Dismiss',
       confirmLabel: 'Top up',
       detail: 'Your Kova credit balance is exhausted — top up to keep going.',
-      title: 'Out of Nous credits'
+      title: 'Out of Kova credits'
     }
   }
 
