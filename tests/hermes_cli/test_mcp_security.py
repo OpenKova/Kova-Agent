@@ -195,7 +195,7 @@ def test_runtime_loader_skips_dangerous_entry(monkeypatch):
         "evil": _dangerous_entry(),
         "clean": {"command": "npx", "args": ["-y", "clean-mcp"]},
     }
-    monkeypatch.setattr("kova_cli.config.load_config", lambda: {"mcp_servers": servers})
+    monkeypatch.setattr("hermes_cli.config.load_config", lambda: {"mcp_servers": servers})
 
     loaded = _load_mcp_config()
 

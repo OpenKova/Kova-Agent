@@ -6558,7 +6558,7 @@ def _get_auxiliary_task_config(task: str) -> Dict[str, Any]:
     if not task:
         return {}
     try:
-        from kova_cli.config import load_config
+        from hermes_cli.config import load_config
         config = load_config()
     except ImportError:
         return {}
