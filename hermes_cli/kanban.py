@@ -181,7 +181,7 @@ def _check_dispatcher_presence() -> tuple[bool, str]:
         False,
         "No gateway is running — the task will sit in 'ready' until you "
         "start it. Run:\n"
-        "    hermes gateway start\n"
+        "    kova gateway start\n"
         "The gateway hosts an embedded dispatcher (tick interval 60s by "
         "default); your task will be picked up on the next tick after "
         "the gateway comes up."
@@ -204,7 +204,7 @@ def build_parser(parent_subparsers: argparse._SubParsersAction) -> argparse.Argu
             "Durable SQLite-backed task board shared across Hermes profiles. "
             "Tasks are claimed atomically, can depend on other tasks, and "
             "are executed by a named profile in an isolated workspace. "
-            "See https://hermes-agent.nousresearch.com/docs/user-guide/features/kanban "
+            "See https://kova-agent.nousresearch.com/docs/user-guide/features/kanban "
             "or docs/hermes-kanban-v1-spec.pdf for the full design."
         ),
     )
@@ -701,7 +701,7 @@ def build_parser(parent_subparsers: argparse._SubParsersAction) -> argparse.Argu
     # --- daemon (deprecated) ---
     p_daemon = sub.add_parser(
         "daemon",
-        help="DEPRECATED — dispatcher now runs in the gateway. Use `hermes gateway start`.",
+        help="DEPRECATED — dispatcher now runs in the gateway. Use `kova gateway start`.",
     )
     p_daemon.add_argument("--interval", type=float, default=60.0,
                           help="Seconds between dispatch ticks (default: 60)")
@@ -950,7 +950,7 @@ def kanban_command(args: argparse.Namespace) -> int:
         else:
             print(
                 "usage: hermes kanban <action> [options]\n"
-                "Run 'hermes kanban --help' for the full list of actions.",
+                "Run 'kova kanban --help' for the full list of actions.",
                 file=sys.stderr,
             )
         return 0
@@ -1212,7 +1212,7 @@ def _cmd_boards_list(args: argparse.Namespace) -> int:
         return 0
     # Human table: marker (•) for current, slug, display name, counts.
     if not boards:
-        print("(no boards — create one with `hermes kanban boards create <slug>`)")
+        print("(no boards — create one with `kova kanban boards create <slug>`)")
         return 0
     print(f"{'':2s}  {'SLUG':24s}  {'NAME':28s}  COUNTS")
     for b in boards:
@@ -1229,7 +1229,7 @@ def _cmd_boards_list(args: argparse.Namespace) -> int:
     print()
     print(f"Current board: {current}")
     if len(boards) > 1:
-        print("Switch boards with `hermes kanban boards switch <slug>`.")
+        print("Switch boards with `kova kanban boards switch <slug>`.")
     return 0
 
 
@@ -1259,7 +1259,7 @@ def _cmd_boards_create(args: argparse.Namespace) -> int:
         kb.set_current_board(meta["slug"])
         print(f"  Switched to {meta['slug']!r}.")
     else:
-        print(f"  Use `hermes kanban boards switch {meta['slug']}` to make it current.")
+        print(f"  Use `kova kanban boards switch {meta['slug']}` to make it current.")
     return 0
 
 
@@ -1391,7 +1391,7 @@ def _cmd_init(args: argparse.Namespace) -> int:
     # already addressable. Multica does this auto-detection on its
     # daemon start; we do it here at init time instead because our
     # dispatcher doesn't need to enumerate — we just pass the name
-    # through to `hermes -p <name>`.
+    # through to `kova -p <name>`.
     try:
         profiles = kb.list_profiles_on_disk()
     except Exception:
@@ -1403,10 +1403,10 @@ def _cmd_init(args: argparse.Namespace) -> int:
             print(f"  {name}")
     else:
         print("No profiles found under ~/.hermes/profiles/.")
-        print("Create one with `hermes -p <name> setup` before assigning tasks.")
+        print("Create one with `kova -p <name> setup` before assigning tasks.")
     print()
     print("Next step: start the gateway so ready tasks actually get picked up.")
-    print("  hermes gateway start")
+    print("  kova gateway start")
     print()
     print(
         "The gateway hosts an embedded dispatcher that ticks every 60 seconds\n"
@@ -1438,7 +1438,7 @@ def _cmd_assignees(args: argparse.Namespace) -> int:
         print(json.dumps(data, indent=2, ensure_ascii=False))
         return 0
     if not data:
-        print("(no assignees — create a profile with `hermes -p <name> setup`)")
+        print("(no assignees — create a profile with `kova -p <name> setup`)")
         return 0
     # Header
     print(f"{'NAME':20s}  {'ON DISK':8s}  COUNTS")
@@ -2538,7 +2538,7 @@ def _cmd_daemon(args: argparse.Namespace) -> int:
             "hermes kanban daemon: DEPRECATED — the dispatcher now runs\n"
             "inside the gateway. To use kanban:\n"
             "\n"
-            "    hermes gateway start       # starts the gateway + embedded dispatcher\n"
+            "    kova gateway start       # starts the gateway + embedded dispatcher\n"
             "\n"
             "Ready tasks will be picked up on the next dispatcher tick\n"
             "(default: every 60 seconds). Configure via config.yaml:\n"

@@ -808,7 +808,7 @@ class TestSlackConnectCleanup:
     async def test_disconnect_closes_workspace_clients_and_clears_runtime_state(self):
         """Regression for #51465: shutdown must close Slack WebClients.
 
-        ``hermes gateway run --replace`` takes the old process through the
+        ``kova gateway run --replace`` takes the old process through the
         normal adapter.disconnect() path. If Slack leaves AsyncWebClient
         instances open there, aiohttp logs ``Unclosed client session`` while
         the old gateway exits after SIGTERM.
@@ -7587,7 +7587,7 @@ class TestMissingCredentials:
         assert fatal_errors[0]["code"] == "missing_slack_bot_token"
         assert fatal_errors[0]["retryable"] is False
         assert "SLACK_BOT_TOKEN" in fatal_errors[0]["message"]
-        assert "hermes gateway setup" in fatal_errors[0]["message"].lower() or ".env" in fatal_errors[0]["message"]
+        assert "kova gateway setup" in fatal_errors[0]["message"].lower() or ".env" in fatal_errors[0]["message"]
 
     @pytest.mark.asyncio
     async def test_missing_app_token_sets_fatal_error(self):
@@ -7613,7 +7613,7 @@ class TestMissingCredentials:
         assert fatal_errors[0]["code"] == "missing_slack_app_token"
         assert fatal_errors[0]["retryable"] is False
         assert "SLACK_APP_TOKEN" in fatal_errors[0]["message"]
-        assert "hermes gateway setup" in fatal_errors[0]["message"].lower() or ".env" in fatal_errors[0]["message"]
+        assert "kova gateway setup" in fatal_errors[0]["message"].lower() or ".env" in fatal_errors[0]["message"]
 
 
 

@@ -874,7 +874,7 @@ class TestWrapperScript:
 
     def test_creates_sh_on_posix(self, profile_env, monkeypatch):
         monkeypatch.setattr("sys.platform", "darwin")
-        monkeypatch.setattr("kova_cli.profiles.shutil.which", lambda name: "/opt/hermes/bin/hermes")
+        monkeypatch.setattr("kova_cli.profiles.shutil.which", lambda name: "/opt/hermes/bin/kova")
         from kova_cli.profiles import create_wrapper_script
         wrapper = create_wrapper_script("mybot")
         assert wrapper is not None
@@ -1691,7 +1691,7 @@ class TestEdgeCases:
             json.dumps(
                 {
                     "pid": live_pid,
-                    "kind": "hermes-gateway",
+                    "kind": "kova-gateway",
                     "argv": ["hermes", "gateway", "run"],
                     "start_time": gw_status._get_process_start_time(live_pid),
                     "gateway_state": "running",
@@ -1727,7 +1727,7 @@ class TestEdgeCases:
             json.dumps(
                 {
                     "pid": os.getpid(),
-                    "kind": "hermes-gateway",
+                    "kind": "kova-gateway",
                     "argv": ["hermes", "gateway", "run"],
                     "gateway_state": "stopped",
                 }
@@ -1759,7 +1759,7 @@ class TestEdgeCases:
             json.dumps(
                 {
                     "pid": 139,
-                    "kind": "hermes-gateway",
+                    "kind": "kova-gateway",
                     "argv": ["hermes", "gateway", "run"],
                     "gateway_state": "running",
                     "active_agents": 0,
@@ -1791,7 +1791,7 @@ class TestEdgeCases:
             json.dumps(
                 {
                     "pid": 139,
-                    "kind": "hermes-gateway",
+                    "kind": "kova-gateway",
                     "argv": ["hermes", "gateway", "run"],
                     "start_time": 1000,
                     "gateway_state": "running",

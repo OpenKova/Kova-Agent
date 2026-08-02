@@ -2833,7 +2833,7 @@ class TelegramAdapter(BasePlatformAdapter):
         if self.has_fatal_error and self.fatal_error_code == "telegram_polling_conflict":
             return
         # Transient 409 Conflict errors arise when the previous gateway process
-        # has been killed (e.g. during `hermes update` or `--replace` handoffs)
+        # has been killed (e.g. during `kova update` or `--replace` handoffs)
         # but its long-poll connection hasn't yet expired on Telegram's servers.
         # Telegram holds open getUpdates sessions for up to ~30s after the
         # client disconnects, so a new gateway starting immediately will receive
@@ -2955,7 +2955,7 @@ class TelegramAdapter(BasePlatformAdapter):
             "The previous gateway session is still held open on Telegram's servers, "
             "or another process is using the same bot token. "
             "To recover: ensure no other Hermes or OpenClaw instance is running "
-            "with this token, then restart the gateway with 'hermes gateway restart'."
+            "with this token, then restart the gateway with 'kova gateway restart'."
             % (MAX_CONFLICT_RETRIES, sum(10 + i * 10 for i in range(1, MAX_CONFLICT_RETRIES + 1)))
         )
         logger.error(
@@ -3702,7 +3702,7 @@ class TelegramAdapter(BasePlatformAdapter):
                         "TELEGRAM_WEBHOOK_URL is set. Without it, the "
                         "webhook endpoint accepts forged updates from "
                         "anyone who can reach it — see "
-                        "https://github.com/NousResearch/hermes-agent/"
+                        "https://github.com/NousResearch/kova-agent/"
                         "security/advisories/GHSA-3vpc-7q5r-276h.\n\n"
                         "Generate a secret and set it in your .env:\n"
                         "  export TELEGRAM_WEBHOOK_SECRET=\"$(openssl rand -hex 32)\"\n\n"
@@ -4988,7 +4988,7 @@ class TelegramAdapter(BasePlatformAdapter):
     ) -> SendResult:
         """Send an inline-keyboard update prompt (Yes / No buttons).
 
-        Used by the gateway ``/update`` watcher when ``hermes update --gateway``
+        Used by the gateway ``/update`` watcher when ``kova update --gateway``
         needs user input (stash restore, config migration).
         """
         if not self._bot:
@@ -5438,7 +5438,7 @@ class TelegramAdapter(BasePlatformAdapter):
         a single ``mpg:<gid>`` button; tapping it drills into a member
         sub-keyboard. Single providers (and groups with only one authenticated
         member) render as direct ``mp:<slug>`` buttons. Grouping mirrors the
-        CLI ``hermes model`` picker via the shared ``group_providers`` fold,
+        CLI ``kova model`` picker via the shared ``group_providers`` fold,
         so all surfaces stay consistent.
         """
         try:
@@ -9454,7 +9454,7 @@ def register(ctx) -> None:
         check_fn=check_telegram_requirements,
         is_connected=_is_connected,
         required_env=["TELEGRAM_BOT_TOKEN"],
-        install_hint="Run `hermes setup` to install Telegram support.",
+        install_hint="Run `kova setup` to install Telegram support.",
         setup_fn=interactive_setup,
         apply_yaml_config_fn=_apply_yaml_config,
         allowed_users_env="TELEGRAM_ALLOWED_USERS",

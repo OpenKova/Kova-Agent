@@ -29,7 +29,7 @@ def _cmd_list(args) -> int:
     if getattr(args, "installed", False):
         pets = store.installed_pets()
         if not pets:
-            _print("No pets installed. Try: hermes pets install boba")
+            _print("No pets installed. Try: kova pets install boba")
             return 0
         _print(f"Installed pets ({len(pets)}):")
         for pet in pets:
@@ -62,7 +62,7 @@ def _cmd_list(args) -> int:
         _print(f"  {mark} {entry.slug:<28} {entry.display_name}  ({entry.kind})")
     if limit and len(entries) > limit:
         _print(f"  … {len(entries) - limit} more (use --limit 0 or --query to filter)")
-    _print("\nInstall one with: hermes pets install <slug>")
+    _print("\nInstall one with: kova pets install <slug>")
     return 0
 
 
@@ -83,7 +83,7 @@ def _cmd_install(args) -> int:
         _set_active(slug)
         _print(f"✓ {pet.display_name} is now the active pet (display.pet.slug={slug}, enabled)")
     else:
-        _print(f"  Make it active with: hermes pets select {slug}")
+        _print(f"  Make it active with: kova pets select {slug}")
     return 0
 
 
@@ -268,13 +268,13 @@ def _cmd_doctor(args) -> int:
 
     ok = True
     if not pets:
-        _print("  → no pets installed. Run: hermes pets install boba")
+        _print("  → no pets installed. Run: kova pets install boba")
         ok = False
     elif active is None:
-        _print("  → active pet unresolved. Run: hermes pets select <slug>")
+        _print("  → active pet unresolved. Run: kova pets select <slug>")
         ok = False
     elif not enabled:
-        _print("  → pet display is disabled. Run: hermes pets select " + active.slug)
+        _print("  → pet display is disabled. Run: kova pets select " + active.slug)
 
     try:
         import PIL  # noqa: F401

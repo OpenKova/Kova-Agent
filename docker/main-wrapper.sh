@@ -70,7 +70,7 @@ cd /opt/data
 cd "$_hermes_orig_cwd"
 
 if [ $# -eq 0 ]; then
-    drop hermes
+    drop kova
 fi
 
 if command -v "$1" >/dev/null 2>&1; then
@@ -78,5 +78,5 @@ if command -v "$1" >/dev/null 2>&1; then
     drop "$@"
 fi
 
-# Hermes subcommand pass-through.
-drop hermes "$@"
+# Kova subcommand pass-through.
+drop kova "$@"

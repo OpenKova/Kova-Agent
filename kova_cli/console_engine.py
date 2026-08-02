@@ -177,7 +177,7 @@ def _clean_summary(text: str | None) -> str:
     summary = " ".join(str(text).split())
     if not summary:
         return ""
-    if summary.startswith("Run `hermes "):
+    if summary.startswith("Run `kova "):
         return ""
     return summary
 
@@ -467,14 +467,14 @@ def _register_command_family(
         child_key = tuple(child_path)
         full_path = (root, *tuple(child_path))
         usage = " ".join(full_path)
-        command_summary = summary or (summaries or {}).get(full_path) or f"Run `hermes {usage}`."
+        command_summary = summary or (summaries or {}).get(full_path) or f"Run `kova {usage}`."
         engine.register(
             full_path,
             usage,
             command_summary,
             handler_factory(tuple(child_path)),
             mutating=child_key in mutating_paths,
-            confirmation=confirmation or f"Run `hermes {usage}`?",
+            confirmation=confirmation or f"Run `kova {usage}`?",
         )
 
 
@@ -494,7 +494,7 @@ class HermesConsoleEngine:
 
         try:
             tokens = _split_line(raw_line)
-            if tokens and tokens[0] == "hermes":
+            if tokens and tokens[0] in ("hermes", "kova"):
                 tokens = tokens[1:]
             if not tokens:
                 return self._help_result()

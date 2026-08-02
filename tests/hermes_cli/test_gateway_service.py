@@ -41,7 +41,7 @@ class TestUserSystemdPrivateSocketPreflight:
 
 class TestSystemdServiceRefresh:
     def test_systemd_install_repairs_outdated_unit_without_force(self, tmp_path, monkeypatch):
-        unit_path = tmp_path / "hermes-gateway.service"
+        unit_path = tmp_path / "kova-gateway.service"
         unit_path.write_text("old unit\n", encoding="utf-8")
 
         monkeypatch.setattr(gateway_cli, "get_systemd_unit_path", lambda system=False: unit_path)
@@ -64,7 +64,7 @@ class TestSystemdServiceRefresh:
         ]
 
     def test_systemd_start_refreshes_outdated_unit(self, tmp_path, monkeypatch):
-        unit_path = tmp_path / "hermes-gateway.service"
+        unit_path = tmp_path / "kova-gateway.service"
         unit_path.write_text("old unit\n", encoding="utf-8")
 
         monkeypatch.setattr(gateway_cli, "get_systemd_unit_path", lambda system=False: unit_path)
@@ -91,7 +91,7 @@ class TestSystemdServiceRefresh:
         ]
 
     def test_systemd_restart_refreshes_outdated_unit(self, tmp_path, monkeypatch):
-        unit_path = tmp_path / "hermes-gateway.service"
+        unit_path = tmp_path / "kova-gateway.service"
         unit_path.write_text("old unit\n", encoding="utf-8")
 
         monkeypatch.setattr(gateway_cli, "get_systemd_unit_path", lambda system=False: unit_path)
@@ -173,12 +173,12 @@ class TestSystemdServiceRefresh:
         assert markers == [321]
         output = capsys.readouterr().out
         assert "still stopping after 90s" in output
-        assert "hermes gateway status" in output
+        assert "kova gateway status" in output
 
     def test_systemd_restart_timeout_prints_status_guidance(self, monkeypatch, capsys):
-        """`hermes gateway restart` must not surface a raw TimeoutExpired traceback.
+        """`kova gateway restart` must not surface a raw TimeoutExpired traceback.
 
-        The dashboard spawns `hermes gateway restart` in the background; when a
+        The dashboard spawns `kova gateway restart` in the background; when a
         wedged adapter websocket pushes drain past the 90s CLI timeout, the
         dashboard would previously show a Python traceback (issue #19937
         follow-up: the same failure mode applies to restart, not just stop).
@@ -212,13 +212,13 @@ class TestSystemdServiceRefresh:
 
         output = capsys.readouterr().out
         assert "still restarting after 90s" in output
-        assert "hermes gateway status" in output
+        assert "kova gateway status" in output
 
     def test_run_gateway_refreshes_outdated_unit_on_boot(self, tmp_path, monkeypatch):
         """run_gateway() should refresh the systemd unit on boot so that
         restart settings take effect even when the process was respawned
-        via exit-code-75 (bypassing `hermes gateway restart`)."""
-        unit_path = tmp_path / "hermes-gateway.service"
+        via exit-code-75 (bypassing `kova gateway restart`)."""
+        unit_path = tmp_path / "kova-gateway.service"
         unit_path.write_text("old unit\n", encoding="utf-8")
 
         monkeypatch.setattr(gateway_cli, "get_systemd_unit_path", lambda system=False: unit_path)
@@ -261,7 +261,7 @@ class TestSystemdServiceRefresh:
         ``generate_systemd_unit`` to return synthetic content that doesn't
         carry those markers.
         """
-        unit_path = tmp_path / "hermes-gateway.service"
+        unit_path = tmp_path / "kova-gateway.service"
         unit_path.write_text("old unit\n", encoding="utf-8")
 
         monkeypatch.setattr(
@@ -304,12 +304,12 @@ class TestSystemdServiceRefresh:
         """Structural guard: a manual E2E HERMES_HOME like
         ``/tmp/hermes-e2e-41264`` carries none of the pytest markers but
         poisons the unit identically (seen live 2026-06-11 — an E2E probe ran
-        ``hermes gateway restart`` with a /tmp HERMES_HOME exported; the
+        ``kova gateway restart`` with a /tmp HERMES_HOME exported; the
         restart's unit refresh baked it into the production unit and the
         post-update restart produced a 7-hour zombie gateway). The refresh
         must refuse ANY temp-dir HERMES_HOME, not just pytest-shaped ones.
         """
-        unit_path = tmp_path / "hermes-gateway.service"
+        unit_path = tmp_path / "kova-gateway.service"
         unit_path.write_text("old unit\n", encoding="utf-8")
 
         monkeypatch.setattr(
@@ -400,7 +400,7 @@ class TestTempHomeServiceDefinitionGuard:
 
 class TestRequireServiceInstalled:
     def test_exits_with_install_hint_when_unit_missing(self, tmp_path, monkeypatch, capsys):
-        unit_path = tmp_path / "hermes-gateway.service"
+        unit_path = tmp_path / "kova-gateway.service"
         monkeypatch.setattr(gateway_cli, "get_systemd_unit_path", lambda system=False: unit_path)
 
         with pytest.raises(SystemExit) as exc_info:
@@ -409,10 +409,10 @@ class TestRequireServiceInstalled:
         assert exc_info.value.code == 1
         out = capsys.readouterr().out
         assert "not installed" in out
-        assert "hermes gateway install" in out
+        assert "kova gateway install" in out
 
     def test_passes_when_unit_exists(self, tmp_path, monkeypatch):
-        unit_path = tmp_path / "hermes-gateway.service"
+        unit_path = tmp_path / "kova-gateway.service"
         unit_path.write_text("[Unit]\n", encoding="utf-8")
         monkeypatch.setattr(gateway_cli, "get_systemd_unit_path", lambda system=False: unit_path)
 
@@ -573,7 +573,7 @@ class TestGatewayStopCleanup:
     def test_stop_only_kills_current_profile_by_default(self, tmp_path, monkeypatch):
         """Without --all, stop uses systemd (if available) and does NOT call
         the global kill_gateway_processes()."""
-        unit_path = tmp_path / "hermes-gateway.service"
+        unit_path = tmp_path / "kova-gateway.service"
         unit_path.write_text("unit\n", encoding="utf-8")
 
         monkeypatch.setattr(gateway_cli, "supports_systemd_services", lambda: True)
@@ -599,7 +599,7 @@ class TestGatewayStopCleanup:
 
     def test_stop_all_sweeps_all_gateway_processes(self, tmp_path, monkeypatch):
         """With --all, stop uses systemd AND calls the global kill_gateway_processes()."""
-        unit_path = tmp_path / "hermes-gateway.service"
+        unit_path = tmp_path / "kova-gateway.service"
         unit_path.write_text("unit\n", encoding="utf-8")
 
         monkeypatch.setattr(gateway_cli, "supports_systemd_services", lambda: True)
@@ -1199,7 +1199,7 @@ class TestLaunchdServiceRecovery:
             gateway_cli._launchd_fallback_to_detached("test reason")
         assert exc.value.code == 1
         out = capsys.readouterr().out
-        assert "nohup hermes gateway run" in out
+        assert "nohup kova gateway run" in out
         # Marker is still written so status knows launchd is unavailable
         assert gateway_cli._launchd_unsupported_marker_exists()
 
@@ -1817,7 +1817,7 @@ class TestGatewaySystemServiceRouting:
 
         out = capsys.readouterr().out
         assert "not supported on Termux" in out
-        assert "Run manually: hermes gateway" in out
+        assert "Run manually: kova gateway" in out
 
     def test_gateway_status_prefers_system_service_when_only_system_unit_exists(self, monkeypatch):
         user_unit = SimpleNamespace(exists=lambda: False)
@@ -1890,7 +1890,7 @@ class TestGatewaySystemServiceRouting:
 
         out = capsys.readouterr().out
         assert "Gateway is not running" in out
-        assert "nohup hermes gateway" in out
+        assert "nohup kova gateway" in out
         assert "install as user service" not in out
 
     def test_gateway_restart_does_not_fallback_to_foreground_when_launchd_restart_fails(self, tmp_path, monkeypatch):
@@ -2062,7 +2062,7 @@ class TestSystemUnitRefreshSyncsHermesHome:
             "agent:\n  restart_drain_timeout: 180\n", encoding="utf-8"
         )
 
-        unit_path = tmp_path / "hermes-gateway.service"
+        unit_path = tmp_path / "kova-gateway.service"
         monkeypatch.setattr(Path, "home", staticmethod(lambda: root_home))
         monkeypatch.setattr(
             gateway_cli,
@@ -2099,7 +2099,7 @@ class TestSystemUnitRefreshSyncsHermesHome:
         moves the sync after the read (or drops it), this test fails.
         """
         order = []
-        unit_path = tmp_path / "hermes-gateway.service"
+        unit_path = tmp_path / "kova-gateway.service"
         unit_path.write_text("[Unit]\n", encoding="utf-8")
 
         monkeypatch.setattr(gateway_cli, "get_systemd_unit_path", lambda system=False: unit_path)
@@ -2411,7 +2411,7 @@ class TestPreflightUserSystemd:
 
         msg = str(exc_info.value)
         assert "sudo loginctl enable-linger" in msg
-        assert "hermes gateway run" in msg  # foreground fallback mentioned
+        assert "kova gateway run" in msg  # foreground fallback mentioned
         assert "Interactive authentication required" in msg
 
     def test_raises_when_loginctl_missing(self, monkeypatch):
@@ -2631,10 +2631,10 @@ class TestRemapPathForUser:
         monkeypatch.setattr(Path, "home", lambda: tmp_path / "root")
         (tmp_path / "root").mkdir()
         result = gateway_cli._remap_path_for_user(
-            str(tmp_path / "root" / ".hermes" / "hermes-agent"),
+            str(tmp_path / "root" / ".hermes" / "kova-agent"),
             str(tmp_path / "alice"),
         )
-        assert result == str(tmp_path / "alice" / ".hermes" / "hermes-agent")
+        assert result == str(tmp_path / "alice" / ".hermes" / "kova-agent")
 
     def test_keeps_system_path_unchanged(self, monkeypatch, tmp_path):
         monkeypatch.setattr(Path, "home", lambda: tmp_path / "root")
@@ -2645,7 +2645,7 @@ class TestRemapPathForUser:
     def test_noop_when_same_user(self, monkeypatch, tmp_path):
         monkeypatch.setattr(Path, "home", lambda: tmp_path / "alice")
         (tmp_path / "alice").mkdir()
-        original = str(tmp_path / "alice" / ".hermes" / "hermes-agent")
+        original = str(tmp_path / "alice" / ".hermes" / "kova-agent")
         result = gateway_cli._remap_path_for_user(original, str(tmp_path / "alice"))
         assert result == original
 
@@ -2656,7 +2656,7 @@ class TestSystemUnitPathRemapping:
     def test_system_unit_has_no_root_paths(self, monkeypatch, tmp_path):
         root_home = tmp_path / "root"
         root_home.mkdir()
-        project = root_home / ".hermes" / "hermes-agent"
+        project = root_home / ".hermes" / "kova-agent"
         project.mkdir(parents=True)
         venv_bin = project / "venv" / "bin"
         venv_bin.mkdir(parents=True)
@@ -2686,7 +2686,7 @@ class TestSystemUnitPathRemapping:
         # checkout is the rot bug fixed alongside this: a relocated/removed
         # checkout would crash-loop the unit on CHDIR (status=200).
         assert "WorkingDirectory=/home/alice/.hermes" in unit
-        assert "WorkingDirectory=/home/alice/.hermes/hermes-agent" not in unit
+        assert "WorkingDirectory=/home/alice/.hermes/kova-agent" not in unit
 
 
 class TestDockerAwareGateway:
@@ -2702,7 +2702,7 @@ class TestDockerAwareGateway:
         monkeypatch.setattr(gateway_cli.subprocess, "run", fake_run)
 
         with pytest.raises(RuntimeError, match="systemctl is not available"):
-            gateway_cli._run_systemctl(["start", "hermes-gateway"])
+            gateway_cli._run_systemctl(["start", "kova-gateway"])
 
     def test_run_systemctl_passes_through_on_success(self, monkeypatch):
         """_run_systemctl delegates to subprocess.run when systemctl exists."""
@@ -2714,13 +2714,13 @@ class TestDockerAwareGateway:
 
         monkeypatch.setattr(gateway_cli.subprocess, "run", fake_run)
 
-        result = gateway_cli._run_systemctl(["status", "hermes-gateway"])
+        result = gateway_cli._run_systemctl(["status", "kova-gateway"])
         assert result.returncode == 0
         assert len(calls) == 1
         assert "status" in calls[0]
 
     def test_install_in_container_prints_docker_guidance(self, monkeypatch, capsys):
-        """'hermes gateway install' inside Docker exits 0 with container guidance."""
+        """'kova gateway install' inside Docker exits 0 with container guidance."""
         import pytest
 
         monkeypatch.setattr(gateway_cli, "is_managed", lambda: False)
@@ -2740,7 +2740,7 @@ class TestDockerAwareGateway:
         assert "restart" in out.lower()
 
     def test_uninstall_in_container_prints_docker_guidance(self, monkeypatch, capsys):
-        """'hermes gateway uninstall' inside Docker exits 0 with container guidance."""
+        """'kova gateway uninstall' inside Docker exits 0 with container guidance."""
         import pytest
 
         monkeypatch.setattr(gateway_cli, "is_managed", lambda: False)
@@ -2758,7 +2758,7 @@ class TestDockerAwareGateway:
         assert "docker" in out.lower()
 
     def test_start_in_container_prints_docker_guidance(self, monkeypatch, capsys):
-        """'hermes gateway start' inside Docker exits 0 with container guidance."""
+        """'kova gateway start' inside Docker exits 0 with container guidance."""
         import pytest
 
         monkeypatch.setattr(gateway_cli, "is_termux", lambda: False)
@@ -2774,7 +2774,7 @@ class TestDockerAwareGateway:
         assert exc_info.value.code == 0
         out = capsys.readouterr().out
         assert "docker" in out.lower()
-        assert "hermes gateway run" in out
+        assert "kova gateway run" in out
 
 
 class TestLegacyHermesUnitDetection:
@@ -2782,7 +2782,7 @@ class TestLegacyHermesUnitDetection:
 
     These guard against the scenario that tripped Luis in April 2026: an
     older install left a ``hermes.service`` unit behind when the service was
-    renamed to ``hermes-gateway.service``. After PR #5646 (signal recovery
+    renamed to ``kova-gateway.service``. After PR #5646 (signal recovery
     via systemd), the two services began SIGTERM-flapping over the same
     Telegram bot token in a 30-second cycle.
 
@@ -2841,20 +2841,20 @@ class TestLegacyHermesUnitDetection:
     def test_ignores_profile_unit_hermes_gateway_coder(self, tmp_path, monkeypatch):
         """CRITICAL: profile units must NOT be flagged as legacy.
 
-        Teknium's concern — ``hermes-gateway-coder.service`` is our standard
+        Teknium's concern — ``kova-gateway-coder.service`` is our standard
         naming for the ``coder`` profile. The legacy detector is an explicit
         allowlist, not a glob, so profile units are safe.
         """
         user_dir, system_dir = self._setup_search_paths(tmp_path, monkeypatch)
         # Drop profile units in BOTH scopes with our ExecStart
         for base in (user_dir, system_dir):
-            (base / "hermes-gateway-coder.service").write_text(
+            (base / "kova-gateway-coder.service").write_text(
                 self._OUR_UNIT_TEXT, encoding="utf-8"
             )
             (base / "hermes-gateway-orcha.service").write_text(
                 self._OUR_UNIT_TEXT, encoding="utf-8"
             )
-            (base / "hermes-gateway.service").write_text(
+            (base / "kova-gateway.service").write_text(
                 self._OUR_UNIT_TEXT, encoding="utf-8"
             )
 
@@ -2866,7 +2866,7 @@ class TestLegacyHermesUnitDetection:
     def test_ignores_unrelated_hermes_service(self, tmp_path, monkeypatch):
         """Third-party ``hermes.service`` that isn't ours stays untouched.
 
-        If a user has some other package named ``hermes`` installed as a
+        If a user has some other package named ``kova`` installed as a
         service, we must not flag it.
         """
         user_dir, _ = self._setup_search_paths(tmp_path, monkeypatch)
@@ -2942,7 +2942,7 @@ class TestLegacyHermesUnitDetection:
 
         assert "Legacy" in out
         assert "hermes.service" in out
-        assert "hermes gateway migrate-legacy" in out
+        assert "kova gateway migrate-legacy" in out
 
     def test_handles_unreadable_unit_file_gracefully(self, tmp_path, monkeypatch):
         """A permission error reading a unit file must not crash detection."""
@@ -3046,7 +3046,7 @@ class TestRemoveLegacyHermesUnits:
         assert remaining == [legacy]
         assert legacy.exists()  # Not removed — requires sudo
         out = capsys.readouterr().out
-        assert "sudo hermes gateway migrate-legacy" in out
+        assert "sudo kova gateway migrate-legacy" in out
 
     def test_system_scope_with_root_removes(self, tmp_path, monkeypatch, capsys):
         _, system_dir, calls = self._setup(tmp_path, monkeypatch, as_root=True)
@@ -3084,13 +3084,13 @@ class TestRemoveLegacyHermesUnits:
     def test_does_not_touch_profile_units_during_migration(
         self, tmp_path, monkeypatch, capsys
     ):
-        """Teknium's constraint: profile units (hermes-gateway-coder.service)
+        """Teknium's constraint: profile units (kova-gateway-coder.service)
         must survive a migration call, even if we somehow include them in the
         search dir."""
         user_dir, _, _ = self._setup(tmp_path, monkeypatch, as_root=True)
-        profile_unit = user_dir / "hermes-gateway-coder.service"
+        profile_unit = user_dir / "kova-gateway-coder.service"
         profile_unit.write_text(self._OUR_UNIT_TEXT, encoding="utf-8")
-        default_unit = user_dir / "hermes-gateway.service"
+        default_unit = user_dir / "kova-gateway.service"
         default_unit.write_text(self._OUR_UNIT_TEXT, encoding="utf-8")
 
         removed, remaining = gateway_cli.remove_legacy_hermes_units(interactive=False)
@@ -3117,7 +3117,7 @@ class TestRemoveLegacyHermesUnits:
 
 
 class TestMigrateLegacyCommand:
-    """Tests for the `hermes gateway migrate-legacy` subcommand dispatch."""
+    """Tests for the `kova gateway migrate-legacy` subcommand dispatch."""
 
     def test_migrate_legacy_subparser_accepts_dry_run_and_yes(self):
         """Verify the argparse subparser is registered and parses flags."""
@@ -3127,7 +3127,7 @@ class TestMigrateLegacyCommand:
         # Fall back to calling main's setup helper if direct access isn't exposed
         # The key thing: the subparser must exist. We verify by constructing
         # a namespace through argparse directly — but if build_parser isn't
-        # public, just confirm that `hermes gateway --help` shows it.
+        # public, just confirm that `kova gateway --help` shows it.
         import subprocess
         import sys
 
@@ -3244,7 +3244,7 @@ class TestSystemdInstallOffersLegacyRemoval:
         monkeypatch.setattr(gateway_cli, "prompt_yes_no", lambda *a, **k: True)
 
         # Mock the rest of the install flow
-        unit_path = tmp_path / "hermes-gateway.service"
+        unit_path = tmp_path / "kova-gateway.service"
         monkeypatch.setattr(
             gateway_cli, "get_systemd_unit_path", lambda system=False: unit_path
         )
@@ -3281,7 +3281,7 @@ class TestSystemdInstallOffersLegacyRemoval:
         monkeypatch.setattr(gateway_cli, "print_legacy_unit_warning", lambda: None)
         monkeypatch.setattr(gateway_cli, "prompt_yes_no", lambda *a, **k: False)
 
-        unit_path = tmp_path / "hermes-gateway.service"
+        unit_path = tmp_path / "kova-gateway.service"
         monkeypatch.setattr(
             gateway_cli, "get_systemd_unit_path", lambda system=False: unit_path
         )
@@ -3325,7 +3325,7 @@ class TestSystemdInstallOffersLegacyRemoval:
         monkeypatch.setattr(gateway_cli, "remove_legacy_hermes_units", fake_remove)
         monkeypatch.setattr(gateway_cli, "prompt_yes_no", counting_prompt)
 
-        unit_path = tmp_path / "hermes-gateway.service"
+        unit_path = tmp_path / "kova-gateway.service"
         monkeypatch.setattr(
             gateway_cli, "get_systemd_unit_path", lambda system=False: unit_path
         )
@@ -3402,13 +3402,13 @@ class TestSystemScopeWizardPreCheck:
         sys_dir.mkdir()
         usr_dir.mkdir()
         if system_present:
-            (sys_dir / "hermes-gateway.service").write_text("[Unit]\n")
+            (sys_dir / "kova-gateway.service").write_text("[Unit]\n")
         if user_present:
-            (usr_dir / "hermes-gateway.service").write_text("[Unit]\n")
+            (usr_dir / "kova-gateway.service").write_text("[Unit]\n")
         monkeypatch.setattr(
             gateway_cli,
             "get_systemd_unit_path",
-            lambda system=False: (sys_dir if system else usr_dir) / "hermes-gateway.service",
+            lambda system=False: (sys_dir if system else usr_dir) / "kova-gateway.service",
         )
 
     def test_non_root_with_only_system_unit_returns_true(self, tmp_path, monkeypatch):
@@ -3437,7 +3437,7 @@ class TestSystemScopeWizardPreCheck:
         assert gateway_cli._system_scope_wizard_would_need_root() is False
 
     def test_non_root_with_explicit_system_arg_returns_true(self, tmp_path, monkeypatch):
-        # Caller passed system=True explicitly (e.g. ``hermes gateway start --system``).
+        # Caller passed system=True explicitly (e.g. ``kova gateway start --system``).
         self._setup_units(tmp_path, monkeypatch, system_present=False, user_present=False)
         monkeypatch.setattr(gateway_cli.os, "geteuid", lambda: 1000)
 
@@ -3450,7 +3450,7 @@ class TestSystemScopeRemediationOutput:
     """
 
     def test_start_remediation_mentions_sudo_systemctl_and_uninstall(self, capsys, monkeypatch):
-        monkeypatch.setattr(gateway_cli, "get_service_name", lambda: "hermes-gateway")
+        monkeypatch.setattr(gateway_cli, "get_service_name", lambda: "kova-gateway")
 
         gateway_cli._print_system_scope_remediation("start")
         out = capsys.readouterr().out
@@ -3458,11 +3458,11 @@ class TestSystemScopeRemediationOutput:
         assert "system-wide service" in out
         assert "start requires root" in out
         assert "sudo systemctl start hermes-gateway" in out
-        assert "sudo hermes gateway uninstall --system" in out
-        assert "hermes gateway install" in out
+        assert "sudo kova gateway uninstall --system" in out
+        assert "kova gateway install" in out
 
     def test_restart_remediation_uses_systemctl_restart(self, capsys, monkeypatch):
-        monkeypatch.setattr(gateway_cli, "get_service_name", lambda: "hermes-gateway")
+        monkeypatch.setattr(gateway_cli, "get_service_name", lambda: "kova-gateway")
 
         gateway_cli._print_system_scope_remediation("restart")
         out = capsys.readouterr().out
@@ -3471,7 +3471,7 @@ class TestSystemScopeRemediationOutput:
         assert "sudo systemctl restart hermes-gateway" in out
 
     def test_stop_remediation_uses_systemctl_stop(self, capsys, monkeypatch):
-        monkeypatch.setattr(gateway_cli, "get_service_name", lambda: "hermes-gateway")
+        monkeypatch.setattr(gateway_cli, "get_service_name", lambda: "kova-gateway")
 
         gateway_cli._print_system_scope_remediation("stop")
         out = capsys.readouterr().out
@@ -3481,7 +3481,7 @@ class TestSystemScopeRemediationOutput:
 
 
 class TestGatewayCommandCatchesSystemScopeError:
-    """The direct CLI path (``hermes gateway start --system`` etc.) must
+    """The direct CLI path (``kova gateway start --system`` etc.) must
     still exit 1 with a clean message when non-root. The top-level
     ``gateway_command`` catches ``SystemScopeRequiresRootError`` and
     converts it back to ``sys.exit(1)``, preserving existing CLI behavior.
@@ -3492,11 +3492,11 @@ class TestGatewayCommandCatchesSystemScopeError:
         usr_dir = tmp_path / "usr"
         sys_dir.mkdir()
         usr_dir.mkdir()
-        (sys_dir / "hermes-gateway.service").write_text("[Unit]\n")
+        (sys_dir / "kova-gateway.service").write_text("[Unit]\n")
         monkeypatch.setattr(
             gateway_cli,
             "get_systemd_unit_path",
-            lambda system=False: (sys_dir if system else usr_dir) / "hermes-gateway.service",
+            lambda system=False: (sys_dir if system else usr_dir) / "kova-gateway.service",
         )
         monkeypatch.setattr(gateway_cli.os, "geteuid", lambda: 1000)
         monkeypatch.setattr(gateway_cli, "supports_systemd_services", lambda: True)

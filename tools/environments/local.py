@@ -692,7 +692,7 @@ def _find_bash() -> str:
     # Prefer the first candidate that can actually start.  A stale
     # HERMES_GIT_BASH_PATH pointing at a broken Git-for-Windows install
     # (``Directory \\drivers\\etc does not exist``) must not win over a
-    # healthy portable Git under %LOCALAPPDATA%\\hermes\\git.
+    # healthy portable Git under %LOCALAPPDATA%\\kova\\git.
     for candidate in candidates:
         if _bash_starts(candidate):
             if candidate != custom and custom and os.path.isfile(custom):
@@ -720,7 +720,7 @@ def _find_bash() -> str:
         return candidates[0]
 
     raise RuntimeError(
-        "Git Bash not found. Hermes Agent requires Git for Windows on Windows.\n"
+        "Git Bash not found. Kova Agent requires Git for Windows on Windows.\n"
         "Install it from: https://git-scm.com/download/win\n"
         "Or set HERMES_GIT_BASH_PATH to your bash.exe location."
     )
@@ -998,11 +998,11 @@ def _resolve_hermes_bin_dir() -> str | None:
     ``hermes`` works fine in the user's own interactive terminal.
 
     We resolve the install dir once (it never changes within a process) and
-    prepend-if-missing it to the subshell PATH so bare ``hermes`` resolves
+    prepend-if-missing it to the subshell PATH so bare ``kova`` resolves
     regardless of how the gateway was started.
 
     Resolution order (cheap, no heavy imports):
-      1. ``shutil.which("hermes")`` — normal PATH-installed shim.
+      1. ``shutil.which("kova")`` — normal PATH-installed shim (falls back to hermes).
       2. The directory of ``sys.argv[0]`` when it's an absolute path to a
          real ``hermes`` executable (covers nix-store / venv wrappers).
       3. The directory of ``sys.executable`` — the running interpreter's
@@ -1014,7 +1014,7 @@ def _resolve_hermes_bin_dir() -> str | None:
 
     candidate: str | None = None
 
-    which = shutil.which("hermes")
+    which = shutil.which("kova") or shutil.which("hermes")
     if which:
         candidate = os.path.dirname(which)
 
@@ -1023,7 +1023,7 @@ def _resolve_hermes_bin_dir() -> str | None:
         base = os.path.basename(argv0).lower()
         if (
             os.path.isabs(argv0)
-            and (base == "hermes" or base.startswith("hermes."))
+            and (base == "hermes" or base.startswith("hermes.") or base == "kova" or base.startswith("kova."))
             and os.path.isfile(argv0)
         ):
             candidate = os.path.dirname(argv0)
@@ -1031,9 +1031,13 @@ def _resolve_hermes_bin_dir() -> str | None:
     if candidate is None:
         exe_dir = os.path.dirname(sys.executable) if sys.executable else ""
         if exe_dir:
-            shim = "hermes.exe" if _IS_WINDOWS else "hermes"
+            shim = "kova.exe" if _IS_WINDOWS else "kova"
             if os.path.isfile(os.path.join(exe_dir, shim)):
                 candidate = exe_dir
+            else:
+                shim = "hermes.exe" if _IS_WINDOWS else "hermes"
+                if os.path.isfile(os.path.join(exe_dir, shim)):
+                    candidate = exe_dir
 
     if candidate and not os.path.isdir(candidate):
         candidate = None

@@ -24,7 +24,7 @@ def test_nous_route_by_provider_slug():
 def test_nous_route_by_base_url_host():
     block = build_billing_block(
         provider="openai_compatible",
-        base_url="https://inference-api.nousresearch.com/v1",
+        base_url="https://inference-api.kova.ai/v1",
         model="hermes-4",
     )
     assert block.is_nous is True
@@ -32,7 +32,7 @@ def test_nous_route_by_base_url_host():
 
 def test_is_nous_inference_route_helper():
     assert is_nous_inference_route("nous", "") is True
-    assert is_nous_inference_route("", "https://inference-api.nousresearch.com/v1") is True
+    assert is_nous_inference_route("", "https://inference-api.kova.ai/v1") is True
     assert is_nous_inference_route("openai", "https://api.openai.com/v1") is False
 
 

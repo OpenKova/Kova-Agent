@@ -469,7 +469,7 @@ class TestBackup:
             assert pid_files == []
 
     def test_default_output_path(self, tmp_path, monkeypatch):
-        """When no output path given, zip goes to ~/hermes-backup-*.zip."""
+        """When no output path given, zip goes to ~/kova-backup-*.zip."""
         hermes_home = tmp_path / ".hermes"
         hermes_home.mkdir()
         (hermes_home / "config.yaml").write_text("model: test\n")
@@ -483,7 +483,7 @@ class TestBackup:
         run_backup(args)
 
         # Should exist in home dir
-        zips = list(tmp_path.glob("hermes-backup-*.zip"))
+        zips = list(tmp_path.glob("kova-backup-*.zip"))
         assert len(zips) == 1
 
     def test_skips_symlinked_files(self, tmp_path, monkeypatch):
@@ -1057,7 +1057,7 @@ class TestBackupEdgeCases:
         from kova_cli.backup import run_backup
         run_backup(args)
 
-        zips = list(out_dir.glob("hermes-backup-*.zip"))
+        zips = list(out_dir.glob("kova-backup-*.zip"))
         assert len(zips) == 1
 
     def test_output_without_zip_suffix(self, tmp_path, monkeypatch):
@@ -2253,7 +2253,7 @@ class TestRunPreUpdateBackup:
         assert "Pre-update snapshot" in out
         assert "Creating pre-update backup" in out
         assert "Saved:" in out
-        assert "hermes import" in out
+        assert "kova import" in out
         assert len(self._zips(hermes_home)) == 1
 
     def test_no_backup_flag_skips_everything(self, hermes_home, capsys):
@@ -2357,7 +2357,7 @@ class TestRunPreUpdateBackup:
 
 class TestPreMigrationBackup:
     """Tests for create_pre_migration_backup — the auto-backup
-    ``hermes claw migrate`` runs before mutating ~/.hermes/."""
+    ``kova claw migrate`` runs before mutating ~/.hermes/."""
 
     @pytest.fixture
     def hermes_home(self, tmp_path):
@@ -2396,7 +2396,7 @@ class TestPreMigrationBackup:
 
     def test_restorable_with_hermes_import(self, hermes_home, tmp_path):
         """The zip produced by pre-migration backup must be a valid Hermes
-        backup — `hermes import` should accept it."""
+        backup — `kova import` should accept it."""
         from kova_cli.backup import create_pre_migration_backup, _validate_backup_zip
         out = create_pre_migration_backup(hermes_home=hermes_home)
         assert out is not None

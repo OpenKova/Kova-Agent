@@ -136,7 +136,7 @@ def _normalize_slack_parent_command(
     """Mirror native Slack ``/hermes`` routing for authenticated relay text."""
     stripped = text.strip()
     parent_parts = stripped.split(maxsplit=1)
-    if not parent_parts or parent_parts[0] != "/hermes":
+    if not parent_parts or parent_parts[0] not in ("/hermes", "/kova"):
         return text, message_type
 
     from hermes_cli.commands import slack_subcommand_map

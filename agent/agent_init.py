@@ -1254,8 +1254,8 @@ def init_agent(
                 if not getattr(agent, "_fallback_activated", False):
                     # No provider configured — reject with a clear message.
                     raise RuntimeError(
-                        "No LLM provider configured. Run `hermes model` to "
-                        "select a provider, or run `hermes setup` for first-time "
+                        "No LLM provider configured. Run `kova model` to "
+                        "select a provider, or run `kova setup` for first-time "
                         "configuration."
                     )
         

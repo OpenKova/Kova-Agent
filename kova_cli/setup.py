@@ -2625,7 +2625,7 @@ def _run_portal_one_shot(config: dict) -> None:
     delegated to ``_model_flow_nous`` â€” the exact same flow quick setup uses
     (``_run_first_time_quick_setup``) and the same one ``kova model`` runs
     when you pick Nous. Routing through it (instead of hand-rolling the auth +
-    provider write here) means ``hermes portal`` always offers a model picker,
+    provider write here) means ``kova portal`` always offers a model picker,
     and there is a single source of truth for the Nous onboarding steps.
     """
     from kova_cli.config import load_config

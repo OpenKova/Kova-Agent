@@ -1,4 +1,4 @@
-"""hermes webhook — manage dynamic webhook subscriptions from the CLI.
+"""kova webhook — manage dynamic webhook subscriptions from the CLI.
 
 Usage:
     hermes webhook subscribe <name> [options]
@@ -138,12 +138,12 @@ def _require_webhook_enabled() -> bool:
 
 
 def webhook_command(args):
-    """Entry point for 'hermes webhook' subcommand."""
+    """Entry point for 'kova webhook' subcommand."""
     sub = getattr(args, "webhook_action", None)
 
     if not sub:
-        print("Usage: hermes webhook {subscribe|list|remove|test}")
-        print("Run 'hermes webhook --help' for details.")
+        print("Usage: kova webhook {subscribe|list|remove|test}")
+        print("Run 'kova webhook --help' for details.")
         return
 
     if not _require_webhook_enabled():
@@ -228,7 +228,7 @@ def _cmd_list(args):
     subs = _load_subscriptions()
     if not subs:
         print("  No dynamic webhook subscriptions.")
-        print("  Create one with: hermes webhook subscribe <name>")
+        print("  Create one with: kova webhook subscribe <name>")
         return
 
     base_url = _get_webhook_base_url()

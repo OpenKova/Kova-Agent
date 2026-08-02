@@ -1,7 +1,7 @@
 """Tests for hermes_bootstrap — Windows UTF-8 stdio shim.
 
 The bootstrap module is imported at the top of every Hermes entry point
-(hermes, hermes-agent, hermes-acp, gateway, batch_runner, cli.py).  It
+(hermes, kova-agent, hermes-acp, gateway, batch_runner, cli.py).  It
 fixes Python's Windows UTF-8 defaults so print("café") doesn't crash and
 subprocess children inherit UTF-8 mode.
 
@@ -241,7 +241,7 @@ class TestEntryPointsImportBootstrap:
     # import hermes_bootstrap before doing any file I/O or stdout writes.
     ENTRY_POINTS = [
         "hermes_cli/main.py",   # hermes CLI (console_script)
-        "run_agent.py",          # hermes-agent (console_script)
+        "run_agent.py",          # kova-agent (console_script)
         "acp_adapter/entry.py",  # hermes-acp (console_script)
         "gateway/run.py",        # gateway
         "batch_runner.py",       # batch mode
@@ -259,14 +259,14 @@ class TestEntryPointsImportBootstrap:
 
         Also lenient about a try/except wrapper around the import: entry
         points may guard the import against ``ModuleNotFoundError`` so a
-        half-finished ``hermes update`` (git-reset landed new code but
+        half-finished ``kova update`` (git-reset landed new code but
         ``uv pip install -e .`` didn't finish re-registering
         ``hermes_bootstrap`` as a top-level module) leaves hermes
         recoverable instead of crashing on every invocation.  When the
         first top-level node is such a guarded-import block, we peek
         inside it to verify bootstrap is the imported module.
         """
-        # Resolve relative to the hermes-agent repo root.  Tests live
+        # Resolve relative to the kova-agent repo root.  Tests live
         # at tests/test_hermes_bootstrap.py, so go up one dir.
         import pathlib
         here = pathlib.Path(__file__).resolve()

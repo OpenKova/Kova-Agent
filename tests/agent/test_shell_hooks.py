@@ -702,7 +702,7 @@ class TestAllowlistConcurrency:
         shlex token, which picked the interpreter (``python3``, ``bash``,
         ``/usr/bin/env``) instead of the actual script for any
         interpreter-prefixed command.  That broke
-        ``hermes hooks doctor``'s executability check and silently
+        ``kova hooks doctor``'s executability check and silently
         disabled mtime drift detection for such hooks."""
         cases = [
             # bare path

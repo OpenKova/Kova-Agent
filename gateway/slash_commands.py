@@ -80,7 +80,7 @@ def _model_switch_skew_guard() -> Optional[str]:
         error=(
             f"This gateway is running code from {boot_rev} but the checkout on "
             f"disk is now {disk_rev}. Switching models would risk a stale-module "
-            f"crash — restart the gateway to load the new code: hermes gateway restart"
+            f"crash — restart the gateway to load the new code: kova gateway restart"
         ),
     )
 
@@ -1220,7 +1220,7 @@ class GatewaySlashCommandsMixin:
                 return (
                     f"✓ {platform.value} paused. "
                     f"Resume with `/platform resume {platform.value}` or "
-                    f"`hermes gateway restart` to reset."
+                    f"`kova gateway restart` to reset."
                 )
             # action == "resume"
             if platform not in failed:
@@ -1345,7 +1345,7 @@ class GatewaySlashCommandsMixin:
         return EphemeralReply(t("gateway.restart.restarting"))
 
     async def _handle_version_command(self, event: MessageEvent) -> str:
-        """Handle /version — show the running Hermes Agent version."""
+        """Handle /version — show the running Kova Agent version."""
         from hermes_cli.banner import format_banner_version_label
 
         return format_banner_version_label()
@@ -4827,7 +4827,7 @@ class GatewaySlashCommandsMixin:
 
         Gateway uploads ONLY the summary report (system info + log tails),
         NOT full log files, to protect conversation privacy.  Users who need
-        full log uploads should use ``hermes debug share`` from the CLI.
+        full log uploads should use ``kova debug share`` from the CLI.
         """
         import asyncio
         from hermes_cli.debug import (
@@ -4867,10 +4867,10 @@ class GatewaySlashCommandsMixin:
         return await loop.run_in_executor(None, _collect_and_upload)
 
     async def _handle_update_command(self, event: MessageEvent) -> str:
-        """Handle /update command — update Hermes Agent to the latest version.
+        """Handle /update command — update Kova Agent to the latest version.
 
-        Spawns ``hermes update`` in a detached session (via ``setsid``) so it
-        survives the gateway restart that ``hermes update`` may trigger. Marker
+        Spawns ``kova update`` in a detached session (via ``setsid``) so it
+        survives the gateway restart that ``kova update`` may trigger. Marker
         files are written so either the current gateway process or the next one
         can notify the user when the update finishes.
         """
@@ -4895,7 +4895,7 @@ class GatewaySlashCommandsMixin:
                 return t("gateway.update.platform_not_messaging")
 
         if is_managed():
-            return f"✗ {format_managed_message('update Hermes Agent')}"
+            return f"✗ {format_managed_message('update Kova Agent')}"
 
         project_root = Path(__file__).parent.parent.resolve()
         git_dir = project_root / '.git'
@@ -4928,7 +4928,7 @@ class GatewaySlashCommandsMixin:
         _tmp_pending.replace(pending_path)
         exit_code_path.unlink(missing_ok=True)
 
-        # Spawn `hermes update --gateway` detached so it survives gateway restart.
+        # Spawn `kova update --gateway` detached so it survives gateway restart.
         # --gateway enables file-based IPC for interactive prompts (stash
         # restore, config migration) so the gateway can forward them to the
         # user instead of silently skipping them.
@@ -4936,7 +4936,7 @@ class GatewaySlashCommandsMixin:
         # where systemd-run --user fails due to missing D-Bus session).
         # PYTHONUNBUFFERED ensures output is flushed line-by-line so the
         # gateway can stream it to the messenger in near-real-time.
-        # Spawn `hermes update --gateway` detached so it survives gateway restart.
+        # Spawn `kova update --gateway` detached so it survives gateway restart.
         # --gateway enables file-based IPC for interactive prompts (stash
         # restore, config migration) so the gateway can forward them to the
         # user instead of silently skipping them.
@@ -4945,7 +4945,7 @@ class GatewaySlashCommandsMixin:
         # PYTHONUNBUFFERED ensures output is flushed line-by-line so the
         # gateway can stream it to the messenger in near-real-time.
         #
-        # Windows: no bash/setsid chain.  Run `hermes update --gateway`
+        # Windows: no bash/setsid chain.  Run `kova update --gateway`
         # directly via sys.executable; redirect stdout/stderr to the same
         # output files via Popen file handles; write the exit code in a
         # follow-up write.  A tiny Python watcher would be cleaner but

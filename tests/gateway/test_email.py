@@ -843,7 +843,7 @@ class TestThreadContext(unittest.TestCase):
             self.assertFalse(send_call["Subject"].startswith("Re: Re:"))
 
     def test_no_thread_context_uses_default_subject(self):
-        """Without thread context, subject should be 'Re: Hermes Agent'."""
+        """Without thread context, subject should be 'Re: Kova Agent'."""
         adapter = self._make_adapter()
 
         with patch("smtplib.SMTP") as mock_smtp:
@@ -853,7 +853,7 @@ class TestThreadContext(unittest.TestCase):
             adapter._send_email("newuser@test.com", "Hello!", None)
 
             send_call = mock_server.send_message.call_args[0][0]
-            self.assertEqual(send_call["Subject"], "Re: Hermes Agent")
+            self.assertEqual(send_call["Subject"], "Re: Kova Agent")
             self.assertIn("Date", send_call)
 
 
@@ -1430,7 +1430,7 @@ class TestImapIdExtensionForNetEase(unittest.TestCase):
             "LOGIN so 163/NetEase mailbox does not return 'Unsafe Login'.",
         )
         payload = id_calls[0].args[1]
-        self.assertIn("hermes-agent", payload)
+        self.assertIn("kova-agent", payload)
 
         names = [c[0] for c in mock_imap.method_calls]
         self.assertIn("login", names)
@@ -1606,7 +1606,7 @@ class TestConnectionConfigResolution(unittest.TestCase):
 
     def test_falls_back_to_platform_config_extra(self):
         """When env vars are absent, settings come from PlatformConfig.extra —
-        the same dict gateway.config populates and `hermes config show` reads."""
+        the same dict gateway.config populates and `kova config show` reads."""
         from gateway.config import PlatformConfig
         from plugins.platforms.email.adapter import EmailAdapter
         cfg = PlatformConfig(enabled=True)

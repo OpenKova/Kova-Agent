@@ -15,7 +15,7 @@ def all_assignees_spawnable(monkeypatch):
     those tasks into ``skipped_nonspawnable`` instead of spawning, which
     would break tests that assert spawn behavior.
     """
-    from kova_cli import profiles
+    from hermes_cli import profiles
     monkeypatch.setattr(profiles, "profile_exists", lambda name: True)
 
 
@@ -25,7 +25,7 @@ def _suppress_concurrent_hermes_gate(request, monkeypatch):
 
     The Windows update path now refuses to proceed when another
     ``hermes.exe`` is detected (issue #26670). On a developer's Windows
-    machine running the test suite via ``hermes`` itself, this would
+    machine running the test suite via ``kova`` itself, this would
     flag the running agent as a concurrent instance and abort every
     ``cmd_update`` test. Tests that want to exercise the gate explicitly
     re-patch ``_detect_concurrent_hermes_instances`` with their own
@@ -38,7 +38,7 @@ def _suppress_concurrent_hermes_gate(request, monkeypatch):
     if request.node.get_closest_marker("real_concurrent_gate"):
         return
     try:
-        from kova_cli import main as _cli_main
+        from hermes_cli import main as _cli_main
     except Exception:
         return
     # raising=False: under pytest's per-test spawn isolation, a concurrent

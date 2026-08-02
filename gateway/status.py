@@ -32,7 +32,7 @@ if sys.platform == "win32":
 else:
     import fcntl
 
-_GATEWAY_KIND = "hermes-gateway"
+_GATEWAY_KIND = "kova-gateway"
 _RUNTIME_STATUS_FILE = "gateway_state.json"
 _LOCKS_DIRNAME = "gateway-locks"
 _IS_WINDOWS = sys.platform == "win32"
@@ -402,14 +402,16 @@ def _gateway_command_subcommand(command: str | None) -> str | None:
         if token == "gateway/run.py" or token.endswith("/gateway/run.py"):
             return "run"
         basename = token.rsplit("/", 1)[-1]
-        if basename in ("hermes-gateway", "hermes-gateway.exe"):
+        if basename in ("hermes-gateway", "hermes-gateway.exe", "kova-gateway", "kova-gateway.exe"):
             return "run"
 
     joined = " ".join(tokens)
     has_gateway_entry = (
         "hermes_cli.main" in joined
         or "hermes_cli/main.py" in joined
-        or any(t.rsplit("/", 1)[-1] in ("hermes", "hermes.exe") for t in tokens)
+        or "kova_cli.main" in joined
+        or "kova_cli/main.py" in joined
+        or any(t.rsplit("/", 1)[-1] in ("hermes", "hermes.exe", "kova", "kova.exe") for t in tokens)
     )
     if not has_gateway_entry:
         return None
@@ -434,7 +436,7 @@ def _gateway_command_subcommand(command: str | None) -> str | None:
         if token != "gateway":
             continue
         if i + 1 >= len(filtered):
-            return "run"  # bare `hermes gateway` defaults to `run`
+            return "run"  # bare `kova gateway` defaults to `run`
         return filtered[i + 1]
     return None
 
@@ -1005,7 +1007,7 @@ def write_runtime_status(
         payload["active_agents"] = parse_active_agents(active_agents)
     if served_profiles is not _UNSET:
         # Profiles this gateway multiplexes (multi-profile mode). Absent/empty
-        # for a single-profile gateway. Lets `hermes status` show per-profile
+        # for a single-profile gateway. Lets `kova status` show per-profile
         # coverage without a second probe.
         payload["served_profiles"] = list(served_profiles or [])
 
@@ -1509,7 +1511,7 @@ def _consume_pid_marker_for_self(
     # platforms without ``/proc`` (macOS, native Windows — the very
     # platform the planned-stop watcher exists for). Requiring a non-None
     # match there would make every consume return False, so a legitimate
-    # ``hermes gateway stop`` on Windows would be misclassified as an
+    # ``kova gateway stop`` on Windows would be misclassified as an
     # unexpected ``UNKNOWN`` exit (exit 1) and revived by the service
     # manager. So: when both start_times are known they must match; when
     # either is unknown, fall back to PID equality alone (bounded by the

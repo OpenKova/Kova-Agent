@@ -196,12 +196,12 @@ def test_gateway_cmd_script_uses_console_python_without_replace_or_start_churn(m
     monkeypatch.setattr(
         gateway_windows,
         "_resolve_detached_python",
-        lambda exe: (exe, r"C:\\Hermes\\hermes-agent\\venv", []),
+        lambda exe: (exe, r"C:\\Hermes\\kova-agent\\venv", []),
     )
 
     content = gateway_windows._build_gateway_cmd_script(
-        r"C:\\Hermes\\hermes-agent\\venv\\Scripts\\python.exe",
-        r"C:\\Hermes\\hermes-agent",
+        r"C:\\Hermes\\kova-agent\\venv\\Scripts\\python.exe",
+        r"C:\\Hermes\\kova-agent",
         r"C:\\HermesHome\\profiles\\alice",
         "--profile alice",
     )
@@ -594,7 +594,7 @@ def test_install_startup_fallback_does_not_auto_spawn_when_gateway_stopped(monke
     assert ("next_steps", None) in calls
     out = capsys.readouterr().out
     assert "gateway not started now" in out
-    assert "hermes --profile alice gateway start" in out
+    assert "kova --profile alice gateway start" in out
 
 
 def test_install_access_denied_declined_elevation_uses_startup_fallback(monkeypatch, tmp_path, capsys):
@@ -707,7 +707,7 @@ def test_uninstall_access_denied_declined_keeps_task_and_cleans_files(monkeypatc
 #
 # Background: on Windows, asyncio.add_signal_handler raises NotImplementedError,
 # so the gateway's SIGTERM handler (which drains in-flight agents and writes
-# resume_pending=True) never fires when `hermes gateway stop` kills the
+# resume_pending=True) never fires when `kova gateway stop` kills the
 # process. The fix: stop() writes the planned_stop_marker first, waits for
 # the gateway's marker-watcher thread to drain + exit cleanly, then escalates
 # to taskkill if drain times out.
@@ -810,7 +810,7 @@ def test_stop_escalates_to_force_kill_when_drain_times_out(monkeypatch):
 
     Drain timeout = gateway is stuck or unresponsive. Without the
     taskkill /T /F escalation, the gateway stays alive and the next
-    `hermes gateway start` fails with "another instance is running".
+    `kova gateway start` fails with "another instance is running".
     """
     pid = 77777
     events = []

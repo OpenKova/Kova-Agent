@@ -1,5 +1,5 @@
 """
-Photon Spectrum (iMessage) platform adapter for Hermes Agent.
+Photon Spectrum (iMessage) platform adapter for Kova Agent.
 
 Both directions of traffic flow through a small supervised Node sidecar
 (see ``sidecar/index.mjs``) that runs the ``spectrum-ts`` SDK — the SDK is
@@ -138,7 +138,7 @@ def check_requirements() -> bool:
     if not (_SIDECAR_DIR / "node_modules").exists():
         # spectrum-ts not installed yet — `hermes photon setup` will
         # install it.  check_fn still returns False so the gateway
-        # surfaces the missing-deps state in `hermes setup` / status.
+        # surfaces the missing-deps state in `kova setup` / status.
         return False
     return True
 
@@ -146,7 +146,7 @@ def check_requirements() -> bool:
 def _sidecar_deps_stale() -> bool:
     """True when node_modules exists but is older than the committed lockfile.
 
-    `hermes update` rewrites ``package-lock.json`` when the spectrum-ts pin is
+    `kova update` rewrites ``package-lock.json`` when the spectrum-ts pin is
     bumped, but does not reinstall ``node_modules``. npm records the state of
     the last install in ``node_modules/.package-lock.json``; when the top-level
     lockfile is newer than that marker, the install is out of date. This is the
@@ -924,7 +924,7 @@ class PhotonAdapter(BasePlatformAdapter):
                 f"Photon sidecar deps not installed. Run: "
                 f"cd {_SIDECAR_DIR} && npm install   (or `hermes photon setup`)"
             )
-        # A `hermes update` that bumps the spectrum-ts pin rewrites
+        # A `kova update` that bumps the spectrum-ts pin rewrites
         # package-lock.json but never reinstalls node_modules, so the sidecar
         # spawns against stale deps and dies on every reconnect (the v8 patch
         # script can't find @spectrum-ts/imessage/dist that only v8 ships).
@@ -1778,7 +1778,7 @@ def register(ctx) -> None:
             "Spectrum project, links your phone number, installs the "
             "spectrum-ts sidecar)."
         ),
-        # Surfaces Photon in `hermes gateway setup` alongside every other
+        # Surfaces Photon in `kova gateway setup` alongside every other
         # channel — same unified onboarding wizard, no Photon-only detour.
         setup_fn=_cli.gateway_setup,
         env_enablement_fn=_env_enablement,

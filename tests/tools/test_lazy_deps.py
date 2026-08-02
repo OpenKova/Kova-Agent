@@ -334,7 +334,7 @@ class TestRefreshActiveFeatures:
 
     def test_windows_matrix_refresh_is_skipped_before_pip(self, monkeypatch):
         # Matrix E2EE pulls python-olm, which has no native Windows wheel/build
-        # path. `hermes update` must not retry that doomed install every run.
+        # path. `kova update` must not retry that doomed install every run.
         monkeypatch.setattr(ld.sys, "platform", "win32")
         monkeypatch.setattr(ld, "active_features", lambda: ["platform.matrix"])
         monkeypatch.setattr(ld, "_is_satisfied", lambda spec: False)

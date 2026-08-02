@@ -68,7 +68,7 @@ class TestHandleUpdateCommand:
             # The handler does Path(__file__).parent.parent.resolve()
             # We need to make project_root / '.git' not exist.
             # Since Path(__file__) resolves to the real gateway/run.py,
-            # project_root will be the real hermes-agent dir (which HAS .git).
+            # project_root will be the real kova-agent dir (which HAS .git).
             # Patch Path to control this.
             original_path = Path
 
@@ -109,7 +109,7 @@ class TestHandleUpdateCommand:
             result = await runner._handle_update_command(event)
 
         assert "Could not locate" in result
-        assert "hermes update" in result
+        assert "kova update" in result
 
     @pytest.mark.asyncio
     async def test_fallback_to_sys_executable(self, tmp_path):
@@ -194,7 +194,7 @@ class TestHandleUpdateCommand:
 
         with patch("gateway.run._hermes_home", hermes_home), \
              patch("gateway.run.__file__", fake_file), \
-             patch("shutil.which", side_effect=lambda x: "/usr/bin/hermes" if x == "hermes" else "/usr/bin/setsid"), \
+             patch("shutil.which", side_effect=lambda x: "/usr/bin/kova" if x == "hermes" else "/usr/bin/setsid"), \
              patch("subprocess.Popen"):
             result = await runner._handle_update_command(event)
 
@@ -230,7 +230,7 @@ class TestHandleUpdateCommand:
 
         with patch("gateway.run._hermes_home", hermes_home), \
              patch("gateway.run.__file__", fake_file), \
-             patch("shutil.which", side_effect=lambda x: "/usr/bin/hermes" if x == "hermes" else "/usr/bin/setsid"), \
+             patch("shutil.which", side_effect=lambda x: "/usr/bin/kova" if x == "hermes" else "/usr/bin/setsid"), \
              patch("subprocess.Popen"):
             await runner._handle_update_command(event)
 
@@ -286,7 +286,7 @@ class TestHandleUpdateCommand:
 
         def which_no_setsid(x):
             if x == "hermes":
-                return "/usr/bin/hermes"
+                return "/usr/bin/kova"
             if x == "setsid":
                 return None
             return None

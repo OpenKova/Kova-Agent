@@ -72,7 +72,7 @@ def _install_example_plugin(_isolate_hermes_home):
     # An installed-but-not-enabled user plugin has its API mount skipped
     # and its assets 404'd — which is the whole point of the gate. These
     # fixtures exist to exercise the *serving* paths, so opt the example
-    # plugin in exactly as a real operator would with `hermes plugins
+    # plugin in exactly as a real operator would with `kova plugins
     # enable example`.
     from hermes_cli.config import load_config, save_config
     _cfg = load_config()
@@ -2400,7 +2400,7 @@ class TestWebServerEndpoints:
         def fail_spawn(*_args, **_kwargs):
             nonlocal spawned
             spawned = True
-            raise AssertionError("docker update guard should not spawn hermes update")
+            raise AssertionError("docker update guard should not spawn kova update")
 
         # Bypass the managed-externally gate so we reach the docker install check.
         monkeypatch.setattr(web_server, "_dashboard_local_update_managed_externally", lambda: False)
@@ -2417,7 +2417,7 @@ class TestWebServerEndpoints:
         assert data["name"] == "hermes-update"
         assert data["pid"] is None
         assert data["error"] == "docker_update_unsupported"
-        assert "docker pull nousresearch/hermes-agent:latest" in data["message"]
+        assert "docker pull nousresearch/kova-agent:latest" in data["message"]
         assert spawned is False
 
         status = self.client.get("/api/actions/hermes-update/status")
@@ -2426,13 +2426,13 @@ class TestWebServerEndpoints:
         assert status_data["running"] is False
         assert status_data["exit_code"] == 1
         assert status_data["pid"] is None
-        assert any("docker pull nousresearch/hermes-agent:latest" in line for line in status_data["lines"])
+        assert any("docker pull nousresearch/kova-agent:latest" in line for line in status_data["lines"])
 
     def test_update_hermes_returns_nix_guidance_without_spawning(self, monkeypatch):
         import hermes_cli.web_server as web_server
 
         def fail_spawn(*_args, **_kwargs):
-            raise AssertionError("Nix update guard should not spawn hermes update")
+            raise AssertionError("Nix update guard should not spawn kova update")
 
         monkeypatch.setattr(web_server, "_dashboard_local_update_managed_externally", lambda: False)
         monkeypatch.setattr(web_server, "detect_install_method", lambda _root: "nix")
@@ -2458,7 +2458,7 @@ class TestWebServerEndpoints:
         def fail_spawn(*_args, **_kwargs):
             nonlocal spawned
             spawned = True
-            raise AssertionError("managed runtime update guard should not spawn hermes update")
+            raise AssertionError("managed runtime update guard should not spawn kova update")
 
         def fail_detect(*_args, **_kwargs):
             nonlocal detected
@@ -2864,7 +2864,7 @@ class TestWebServerEndpoints:
         as a provider card, even when it has no hand entry in OPTIONAL_ENV_VARS.
 
         Regression for the GUI⇄CLI drift: openai-api, kilocode, novita,
-        tencent-tokenhub, copilot were configurable via `hermes model` but
+        tencent-tokenhub, copilot were configurable via `kova model` but
         invisible in the desktop Providers → API keys tab.
         """
         from hermes_cli.provider_catalog import provider_catalog
@@ -3039,7 +3039,7 @@ class TestWebServerEndpoints:
 
     def test_ops_import_passes_force_flag(self, tmp_path, monkeypatch):
         """force=True must append --force so the spawned non-interactive
-        `hermes import` doesn't auto-abort at the overwrite prompt."""
+        `kova import` doesn't auto-abort at the overwrite prompt."""
         import hermes_cli.web_server as ws
 
         archive = tmp_path / "backup.zip"
@@ -3341,7 +3341,7 @@ class TestWebServerEndpoints:
         assert "personal WeChat" in weixin["description"]
         assert "Official Account" not in f"{weixin['name']} {weixin['description']}"
         assert weixin["docs_url"] == (
-            "https://hermes-agent.nousresearch.com/docs/user-guide/messaging/weixin/"
+            "https://kova-agent.nousresearch.com/docs/user-guide/messaging/weixin/"
         )
 
         fields = {field["key"]: field for field in weixin["env_vars"]}
@@ -3359,7 +3359,7 @@ class TestWebServerEndpoints:
 
         teams = _build_catalog_entry("teams")
         assert teams["docs_url"] == (
-            "https://hermes-agent.nousresearch.com/docs/user-guide/messaging/teams"
+            "https://kova-agent.nousresearch.com/docs/user-guide/messaging/teams"
         )
 
     def test_google_chat_messaging_metadata_links_setup_guide(self):
@@ -3372,7 +3372,7 @@ class TestWebServerEndpoints:
         google_chat = _build_catalog_entry("google_chat")
         assert google_chat["name"] == "Google Chat"
         assert google_chat["docs_url"] == (
-            "https://hermes-agent.nousresearch.com/docs/user-guide/messaging/google_chat"
+            "https://kova-agent.nousresearch.com/docs/user-guide/messaging/google_chat"
         )
 
     def test_messaging_catalog_covers_gateway_platforms(self):
@@ -3767,7 +3767,7 @@ class TestWebServerEndpoints:
         self, monkeypatch
     ):
         """A live in-flight gateway restart is reused instead of spawning a
-        second racing ``hermes gateway restart`` child (e.g. when a stale
+        second racing ``kova gateway restart`` child (e.g. when a stale
         cached frontend also fires its own restart call)."""
         import hermes_cli.web_server as ws
 
@@ -3968,7 +3968,7 @@ class TestWebServerEndpoints:
         assert seen_encodings == {"index": "utf-8", "css": "utf-8"}
 
     def test_headless_serve_disables_spa_even_with_a_dist(self, monkeypatch, tmp_path):
-        """`hermes serve` (HERMES_SERVE_HEADLESS) must NOT serve the SPA even
+        """`kova serve` (HERMES_SERVE_HEADLESS) must NOT serve the SPA even
         when a built dist is present — only the API/WS surface is reachable."""
         from fastapi import FastAPI
         from starlette.testclient import TestClient
@@ -4190,7 +4190,7 @@ class TestWebServerEndpoints:
         """A custom endpoint that requires auth must persist model.api_key (where
         the runtime reads it) AND register a named custom_providers entry so the
         endpoint reappears as a ready row in the picker — matching the
-        ``hermes model`` custom flow. Regression for the desktop loop where a
+        ``kova model`` custom flow. Regression for the desktop loop where a
         keyed custom endpoint could never be configured from the GUI."""
         from hermes_cli.config import load_config
 
@@ -4644,7 +4644,7 @@ class TestWebServerEndpoints:
 
     def test_recommended_default_nous_honors_free_tier(self, monkeypatch):
         """For a free-tier Nous user, the recommended default must be a free
-        model (mirroring `hermes model`), not the first curated paid entry."""
+        model (mirroring `kova model`), not the first curated paid entry."""
         import hermes_cli.models as models_mod
 
         monkeypatch.setattr(models_mod, "get_curated_nous_model_ids", lambda: ["paid/expensive", "free/cheap"])
@@ -5220,7 +5220,7 @@ class TestNewEndpoints:
         resp = self.client.get("/api/profiles/default/setup-command")
 
         assert resp.status_code == 200
-        assert resp.json()["command"] == "hermes setup"
+        assert resp.json()["command"] == "kova setup"
 
     def test_profiles_create_creates_wrapper_alias_when_safe(self, monkeypatch, tmp_path):
         import hermes_cli.profiles as profiles_mod
@@ -5228,7 +5228,7 @@ class TestNewEndpoints:
         wrapper_dir = tmp_path / "bin"
         wrapper_dir.mkdir()
         monkeypatch.setattr(profiles_mod, "_get_wrapper_dir", lambda: wrapper_dir)
-        monkeypatch.setattr(profiles_mod.shutil, "which", lambda name: "/opt/hermes/bin/hermes")
+        monkeypatch.setattr(profiles_mod.shutil, "which", lambda name: "/opt/hermes/bin/kova")
 
         resp = self.client.post(
             "/api/profiles",
@@ -5241,9 +5241,9 @@ class TestNewEndpoints:
         assert wrapper_path.exists()
         lines = [line.strip() for line in wrapper_path.read_text().splitlines() if line.strip()]
         if is_windows:
-            assert lines == ["@echo off", "hermes -p writer %*"]
+            assert lines == ["@echo off", "kova -p writer %*"]
         else:
-            assert lines == ["#!/bin/sh", 'exec /opt/hermes/bin/hermes -p writer "$@"']
+            assert lines == ["#!/bin/sh", 'exec /opt/hermes/bin/kova -p writer "$@"']
 
     def test_profiles_create_with_clone_from_copies_source_skills(self, monkeypatch):
         from hermes_constants import get_hermes_home
@@ -8653,7 +8653,7 @@ class TestDashboardPluginManifestExtensions:
 # /api/pty WebSocket — terminal bridge for the dashboard "Chat" tab.
 #
 # These tests drive the endpoint with a tiny fake command (typically ``cat``
-# or ``sh -c 'printf …'``) instead of the real ``hermes --tui`` binary.  The
+# or ``sh -c 'printf …'``) instead of the real ``kova --tui`` binary.  The
 # endpoint resolves its argv through ``_resolve_chat_argv``, so tests
 # monkeypatch that hook.
 # ---------------------------------------------------------------------------

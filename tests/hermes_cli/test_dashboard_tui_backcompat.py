@@ -1,4 +1,4 @@
-"""Regression test: `hermes dashboard --tui` must not hard-crash.
+"""Regression test: `kova dashboard --tui` must not hard-crash.
 
 Older Hermes desktop app shells (<= 0.15.x) spawn the backend as::
 

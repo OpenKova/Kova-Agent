@@ -2967,7 +2967,7 @@ def delegate_task(
                 _sync_result["note"] = (
                     "background=true is not available in this session — it cannot "
                     "receive a detached subagent result after the turn ends (a "
-                    "one-shot runner such as `hermes -z`, a cron job, a Kanban "
+                    "one-shot runner such as `kova -z`, a cron job, a Kanban "
                     "worker, or a stateless HTTP endpoint). The subagent(s) ran "
                     "SYNCHRONOUSLY and the result is included above."
                 )
@@ -3311,7 +3311,7 @@ def _resolve_delegation_credentials(cfg: dict, parent_agent) -> dict:
     if not api_key:
         raise ValueError(
             f"Delegation provider '{configured_provider}' resolved but has no API key. "
-            f"Set the appropriate environment variable or run 'hermes auth'."
+            f"Set the appropriate environment variable or run 'kova auth'."
         )
 
     return {
@@ -3341,7 +3341,7 @@ def _load_config() -> dict:
     rebuild via ``_get_max_concurrent_children``, so skipping the defensive
     deepcopy matters. Do NOT mutate the returned dict.
 
-    ``HERMES_IGNORE_USER_CONFIG=1`` (``hermes chat --ignore-user-config``) is
+    ``HERMES_IGNORE_USER_CONFIG=1`` (``kova chat --ignore-user-config``) is
     only honored by the legacy ``cli`` loader, not the shared one, so when the
     flag is set we keep ``cli.CLI_CONFIG`` authoritative to preserve the
     flag's contract of suppressing user config.yaml settings.

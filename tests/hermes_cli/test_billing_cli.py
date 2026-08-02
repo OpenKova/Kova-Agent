@@ -33,7 +33,7 @@ def test_billing_logged_out(cli, monkeypatch, capsys):
     cli._show_billing("/billing")
     out = capsys.readouterr().out
     assert "Not logged into Nous Portal" in out
-    assert "hermes portal" in out
+    assert "kova portal" in out
 
 
 def test_billing_overview_non_interactive_renders_text_not_modal(cli, monkeypatch, capsys):
@@ -83,7 +83,7 @@ def test_billing_killswitch_off_blocks(cli, monkeypatch, capsys):
     out = capsys.readouterr().out
     assert "Remote spending is off for this org." in out
     assert (
-        "A billing admin can turn it on from the portal's Hermes Agent page "
+        "A billing admin can turn it on from the portal's Kova Agent page "
         "to add funds here."
     ) in out
 

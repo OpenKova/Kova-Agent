@@ -1,4 +1,4 @@
-"""``hermes setup`` subcommand parser.
+"""``kova setup`` subcommand parser.
 
 Extracted verbatim from ``hermes_cli/main.py:main()`` (god-file Phase 2).
 Handler injected to avoid importing ``main``.
@@ -40,7 +40,7 @@ def build_setup_parser(subparsers, *, cmd_setup: Callable) -> None:
         action="store_true",
         help="(Default on existing installs.) Re-run the full wizard, "
         "showing current values as defaults. Kept for backwards "
-        "compatibility — a bare 'hermes setup' now does this.",
+        "compatibility — a bare 'kova setup' now does this.",
     )
     setup_parser.add_argument(
         "--quick",

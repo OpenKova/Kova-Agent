@@ -27,7 +27,7 @@ def _install_fake_gateway_run(monkeypatch, start_gateway):
     # ``run_gateway()`` calls ``refresh_systemd_unit_if_needed()`` on every
     # invocation so that restart settings stay current after exit-code-75
     # respawns. That helper writes to ``Path.home() / ".config/systemd/user
-    # /hermes-gateway.service"`` and runs ``systemctl --user daemon-reload``
+    # /kova-gateway.service"`` and runs ``systemctl --user daemon-reload``
     # — both target the *real* user environment because the conftest only
     # sandboxes ``HERMES_HOME``, not ``HOME``. Tests that drive
     # ``run_gateway()`` end-to-end with a fake ``start_gateway`` MUST stub
@@ -245,7 +245,7 @@ def test_run_gateway_refuses_when_service_supervising(monkeypatch, capsys):
     assert calls == []  # dispatcher never started
     out = capsys.readouterr().out
     assert "already running under systemd (user)" in out
-    assert "hermes gateway restart" in out
+    assert "kova gateway restart" in out
     assert "--force" in out
 
 
@@ -329,7 +329,7 @@ def test_run_gateway_refuses_existing_process_before_importing_gateway_run(monke
     assert calls == []
     out = capsys.readouterr().out
     assert "Another gateway instance is already running (PID 17907)" in out
-    assert "hermes gateway run --replace" in out
+    assert "kova gateway run --replace" in out
 
 
 def test_run_gateway_replace_skips_existing_process_preflight(monkeypatch):
@@ -598,7 +598,7 @@ def test_gateway_start_ignores_legacy_platform_selector(monkeypatch):
 def test_gateway_restart_on_windows_without_service_uses_detached_backend(monkeypatch):
     """Windows manual restart must not fall back to foreground run_gateway().
 
-    A Telegram-hosted agent may run `hermes gateway restart` via the terminal
+    A Telegram-hosted agent may run `kova gateway restart` via the terminal
     tool. The generic manual fallback stops the gateway and then calls
     run_gateway() in the same foreground subprocess; on Windows that subprocess
     can be reaped when its gateway parent is terminated, leaving the gateway
@@ -657,7 +657,7 @@ def test_gateway_restart_on_windows_preserves_failure_fallback(monkeypatch):
 
 
 def test_systemd_status_warns_when_linger_disabled(monkeypatch, tmp_path, capsys):
-    unit_path = tmp_path / "hermes-gateway.service"
+    unit_path = tmp_path / "kova-gateway.service"
     unit_path.write_text("[Unit]\n")
 
     monkeypatch.setattr(gateway, "get_systemd_unit_path", lambda system=False: unit_path)
@@ -687,7 +687,7 @@ def test_systemd_status_warns_when_linger_disabled(monkeypatch, tmp_path, capsys
 
 
 def test_systemd_install_checks_linger_status(monkeypatch, tmp_path, capsys):
-    unit_path = tmp_path / "systemd" / "user" / "hermes-gateway.service"
+    unit_path = tmp_path / "systemd" / "user" / "kova-gateway.service"
 
     monkeypatch.setattr(gateway, "get_systemd_unit_path", lambda system=False: unit_path)
     # Synthetic unit with a non-temp home: the real generator bakes the
@@ -724,7 +724,7 @@ def test_systemd_install_checks_linger_status(monkeypatch, tmp_path, capsys):
 
 
 def test_systemd_install_can_skip_enable_on_startup(monkeypatch, tmp_path, capsys):
-    unit_path = tmp_path / "systemd" / "user" / "hermes-gateway.service"
+    unit_path = tmp_path / "systemd" / "user" / "kova-gateway.service"
 
     monkeypatch.setattr(gateway, "get_systemd_unit_path", lambda system=False: unit_path)
     # Non-temp home so the temp-home write guard (which trips on the
@@ -761,7 +761,7 @@ def test_systemd_install_can_skip_enable_on_startup(monkeypatch, tmp_path, capsy
 
 
 def test_systemd_install_system_scope_skips_linger_and_uses_systemctl(monkeypatch, tmp_path, capsys):
-    unit_path = tmp_path / "etc" / "systemd" / "system" / "hermes-gateway.service"
+    unit_path = tmp_path / "etc" / "systemd" / "system" / "kova-gateway.service"
 
     monkeypatch.setattr(gateway, "get_systemd_unit_path", lambda system=False: unit_path)
     monkeypatch.setattr(
@@ -796,8 +796,8 @@ def test_systemd_install_system_scope_skips_linger_and_uses_systemctl(monkeypatc
 
 
 def test_conflicting_systemd_units_warning(monkeypatch, tmp_path, capsys):
-    user_unit = tmp_path / "user" / "hermes-gateway.service"
-    system_unit = tmp_path / "system" / "hermes-gateway.service"
+    user_unit = tmp_path / "user" / "kova-gateway.service"
+    system_unit = tmp_path / "system" / "kova-gateway.service"
     user_unit.parent.mkdir(parents=True)
     system_unit.parent.mkdir(parents=True)
     user_unit.write_text("[Unit]\n", encoding="utf-8")
@@ -813,7 +813,7 @@ def test_conflicting_systemd_units_warning(monkeypatch, tmp_path, capsys):
 
     out = capsys.readouterr().out
     assert "Both user and system gateway services are installed" in out
-    assert "hermes gateway uninstall" in out
+    assert "kova gateway uninstall" in out
     assert "--system" in out
 
 
@@ -1013,7 +1013,7 @@ def test_gateway_install_noninteractive_skips_legacy_unit_prompt(monkeypatch, tm
     monkeypatch.setattr(gateway, "remove_legacy_hermes_units", lambda interactive=False: calls.append(("remove_legacy",)))
     monkeypatch.setattr(gateway, "print_legacy_unit_warning", lambda: None)
 
-    fake_path = tmp_path / "hermes-gateway.service"
+    fake_path = tmp_path / "kova-gateway.service"
     monkeypatch.setattr(gateway, "get_systemd_unit_path", lambda system=False: fake_path)
     monkeypatch.setattr(gateway, "generate_systemd_unit", lambda system=False, run_as_user=None: "[Service]")
     monkeypatch.setattr(gateway, "_run_systemctl", lambda *a, **kw: None)

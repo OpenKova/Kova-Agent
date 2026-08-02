@@ -1,4 +1,4 @@
-"""Shared fixtures for the hermes-agent test suite.
+"""Shared fixtures for the kova-agent test suite.
 
 Hermetic-test invariants enforced here (see AGENTS.md for rationale):
 
@@ -680,11 +680,13 @@ def _live_system_guard(request, monkeypatch):
 
     # ── Subprocess command-string inspection (whole-line) ──────────
     _HERMES_TOKENS = (
+        "kova-gateway",
         "hermes-gateway",
         "hermes.service",
         "hermes_cli.main gateway",
         "hermes_cli/main.py gateway",
         "gateway/run.py",
+        "kova gateway",
         "hermes gateway",
     )
     _MUTATING_VERBS = (
@@ -767,7 +769,7 @@ def _live_system_guard(request, monkeypatch):
                 "Mark with @pytest.mark.live_system_guard_bypass if "
                 "intentional."
             )
-        # Block any subprocess that would run `hermes update` (or the
+        # Block any subprocess that would run `kova update` (or the
         # equivalent `python -m hermes_cli.main update`).  These commands
         # run `git fetch origin + git pull` against the REAL checkout,
         # overwriting files like pyproject.toml mid-test-run and corrupting
@@ -792,7 +794,7 @@ def _live_system_guard(request, monkeypatch):
             raise RuntimeError(
                 f"tests/conftest.py live-system guard: blocked "
                 f"subprocess.{name}({cmd!r}) — this command would run "
-                "`hermes update` against the real checkout, fetching "
+                "`kova update` against the real checkout, fetching "
                 "from origin and overwriting repo files (e.g. "
                 "pyproject.toml) mid-test-run. This corrupts every "
                 "subsequent subprocess in the same runner. "

@@ -181,7 +181,7 @@ def _get_parent_pid(pid: int) -> int | None:
     older implementation shelled out to ``ps -o ppid= -p <pid>``, which
     silently fails on Windows (no ``ps``) so the ancestor walk terminated
     at self — the caller's dedup / exclude logic then couldn't distinguish
-    "hermes CLI that invoked this scan" from "real gateway process".
+    "kova CLI that invoked this scan" from "real gateway process".
     """
     if pid <= 1:
         return None
@@ -1720,7 +1720,7 @@ def _windows_gateway_should_absorb_console_controls() -> bool:
 # Service Configuration
 # =============================================================================
 
-_SERVICE_BASE = "hermes-gateway"
+_SERVICE_BASE = "kova-gateway"
 SERVICE_DESCRIPTION = "Kova Agent Gateway - Messaging Platform Integration"
 
 
@@ -1787,7 +1787,7 @@ def _profile_arg(hermes_home: str | None = None, default_root: str | Path | None
 
 def _profile_arg_for_target_user(hermes_home: str, target_home_dir: str) -> str:
     """Return the profile arg for a system service running as another user."""
-    target_root = Path(target_home_dir) / ".hermes"
+    target_root = Path(target_home_dir) / ".kova"
     try:
         Path(hermes_home).resolve().relative_to(target_root.resolve())
         return _profile_arg(hermes_home, default_root=target_root)
@@ -2096,15 +2096,15 @@ def _find_legacy_hermes_units() -> list[tuple[str, Path, bool]]:
 
     Detects unit files installed by older Hermes versions that used a
     different service name (e.g. ``hermes.service`` before the rename to
-    ``hermes-gateway.service``). When both a legacy unit and the current
-    ``hermes-gateway.service`` are active, they fight over the same bot
+    ``kova-gateway.service``). When both a legacy unit and the current
+    ``kova-gateway.service`` are active, they fight over the same bot
     token — the PR #5646 signal-recovery change turns this into a 30-second
     SIGTERM flap loop.
 
     Safety guards:
 
     * Explicit allowlist of legacy names (no globbing). Profile units such
-      as ``hermes-gateway-coder.service`` and unrelated third-party
+      as ``kova-gateway-coder.service`` and unrelated third-party
       ``hermes-*`` services are never matched.
     * ExecStart content check — only flag units that invoke our gateway
       entrypoint. A user-created ``hermes.service`` running an unrelated
@@ -2147,7 +2147,7 @@ def print_legacy_unit_warning() -> None:
     for name, path, is_system in legacy:
         scope = "system" if is_system else "user"
         print_info(f"    {path}  ({scope} scope)")
-    print_info("  These run alongside the current hermes-gateway service and")
+    print_info("  These run alongside the current kova-gateway service and")
     print_info("  cause SIGTERM flap loops — both try to use the same bot token.")
     print_info("  Remove them with:")
     print_info("    kova gateway migrate-legacy")
@@ -2621,8 +2621,8 @@ def _hermes_home_for_target_user(target_home_dir: str) -> str:
 
     When installing a system service via sudo, get_hermes_home() resolves to
     root's home.  This translates it to the target user's equivalent path:
-      /root/.hermes                    → /home/alice/.hermes
-      /root/.hermes/profiles/coder     → /home/alice/.hermes/profiles/coder
+      /root/.kova                    → /home/alice/.kova
+      /root/.kova/profiles/coder     → /home/alice/.kova/profiles/coder
       /opt/custom-hermes               → /opt/custom-hermes  (kept as-is)
     """
     current_hermes_raw = os.environ.get("HERMES_HOME", "").strip()
@@ -2634,14 +2634,14 @@ def _hermes_home_for_target_user(target_home_dir: str) -> str:
     # Keep explicit custom paths lexical. Resolving a non-existent custom path
     # can rewrite it through host-specific path mappings, which would bake a
     # different HERMES_HOME into the generated service unit.
-    current_default = Path.home() / ".hermes"
-    target_default = Path(target_home_dir) / ".hermes"
+    current_default = Path.home() / ".kova"
+    target_default = Path(target_home_dir) / ".kova"
 
-    # Default ~/.hermes → remap to target user's default
+    # Default ~/.kova → remap to target user's default
     if current_hermes == current_default:
         return str(target_default)
 
-    # Profile or subdir of ~/.hermes → preserve the relative structure
+    # Profile or subdir of ~/.kova → preserve the relative structure
     try:
         relative = current_hermes.relative_to(current_default)
         return str(target_default / relative)
@@ -3205,7 +3205,7 @@ def systemd_install(
         _require_root_for_system_service("install")
 
     # Offer to remove legacy units (hermes.service from pre-rename installs)
-    # before installing the new hermes-gateway.service. If both remain, they
+    # before installing the new kova-gateway.service. If both remain, they
     # flap-fight for the Telegram bot token on every gateway startup.
     # Only removes units matching _LEGACY_SERVICE_NAMES + our ExecStart
     # signature — profile units are never touched.
@@ -4855,7 +4855,7 @@ def run_gateway(verbose: int = 0, quiet: bool = False, replace: bool = False, fo
     from gateway.run import start_gateway
 
     print("┌─────────────────────────────────────────────────────────┐")
-    print("│           ⚕ Hermes Gateway Starting...                 │")
+    print("│           ⚕ Kova Gateway Starting...                 │")
     print("├─────────────────────────────────────────────────────────┤")
     print("│  Messaging platforms + cron scheduler                    │")
     print("│  Press Ctrl+C to stop                                   │")
@@ -5555,7 +5555,7 @@ def _setup_standard_platform(platform: dict):
                 else:
                     access_choices = [
                         "Enable open access (anyone can message the bot)",
-                        "Use DM pairing (unknown users request access, you approve with 'hermes pairing approve')",
+                        "Use DM pairing (unknown users request access, you approve with 'kova pairing approve')",
                         "Skip for now (bot will deny all users until configured)",
                     ]
                     default_access_idx = 1
@@ -7298,7 +7298,7 @@ def _gateway_command_inner(args):
 
     elif subcmd == "migrate-legacy":
         # Stop, disable, and remove legacy Hermes gateway unit files from
-        # pre-rename installs (e.g. hermes.service). Profile units and
+        # pre-rename installs (e.g. kova.service). Profile units and
         # unrelated third-party services are never touched.
         dry_run = getattr(args, "dry_run", False)
         yes = getattr(args, "yes", False)

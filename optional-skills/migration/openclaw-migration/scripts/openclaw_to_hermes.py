@@ -129,7 +129,7 @@ MIGRATION_OPTION_METADATA: Dict[str, Dict[str, str]] = {
     },
     "cron-jobs": {
         "label": "Cron / scheduled tasks",
-        "description": "Import cron job definitions. Archive for manual recreation via 'hermes cron'.",
+        "description": "Import cron job definitions. Archive for manual recreation via 'kova cron'.",
     },
     "hooks-config": {
         "label": "Hooks and webhooks",
@@ -400,13 +400,16 @@ def backup_existing(path: Path, backup_root: Path) -> Optional[Path]:
 # memory entries, user profiles, SOUL.md, and workspace instructions
 # read as self-referential to the new agent identity.
 #
-# Case-preserving: ``OpenClaw`` → ``Hermes`` (prose), but lowercase matches
-# like ``openclaw`` → ``hermes`` (so filesystem paths like ``~/.openclaw``
-# become ``~/.hermes`` — the real Hermes home — not the broken ``~/.Hermes``).
+# Case-preserving: ``OpenClaw`` → ``Kova`` (prose), but lowercase
+# ``openclaw`` → ``kova`` and dot-prefixed filesystem paths like
+# ``~/.openclaw`` → ``~/.hermes`` (the real Hermes home — not the
+# broken ``~/.Hermes`` or ``~/.kova``).
 _REBRAND_PATTERNS: List[Tuple[re.Pattern, str]] = [
-    (re.compile(r'\bOpen[\s-]?Claw\b', re.IGNORECASE), 'Hermes'),
-    (re.compile(r'\bClawdBot\b', re.IGNORECASE), 'Hermes'),
-    (re.compile(r'\bMoltBot\b', re.IGNORECASE), 'Hermes'),
+    # Filesystem paths first — the Hermes home dir keeps its real name.
+    (re.compile(r'(?<![A-Za-z])\.openclaw\b'), '.hermes'),
+    (re.compile(r'\bOpen[\s-]?Claw\b', re.IGNORECASE), 'Kova'),
+    (re.compile(r'\bClawdBot\b', re.IGNORECASE), 'Kova'),
+    (re.compile(r'\bMoltBot\b', re.IGNORECASE), 'Kova'),
 ]
 
 
@@ -414,10 +417,10 @@ def _case_preserving_replacement(replacement: str):
     """Return a re.sub replacement fn that lowercases the result when the
     matched text was all-lowercase.
 
-    Keeps ``OpenClaw`` → ``Hermes`` but maps ``openclaw`` → ``hermes`` so a
-    filesystem path like ``~/.openclaw/config.yaml`` rewrites to
-    ``~/.hermes/config.yaml`` (the real Hermes home) instead of the broken
-    ``~/.Hermes/config.yaml``.
+    Keeps ``OpenClaw`` → ``Kova`` but maps ``openclaw`` → ``kova`` and
+    rewrites dot-prefixed filesystem paths ``~/.openclaw`` → ``~/.hermes``
+    (the real Hermes home) instead of the broken ``~/.Hermes`` or
+    ``~/.kova``.
     """
     def _sub(match: "re.Match[str]") -> str:
         matched = match.group(0)
@@ -428,7 +431,7 @@ def _case_preserving_replacement(replacement: str):
 
 
 def rebrand_text(text: str) -> str:
-    """Replace OpenClaw / ClawdBot / MoltBot brand names with Hermes.
+    """Replace OpenClaw / ClawdBot / MoltBot brand names with Kova.
 
     Preserves case so filesystem-path matches (lowercase) don't become
     capitalized directory names that don't exist.
@@ -2228,7 +2231,7 @@ class Migrator:
                 dest = self.archive_dir / "cron-config.json"
                 dest.write_text(json.dumps(cron, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
                 self.record("cron-jobs", "openclaw.json cron.*", str(dest), "archived",
-                            "Cron config archived. Use 'hermes cron' to recreate jobs manually.")
+                            "Cron config archived. Use 'kova cron' to recreate jobs manually.")
             else:
                 self.record("cron-jobs", "openclaw.json cron.*", "archive/cron-config.json",
                             "archived", "Would archive cron config")
@@ -2913,9 +2916,9 @@ class Migrator:
         ])
 
         if has_cron_config_archive:
-            notes.append("- Run `hermes cron` to recreate scheduled tasks (see archive/cron-config.json)")
+            notes.append("- Run `kova cron` to recreate scheduled tasks (see archive/cron-config.json)")
         elif has_cron_store_archive:
-            notes.append("- Run `hermes cron` to recreate scheduled tasks (see archived cron-store)")
+            notes.append("- Run `kova cron` to recreate scheduled tasks (see archived cron-store)")
 
         # Check if skills were imported
         has_skills = any(i.kind == "skills" and i.status == "migrated" for i in self.items)
@@ -3116,7 +3119,7 @@ def main() -> int:
         print("    1. Review ~/.hermes/config.yaml")
         print("    2. Run: hermes mcp list")
         if any(i["kind"] == "cron-jobs" and i["status"] == "archived" for i in items):
-            print("    3. Recreate cron jobs: hermes cron")
+            print("    3. Recreate cron jobs: kova cron")
         if report.get("output_dir"):
             print(f"    → Full report: {report['output_dir']}/MIGRATION_NOTES.md")
     elif not args.execute:

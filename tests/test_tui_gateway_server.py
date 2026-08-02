@@ -62,7 +62,7 @@ def test_session_create_rejects_at_active_session_limit(monkeypatch, tmp_path):
 
         second = server._methods["session.create"]("r2", {"cols": 80})
         assert second["error"]["message"] == (
-            "Hermes is at the active session limit (1/1). "
+            "Kova is at the active session limit (1/1). "
             "Try again when another session finishes."
         )
         assert list(server._sessions) == [sid]
@@ -612,7 +612,7 @@ def test_completion_cwd_prefers_launch_config_over_stale_env(monkeypatch, tmp_pa
     """
     configured = tmp_path / "omni"
     configured.mkdir()
-    stale = tmp_path / "hermes-agent"
+    stale = tmp_path / "kova-agent"
     stale.mkdir()
 
     monkeypatch.setenv("TERMINAL_CWD", str(stale))
@@ -2443,7 +2443,7 @@ def test_config_sync_config_wins_over_env_seed(monkeypatch):
 
 
 def test_config_sync_ignores_env_seed_without_config_model(monkeypatch):
-    # `hermes --tui -m <model>` sets HERMES_MODEL/HERMES_INFERENCE_MODEL as a
+    # `kova --tui -m <model>` sets HERMES_MODEL/HERMES_INFERENCE_MODEL as a
     # launch-scoped seed. When config.yaml has NO model.default (typical
     # custom-provider-only setup), the sync must NOT adopt the env seed as a
     # config target — doing so replayed the -m flag as a /model switch and
@@ -8673,13 +8673,13 @@ def test_session_delete_success_returns_deleted_id(monkeypatch):
 
 
 # --------------------------------------------------------------------------
-# model.options — curated-list parity with `hermes model` and classic /model
+# model.options — curated-list parity with `kova model` and classic /model
 # --------------------------------------------------------------------------
 
 
 def test_model_options_does_not_overwrite_curated_models(monkeypatch):
     """The TUI model.options handler must surface the same curated model
-    list as `hermes model` and the classic CLI /model picker.
+    list as `kova model` and the classic CLI /model picker.
 
     Regression: earlier versions of this handler unconditionally replaced
     each provider's curated ``models`` field with ``provider_model_ids()``
@@ -9230,7 +9230,7 @@ def test_session_active_list_excludes_finalized_sessions(monkeypatch):
     that window ``session.active_list`` would otherwise still report the dead
     session, which is exactly the footer "N sessions" count that only ever grew
     until a gateway restart. A live session on the real stdio transport (the
-    standalone ``hermes --tui`` case) must still be reported.
+    standalone ``kova --tui`` case) must still be reported.
     """
     class _DB:
         def get_session_title(self, key):

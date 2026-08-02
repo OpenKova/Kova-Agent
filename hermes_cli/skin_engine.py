@@ -94,7 +94,7 @@ All fields are optional. Missing values inherit from the ``default`` skin.
 
     # Branding: text strings used throughout the CLI
     branding:
-      agent_name: "Hermes Agent"          # Banner title, status display
+      agent_name: "Kova Agent"          # Banner title, status display
       welcome: "Welcome message"          # Shown at CLI startup
       goodbye: "Goodbye! ⚕"              # Shown on exit
       response_label: " ⚕ Kova "       # Response box header label

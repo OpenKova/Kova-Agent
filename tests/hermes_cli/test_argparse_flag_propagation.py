@@ -1,7 +1,7 @@
 """Tests for parent→subparser flag propagation.
 
 When flags like --yolo, -w, -s exist on both the parent parser and the 'chat'
-subparser, placing the flag BEFORE the subcommand (e.g. 'hermes --yolo chat')
+subparser, placing the flag BEFORE the subcommand (e.g. 'kova --yolo chat')
 must not silently drop the flag value.
 
 Regression test for: argparse subparser default=False overwriting parent's
@@ -150,7 +150,7 @@ class TestAcceptHooksOnAgentSubparsers:
     position (before the subcommand, between group/subcommand, and
     after the leaf subcommand) for gateway/cron/mcp/acp.  Regression
     against prior behaviour where the flag only worked on the root
-    parser and `chat`, so `hermes gateway run --accept-hooks` failed
+    parser and `chat`, so `kova gateway run --accept-hooks` failed
     with `unrecognized arguments`."""
 
     ARGVS = [
@@ -199,7 +199,7 @@ print(json.dumps(results))
 """
 
     def test_accepted_at_every_position(self):
-        """Every `hermes <argv>` must exit 0 (help) rather than failing
+        """Every `kova <argv>` must exit 0 (help) rather than failing
         with `unrecognized arguments`."""
         import json
         import subprocess
@@ -225,7 +225,7 @@ class TestChatSubparserInheritedValueFlags:
     """Verify -t/--toolsets, -m/--model and --provider survive parent→chat
     subparser dispatch.
 
-    Regression test for #28780: `hermes -t web chat` silently dropped the
+    Regression test for #28780: `kova -t web chat` silently dropped the
     toolset because the chat subparser re-declared `-t/--toolsets` with
     `default=None`, which clobbered the top-level parser's value during
     subparser dispatch.
@@ -251,7 +251,7 @@ class TestChatSubparserInheritedValueFlags:
     def test_flag_before_chat_is_preserved(self, real_parser, flag, attr, value):
         args, _ = real_parser.parse_known_args([flag, value, "chat"])
         assert getattr(args, attr, None) == value, (
-            f"`hermes {flag} {value} chat` lost the flag — got "
+            f"`kova {flag} {value} chat` lost the flag — got "
             f"{getattr(args, attr, None)!r}, expected {value!r}"
         )
 
@@ -298,10 +298,10 @@ class TestChatSubparserInheritedValueFlags:
     ):
         """`--tui` / `--cli` / `--dev` are store_true flags inherited by chat; the same
         SUPPRESS contract applies. Without it, the subparser's `default=False`
-        would clobber the parent's `True` when used as `hermes --tui chat`."""
+        would clobber the parent's `True` when used as `kova --tui chat`."""
         args, _ = real_parser.parse_known_args([flag, "chat"])
         assert getattr(args, attr, None) is True, (
-            f"`hermes {flag} chat` lost the flag — got "
+            f"`kova {flag} chat` lost the flag — got "
             f"{getattr(args, attr, None)!r}, expected True"
         )
 
@@ -333,7 +333,7 @@ class TestChatSubparserInheritedValueFlags:
         assert not offenders, (
             "Chat subparser redeclares these top-level flags without "
             "default=argparse.SUPPRESS; they will silently clobber the "
-            "top-level value when used as `hermes <flag> <value> chat`:\n  "
+            "top-level value when used as `kova <flag> <value> chat`:\n  "
             + "\n  ".join(f"{opts} dest={dest} default={d!r}"
                           for opts, dest, d in offenders)
         )

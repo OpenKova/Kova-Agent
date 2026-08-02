@@ -76,7 +76,7 @@ class TestDoctorToolAvailabilitySummary:
 
 
 class TestDoctorEnvFileEncoding:
-    """Regression for #18637 (bug 3): `hermes doctor` crashed on Windows
+    """Regression for #18637 (bug 3): `kova doctor` crashed on Windows
     Chinese locale (GBK) because `.env` was read with Path.read_text() which
     defaults to the system locale encoding, not UTF-8."""
 
@@ -244,7 +244,7 @@ def test_run_doctor_sets_interactive_env_for_tool_checks(monkeypatch, tmp_path):
 
 
 def test_check_gateway_service_linger_warns_when_disabled(monkeypatch, tmp_path, capsys):
-    unit_path = tmp_path / "hermes-gateway.service"
+    unit_path = tmp_path / "kova-gateway.service"
     unit_path.write_text("[Unit]\n")
 
     monkeypatch.setattr(gateway_cli, "is_linux", lambda: True)
@@ -1423,7 +1423,7 @@ class TestDoctorStaleMaxIterationsDrift:
 
 
 def test_npm_audit_fix_hint_avoids_crashing_workspace_flag(monkeypatch, tmp_path):
-    """`hermes doctor` must not hand users `npm audit fix --workspace <name>`:
+    """`kova doctor` must not hand users `npm audit fix --workspace <name>`:
     that exact form crashes npm with "Cannot read properties of null (reading
     'edgesOut')" (an arborist bug with workspace-filtered audit fix).
 

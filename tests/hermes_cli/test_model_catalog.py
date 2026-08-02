@@ -180,9 +180,9 @@ class TestFallbackChain:
     releases (opus 4.8, etc.) never reach the picker.
     """
 
-    PRIMARY = "https://hermes-agent.nousresearch.com/docs/api/model-catalog.json"
+    PRIMARY = "https://kova-agent.nousresearch.com/docs/api/model-catalog.json"
     FALLBACK = (
-        "https://raw.githubusercontent.com/NousResearch/hermes-agent"
+        "https://raw.githubusercontent.com/NousResearch/kova-agent"
         "/main/website/static/api/model-catalog.json"
     )
 
@@ -432,7 +432,7 @@ class TestIntegrationWithModelsModule:
 
     def test_picker_nous_row_uses_curated_list(self, tmp_path, monkeypatch):
         """The /model picker surfaces the curated ``_PROVIDER_MODELS["nous"]``
-        list in curated order — matching the ``hermes model`` CLI — not the live
+        list in curated order — matching the ``kova model`` CLI — not the live
         ``/v1/models`` catalog or the manifest. Portal free/paid recommendations
         are unioned in when reachable; offline (as here, with the Portal calls
         stubbed out) it's exactly the curated list.

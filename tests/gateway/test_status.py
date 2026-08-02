@@ -18,7 +18,7 @@ class TestGatewayPidState:
 
         payload = json.loads((tmp_path / "gateway.pid").read_text())
         assert payload["pid"] == os.getpid()
-        assert payload["kind"] == "hermes-gateway"
+        assert payload["kind"] == "kova-gateway"
         assert isinstance(payload["argv"], list)
         assert payload["argv"]
 
@@ -64,7 +64,7 @@ class TestGatewayPidState:
         dead_pid = 999999  # not our pid, and below we simulate it's dead
         pid_path.write_text(json.dumps({
             "pid": dead_pid,
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
             "argv": ["python", "-m", "hermes_cli.main", "gateway", "run"],
             "start_time": 111,
         }))
@@ -82,7 +82,7 @@ class TestGatewayPidState:
         pid_path = tmp_path / "gateway.pid"
         pid_path.write_text(json.dumps({
             "pid": os.getpid(),
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
             "argv": ["python", "-m", "hermes_cli.main", "gateway"],
             "start_time": 123,
         }))
@@ -102,7 +102,7 @@ class TestGatewayPidState:
         pid_path = tmp_path / "gateway.pid"
         pid_path.write_text(json.dumps({
             "pid": os.getpid(),
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
             "argv": ["/venv/bin/python", "/repo/hermes_cli/main.py", "gateway", "run", "--replace"],
             "start_time": 123,
         }))
@@ -127,7 +127,7 @@ class TestGatewayPidState:
         pid_path = other_home / "gateway.pid"
         pid_path.write_text(json.dumps({
             "pid": os.getpid(),
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
             "argv": ["python", "-m", "hermes_cli.main", "gateway"],
             "start_time": 123,
         }))
@@ -139,7 +139,7 @@ class TestGatewayPidState:
         lock_path = other_home / "gateway.lock"
         lock_path.write_text(json.dumps({
             "pid": os.getpid(),
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
             "argv": ["python", "-m", "hermes_cli.main", "gateway"],
             "start_time": 123,
         }))
@@ -164,7 +164,7 @@ class TestGatewayPidState:
         pid_path = tmp_path / "gateway.pid"
         pid_path.write_text(json.dumps({
             "pid": os.getpid(),
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
             "argv": ["python", "-m", "hermes_cli.main", "gateway"],
             "start_time": 123,
         }))
@@ -182,7 +182,7 @@ class TestGatewayPidState:
         pid_path = tmp_path / "gateway.pid"
         record = {
             "pid": os.getpid(),
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
             "argv": ["python", "-m", "hermes_cli.main", "gateway", "restart"],
             "start_time": 123,
         }
@@ -209,7 +209,7 @@ class TestGatewayPidState:
         state_path.write_text(json.dumps({
             "gateway_state": "running",
             "pid": os.getpid(),
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
             "argv": ["python", "-m", "hermes_cli.main", "gateway", "restart"],
             "start_time": 123,
         }))
@@ -231,7 +231,7 @@ class TestGatewayPidState:
         pid_path = tmp_path / "gateway.pid"
         record = {
             "pid": os.getpid(),
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
             "argv": ["python", "-m", "hermes_cli.main", "gateway"],
             "start_time": 123,
         }
@@ -262,7 +262,7 @@ class TestGatewayPidState:
         def _write_record(pid: int, start_time: int) -> None:
             record = {
                 "pid": pid,
-                "kind": "hermes-gateway",
+                "kind": "kova-gateway",
                 "argv": ["python", "-m", "hermes_cli.main", "gateway"],
                 "start_time": start_time,
             }
@@ -307,13 +307,13 @@ class TestGatewayPidState:
 
         pid_path.write_text(json.dumps({
             "pid": dead_foreign_pid,
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
             "argv": ["python", "-m", "hermes_cli.main", "gateway"],
             "start_time": 123,
         }))
         lock_path.write_text(json.dumps({
             "pid": dead_foreign_pid,
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
             "argv": ["python", "-m", "hermes_cli.main", "gateway"],
             "start_time": 123,
         }))
@@ -328,7 +328,7 @@ class TestGatewayPidState:
         pid_path = tmp_path / "gateway.pid"
         pid_path.write_text(json.dumps({
             "pid": 99999,
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
             "argv": ["python", "-m", "hermes_cli.main", "gateway"],
             "start_time": 123,
         }))
@@ -340,7 +340,7 @@ class TestGatewayPidState:
             "_build_pid_record",
             lambda: {
                 "pid": os.getpid(),
-                "kind": "hermes-gateway",
+                "kind": "kova-gateway",
                 "argv": ["python", "-m", "hermes_cli.main", "gateway"],
                 "start_time": 123,
             },
@@ -426,7 +426,7 @@ class TestGatewayRuntimeStatus:
         state_path.write_text(json.dumps({
             "pid": 99999,
             "start_time": 1000.0,
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
             "platforms": {},
             "updated_at": "2025-01-01T00:00:00Z",
         }))
@@ -445,7 +445,7 @@ class TestGatewayRuntimeStatus:
         state_path.write_text(json.dumps({
             "pid": 99999,
             "start_time": 1000.0,
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
             "argv": ["/old/path/hermes", "gateway", "run"],
             "platforms": {},
             "updated_at": "2025-01-01T00:00:00Z",
@@ -473,7 +473,7 @@ class TestGatewayRuntimeStatus:
             "pid": 132,
             "start_time": 123,
             "gateway_state": "running",
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
             "argv": ["/opt/hermes/.venv/bin/hermes", "gateway", "run", "--replace"],
         }
 
@@ -489,7 +489,7 @@ class TestGatewayRuntimeStatus:
             "pid": 132,
             "start_time": 123,
             "gateway_state": "running",
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
             "argv": ["/opt/hermes/.venv/bin/hermes", "gateway", "run", "--replace"],
         }
 
@@ -505,7 +505,7 @@ class TestGatewayRuntimeStatus:
 
         Per-profile Docker supervision: ``coder``'s gateway died leaving a
         ``gateway_state=running`` record at PID 139.  The OS then recycled 139
-        onto the live *default* gateway (``hermes gateway run``).  The recorded
+        onto the live *default* gateway (``kova gateway run``).  The recorded
         ``start_time`` is absent (older state file), so the start-time PID-reuse
         guard does not catch it.  Without the profile scope the live command
         line still ``looks_like_gateway`` and ``coder`` is wrongly reported up.
@@ -513,7 +513,7 @@ class TestGatewayRuntimeStatus:
         payload = {
             "pid": 139,
             "gateway_state": "running",
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
             "argv": ["hermes", "gateway", "run"],
         }
         coder_home = Path("/opt/data/profiles/coder")
@@ -522,7 +522,7 @@ class TestGatewayRuntimeStatus:
         monkeypatch.setattr(status, "_get_process_start_time", lambda pid: None)
         # PID 139 is now the live DEFAULT gateway (bare, no -p coder).
         monkeypatch.setattr(
-            status, "_read_process_cmdline", lambda pid: "hermes gateway run --replace"
+            status, "_read_process_cmdline", lambda pid: "kova gateway run --replace"
         )
 
         assert (
@@ -536,7 +536,7 @@ class TestGatewayRuntimeStatus:
         payload = {
             "pid": 139,
             "gateway_state": "running",
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
             "argv": ["hermes", "gateway", "run"],
             "start_time": 1000,
         }
@@ -545,7 +545,7 @@ class TestGatewayRuntimeStatus:
         monkeypatch.setattr(status, "_pid_exists", lambda pid: True)
         monkeypatch.setattr(status, "_get_process_start_time", lambda pid: 1000)
         for cmdline in (
-            "hermes -p coder gateway run --replace",
+            "kova -p coder gateway run --replace",
             "/opt/hermes/.venv/bin/hermes --profile coder gateway run --replace",
             "hermes_home=/opt/data/profiles/coder hermes gateway run --replace",
         ):
@@ -562,7 +562,7 @@ class TestGatewayRuntimeStatus:
         payload = {
             "pid": 139,
             "gateway_state": "running",
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
             "argv": ["hermes", "gateway", "run"],
         }
         default_home = Path("/opt/data")
@@ -570,7 +570,7 @@ class TestGatewayRuntimeStatus:
         monkeypatch.setattr(status, "_pid_exists", lambda pid: True)
         monkeypatch.setattr(status, "_get_process_start_time", lambda pid: None)
         monkeypatch.setattr(
-            status, "_read_process_cmdline", lambda pid: "hermes -p coder gateway run --replace"
+            status, "_read_process_cmdline", lambda pid: "kova -p coder gateway run --replace"
         )
 
         assert (
@@ -579,12 +579,12 @@ class TestGatewayRuntimeStatus:
         )
 
     def test_runtime_status_running_pid_default_profile_accepts_bare_cmdline(self, monkeypatch):
-        """The default/root gateway (bare ``hermes gateway run``) is reported
+        """The default/root gateway (bare ``kova gateway run``) is reported
         running for the default profile."""
         payload = {
             "pid": 139,
             "gateway_state": "running",
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
             "argv": ["hermes", "gateway", "run"],
             "start_time": 1000,
         }
@@ -593,7 +593,7 @@ class TestGatewayRuntimeStatus:
         monkeypatch.setattr(status, "_pid_exists", lambda pid: True)
         monkeypatch.setattr(status, "_get_process_start_time", lambda pid: 1000)
         monkeypatch.setattr(
-            status, "_read_process_cmdline", lambda pid: "hermes gateway run --replace"
+            status, "_read_process_cmdline", lambda pid: "kova gateway run --replace"
         )
 
         assert (
@@ -608,7 +608,7 @@ class TestGatewayRuntimeStatus:
         payload = {
             "pid": 139,
             "gateway_state": "running",
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
             "argv": ["hermes", "gateway", "run"],
             "start_time": 1000,
         }
@@ -796,7 +796,7 @@ class TestScopedLocks:
         lock_path.write_text(json.dumps({
             "pid": 99999,
             "start_time": 123,
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
         }))
 
         # Post-#21561 the liveness probe routes through
@@ -823,8 +823,8 @@ class TestScopedLocks:
         lock_path.write_text(json.dumps({
             "pid": 873,
             "start_time": None,
-            "kind": "hermes-gateway",
-            "argv": ["/Users/user/.hermes/hermes-agent/hermes_cli/main.py", "gateway", "run", "--replace"],
+            "kind": "kova-gateway",
+            "argv": ["/Users/user/.hermes/kova-agent/hermes_cli/main.py", "gateway", "run", "--replace"],
         }))
 
         # Post-#21561 the liveness probe routes through
@@ -859,8 +859,8 @@ class TestScopedLocks:
         lock_path.write_text(json.dumps({
             "pid": 873,
             "start_time": None,
-            "kind": "hermes-gateway",
-            "argv": ["/Users/user/.hermes/hermes-agent/hermes_cli/main.py", "gateway", "run", "--replace"],
+            "kind": "kova-gateway",
+            "argv": ["/Users/user/.hermes/kova-agent/hermes_cli/main.py", "gateway", "run", "--replace"],
         }))
 
         monkeypatch.setattr(status, "_pid_exists", lambda pid: True)
@@ -885,7 +885,7 @@ class TestScopedLocks:
         lock_path.write_text(json.dumps({
             "pid": 99999,
             "start_time": 123,
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
         }))
         monkeypatch.setattr(status, "_pid_exists", lambda pid: False)
 
@@ -907,7 +907,7 @@ class TestScopedLocks:
         stale_record = {
             "pid": 99999,
             "start_time": 123,
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
         }
         lock_path.write_text(json.dumps(stale_record))
         monkeypatch.setattr(status, "_pid_exists", lambda pid: False)
@@ -915,7 +915,7 @@ class TestScopedLocks:
         winner_record = {
             "pid": 424242,
             "start_time": 456,
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
             "scope": "telegram-bot-token",
         }
         real_replace = os.replace
@@ -948,7 +948,7 @@ class TestScopedLocks:
         lock_path.write_text(json.dumps({
             "pid": 99999,
             "start_time": 123,
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
         }))
         monkeypatch.setattr(status, "_pid_exists", lambda pid: pid != 99999)
 
@@ -985,7 +985,7 @@ class TestScopedLocks:
         lock_path.write_text(json.dumps({
             "pid": 99999,
             "start_time": None,
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
             "argv": ["hermes_cli/main.py", "gateway", "run"],
         }))
 
@@ -1009,8 +1009,8 @@ class TestScopedLocks:
         lock_path.write_text(json.dumps({
             "pid": 99999,
             "start_time": None,
-            "kind": "hermes-gateway",
-            "argv": ["/Users/user/.hermes/hermes-agent/hermes_cli/main.py", "gateway", "run", "--replace"],
+            "kind": "kova-gateway",
+            "argv": ["/Users/user/.hermes/kova-agent/hermes_cli/main.py", "gateway", "run", "--replace"],
         }))
 
         monkeypatch.setattr(status, "_pid_exists", lambda pid: True)
@@ -1029,7 +1029,7 @@ class TestScopedLocks:
         lock_path.write_text(json.dumps({
             "pid": 99999,
             "start_time": 123,
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
         }))
 
         # Post-#21561: simulate "PID gone" via _pid_exists returning False.
@@ -1090,12 +1090,12 @@ class TestScopedLocks:
         target_lock.write_text(json.dumps({
             "pid": 111,
             "start_time": 222,
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
         }))
         other_lock.write_text(json.dumps({
             "pid": 999,
             "start_time": 333,
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
         }))
 
         removed = status.release_all_scoped_locks(
@@ -1116,7 +1116,7 @@ class TestScopedLocks:
         reused_pid_lock.write_text(json.dumps({
             "pid": 111,
             "start_time": 999,
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
         }))
 
         removed = status.release_all_scoped_locks(
@@ -1141,7 +1141,7 @@ class TestScopedLocks:
         lock_path.write_text(json.dumps({
             "pid": 840,
             "start_time": 123,
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
             "argv": ["/usr/bin/python", "-m", "hermes_cli.main", "gateway", "run"],
         }))
 
@@ -1429,7 +1429,7 @@ class TestScopedLockTakeover:
         target_home.mkdir(parents=True, exist_ok=True)
         record = {
             "pid": pid,
-            "kind": "hermes-gateway",
+            "kind": "kova-gateway",
             "argv": ["python", "-m", "hermes_cli.main", "gateway", "run"],
             "start_time": start_time,
             "hermes_home": str(target_home),
@@ -1663,7 +1663,7 @@ class TestPlannedStopMarker:
         ``_get_process_start_time`` returns None on macOS / native Windows
         (no ``/proc/<pid>/stat``). The planned-stop watcher only runs there,
         so if the authoritative consume required a non-None start_time match
-        it would always return False — and ``hermes gateway stop`` would be
+        it would always return False — and ``kova gateway stop`` would be
         misclassified as an unexpected ``UNKNOWN`` exit, exit 1, and revived
         by the service manager (the very crash loop #34597 set out to fix).
         With start_time unavailable on BOTH sides we fall back to PID

@@ -24,7 +24,7 @@ def _dotenv_key_names() -> set[str]:
 
     The managed backends (launchd / systemd / the desktop-spawned ``serve``
     process) load credentials from this file — NOT from an interactive shell's
-    exports. ``hermes debug share`` runs in a terminal, so ``os.getenv`` reflects
+    exports. ``kova debug share`` runs in a terminal, so ``os.getenv`` reflects
     the shell's environment, which can include exported keys the managed backend
     never sees. Comparing against this set lets the dump flag that mismatch (the
     exact trap behind #48504-style "no web_search" reports: key exported in the
@@ -340,7 +340,7 @@ def run_dump(args):
     os_info = f"{platform.system()} {platform.release()} {platform.machine()}"
 
     lines = []
-    lines.append("--- hermes dump ---")
+    lines.append("--- kova dump ---")
     # Identify the build by commit + the date that commit was made, resolved
     # live via git.  __release_date__ (the package release date) is
     # intentionally NOT shown here — it reads like a wall-clock timestamp and

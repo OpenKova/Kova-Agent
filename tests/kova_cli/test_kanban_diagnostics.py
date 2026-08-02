@@ -1,4 +1,4 @@
-"""Tests for kova_cli.kanban_diagnostics — rule-engine that produces
+"""Tests for hermes_cli.kanban_diagnostics — rule-engine that produces
 structured distress signals (diagnostics) for kanban tasks.
 
 These tests exercise each rule in isolation using minimal in-memory
@@ -14,8 +14,8 @@ from pathlib import Path
 
 import pytest
 
-from kova_cli import kanban_db as kb
-from kova_cli import kanban_diagnostics as kd
+from hermes_cli import kanban_db as kb
+from hermes_cli import kanban_diagnostics as kd
 
 
 # ---------------------------------------------------------------------------
@@ -713,7 +713,7 @@ def test_triage_aux_unavailable_fires_auto_decompose_off_points_at_specifier():
     assert d.data["primary_slot"] == "auxiliary.triage_specifier"
     # And it should offer the manual specify command as an action
     labels = [a.label for a in d.actions]
-    assert any("hermes kanban specify" in l for l in labels)
+    assert any("kova kanban specify" in l for l in labels)
 
 
 def test_triage_aux_unavailable_skips_non_triage_tasks():

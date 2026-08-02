@@ -2352,7 +2352,7 @@ def terminal_tool(
         # restart|stop targeting hermes-gateway) must never run inside the
         # gateway process itself. The restart would SIGTERM the gateway, which
         # kills this very subprocess before it can complete — the service may
-        # never restart. This mirrors the `hermes gateway restart` guard in
+        # never restart. This mirrors the `kova gateway restart` guard in
         # hermes_cli/gateway.py and the cron-path guard in hermes_cli/cron.py,
         # but applies unconditionally (force=True cannot help here).
         if os.environ.get("_HERMES_GATEWAY") == "1":
@@ -2365,7 +2365,7 @@ def terminal_tool(
                         "Blocked: cannot restart or stop the gateway from inside the "
                         "gateway process. The gateway would kill this command before "
                         "it could complete (SIGTERM propagates to child processes). "
-                        "Run `hermes gateway restart` from a separate shell outside "
+                        "Run `kova gateway restart` from a separate shell outside "
                         "the running gateway."
                     ),
                     "status": "error",
@@ -2623,7 +2623,7 @@ def terminal_tool(
                         result_data["notify_unsupported"] = (
                             "notify_on_complete / watch_patterns are not available in "
                             "this session — it cannot receive an async completion after "
-                            "the turn ends (a one-shot runner such as `hermes -z`, a "
+                            "the turn ends (a one-shot runner such as `kova -z`, a "
                             "cron job, a Kanban worker, or a stateless HTTP endpoint). "
                             "The process is "
                             "running in the background; retrieve its result with "

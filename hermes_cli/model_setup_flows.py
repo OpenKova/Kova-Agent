@@ -1,4 +1,4 @@
-"""Per-provider model-selection wizard flows for ``hermes setup`` / ``hermes model``.
+"""Per-provider model-selection wizard flows for ``kova setup`` / ``kova model``.
 
 Extracted from ``hermes_cli/main.py`` as part of the god-file decomposition
 campaign (``~/.hermes/plans/god-file-decomposition.md``, Phase 2 — splitting
@@ -181,7 +181,7 @@ def _model_flow_openrouter(config, current_model=""):
     # Route through _prompt_api_key so users can replace a stale/broken key
     # in-flow (K/R/C) instead of having to edit ~/.hermes/.env by hand. The
     # previous bypass-when-key-exists branch left no way to recover from a
-    # bad paste short of re-running `hermes setup` from scratch. OpenRouter
+    # bad paste short of re-running `kova setup` from scratch. OpenRouter
     # isn't in PROVIDER_REGISTRY so we synthesize a minimal pconfig.
     pconfig = ProviderConfig(
         id="openrouter",
@@ -259,7 +259,7 @@ def _model_flow_moa(config, current_model=""):
     moa = normalize_moa_config(config.get("moa") if isinstance(config, dict) else {})
     presets = moa.get("presets") or {}
     if not presets:
-        print("No MoA presets configured. Run `hermes moa configure <name>` first.")
+        print("No MoA presets configured. Run `kova moa configure <name>` first.")
         return
 
     names = list(presets.keys())
@@ -609,7 +609,7 @@ def _model_flow_openai_codex(config, current_model=""):
             return
 
     _codex_token = None
-    # Prefer credential pool (where `hermes auth` stores device_code tokens),
+    # Prefer credential pool (where `kova auth` stores device_code tokens),
     # fall back to legacy provider state.
     try:
         _codex_status = get_codex_auth_status()
@@ -703,7 +703,7 @@ def _model_flow_xai_oauth(_config, current_model="", *, args=None):
 
     # Resolve a usable base URL.  ``resolve_xai_oauth_runtime_credentials``
     # only reads from the auth.json singleton — but credentials may legitimately
-    # live only in the pool (e.g. after ``hermes auth add xai-oauth``).  Fall
+    # live only in the pool (e.g. after ``kova auth add xai-oauth``).  Fall
     # back to the default base URL in that case so the model picker still
     # completes successfully instead of bailing out with
     # ``Could not resolve xAI OAuth credentials``.
@@ -1032,7 +1032,7 @@ def _model_flow_custom(config):
         else:
             _caller_model.pop("api_mode", None)
         config["model"] = _caller_model
-        print("Endpoint saved. Use `/model` in chat or `hermes model` to set a model.")
+        print("Endpoint saved. Use `/model` in chat or `kova model` to set a model.")
 
     # Auto-save to custom_providers so it appears in the menu next time
     _save_custom_provider(

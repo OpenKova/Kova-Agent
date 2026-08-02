@@ -882,7 +882,7 @@ def install_cua_driver(upgrade: bool = False) -> bool:
             "    /Applications is not writable; skipping cua-driver refresh."
         )
         _print_info(
-            "    Run `hermes computer-use install --upgrade` from an admin account to update it."
+            "    Run `kova computer-use install --upgrade` from an admin account to update it."
         )
         return bool(binary)
 

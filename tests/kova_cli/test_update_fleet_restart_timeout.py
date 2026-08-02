@@ -33,7 +33,7 @@ class TestFleetRestartTimeoutIsolation:
             "hermes-gateway-xiaomo5",
             "hermes-gateway-xiaomo6",
             "hermes-gateway-xiaomo7",
-            "hermes-gateway",
+            "kova-gateway",
         ]
         restarted: list[str] = []
         failed: list[str] = []
@@ -65,7 +65,7 @@ class TestFleetRestartTimeoutIsolation:
             "hermes-gateway-xiaomo4",
             "hermes-gateway-xiaomo6",
             "hermes-gateway-xiaomo7",
-            "hermes-gateway",
+            "kova-gateway",
         ]
         assert set(restarted) | set(failed) == set(units)
         assert timeout_cmds == [
@@ -79,7 +79,7 @@ class TestFleetRestartTimeoutIsolation:
             "\n".join(
                 [
                     "ssh.service loaded active running",
-                    "hermes-gateway-coder.service loaded active running",
+                    "kova-gateway-coder.service loaded active running",
                     "not-a-service loaded active running",
                     "",
                 ]
@@ -88,7 +88,7 @@ class TestFleetRestartTimeoutIsolation:
             on_unit_timeout=lambda *_: pytest.fail("unexpected timeout"),
         )
 
-        assert seen == ["hermes-gateway-coder"]
+        assert seen == ["kova-gateway-coder"]
 
     def test_process_errors_other_than_timeout_still_propagate(self):
         def process_unit(_svc_name: str) -> None:
@@ -96,7 +96,7 @@ class TestFleetRestartTimeoutIsolation:
 
         with pytest.raises(RuntimeError, match="not a timeout"):
             _for_each_systemd_gateway_unit(
-                _list_units_stdout(["hermes-gateway"]),
+                _list_units_stdout(["kova-gateway"]),
                 process_unit=process_unit,
                 on_unit_timeout=lambda *_: pytest.fail("timeout handler must not run"),
             )

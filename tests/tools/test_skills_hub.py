@@ -245,7 +245,7 @@ class TestTrustLevelFor:
 
     def test_nvidia_skills_tap_is_registered_and_trusted(self):
         # Invariant: every trusted repo in TRUSTED_REPOS that we want
-        # browseable/searchable through `hermes skills browse` must also
+        # browseable/searchable through `kova skills browse` must also
         # appear as a default tap on GitHubSource. Without the tap, the
         # repo's skills don't show up in search results or the docs-site
         # Skills Hub page even though the trust level is correct.
@@ -270,7 +270,7 @@ class TestTrustLevelFor:
             assert repo in tap_repos, (
                 f"Trusted repo {repo!r} is in TRUSTED_REPOS but missing "
                 "from GitHubSource.DEFAULT_TAPS — its skills will not be "
-                "browsable via `hermes skills browse`."
+                "browsable via `kova skills browse`."
             )
 
 
@@ -1845,7 +1845,7 @@ class TestOptionalSkillSourceMetadata:
         meta = src.inspect("official/finance/3-statement-model")
 
         assert meta is not None
-        assert meta.repo == "NousResearch/hermes-agent"
+        assert meta.repo == "NousResearch/kova-agent"
         assert meta.path == "optional-skills/finance/3-statement-model"
 
 

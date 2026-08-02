@@ -1045,7 +1045,7 @@ def switch_model(
         if pdef is None:
             _switch_err = (
                 f"Unknown provider '{explicit_provider}'. "
-                f"Check 'hermes model' for available providers, or define it "
+                f"Check 'kova model' for available providers, or define it "
                 f"in config.yaml under 'providers:'."
             )
             # Check for common config issues that cause provider resolution failures
@@ -1053,7 +1053,7 @@ def switch_model(
                 from hermes_cli.config import validate_config_structure
                 _cfg_issues = validate_config_structure()
                 if _cfg_issues:
-                    _switch_err += "\n\nRun 'hermes doctor' — config issues detected:"
+                    _switch_err += "\n\nRun 'kova doctor' — config issues detected:"
                     for _ci in _cfg_issues[:3]:
                         _switch_err += f"\n  • {_ci.message}"
             except Exception:
@@ -1829,7 +1829,7 @@ def list_authenticated_providers(
     curated: dict[str, list[str]] = dict(_PROVIDER_MODELS)
     curated["openrouter"] = [mid for mid, _ in OPENROUTER_MODELS]
     # "nous" pulls from the remote model-catalog manifest published at
-    # https://hermes-agent.nousresearch.com/docs/api/model-catalog.json so
+    # https://kova-agent.nousresearch.com/docs/api/model-catalog.json so
     # newly added Portal models surface in the /model picker without
     # requiring a Hermes release. Falls back to the in-repo
     # _PROVIDER_MODELS["nous"] snapshot when the manifest is unreachable.
@@ -1958,7 +1958,7 @@ def list_authenticated_providers(
             continue
 
         # Unified pathway: route through cached_provider_model_ids() so the
-        # /model picker sees the SAME list `hermes model` would build, with
+        # /model picker sees the SAME list `kova model` would build, with
         # disk caching to keep the picker open snappy. Falls back to the
         # curated static list when the live fetcher returns nothing.
         model_ids = cached_provider_model_ids(hermes_id)
@@ -2124,7 +2124,7 @@ def list_authenticated_providers(
         elif hermes_slug == "nous":
             # Nous serves a large live /v1/models catalog (vendor-prefixed
             # models from many providers, returned alphabetically). The
-            # `hermes model` picker deliberately shows ONLY the curated agentic
+            # `kova model` picker deliberately shows ONLY the curated agentic
             # list — augmented with the Portal's free/paid recommendations so
             # newly-launched models surface without a CLI release — in curated
             # order. Mirror that exactly (see _model_flow_nous in main.py) so
@@ -2189,7 +2189,7 @@ def list_authenticated_providers(
     # --- 2b. Cross-check canonical provider list ---
     # Catches providers that are in CANONICAL_PROVIDERS but weren't found
     # in PROVIDER_TO_MODELS_DEV or HERMES_OVERLAYS (keeps /model in sync
-    # with `hermes model`).
+    # with `kova model`).
     try:
         from hermes_cli.models import CANONICAL_PROVIDERS as _canon_provs
     except ImportError:

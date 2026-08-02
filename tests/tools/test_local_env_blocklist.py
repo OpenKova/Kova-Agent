@@ -4,8 +4,8 @@ Verifies that Hermes-managed provider, tool, and gateway env vars are
 stripped from subprocess environments so external CLIs are not silently
 misrouted or handed Hermes secrets.
 
-See: https://github.com/NousResearch/hermes-agent/issues/1002
-See: https://github.com/NousResearch/hermes-agent/issues/1264
+See: https://github.com/NousResearch/kova-agent/issues/1002
+See: https://github.com/NousResearch/kova-agent/issues/1264
 """
 
 import os
@@ -276,7 +276,7 @@ class TestActiveVenvMarkerStripping:
 
     def test_virtualenv_marker_stripped_end_to_end(self):
         result_env = _run_with_env(extra_os_env={
-            "VIRTUAL_ENV": "/home/user/.hermes/hermes-agent/venv",
+            "VIRTUAL_ENV": "/home/user/.hermes/kova-agent/venv",
         })
         assert "VIRTUAL_ENV" not in result_env
 
@@ -470,7 +470,7 @@ class TestSanePathIncludesHomebrew:
     def _disable_hermes_bin_injection(self):
         """These tests assert the sane-path merge in isolation. Disable the
         hermes-install-dir prepend (a separate concern, covered by
-        TestHermesBinDirOnPath) so a real ``hermes`` on the test runner's PATH
+        TestHermesBinDirOnPath) so a real ``kova`` on the test runner's PATH
         doesn't shift the asserted PATH layout."""
         from tools.environments import local as local_mod
         saved = local_mod._HERMES_BIN_DIR
@@ -575,7 +575,7 @@ class TestSanePathIncludesHomebrew:
 class TestHermesBinDirOnPath:
     """The hermes install dir is reachable in the terminal subshell PATH.
 
-    Plugins shelling out to bare ``hermes`` via the terminal tool must work
+    Plugins shelling out to bare ``kova`` via the terminal tool must work
     even when the gateway was launched without the hermes install dir on
     PATH (systemd, service managers, cron). See the discussion that motivated
     _resolve_hermes_bin_dir / _prepend_hermes_bin_dir.
@@ -589,7 +589,7 @@ class TestHermesBinDirOnPath:
         from tools.environments import local as local_mod
         self._reset_cache()
         monkeypatch.setattr(local_mod.shutil, "which",
-                            lambda name: "/opt/hermes/bin/hermes" if name == "hermes" else None)
+                            lambda name: "/opt/hermes/bin/kova" if name == "hermes" else None)
         monkeypatch.setattr(local_mod.os.path, "isdir", lambda p: p == "/opt/hermes/bin")
         assert local_mod._resolve_hermes_bin_dir() == "/opt/hermes/bin"
 

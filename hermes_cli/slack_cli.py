@@ -204,7 +204,7 @@ def slack_manifest_command(args) -> int:
                 long_description = handle.read()
         except (OSError, UnicodeError, RuntimeError) as exc:
             print(
-                f"hermes slack manifest: cannot read long description from "
+                f"kova slack manifest: cannot read long description from "
                 f"{source_arg}: {exc}",
                 file=sys.stderr,
             )
@@ -277,7 +277,7 @@ def slack_manifest_command(args) -> int:
             "     slash commands changed.\n"
             "  4. Make sure Socket Mode is enabled and you have a bot token\n"
             "     (xoxb-...) and app token (xapp-...) configured via\n"
-            "     `hermes setup`.\n",
+            "     `kova setup`.\n",
             file=sys.stderr,
         )
     else:

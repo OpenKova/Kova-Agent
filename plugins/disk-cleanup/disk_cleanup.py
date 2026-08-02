@@ -1,4 +1,4 @@
-"""disk_cleanup — ephemeral file cleanup for Hermes Agent.
+"""disk_cleanup — ephemeral file cleanup for Kova Agent.
 
 Library module wrapping the deterministic cleanup rules written by
 @LVT382009 in PR #12212. The plugin ``__init__.py`` wires these
@@ -147,7 +147,7 @@ ALLOWED_CATEGORIES = {
 _EMPTY_DIR_PROTECTED_TOP_LEVEL = frozenset({
     "logs", "memories", "sessions", "cron", "cronjobs",
     "cache", "skills", "plugins", "disk-cleanup", "optional-skills",
-    "hermes-agent", "backups", "profiles", ".worktrees",
+    "hermes-agent", "kova-agent", "backups", "profiles", ".worktrees",
 })
 
 _EMPTY_DIR_SWEEP_PRUNE_DIRS = frozenset({
@@ -562,7 +562,7 @@ def guess_category(path: Path) -> Optional[str]:
         if top in {
             "disk-cleanup", "logs", "memories", "sessions", "config.yaml",
             "skills", "plugins", ".env", "USER.md", "MEMORY.md", "SOUL.md",
-            "auth.json", "hermes-agent",
+            "auth.json", "hermes-agent", "kova-agent",
         }:
             return None
         if top == "cron" or top == "cronjobs":

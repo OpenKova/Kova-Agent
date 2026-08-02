@@ -28,7 +28,7 @@ from __future__ import annotations
 # (HARDLINE)" and the hermes-agent-dev new-skill salvage reference. Embedded in
 # the prompt so the agent authors skills the way a maintainer would by hand.
 _AUTHORING_STANDARDS = """\
-Follow the Hermes skill-authoring standards exactly. These are the same
+Follow the Kova skill-authoring standards exactly. These are the same
 HARDLINE rules a maintainer enforces in review:
 
 Frontmatter:
@@ -46,7 +46,7 @@ Frontmatter:
     Bad (123):   `A comprehensive skill that lets the agent search arXiv for
                   academic papers using keywords, authors, and categories.`
 - version: 0.1.0
-- author: always the literal value `Hermes`. NEVER fill it from the host
+- author: always the literal value `kova`. NEVER fill it from the host
   environment — the OS/login username (e.g. the `user=` line in your
   environment hints), git config, or any identity you can probe must not be
   written. Skills get shared and published, so an environment-derived name is

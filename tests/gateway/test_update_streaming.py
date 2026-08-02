@@ -207,7 +207,7 @@ class TestRestoreStashWithInputFn:
 
 
 class TestUpdateCommandGatewayFlag:
-    """Verify the gateway spawns hermes update --gateway."""
+    """Verify the gateway spawns kova update --gateway."""
 
     @pytest.mark.asyncio
     async def test_spawns_with_gateway_flag(self, tmp_path):

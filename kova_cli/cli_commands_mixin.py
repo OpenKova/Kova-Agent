@@ -66,7 +66,7 @@ class CLICommandsMixin:
         mgr = self.agent._checkpoint_mgr
         if not mgr.enabled:
             print("  Checkpoints are not enabled.")
-            print("  Enable with: hermes --checkpoints")
+            print("  Enable with: kova --checkpoints")
             print("  Or in config.yaml: checkpoints: { enabled: true }")
             return
 
@@ -275,7 +275,7 @@ class CLICommandsMixin:
         for p in running:
             cmd = p.get("command", "")[:80]
             up = format_uptime_short(p.get("uptime_seconds", 0))
-            _cprint(f"    {p.get('session_id', '?')} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· {up} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· {cmd}")
+            _cprint(f"    {p.get('session_id', '?')} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚· {up} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚· {cmd}")
 
         if finished:
             _cprint(f"  Recently finished: {len(finished)}")
@@ -292,8 +292,8 @@ class CLICommandsMixin:
             for d in delegations:
                 goal = (d.get("goal") or "")[:60]
                 _cprint(
-                    f"    {d.get('delegation_id', '?')} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· "
-                    f"{d.get('status', '?')} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· {goal}"
+                    f"    {d.get('delegation_id', '?')} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚· "
+                    f"{d.get('status', '?')} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚· {goal}"
                 )
 
         agent_running = getattr(self, "_agent_running", False)
@@ -424,7 +424,7 @@ class CLICommandsMixin:
         if _remainder:
             _cprint(f"  {_DIM}Now type your prompt (or use --image in single-query mode): {_remainder}{_RST}")
         elif _is_termux_environment():
-            _cprint(f"  {_DIM}Tip: type your next message, or run hermes chat -q --image {_termux_example_image_path(image_path.name)} \"What do you see?\"{_RST}")
+            _cprint(f"  {_DIM}Tip: type your next message, or run kova chat -q --image {_termux_example_image_path(image_path.name)} \"What do you see?\"{_RST}")
 
     def _handle_tools_command(self, cmd: str):
         """Handle /tools [list|disable|enable] slash commands.
@@ -1508,7 +1508,7 @@ class CLICommandsMixin:
     def _handle_curator_command(self, cmd: str):
         """Handle /curator slash command.
 
-        Delegates to kova_cli.curator so the CLI and the `hermes curator`
+        Delegates to kova_cli.curator so the CLI and the `kova curator`
         subcommand share the same handler set.
         """
         import shlex
@@ -1816,7 +1816,7 @@ class CLICommandsMixin:
                 f"[dim]-[/] {_escape(desc)} [dim]({skill_count} skills)[/]"
             )
             for s in info.get("skills", []):
-                ChatConsole().print(f"        [dim]ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· {_escape(s)}[/]")
+                ChatConsole().print(f"        [dim]ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚· {_escape(s)}[/]")
         _cprint(
             f"\n  {_DIM}Invoke a bundle with /<slug>. "
             f"Manage with `hermes bundles`.{_RST}"

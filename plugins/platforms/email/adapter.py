@@ -139,7 +139,7 @@ def _send_imap_id(imap: "imaplib.IMAP4") -> None:
             _hermes_version = "0"
         imap.xatom(
             "ID",
-            f'("name" "hermes-agent" "version" "{_hermes_version}" '
+            f'("name" "kova-agent" "version" "{_hermes_version}" '
             '"vendor" "NousResearch" '
             '"support-email" "noreply@nousresearch.com")',
         )
@@ -567,7 +567,7 @@ class EmailAdapter(BasePlatformAdapter):
             message = (
                 "Not configured — missing "
                 + ", ".join(missing)
-                + ". Set it via `hermes gateway setup` (env) or platforms.email "
+                + ". Set it via `kova gateway setup` (env) or platforms.email "
                 "in config.yaml."
             )
             logger.error("[Email] %s", message)
@@ -931,7 +931,7 @@ class EmailAdapter(BasePlatformAdapter):
 
         # Thread context for reply
         ctx = self._thread_context.get(to_addr, {})
-        subject = ctx.get("subject", "Hermes Agent")
+        subject = ctx.get("subject", "Kova Agent")
         if not subject.startswith("Re:"):
             subject = f"Re: {subject}"
         msg["Subject"] = subject
@@ -1045,7 +1045,7 @@ class EmailAdapter(BasePlatformAdapter):
         msg["To"] = to_addr
 
         ctx = self._thread_context.get(to_addr, {})
-        subject = ctx.get("subject", "Hermes Agent")
+        subject = ctx.get("subject", "Kova Agent")
         if not subject.startswith("Re:"):
             subject = f"Re: {subject}"
         msg["Subject"] = subject
@@ -1125,7 +1125,7 @@ class EmailAdapter(BasePlatformAdapter):
         msg["To"] = to_addr
 
         ctx = self._thread_context.get(to_addr, {})
-        subject = ctx.get("subject", "Hermes Agent")
+        subject = ctx.get("subject", "Kova Agent")
         if not subject.startswith("Re:"):
             subject = f"Re: {subject}"
         msg["Subject"] = subject
@@ -1219,7 +1219,7 @@ async def _standalone_send(
         msg = MIMEText(message, "plain", "utf-8")
         msg["From"] = address
         msg["To"] = chat_id
-        msg["Subject"] = "Hermes Agent"
+        msg["Subject"] = "Kova Agent"
         msg["Date"] = formatdate(localtime=True)
 
         server = smtplib.SMTP(smtp_host, smtp_port)

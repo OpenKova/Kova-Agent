@@ -958,7 +958,7 @@ class TestProbeApiModelsUserAgent:
             )
 
         req = mock_urlopen.call_args[0][0]
-        assert req.get_header("X-goog-api-client") == f"hermes-agent/{_HERMES_VERSION}"
+        assert req.get_header("X-goog-api-client") == f"kova-agent/{_HERMES_VERSION}"
 
     def test_probe_omits_gemini_client_context_for_other_providers(self):
         from unittest.mock import patch

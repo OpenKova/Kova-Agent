@@ -451,7 +451,7 @@ def _build_safe_env(user_env: Optional[dict]) -> dict:
     in every MCP server's ``env:`` block.
     """
     try:
-        from hermes_cli.env_loader import get_secret_source
+        from kova_cli.env_loader import get_secret_source
     except Exception:  # pragma: no cover — early bootstrap/import fallback
         get_secret_source = None
     env = {}
@@ -2353,7 +2353,7 @@ class MCPServerTask:
         if not _MCP_AVAILABLE:
             raise ImportError(
                 f"MCP server '{self.name}' requires the 'mcp' Python SDK, but "
-                "it is not installed. Run `hermes setup` to install MCP support, "
+                "it is not installed. Run `kova setup` to install MCP support, "
                 "then retry."
             )
 
@@ -3879,7 +3879,7 @@ def _handle_auth_error_and_retry(
     return json.dumps({
         "error": (
             f"MCP server '{server_name}' requires re-authentication. "
-            f"Run `hermes mcp login {server_name}` (or delete the tokens "
+            f"Run `kova mcp login {server_name}` (or delete the tokens "
             f"file under ~/.hermes/mcp-tokens/ and restart). Do NOT retry "
             f"this tool — ask the user to re-authenticate."
         ),
@@ -4393,7 +4393,7 @@ def _interpolate_env_vars(value):
 def _filter_suspicious_mcp_servers(servers: Dict[str, dict]) -> Dict[str, dict]:
     """Drop exfiltration-shaped MCP configs before any stdio spawn path."""
     try:
-        from hermes_cli.mcp_security import validate_mcp_server_entry as _validate_mcp_server_entry
+        from kova_cli.mcp_security import validate_mcp_server_entry as _validate_mcp_server_entry
     except Exception:
         _validate_mcp_server_entry: Callable[[str, dict[str, Any]], list[str]] | None = None
 

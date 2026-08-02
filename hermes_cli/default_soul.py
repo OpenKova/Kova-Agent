@@ -22,7 +22,7 @@ DEFAULT_SOUL_MD = (
 # safety guarantee is that these strings carry zero user intent.
 _LEGACY_TEMPLATE_SOULS = (
     (
-        "# Hermes Agent Persona\n"
+        "# Kova Agent Persona\n"
         "\n"
         "<!--\n"
         "This file defines the agent's personality and tone.\n"
@@ -42,7 +42,7 @@ _LEGACY_TEMPLATE_SOULS = (
     # block / trailing newline in some historical revisions; the bare scaffold
     # (no Examples block) was also shipped briefly.
     (
-        "# Hermes Agent Persona\n"
+        "# Kova Agent Persona\n"
         "\n"
         "<!--\n"
         "This file defines the agent's personality and tone.\n"

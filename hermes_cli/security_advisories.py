@@ -1,5 +1,5 @@
 """
-Security advisory checker for Hermes Agent.
+Security advisory checker for Kova Agent.
 
 Detects known-compromised Python packages installed in the active venv
 (supply-chain attacks like the Mini Shai-Hulud worm of May 2026 that
@@ -21,9 +21,9 @@ Design goals:
 
 The check is invoked from three places:
 
-1. ``hermes doctor`` (and ``hermes doctor --ack <id>``)
+1. ``kova doctor`` (and ``hermes doctor --ack <id>``)
 2. CLI startup banner (one short line, then full guidance via
-   ``hermes doctor``)
+   ``kova doctor``)
 3. Gateway startup (logged to gateway.log; first interactive message gets
    a one-line operator banner)
 
@@ -281,7 +281,7 @@ def short_banner_lines(hits: list[AdvisoryHit]) -> list[str]:
     lines = [
         f"SECURITY ADVISORY [{primary.advisory.id}]: {primary.advisory.title}",
         f"  Detected: {primary.package}=={primary.installed_version}",
-        "  Run 'hermes doctor' for remediation steps.",
+        "  Run 'kova doctor' for remediation steps.",
     ]
     if len(hits) > 1:
         lines.insert(1, f"  ({len(hits) - 1} additional advisor"
@@ -404,7 +404,7 @@ def hits_due_for_banner(
 
 
 def render_doctor_section(hits: list[AdvisoryHit]) -> tuple[bool, list[str]]:
-    """Render the security-advisory section for ``hermes doctor``.
+    """Render the security-advisory section for ``kova doctor``.
 
     Returns ``(has_problems, lines)``. Caller is responsible for printing
     with whatever color scheme it uses.
@@ -450,4 +450,4 @@ def gateway_log_message(hits: list[AdvisoryHit]) -> Optional[str]:
                 f"See {h.advisory.url}")
     return (f"{len(fresh)} security advisories active "
             f"(IDs: {', '.join(h.advisory.id for h in fresh)}). "
-            f"Run `hermes doctor` on the gateway host for details.")
+            f"Run `kova doctor` on the gateway host for details.")

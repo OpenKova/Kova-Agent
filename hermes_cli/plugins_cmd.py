@@ -526,7 +526,7 @@ def _install_plugin_core(identifier: str, *, force: bool) -> tuple[Path, dict, s
             if not force:
                 raise PluginOperationError(
                     f"Plugin '{plugin_name}' already exists. Use force reinstall "
-                    f"or run `hermes plugins update {plugin_name}`.",
+                    f"or run `kova plugins update {plugin_name}`.",
                 )
             shutil.rmtree(target)
 
@@ -625,11 +625,11 @@ def cmd_install(
     else:
         console.print(
             f"[dim]Plugin installed but not enabled. "
-            f"Run `hermes plugins enable {installed_name}` to activate.[/dim]",
+            f"Run `kova plugins enable {installed_name}` to activate.[/dim]",
         )
 
     console.print("[dim]Restart the gateway for the plugin to take effect:[/dim]")
-    console.print("[dim]  hermes gateway restart[/dim]")
+    console.print("[dim]  kova gateway restart[/dim]")
     console.print()
 
 
@@ -721,7 +721,7 @@ _BASIC_AUTH_PLUGIN_KEYS = frozenset({"basic", "dashboard_auth/basic"})
 def ensure_basic_auth_plugin_enabled_in_config(cfg: dict) -> bool:
     """Re-enable the bundled basic dashboard-auth plugin in *cfg*.
 
-    ``hermes setup`` / ``hermes plugins disable basic`` can park the plugin
+    ``kova setup`` / ``hermes plugins disable basic`` can park the plugin
     in ``plugins.disabled`` while ``dashboard.basic_auth`` is configured.
     The basic provider is a bundled backend that still respects the
     deny-list, so password auth silently fails until the block is removed.
@@ -1131,7 +1131,7 @@ def cmd_list(args: Any | None = None) -> None:
     entries = _discover_all_plugins()
     if not entries:
         console.print("[dim]No plugins installed.[/dim]")
-        console.print("[dim]Install with:[/dim] hermes plugins install owner/repo")
+        console.print("[dim]Install with:[/dim] kova plugins install owner/repo")
         return
 
     enabled = _get_enabled_set()
@@ -1182,9 +1182,9 @@ def cmd_list(args: Any | None = None) -> None:
     console.print()
     console.print(table)
     console.print()
-    console.print("[dim]Compact view:[/dim] hermes plugins list --plain --no-bundled")
-    console.print("[dim]Interactive toggle:[/dim] hermes plugins")
-    console.print("[dim]Enable/disable:[/dim] hermes plugins enable/disable <name>")
+    console.print("[dim]Compact view:[/dim] kova plugins list --plain --no-bundled")
+    console.print("[dim]Interactive toggle:[/dim] kova plugins")
+    console.print("[dim]Enable/disable:[/dim] kova plugins enable/disable <name>")
     console.print("[dim]Plugins are opt-in by default — only 'enabled' plugins load.[/dim]")
 
 
@@ -1408,7 +1408,7 @@ def cmd_toggle() -> None:
 
     if not has_plugins and not has_categories:
         console.print("[dim]No plugins installed and no provider categories available.[/dim]")
-        console.print("[dim]Install with:[/dim] hermes plugins install owner/repo")
+        console.print("[dim]Install with:[/dim] kova plugins install owner/repo")
         return
 
     # Non-TTY fallback

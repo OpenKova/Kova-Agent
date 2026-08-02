@@ -294,7 +294,7 @@ class TestCreateProfile:
         assert not (profile_dir / "profiles").exists()
 
     def test_clone_all_excludes_default_infrastructure(self, profile_env):
-        """--clone-all from default profile excludes hermes-agent, .worktrees,
+        """--clone-all from default profile excludes kova-agent, .worktrees,
         bin, node_modules at root, plus __pycache__/*.pyc/*.pyo/*.sock/*.tmp
         at any depth.  Profile data (config, env, skills, logs) must be
         preserved — clone-all means "complete snapshot minus infrastructure
@@ -303,9 +303,9 @@ class TestCreateProfile:
         tmp_path = profile_env
         default_home = tmp_path / ".hermes"
         # Simulate infrastructure dirs that only the default profile has
-        (default_home / "hermes-agent" / ".git").mkdir(parents=True)
-        (default_home / "hermes-agent" / "venv" / "bin").mkdir(parents=True)
-        (default_home / "hermes-agent" / "README.md").write_text("repo")
+        (default_home / "kova-agent" / ".git").mkdir(parents=True)
+        (default_home / "kova-agent" / "venv" / "bin").mkdir(parents=True)
+        (default_home / "kova-agent" / "README.md").write_text("repo")
         (default_home / ".worktrees" / "some-tree").mkdir(parents=True)
         (default_home / "profiles" / "other").mkdir(parents=True)
         (default_home / "profiles" / "other" / "config.yaml").write_text("x")
@@ -330,7 +330,7 @@ class TestCreateProfile:
         profile_dir = create_profile("cloned", clone_all=True, no_alias=True)
 
         # Infrastructure must be excluded
-        assert not (profile_dir / "hermes-agent").exists()
+        assert not (profile_dir / "kova-agent").exists()
         assert not (profile_dir / ".worktrees").exists()
         assert not (profile_dir / "profiles").exists()
         assert not (profile_dir / "bin").exists()
@@ -396,7 +396,7 @@ class TestCreateProfile:
 # ===================================================================
 
 class TestNoSkillsOptOut:
-    """Tests for `hermes profile create --no-skills` and the opt-out marker."""
+    """Tests for `kova profile create --no-skills` and the opt-out marker."""
 
     def test_no_skills_writes_marker_and_skips_seeding(self, profile_env):
         profile_dir = create_profile("orchestrator", no_alias=True, no_skills=True)
@@ -434,7 +434,7 @@ class TestNoSkillsOptOut:
 
     def test_seed_profile_skills_respects_marker(self, profile_env):
         """seed_profile_skills() must no-op on opted-out profiles even when
-        called directly (e.g. by `hermes update`'s all-profile sync loop)."""
+        called directly (e.g. by `kova update`'s all-profile sync loop)."""
         profile_dir = create_profile("orchestrator", no_alias=True, no_skills=True)
 
         # Call seed_profile_skills() directly — it should NOT invoke subprocess,
@@ -506,7 +506,7 @@ class TestNoSkillsOptOut:
 # ===================================================================
 
 class TestBackfillProfileEnvs:
-    """Tests for backfill_profile_envs() — the `hermes update` pass that
+    """Tests for backfill_profile_envs() — the `kova update` pass that
     gives pre-#44792 profiles (created before .env seeding) their own
     .env, copied from the default install so credentials don't break."""
 
@@ -848,7 +848,7 @@ class TestAliasCollision:
         wrapper_dir = profile_env / ".local" / "bin"
         wrapper_dir.mkdir(parents=True, exist_ok=True)
         bat_path = wrapper_dir / "mybot.bat"
-        bat_path.write_text("@echo off\r\nhermes -p mybot %*\r\n")
+        bat_path.write_text("@echo off\r\nkova -p mybot %*\r\n")
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
                 returncode=0, stdout=str(bat_path),
@@ -874,14 +874,14 @@ class TestWrapperScript:
 
     def test_creates_sh_on_posix(self, profile_env, monkeypatch):
         monkeypatch.setattr("sys.platform", "darwin")
-        monkeypatch.setattr("hermes_cli.profiles.shutil.which", lambda name: "/opt/hermes/bin/hermes")
+        monkeypatch.setattr("hermes_cli.profiles.shutil.which", lambda name: "/opt/hermes/bin/kova")
         from hermes_cli.profiles import create_wrapper_script
         wrapper = create_wrapper_script("mybot")
         assert wrapper is not None
         assert wrapper.name == "mybot"
         content = wrapper.read_text()
         assert content.startswith("#!/bin/sh")
-        assert "exec /opt/hermes/bin/hermes -p mybot" in content
+        assert "exec /opt/hermes/bin/kova -p mybot" in content
 
     def test_creates_bat_on_windows(self, profile_env, monkeypatch):
         monkeypatch.setattr("sys.platform", "win32")
@@ -891,7 +891,7 @@ class TestWrapperScript:
         assert wrapper.name == "mybot.bat"
         content = wrapper.read_text()
         assert "@echo off" in content
-        assert "hermes -p mybot" in content
+        assert "kova -p mybot" in content
         assert "%*" in content
 
     def test_remove_finds_bat_on_windows(self, profile_env, monkeypatch):
@@ -928,7 +928,7 @@ class TestWrapperScript:
         assert wrapper.name == "rq"
         content = wrapper.read_text()
         assert content.startswith("#!/bin/sh")
-        assert "hermes -p redqueen" in content
+        assert "kova -p redqueen" in content
 
     def test_custom_alias_target_on_windows(self, profile_env, monkeypatch):
         # Regression: custom-name aliases must still produce an executable
@@ -940,7 +940,7 @@ class TestWrapperScript:
         assert wrapper.name == "rq.bat"
         content = wrapper.read_text()
         assert "@echo off" in content
-        assert "hermes -p redqueen" in content
+        assert "kova -p redqueen" in content
         assert "%*" in content
         assert "#!/bin/sh" not in content
 
@@ -989,7 +989,7 @@ class TestWrapperScriptSecurity:
         wrapper = create_wrapper_script("mybot", target="coder")
         assert wrapper is not None
         assert wrapper.resolve().is_relative_to(_get_wrapper_dir().resolve())
-        assert 'hermes -p coder "$@"' in wrapper.read_text()
+        assert 'kova -p coder "$@"' in wrapper.read_text()
 
 
 # ===================================================================
@@ -1327,7 +1327,7 @@ class TestExportImport:
         (default_dir / "config.yaml").write_text("ok")
 
         # Create dirs/files that should be excluded
-        for d in ("hermes-agent", ".worktrees", "profiles", "bin",
+        for d in ("kova-agent", ".worktrees", "profiles", "bin",
                   "image_cache", "logs", "sandboxes", "checkpoints"):
             sub = default_dir / d
             sub.mkdir(exist_ok=True)
@@ -1350,7 +1350,7 @@ class TestExportImport:
 
         # Infrastructure excluded
         excluded_prefixes = [
-            "default/hermes-agent", "default/.worktrees", "default/profiles",
+            "default/kova-agent", "default/.worktrees", "default/profiles",
             "default/bin", "default/image_cache", "default/logs",
             "default/sandboxes", "default/checkpoints",
         ]
@@ -1691,7 +1691,7 @@ class TestEdgeCases:
             json.dumps(
                 {
                     "pid": live_pid,
-                    "kind": "hermes-gateway",
+                    "kind": "kova-gateway",
                     "argv": ["hermes", "gateway", "run"],
                     "start_time": gw_status._get_process_start_time(live_pid),
                     "gateway_state": "running",
@@ -1710,7 +1710,7 @@ class TestEdgeCases:
         # runs the gateway with no profile flag).
         with patch("gateway.status.get_running_pid", return_value=None), patch(
             "gateway.status._read_process_cmdline",
-            return_value="hermes gateway run --replace",
+            return_value="kova gateway run --replace",
         ):
             assert _check_gateway_running(default_home) is True
 
@@ -1727,7 +1727,7 @@ class TestEdgeCases:
             json.dumps(
                 {
                     "pid": os.getpid(),
-                    "kind": "hermes-gateway",
+                    "kind": "kova-gateway",
                     "argv": ["hermes", "gateway", "run"],
                     "gateway_state": "stopped",
                 }
@@ -1740,7 +1740,7 @@ class TestEdgeCases:
 
     def test_gateway_running_check_rejects_pid_reused_by_other_profile(self, profile_env):
         """Regression (user report): the dashboard showed a NAMED profile's
-        gateway green while ``hermes -p <name> gateway status`` showed it
+        gateway green while ``kova -p <name> gateway status`` showed it
         stopped.
 
         Per-profile Docker supervision: a named profile (``coder``) left a
@@ -1759,7 +1759,7 @@ class TestEdgeCases:
             json.dumps(
                 {
                     "pid": 139,
-                    "kind": "hermes-gateway",
+                    "kind": "kova-gateway",
                     "argv": ["hermes", "gateway", "run"],
                     "gateway_state": "running",
                     "active_agents": 0,
@@ -1775,7 +1775,7 @@ class TestEdgeCases:
             "gateway.status._pid_exists", return_value=True
         ), patch("gateway.status._get_process_start_time", return_value=None), patch(
             "gateway.status._read_process_cmdline",
-            return_value="hermes gateway run --replace",
+            return_value="kova gateway run --replace",
         ):
             assert _check_gateway_running(coder_home) is False
 
@@ -1791,7 +1791,7 @@ class TestEdgeCases:
             json.dumps(
                 {
                     "pid": 139,
-                    "kind": "hermes-gateway",
+                    "kind": "kova-gateway",
                     "argv": ["hermes", "gateway", "run"],
                     "start_time": 1000,
                     "gateway_state": "running",
@@ -1805,7 +1805,7 @@ class TestEdgeCases:
             "gateway.status._pid_exists", return_value=True
         ), patch("gateway.status._get_process_start_time", return_value=1000), patch(
             "gateway.status._read_process_cmdline",
-            return_value="hermes -p coder gateway run --replace",
+            return_value="kova -p coder gateway run --replace",
         ):
             assert _check_gateway_running(coder_home) is True
 

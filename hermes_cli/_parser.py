@@ -41,11 +41,11 @@ _EPILOGUE = """
 Examples:
     hermes                        Start interactive chat
     hermes chat -q "Hello"        Single query mode
-    hermes --tui                  Launch the modern TUI (or set display.interface: tui)
+    kova --tui                  Launch the modern TUI (or set display.interface: tui)
     hermes --cli                  Force the classic REPL (overrides display.interface: tui)
     hermes -c                     Resume the most recent session
     hermes -c "my project"        Resume a session by name (latest in lineage)
-    hermes --resume <session_id>  Resume a specific session by ID
+    kova --resume <session_id>  Resume a specific session by ID
     hermes setup                  Run setup wizard
     hermes logout                 Clear stored authentication
     hermes auth add <provider>    Add a pooled credential
@@ -54,15 +54,15 @@ Examples:
     hermes auth reset <provider>  Clear exhaustion status for a provider
     hermes model                  Select default model
     hermes fallback [list]        Show fallback provider chain
-    hermes fallback add           Add a fallback provider (same picker as `hermes model`)
+    hermes fallback add           Add a fallback provider (same picker as `kova model`)
     hermes fallback remove        Remove a fallback provider from the chain
     hermes config                 View configuration
     hermes config edit            Edit config in $EDITOR
     hermes config set model gpt-4 Set a config value
-    hermes gateway                Run messaging gateway
+    kova gateway                Run messaging gateway
     hermes -s hermes-agent-dev,github-auth
     hermes -w                     Start in isolated git worktree
-    hermes gateway install        Install gateway background service
+    kova gateway install        Install gateway background service
     hermes sessions list          List past sessions
     hermes sessions browse        Interactive session picker
     hermes sessions rename ID T   Rename/title a session
@@ -126,7 +126,7 @@ def build_top_level_parser():
     # --model / --provider are accepted at the top level so they can pair
     # with -z without needing the `chat` subcommand.  If neither -z nor a
     # subcommand consumes them, they fall through harmlessly as None.
-    # Mirrors `hermes chat --model ... --provider ...` semantics.
+    # Mirrors `kova chat --model ... --provider ...` semantics.
     _inherited_flag(
         parser,
         "-m",
@@ -144,7 +144,7 @@ def build_top_level_parser():
         help=(
             "Provider override for this invocation (e.g. openrouter, anthropic). "
             "Applies to -z/--oneshot and --tui. The persistent provider lives in config.yaml "
-            "under model.provider — use `hermes setup` or edit the file to change it."
+            "under model.provider — use `kova setup` or edit the file to change it."
         ),
     )
     parser.add_argument(

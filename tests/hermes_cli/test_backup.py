@@ -51,11 +51,11 @@ def _make_hermes_tree(root: Path) -> None:
     (root / "profiles" / "coder" / "config.yaml").write_text("model:\n  provider: anthropic\n")
     (root / "profiles" / "coder" / ".env").write_text("ANTHROPIC_API_KEY=sk-ant-123\n")
 
-    # hermes-agent repo (should be EXCLUDED)
-    (root / "hermes-agent").mkdir(exist_ok=True)
-    (root / "hermes-agent" / "run_agent.py").write_text("# big file\n")
-    (root / "hermes-agent" / ".git").mkdir()
-    (root / "hermes-agent" / ".git" / "HEAD").write_text("ref: refs/heads/main\n")
+    # kova-agent repo (should be EXCLUDED)
+    (root / "kova-agent").mkdir(exist_ok=True)
+    (root / "kova-agent" / "run_agent.py").write_text("# big file\n")
+    (root / "kova-agent" / ".git").mkdir()
+    (root / "kova-agent" / ".git" / "HEAD").write_text("ref: refs/heads/main\n")
 
     # __pycache__ (should be EXCLUDED)
     (root / "plugins").mkdir(exist_ok=True)
@@ -84,8 +84,8 @@ def _symlink_file_or_skip(link: Path, target: Path) -> None:
 class TestShouldExclude:
     def test_excludes_hermes_agent(self):
         from hermes_cli.backup import _should_exclude
-        assert _should_exclude(Path("hermes-agent/run_agent.py"))
-        assert _should_exclude(Path("hermes-agent/.git/HEAD"))
+        assert _should_exclude(Path("kova-agent/run_agent.py"))
+        assert _should_exclude(Path("kova-agent/.git/HEAD"))
 
     def test_excludes_pycache(self):
         from hermes_cli.backup import _should_exclude
@@ -149,11 +149,11 @@ class TestShouldExclude:
         assert not _should_exclude(Path("logs/agent.log"))
 
     def test_includes_nested_hermes_agent_in_skills(self):
-        """skills/autonomous-ai-agents/hermes-agent/ must NOT be excluded —
-        only the root-level hermes-agent/ repo is skipped."""
+        """skills/autonomous-ai-agents/kova-agent/ must NOT be excluded —
+        only the root-level kova-agent/ repo is skipped."""
         from hermes_cli.backup import _should_exclude
-        assert not _should_exclude(Path("skills/autonomous-ai-agents/hermes-agent/SKILL.md"))
-        assert not _should_exclude(Path("skills/autonomous-ai-agents/hermes-agent/sub/item.txt"))
+        assert not _should_exclude(Path("skills/autonomous-ai-agents/kova-agent/SKILL.md"))
+        assert not _should_exclude(Path("skills/autonomous-ai-agents/kova-agent/sub/item.txt"))
 
     @pytest.mark.parametrize(
         "rel",
@@ -347,7 +347,7 @@ class TestBackup:
         assert all(d == str(out_zip.parent) for d in staged_dirs), staged_dirs
 
     def test_excludes_hermes_agent(self, tmp_path, monkeypatch):
-        """Backup does NOT include hermes-agent/ directory."""
+        """Backup does NOT include kova-agent/ directory."""
         hermes_home = tmp_path / ".hermes"
         hermes_home.mkdir()
         _make_hermes_tree(hermes_home)
@@ -363,8 +363,8 @@ class TestBackup:
 
         with zipfile.ZipFile(out_zip, "r") as zf:
             names = zf.namelist()
-            agent_files = [n for n in names if "hermes-agent" in n]
-            assert agent_files == [], f"hermes-agent files leaked into backup: {agent_files}"
+            agent_files = [n for n in names if "kova-agent" in n]
+            assert agent_files == [], f"kova-agent files leaked into backup: {agent_files}"
 
     def test_excludes_dependency_and_cache_trees(self, tmp_path, monkeypatch):
         """A plugin venv / site-packages / pip cache under HERMES_HOME must be
@@ -398,15 +398,15 @@ class TestBackup:
         assert "config.yaml" in names
 
     def test_includes_nested_hermes_agent_in_skills(self, tmp_path, monkeypatch):
-        """Backup includes skills/.../hermes-agent/ but NOT root hermes-agent/."""
+        """Backup includes skills/.../kova-agent/ but NOT root kova-agent/."""
         hermes_home = tmp_path / ".hermes"
         hermes_home.mkdir()
         _make_hermes_tree(hermes_home)
 
-        # Add a nested hermes-agent directory inside skills (like the real layout)
-        nested = hermes_home / "skills" / "autonomous-ai-agents" / "hermes-agent"
+        # Add a nested kova-agent directory inside skills (like the real layout)
+        nested = hermes_home / "skills" / "autonomous-ai-agents" / "kova-agent"
         nested.mkdir(parents=True)
-        (nested / "SKILL.md").write_text("# Hermes Agent Skill\n")
+        (nested / "SKILL.md").write_text("# Kova Agent Skill\n")
         (nested / "sub").mkdir()
         (nested / "sub" / "item.txt").write_text("nested content\n")
 
@@ -421,12 +421,12 @@ class TestBackup:
 
         with zipfile.ZipFile(out_zip, "r") as zf:
             names = zf.namelist()
-            # Root hermes-agent must be excluded
-            root_agent = [n for n in names if n.startswith("hermes-agent/")]
-            assert root_agent == [], f"root hermes-agent leaked: {root_agent}"
-            # Nested skill hermes-agent must be included
-            assert "skills/autonomous-ai-agents/hermes-agent/SKILL.md" in names
-            assert "skills/autonomous-ai-agents/hermes-agent/sub/item.txt" in names
+            # Root kova-agent must be excluded
+            root_agent = [n for n in names if n.startswith("kova-agent/")]
+            assert root_agent == [], f"root kova-agent leaked: {root_agent}"
+            # Nested skill kova-agent must be included
+            assert "skills/autonomous-ai-agents/kova-agent/SKILL.md" in names
+            assert "skills/autonomous-ai-agents/kova-agent/sub/item.txt" in names
 
     def test_excludes_pycache(self, tmp_path, monkeypatch):
         """Backup does NOT include __pycache__ dirs."""
@@ -469,7 +469,7 @@ class TestBackup:
             assert pid_files == []
 
     def test_default_output_path(self, tmp_path, monkeypatch):
-        """When no output path given, zip goes to ~/hermes-backup-*.zip."""
+        """When no output path given, zip goes to ~/kova-backup-*.zip."""
         hermes_home = tmp_path / ".hermes"
         hermes_home.mkdir()
         (hermes_home / "config.yaml").write_text("model: test\n")
@@ -483,7 +483,7 @@ class TestBackup:
         run_backup(args)
 
         # Should exist in home dir
-        zips = list(tmp_path.glob("hermes-backup-*.zip"))
+        zips = list(tmp_path.glob("kova-backup-*.zip"))
         assert len(zips) == 1
 
     def test_skips_symlinked_files(self, tmp_path, monkeypatch):
@@ -908,8 +908,8 @@ class TestRoundTrip:
         assert (dst_home / "sessions" / "abc123.json").exists()
         assert (dst_home / "logs" / "agent.log").exists()
 
-        # hermes-agent should NOT be present
-        assert not (dst_home / "hermes-agent").exists()
+        # kova-agent should NOT be present
+        assert not (dst_home / "kova-agent").exists()
         # __pycache__ should NOT be present
         assert not (dst_home / "plugins" / "__pycache__").exists()
         # PID files should NOT be present
@@ -1057,7 +1057,7 @@ class TestBackupEdgeCases:
         from hermes_cli.backup import run_backup
         run_backup(args)
 
-        zips = list(out_dir.glob("hermes-backup-*.zip"))
+        zips = list(out_dir.glob("kova-backup-*.zip"))
         assert len(zips) == 1
 
     def test_output_without_zip_suffix(self, tmp_path, monkeypatch):
@@ -1327,7 +1327,7 @@ class TestProfileRestoration:
 
         # Wrappers should contain the right content
         coder_wrapper = (wrapper_dir / "coder").read_text()
-        assert "hermes -p coder" in coder_wrapper
+        assert "kova -p coder" in coder_wrapper
 
     def test_import_skips_profile_dirs_without_config(self, tmp_path, monkeypatch):
         """Import doesn't create wrappers for profile dirs without config."""
@@ -1980,7 +1980,7 @@ class TestQuickSnapshotProjectsKanban:
 
 
 class TestPreUpdateBackup:
-    """Tests for create_pre_update_backup — the auto-backup ``hermes update``
+    """Tests for create_pre_update_backup — the auto-backup ``kova update``
     runs before touching anything."""
 
     def test_failed_sqlite_snapshot_removes_incomplete_archive(self, tmp_path, monkeypatch):
@@ -2048,7 +2048,7 @@ class TestPreUpdateBackup:
 
     def test_backup_contents_match_full_backup(self, hermes_home):
         """Pre-update backup should include the same user data that
-        ``hermes backup`` would, and should exclude the same directories."""
+        ``kova backup`` would, and should exclude the same directories."""
         from hermes_cli.backup import create_pre_update_backup
         out = create_pre_update_backup(hermes_home=hermes_home)
         assert out is not None
@@ -2060,8 +2060,8 @@ class TestPreUpdateBackup:
         assert "sessions/abc123.json" in names
         assert "skills/my-skill/SKILL.md" in names
         assert "profiles/coder/config.yaml" in names
-        # hermes-agent repo excluded
-        assert not any(n.startswith("hermes-agent/") for n in names)
+        # kova-agent repo excluded
+        assert not any(n.startswith("kova-agent/") for n in names)
         # __pycache__ excluded
         assert not any("__pycache__" in n for n in names)
         # pid files excluded
@@ -2253,7 +2253,7 @@ class TestRunPreUpdateBackup:
         assert "Pre-update snapshot" in out
         assert "Creating pre-update backup" in out
         assert "Saved:" in out
-        assert "hermes import" in out
+        assert "kova import" in out
         assert len(self._zips(hermes_home)) == 1
 
     def test_no_backup_flag_skips_everything(self, hermes_home, capsys):
@@ -2357,7 +2357,7 @@ class TestRunPreUpdateBackup:
 
 class TestPreMigrationBackup:
     """Tests for create_pre_migration_backup — the auto-backup
-    ``hermes claw migrate`` runs before mutating ~/.hermes/."""
+    ``kova claw migrate`` runs before mutating ~/.hermes/."""
 
     @pytest.fixture
     def hermes_home(self, tmp_path):
@@ -2379,7 +2379,7 @@ class TestPreMigrationBackup:
 
     def test_backup_uses_shared_exclusion_rules(self, hermes_home):
         """Pre-migration backup reuses the same exclusion rules as
-        ``hermes backup`` / ``create_pre_update_backup`` — no drift."""
+        ``kova backup`` / ``create_pre_update_backup`` — no drift."""
         from hermes_cli.backup import create_pre_migration_backup
         out = create_pre_migration_backup(hermes_home=hermes_home)
         assert out is not None
@@ -2390,13 +2390,13 @@ class TestPreMigrationBackup:
         assert ".env" in names
         assert "skills/my-skill/SKILL.md" in names
         # Same exclusions as the shared helper
-        assert not any(n.startswith("hermes-agent/") for n in names)
+        assert not any(n.startswith("kova-agent/") for n in names)
         assert not any("__pycache__" in n for n in names)
         assert "gateway.pid" not in names
 
     def test_restorable_with_hermes_import(self, hermes_home, tmp_path):
         """The zip produced by pre-migration backup must be a valid Hermes
-        backup — `hermes import` should accept it."""
+        backup — `kova import` should accept it."""
         from hermes_cli.backup import create_pre_migration_backup, _validate_backup_zip
         out = create_pre_migration_backup(hermes_home=hermes_home)
         assert out is not None
@@ -2456,7 +2456,7 @@ class TestPreMigrationBackup:
 # ---------------------------------------------------------------------------
 
 class TestRestoreCronJobsIfEmptied:
-    """`hermes update` config migration can leave cron/jobs.json valid-but-empty,
+    """`kova update` config migration can leave cron/jobs.json valid-but-empty,
     silently dropping every scheduled job. `restore_cron_jobs_if_emptied` is the
     post-migration safety net that restores from the pre-update snapshot."""
 

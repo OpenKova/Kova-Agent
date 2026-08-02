@@ -4,7 +4,7 @@ In a fresh install the board lives at ``<root>/kanban.db`` where
 ``<root>`` is the **shared Hermes root** (the parent of any active
 profile). Profiles intentionally collapse onto a shared board: it IS
 the cross-profile coordination primitive. A worker spawned with
-``hermes -p <profile>`` joins the same board as the dispatcher that
+``kova -p <profile>`` joins the same board as the dispatcher that
 claimed the task. The same applies to ``<root>/kanban/workspaces/`` and
 ``<root>/kanban/logs/``.
 
@@ -1472,7 +1472,7 @@ def _dispatch_tick_lock(db_path: Path):
     may proceed with the tick, or ``False`` when another process already
     holds it (the caller should skip the tick this round).
 
-    Motivation (issue #35240): a ``hermes gateway run --replace`` /
+    Motivation (issue #35240): a ``kova gateway run --replace`` /
     ``gateway restart`` invoked from a shell on a systemd/launchd host can
     leave an orphan gateway whose dispatcher escapes the service cgroup,
     survives ``systemctl restart``, and becomes a *second* long-lived
@@ -8228,7 +8228,7 @@ def _dispatch_once_locked(
                 result.skipped_unassigned.append(row["id"])
                 continue
         # Skip ready tasks whose assignee is not a real Hermes profile.
-        # `_default_spawn` invokes ``hermes -p <assignee>`` which fails
+        # `_default_spawn` invokes ``kova -p <assignee>`` which fails
         # with "Profile 'X' does not exist" when the assignee names a
         # control-plane lane (e.g. an interactive Claude Code terminal
         # like ``orion-cc`` / ``orion-research``) rather than a Hermes
@@ -8605,7 +8605,7 @@ def _resolve_hermes_argv() -> list[str]:
     1. ``$HERMES_BIN`` — explicit operator override. Path-like values are
        normalized to absolute paths; bare command names keep normal PATH
        semantics and never prefer a same-directory file before ``PATH``.
-    2. ``shutil.which("hermes")`` — the console-script shim, normalized to
+    2. ``shutil.which("kova") or shutil.which("hermes")`` — the console-script shim, normalized to
        an absolute path. On Windows, ``which`` can return a relative
        ``.\\hermes.CMD`` when the current directory is on ``PATH``; directly
        launching batch shims is also unsafe with task-derived argv. The
@@ -8632,7 +8632,7 @@ def _resolve_hermes_argv() -> list[str]:
             return _hermes_path_argv(resolved_env_bin)
         return _module_hermes_argv()
 
-    hermes_bin = _safe_which_no_cwd("hermes") if _IS_WINDOWS else shutil.which("hermes")
+    hermes_bin = _safe_which_no_cwd("hermes") if _IS_WINDOWS else shutil.which("kova") or shutil.which("hermes")
     if hermes_bin:
         return _hermes_path_argv(hermes_bin)
     return _module_hermes_argv()
@@ -8708,7 +8708,7 @@ def _default_spawn(
     *,
     board: Optional[str] = None,
 ) -> Optional[int]:
-    """Fire-and-forget ``hermes -p <profile> chat -q ...`` subprocess.
+    """Fire-and-forget ``kova -p <profile> chat -q ...`` subprocess.
 
     Returns the spawned child's PID so the dispatcher can detect crashes
     before the claim TTL expires. The child's completion is still observed
@@ -8734,7 +8734,7 @@ def _default_spawn(
     # Inject HERMES_HOME so the worker reads the profile-scoped config.yaml
     # (fallback_providers, toolsets, agent settings, etc.) instead of the root
     # config.  Without this, `env = dict(os.environ)` copies only the parent's
-    # env, and when the child process starts `hermes -p <name>` the
+    # env, and when the child process starts `kova -p <name>` the
     # _apply_profile_override() runs *before* hermes_constants is imported.
     # If HERMES_HOME is absent from the child's env, get_hermes_home() falls
     # back to Path.home() / ".hermes" (the DEFAULT profile root), ignoring the
@@ -8793,7 +8793,7 @@ def _default_spawn(
     if foreground_timeout is not None:
         env["TERMINAL_MAX_FOREGROUND_TIMEOUT"] = foreground_timeout
     # Pin the shared board + workspaces root the dispatcher resolved, so
-    # that even when the worker activates a profile (`hermes -p <name>`
+    # that even when the worker activates a profile (`kova -p <name>`
     # rewrites HERMES_HOME), its kanban paths still match the
     # dispatcher's. Belt-and-braces with the `get_default_hermes_root()`
     # resolution in `kanban_home()` — symmetric resolution is the norm,
@@ -8806,7 +8806,7 @@ def _default_spawn(
     resolved_board = _normalize_board_slug(board) or get_current_board()
     env["HERMES_KANBAN_BOARD"] = resolved_board
     # HERMES_PROFILE is the author the kanban_comment tool defaults to.
-    # `hermes -p <assignee>` activates the profile, but the env var is
+    # `kova -p <assignee>` activates the profile, but the env var is
     # what the tool reads — set it explicitly here so comments are
     # attributed correctly regardless of how the child loads config.
     env["HERMES_PROFILE"] = profile_arg

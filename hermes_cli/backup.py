@@ -47,7 +47,8 @@ logger = logging.getLogger(__name__)
 # exclude ``.archive`` here because the curator's ``skills/.archive/`` holds
 # restorable user skills that must survive a backup.
 _EXCLUDED_DIRS = {
-    "hermes-agent",     # the codebase repo — re-clone instead
+    "kova-agent",       # the codebase repo — re-clone instead
+    "hermes-agent",     # legacy pre-rebrand checkout dir name — re-clone instead
     "__pycache__",      # bytecode caches — regenerated on import
     ".git",             # nested git dirs (profiles shouldn't have these, but safety)
     "node_modules",     # js deps — reinstalled on demand
@@ -215,10 +216,10 @@ def _should_exclude(rel_path: Path) -> bool:
     for part in parts:
         if part not in _EXCLUDED_DIRS:
             continue
-        # ``hermes-agent`` only matches at the root level (first component).
-        # Nested directories with the same name — e.g.
+        # ``hermes-agent``/``kova-agent`` only match at the root level (first
+        # component). Nested directories with the same name — e.g.
         # ``skills/autonomous-ai-agents/hermes-agent/`` — must be preserved.
-        if part == "hermes-agent" and part != parts[0]:
+        if part in ("hermes-agent", "kova-agent") and part != parts[0]:
             continue
         return True
 
@@ -332,13 +333,14 @@ def run_backup(args) -> None:
         rel_dir = dp.relative_to(hermes_root)
 
         # Prune excluded directories in-place so os.walk doesn't descend
-        # ``hermes-agent`` is only pruned at the root level; nested dirs
-        # with the same name (e.g. in skills/) must be preserved.
+        # ``hermes-agent``/``kova-agent`` are only pruned at the root level;
+        # nested dirs with the same name (e.g. in skills/) must be preserved.
         is_root = rel_dir == Path(".")
         orig_dirnames = dirnames[:]
         dirnames[:] = [
             d for d in dirnames
-            if d not in _EXCLUDED_DIRS or (d == "hermes-agent" and not is_root)
+            if d not in _EXCLUDED_DIRS
+            or (d in ("hermes-agent", "kova-agent") and not is_root)
         ]
         for removed in set(orig_dirnames) - set(dirnames):
             skipped_dirs.add(str(rel_dir / removed))
@@ -737,7 +739,8 @@ def run_import(args) -> None:
 
         # Guidance
         print()
-        if not (hermes_root / "hermes-agent").is_dir():
+        if not (hermes_root / "kova-agent").is_dir() \
+                and not (hermes_root / "hermes-agent").is_dir():
             print("Note: The Kova-Agent codebase was not included in the backup.")
             print("  If this is a fresh install, run: kova update")
 
@@ -761,7 +764,7 @@ def run_import(args) -> None:
 # Entries may be individual files OR directories.  Directories are captured
 # recursively; missing entries are silently skipped.  Pairing data lives in
 # platform-specific JSON blobs outside state.db, so it's listed here explicitly
-# — `hermes update` snapshots this set before pulling so approved-user lists
+# — `kova update` snapshots this set before pulling so approved-user lists
 # are recoverable if anything goes wrong (issue #15733).
 _QUICK_STATE_FILES = (
     "state.db",
@@ -818,7 +821,7 @@ def create_quick_snapshot(
         max_file_size: When set, individual files larger than this many bytes
             are skipped (with a printed warning) instead of copied. Used by
             the pre-update safety snapshot so a multi-GB ``state.db`` can
-            never stall ``hermes update`` or silently eat disk — the small
+            never stall ``kova update`` or silently eat disk — the small
             pairing/cron/config files the snapshot exists to protect are
             always captured. ``None`` (default) copies everything, which
             preserves manual ``/snapshot`` and ``hermes backup --quick``
@@ -1081,7 +1084,7 @@ def restore_cron_jobs_if_emptied(
     snapshot_id: str,
     hermes_home: Optional[Path] = None,
 ) -> Optional[Dict[str, Any]]:
-    """Safety net for silent cron-job loss across ``hermes update``.
+    """Safety net for silent cron-job loss across ``kova update``.
 
     Config-version migrations have been observed to leave ``cron/jobs.json``
     valid-but-empty after an update, silently dropping every scheduled job
@@ -1344,7 +1347,7 @@ def create_pre_update_backup(
 
     Returns the path to the created zip, or ``None`` if no files were
     found or the backup could not be created.  Never raises — the caller
-    (``hermes update``) should continue even if the backup fails.
+    (``kova update``) should continue even if the backup fails.
     """
     hermes_root = hermes_home or get_default_hermes_root()
     if not hermes_root.is_dir():

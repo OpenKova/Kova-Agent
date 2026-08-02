@@ -191,7 +191,7 @@ def _openai_http_client_kwargs(
             logger.warning(
                 "agent.process_bootstrap.build_keepalive_http_client is "
                 "unavailable — mixed/stale install detected (#64333). Falling "
-                "back to the SDK default HTTP client. Run `hermes update` (or "
+                "back to the SDK default HTTP client. Run `kova update` (or "
                 "reinstall the Desktop app) to resync the runtime."
             )
         client = None
@@ -567,7 +567,7 @@ _PROVIDERS_WITHOUT_VISION: frozenset = frozenset({
 # `X-Title` is the canonical attribution header OpenRouter's dashboard
 # reads; the previous `X-OpenRouter-Title` label was not recognized there.
 _OR_HEADERS_BASE = {
-    "HTTP-Referer": "https://hermes-agent.kova.ai",
+    "HTTP-Referer": "https://kova-agent.kova.ai",
     "X-Title": "Kova Agent",
     "X-OpenRouter-Categories": "productivity,cli-agent",
 }
@@ -2616,7 +2616,7 @@ def _validate_base_url(base_url: str) -> None:
     except ValueError as exc:
         raise RuntimeError(
             f"Malformed custom endpoint URL: {candidate!r}. "
-            "Run `hermes setup` or `hermes model` and enter a valid http(s) base URL."
+            "Run `kova setup` or `kova model` and enter a valid http(s) base URL."
         ) from exc
 
 
@@ -4514,7 +4514,7 @@ def _resolve_auto(
             logger.warning(
                 "OPENAI_BASE_URL is set (%s) but model.provider is '%s'. "
                 "Auxiliary clients may route to the wrong endpoint. "
-                "Run: hermes model to reconfigure, or remove "
+                "Run: kova model to reconfigure, or remove "
                 "OPENAI_BASE_URL from ~/.hermes/.env",
                 _env_base, _cfg_provider,
             )
@@ -5238,7 +5238,7 @@ def resolve_provider_client(
         if client is None:
             logger.warning(
                 "resolve_provider_client: azure-foundry requested but "
-                "runtime resolution failed (run: hermes doctor for "
+                "runtime resolution failed (run: kova doctor for "
                 "diagnostics)"
             )
             return None, None
@@ -6571,7 +6571,7 @@ def _get_auxiliary_task_config(task: str) -> Dict[str, Any]:
     # ctx.register_auxiliary_task(defaults={...}) takes effect without
     # forcing the user to write config.yaml entries.
     try:
-        from hermes_cli.plugins import get_plugin_auxiliary_tasks
+        from kova_cli.plugins import get_plugin_auxiliary_tasks
         for _entry in get_plugin_auxiliary_tasks():
             if _entry.get("key") == task:
                 _defaults = _entry.get("defaults") or {}
@@ -7197,7 +7197,7 @@ def call_llm(
         if client is None:
             raise RuntimeError(
                 f"No LLM provider configured for task={task} provider={resolved_provider}. "
-                f"Run: hermes setup"
+                f"Run: kova setup"
             )
         resolved_provider = effective_provider or resolved_provider
     else:
@@ -7241,7 +7241,7 @@ def call_llm(
         if client is None:
             raise RuntimeError(
                 f"No LLM provider configured for task={task} provider={resolved_provider}. "
-                f"Run: hermes setup")
+                f"Run: kova setup")
 
     effective_timeout = _effective_aux_timeout(task, timeout)
 
@@ -7830,7 +7830,7 @@ async def async_call_llm(
         if client is None:
             raise RuntimeError(
                 f"No LLM provider configured for task={task} provider={resolved_provider}. "
-                f"Run: hermes setup"
+                f"Run: kova setup"
             )
         resolved_provider = effective_provider or resolved_provider
     else:
@@ -7867,7 +7867,7 @@ async def async_call_llm(
         if client is None:
             raise RuntimeError(
                 f"No LLM provider configured for task={task} provider={resolved_provider}. "
-                f"Run: hermes setup")
+                f"Run: kova setup")
 
     effective_timeout = _effective_aux_timeout(task, timeout)
 

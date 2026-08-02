@@ -1,4 +1,4 @@
-﻿__pycache__/
+__pycache__/
 *.pyc
 *.pyo
 .pytest_cache/
@@ -26,3 +26,24 @@ kova.log
 *.code-workspace
 target/
 Cargo.lock
+
+# Web UI build lockfile (created by kova web / desktop build)
+.web_ui_build.lock
+
+# Runtime markers that must never be swept by `git stash -u` during update
+.hermes-bootstrap-complete
+.install_method
+.update-incomplete
+
+
+# Runtime state files (accidentally committed in earlier rebrand sweep)
+.lazy-refresh-incomplete
+.pytest-cache/
+
+# tsc build output emitted into apps/desktop/src (never commit compiled .js)
+apps/desktop/src/**/*.js
+# sdist/wheel scratch dirs from packaging tests
+/kova_agent-*/
+
+apps/shared/src/**/*.js
+*.tsbuildinfo

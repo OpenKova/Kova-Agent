@@ -889,7 +889,7 @@ def test_profiles_default_subdir_is_skipped_with_warning(
         # Bare subcommand (docker run ... dashboard ...).
         ("dashboard",),
         ("dashboard", "--host", "127.0.0.1", "--no-open"),
-        # Through s6 /init + the main-wrapper that re-execs `hermes`.
+        # Through s6 /init + the main-wrapper that re-execs `kova`.
         ("/init", "/opt/hermes/docker/main-wrapper.sh", "dashboard"),
         (
             "/init",
@@ -899,7 +899,7 @@ def test_profiles_default_subdir_is_skipped_with_warning(
             "127.0.0.1",
             "--no-open",
         ),
-        # Wrapper that kept the explicit `hermes` argv0.
+        # Wrapper that kept the explicit `kova` argv0.
         ("/init", "/opt/hermes/docker/main-wrapper.sh", "hermes", "dashboard"),
         # s6-overlay v3: PID 1 is s6-svscan, so the role is read off the
         # rc.init-launched process whose argv is

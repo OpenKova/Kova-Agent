@@ -1286,7 +1286,7 @@ DEFAULT_CONFIG = {
     #   - enabled: True -> False   (opt-in; most users never use /rollback)
     #   - max_snapshots: 50 -> 20  (now actually enforced via ref rewrite)
     #   - auto_prune:   False -> True (orphans/stale pruned automatically)
-    # Opt in via ``hermes chat --checkpoints`` or set enabled=True here.
+    # Opt in via ``kova chat --checkpoints`` or set enabled=True here.
     "checkpoints": {
         "enabled": False,
         # Max checkpoints to keep per working directory.  Pre-v2 this only
@@ -1870,7 +1870,7 @@ DEFAULT_CONFIG = {
         # "Steered into current run" confirmation bubble by setting this false.
         # The mid-turn steering itself still happens.
         "busy_steer_ack_enabled": True,
-        # Which interface bare `hermes` (and `hermes chat`) launches by default:
+        # Which interface bare `hermes` (and `kova chat`) launches by default:
         #   "cli" — the classic prompt_toolkit REPL (default, preserves prior behavior)
         #   "tui" — the modern Ink TUI (same as passing `--tui`)
         # Explicit flags always win over this setting: `--cli` forces the classic
@@ -2516,7 +2516,7 @@ DEFAULT_CONFIG = {
     # and patch drift. Runs inactivity-triggered from session start — no
     # cron daemon.
     #
-    # See `hermes curator status` for the last run summary.
+    # See `kova curator status` for the last run summary.
     "curator": {
         "enabled": True,
         # How long to wait between curator runs (hours).  Default: 7 days.
@@ -2533,7 +2533,7 @@ DEFAULT_CONFIG = {
         # (mark stale / archive long-unused skills) and skips the forked
         # aux-model review entirely — no umbrella-building, no aux-model cost.
         # Set to true to opt back into merging overlapping skills into
-        # class-level umbrellas. `hermes curator run --consolidate` overrides
+        # class-level umbrellas. `kova curator run --consolidate` overrides
         # this for a single invocation.
         "consolidate": False,
         # Also prune (archive) bundled built-in skills after the inactivity
@@ -2550,7 +2550,7 @@ DEFAULT_CONFIG = {
         # Pre-run backup: before every real curator pass (dry-run is
         # skipped), snapshot ~/.hermes/skills/ into
         # ~/.hermes/skills/.curator_backups/<utc-iso>/skills.tar.gz so the
-        # user can roll back with `hermes curator rollback`.
+        # user can roll back with `kova curator rollback`.
         "backup": {
             "enabled": True,
             "keep": 5,  # retain last N regular snapshots
@@ -3462,7 +3462,7 @@ DEFAULT_CONFIG = {
             # https://vault.bitwarden.eu for EU Cloud, or your own URL
             # for self-hosted Bitwarden.  Plumbed into the bws subprocess
             # as BWS_SERVER_URL.  Prompted for during
-            # `hermes secrets bitwarden setup`.
+            # `kova secrets bitwarden setup`.
             "server_url": "",
         },
         "onepassword": {
@@ -6268,7 +6268,7 @@ def migrate_config(interactive: bool = True, quiet: bool = False) -> Dict[str, A
     # unification under `auxiliary.curator`) never wrote the curator section
     # to disk. The runtime deep-merge in `load_config()` fills defaults at
     # read time, so the curator *functions*; but users can't see/edit the
-    # settings in their `config.yaml`, and `hermes curator status` has no
+    # settings in their `config.yaml`, and `kova curator status` has no
     # stable logs dir to point at until the first run mkdir's it.
     #
     # This migration:

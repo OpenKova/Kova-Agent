@@ -123,7 +123,7 @@ def test_get_container_exec_info_docker_backend(container_env):
         "backend=docker\n"
         "container_name=hermes-custom\n"
         "exec_user=myuser\n"
-        "hermes_bin=/opt/hermes/bin/hermes\n"
+        "hermes_bin=/opt/hermes/bin/kova\n"
     )
 
     with patch("kova_constants.is_container", return_value=False):
@@ -132,7 +132,7 @@ def test_get_container_exec_info_docker_backend(container_env):
     assert info["backend"] == "docker"
     assert info["container_name"] == "hermes-custom"
     assert info["exec_user"] == "myuser"
-    assert info["hermes_bin"] == "/opt/hermes/bin/hermes"
+    assert info["hermes_bin"] == "/opt/hermes/bin/kova"
 
 
 def test_get_container_exec_info_crashes_on_permission_error(container_env):

@@ -66,14 +66,14 @@ TIPS = [
     "hermes -c resumes your most recent CLI session. hermes -c \"project name\" resumes by title.",
     "hermes -w creates an isolated git worktree — perfect for parallel agent workflows.",
     "hermes -w -q \"Fix issue #42\" combines worktree isolation with a one-shot query.",
-    "hermes chat -t web,terminal enables only specific toolsets for a focused session.",
-    "hermes chat -s github-pr-workflow preloads a skill at launch.",
-    "hermes chat -q \"query\" runs a single non-interactive query and exits.",
-    "hermes chat --max-turns 200 overrides the default 90-iteration limit per turn.",
-    "hermes chat --checkpoints enables filesystem snapshots before every destructive file change.",
+    "kova chat -t web,terminal enables only specific toolsets for a focused session.",
+    "kova chat -s github-pr-workflow preloads a skill at launch.",
+    "kova chat -q \"query\" runs a single non-interactive query and exits.",
+    "kova chat --max-turns 200 overrides the default 90-iteration limit per turn.",
+    "kova chat --checkpoints enables filesystem snapshots before every destructive file change.",
     "hermes --yolo bypasses all dangerous command approval prompts for the entire session.",
-    "hermes chat --source telegram tags the session for filtering in hermes sessions list.",
-    "hermes -p work chat runs under a specific profile without changing your default.",
+    "kova chat --source telegram tags the session for filtering in hermes sessions list.",
+    "kova -p work chat runs under a specific profile without changing your default.",
 
     # --- CLI Subcommands ---
     "hermes doctor --fix diagnoses and auto-repairs config and dependency issues.",
@@ -88,19 +88,19 @@ TIPS = [
     "hermes skills check scans installed hub skills for upstream updates.",
     "hermes skills tap add myorg/skills-repo adds a custom GitHub skill source.",
     "hermes skills snapshot export setup.json exports your skill configuration for backup or sharing.",
-    "hermes mcp add github --command npx adds MCP servers from the command line.",
-    "hermes mcp serve runs Hermes itself as an MCP server for other agents.",
-    "hermes auth add lets you add multiple API keys for credential pool rotation.",
+    "kova mcp add github --command npx adds MCP servers from the command line.",
+    "kova mcp serve runs Hermes itself as an MCP server for other agents.",
+    "kova auth add lets you add multiple API keys for credential pool rotation.",
     "hermes completion bash >> ~/.bashrc enables tab completion for all commands and profiles.",
     "hermes logs -f follows agent.log in real time. --level WARNING --since 1h filters output.",
     "hermes backup creates a zip backup of your entire Hermes home directory.",
-    "hermes profile create coder creates an isolated profile that becomes its own command.",
-    "hermes profile create work --clone copies your current config and keys to a new profile.",
-    "hermes update syncs new bundled skills to ALL profiles automatically.",
-    "hermes gateway install sets up Hermes as a system service (systemd/launchd).",
+    "kova profile create coder creates an isolated profile that becomes its own command.",
+    "kova profile create work --clone copies your current config and keys to a new profile.",
+    "kova update syncs new bundled skills to ALL profiles automatically.",
+    "kova gateway install sets up Hermes as a system service (systemd/launchd).",
     "hermes memory setup lets you configure an external memory provider (Honcho, Mem0, etc.).",
     "hermes webhook subscribe creates event-driven webhook routes with HMAC validation.",
-    "Save money: hermes tools disables unused tools, hermes skills config trims skills down.",
+    "Save money: kova tools disables unused tools, kova skills config trims skills down.",
     "/reasoning low or /reasoning minimal cuts thinking depth below the default (medium) — faster, cheaper responses.",
     "hermes models routes vision, compression, and aux tasks to cheaper models — cuts background token cost 85%+ without downgrading your main chat model.",
 
@@ -151,7 +151,7 @@ TIPS = [
 
     # --- Profiles ---
     "Each profile gets its own config, API keys, memory, sessions, skills, and cron jobs.",
-    "Profile names become shell commands — 'hermes profile create coder' creates the 'coder' command.",
+    "Profile names become shell commands — 'kova profile create coder' creates the 'coder' command.",
     "hermes profile export coder -o backup.tar.gz creates a portable profile archive.",
     "If two profiles accidentally share a bot token, the second gateway is blocked with a clear error.",
 
@@ -193,7 +193,7 @@ TIPS = [
 
     # --- Gateway & Messaging ---
     "Hermes runs on 21 messaging platforms: Telegram, Discord, Slack, WhatsApp, Signal, Matrix, IRC, Microsoft Teams, email, and more.",
-    "hermes gateway install sets it up as a system service that starts on boot.",
+    "kova gateway install sets it up as a system service that starts on boot.",
     "DingTalk uses Stream Mode — no webhooks or public URL needed.",
     "BlueBubbles brings iMessage to Hermes via a local macOS server.",
     "Webhook routes support HMAC validation, rate limiting, and event filtering.",
@@ -227,12 +227,12 @@ TIPS = [
     "browser_vision with annotate=true overlays numbered labels on interactive elements.",
 
     # --- MCP ---
-    "hermes mcp opens an interactive picker of Nous-approved MCPs you can install in one keystroke.",
-    "hermes mcp catalog lists Nous-approved MCP servers shipped with the repo.",
-    "hermes mcp install <name> installs a catalog entry, prompts for credentials, and lets you pick which of its tools to enable.",
+    "kova mcp opens an interactive picker of Nous-approved MCPs you can install in one keystroke.",
+    "kova mcp catalog lists Nous-approved MCP servers shipped with the repo.",
+    "kova mcp install <name> installs a catalog entry, prompts for credentials, and lets you pick which of its tools to enable.",
     "MCP servers are configured in config.yaml — both stdio and HTTP transports supported.",
     "Per-server tool filtering: tools.include whitelists and tools.exclude blacklists specific tools.",
-    "MCP servers auto-generate toolsets at runtime — hermes tools can toggle them per platform.",
+    "MCP servers auto-generate toolsets at runtime — kova tools can toggle them per platform.",
     "MCP OAuth support: auth: oauth enables browser-based authorization with PKCE.",
 
     # --- Checkpoints & Rollback ---
@@ -243,7 +243,7 @@ TIPS = [
 
     # --- Batch & Data ---
     "batch_runner.py processes hundreds of prompts in parallel for training data generation.",
-    "hermes chat -Q enables quiet mode for programmatic use — suppresses banner and spinner.",
+    "kova chat -Q enables quiet mode for programmatic use — suppresses banner and spinner.",
     "Trajectory saving (--save-trajectories) captures full tool-use traces for model training.",
 
     # --- Plugins ---
@@ -259,14 +259,14 @@ TIPS = [
     "Slash commands support prefix matching: /h resolves to /help, /mod to /model.",
     "Dragging a file path into the terminal auto-attaches images or sends as context.",
     ".worktreeinclude in your repo root lists gitignored files to copy into worktrees.",
-    "hermes acp runs Hermes as an ACP server for VS Code, Zed, and JetBrains integration.",
+    "kova acp runs Hermes as an ACP server for VS Code, Zed, and JetBrains integration.",
     "Custom providers: save named endpoints in config.yaml under custom_providers.",
     "HERMES_EPHEMERAL_SYSTEM_PROMPT injects a system prompt that's never persisted to history.",
     "credential_pool_strategies supports fill_first, round_robin, least_used, and random rotation.",
-    "hermes auth add nous or hermes auth add openai-codex sets up OAuth-based providers.",
+    "kova auth add nous or kova auth add openai-codex sets up OAuth-based providers.",
     "The API server supports both Chat Completions and Responses API with server-side state.",
     "tool_preview_length: 0 in config shows full file paths in the spinner's activity feed.",
-    "hermes status --deep runs deeper diagnostic checks across all components.",
+    "kova status --deep runs deeper diagnostic checks across all components.",
 
     # --- Hidden Gems & Power-User Tricks ---
     "Cron jobs can attach a Python script (--script) whose stdout is injected into the prompt as context.",
@@ -320,7 +320,7 @@ TIPS = [
     "When compression fails, further attempts are paused for 10 minutes to avoid API hammering.",
     "Long dangerous commands (>70 chars) get a 'view' option in the approval prompt to see the full text first.",
     "Audio level visualization shows ▁▂▃▄▅▆▇ bars during voice recording based on microphone RMS levels.",
-    "Profile names cannot collide with existing PATH binaries — 'hermes profile create ls' would be rejected.",
+    "Profile names cannot collide with existing PATH binaries — 'kova profile create ls' would be rejected.",
     "hermes profile create backup --clone-all copies everything (config, keys, SOUL.md, memories, skills, sessions).",
     "The voice record key is configurable via voice.record_key in config.yaml — not just Ctrl+B.",
     ".cursorrules and .cursor/rules/*.mdc files are auto-detected and loaded as project context.",
@@ -333,7 +333,7 @@ TIPS = [
     "Slash commands never trigger the large-paste collapse — /command with big arguments works correctly.",
     "In interrupt mode, slash commands typed during agent execution bypass interrupt logic and run immediately.",
     "HERMES_DEV=1 bypasses container mode detection for local development.",
-    "Each MCP server gets its own toolset (mcp-servername) that can be toggled independently via hermes tools.",
+    "Each MCP server gets its own toolset (mcp-servername) that can be toggled independently via kova tools.",
     "MCP ${ENV_VAR} placeholders in config are resolved at server spawn — including vars from ~/.hermes/.env.",
     "Skills from trusted repos (NousResearch) get a 'trusted' security level; community skills get extra scanning.",
     "The skills quarantine at ~/.hermes/skills/.hub/quarantine/ holds skills pending security review.",
@@ -364,12 +364,12 @@ TIPS = [
     'Drop a ~/.hermes/BOOT.md checklist and a gateway:startup hook runs it as a one-shot agent every boot.',
 
     # --- Curator ---
-    'hermes curator run --dry-run previews what the curator would archive or consolidate without mutating anything.',
-    "hermes curator pin <skill> hard-fences a skill against both auto-archival and the agent's skill_manage tool.",
-    'hermes curator rollback restores skills from a pre-run snapshot — backups live under skills/.curator_backups/.',
+    'kova curator run --dry-run previews what the curator would archive or consolidate without mutating anything.',
+    "kova curator pin <skill> hard-fences a skill against both auto-archival and the agent's skill_manage tool.",
+    'kova curator rollback restores skills from a pre-run snapshot — backups live under skills/.curator_backups/.',
 
     # --- Credential Pools & Routing ---
-    'hermes auth reset <provider> clears all cooldowns and exhaustion flags on a credential pool.',
+    'kova auth reset <provider> clears all cooldowns and exhaustion flags on a credential pool.',
     'credential_pool_strategies.<provider>: round_robin cycles keys evenly instead of the fill_first default.',
     'use_gateway: true per-tool routes web, image, tts, or browser through your Nous subscription — no extra keys.',
     'provider_routing.data_collection: deny excludes data-storing providers on OpenRouter.',
@@ -426,18 +426,18 @@ TIPS = [
     '/debug uploads a support bundle (system info + logs) and returns shareable links — works in chat too.',
 
     # --- CLI Subcommands & Flags ---
-    'hermes -z "<prompt>" is the purest one-shot: final answer on stdout, nothing else — ideal for piping in scripts.',
-    'hermes chat --pass-session-id injects the session ID into the system prompt so the agent can self-reference it.',
-    'hermes chat --image path/to/pic.png attaches a local image to a single -q query without a separate upload step.',
-    'hermes chat --ignore-user-config skips the active user config — reproducible bug reports and CI runs.',
-    "hermes chat --source tool tags programmatic chats so they don't clutter hermes sessions list.",
+    'kova -z "<prompt>" is the purest one-shot: final answer on stdout, nothing else — ideal for piping in scripts.',
+    'kova chat --pass-session-id injects the session ID into the system prompt so the agent can self-reference it.',
+    'kova chat --image path/to/pic.png attaches a local image to a single -q query without a separate upload step.',
+    'kova chat --ignore-user-config skips the active user config — reproducible bug reports and CI runs.',
+    "kova chat --source tool tags programmatic chats so they don't clutter hermes sessions list.",
     'hermes dump --show-keys includes redacted API key fingerprints for deeper support debugging.',
     'hermes sessions rename <ID> "new title" renames any past session; hermes sessions delete <ID> removes one.',
     'hermes import restores a full Hermes backup zip; session JSON/JSONL exports import from the dashboard Sessions page.',
     'hermes fallback manages the fallback_model chain interactively — no hand-editing config.yaml.',
     'hermes pairing rotates the DM pairing token — the first messager after rotation claims access to the bot.',
-    'hermes setup walks first-time users through provider, keys, and platform wiring in one interactive flow.',
-    'hermes status --deep runs the full health sweep across every component; plain hermes status is the quick view.',
+    'kova setup walks first-time users through provider, keys, and platform wiring in one interactive flow.',
+    'kova status --deep runs the full health sweep across every component; plain hermes status is the quick view.',
 
     # --- Agent Behavior Env Vars ---
     'HERMES_AGENT_TIMEOUT=0 disables the gateway inactivity kill for a running agent — use for long research runs.',

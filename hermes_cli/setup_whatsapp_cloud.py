@@ -482,7 +482,7 @@ def run_whatsapp_cloud_setup() -> int:
     print("       Note the printed https://<random>.trycloudflare.com URL.")
     print()
     print("    3. Start the Kova gateway in another terminal:")
-    print("         hermes gateway")
+    print("         kova gateway")
     print()
     print("    4. Verify your local config is reachable. From a third")
     print("       terminal, with the tunnel URL substituted:")
@@ -535,7 +535,7 @@ def run_whatsapp_cloud_setup() -> int:
     print("        Requires Meta's business verification process —")
     print("        Business Manager → Security Center → Start Verification.")
     print()
-    print("  Docs: https://hermes-agent.nousresearch.com/docs/user-guide/")
+    print("  Docs: https://kova-agent.nousresearch.com/docs/user-guide/")
     print("        messaging/whatsapp-cloud")
     print()
     return 0

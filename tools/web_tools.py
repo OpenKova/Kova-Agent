@@ -703,7 +703,7 @@ def web_search_tool(query: str, limit: int = 5) -> str:
                     "error": (
                         f"web.search_backend is set to '{_vendor}', but its "
                         f"plugin ('{disabled_key}') is disabled in config. "
-                        f"Re-enable it with `hermes plugins enable {disabled_key}` "
+                        f"Re-enable it with `kova plugins enable {disabled_key}` "
                         "(or remove it from plugins.disabled)."
                     ),
                 }
@@ -712,7 +712,7 @@ def web_search_tool(query: str, limit: int = 5) -> str:
                     "success": False,
                     "error": (
                         "No web search provider configured. "
-                        "Run `hermes tools` to set one up."
+                        "Run `kova tools` to set one up."
                     ),
                 }
         else:
@@ -909,7 +909,7 @@ async def web_extract_tool(
                                     f"web.extract_backend is set to '{_vendor}', "
                                     f"but its plugin ('{disabled_key}') is disabled "
                                     "in config. Re-enable it with "
-                                    f"`hermes plugins enable {disabled_key}` "
+                                    f"`kova plugins enable {disabled_key}` "
                                     "(or remove it from plugins.disabled)."
                                 ),
                             },

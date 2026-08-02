@@ -1,4 +1,4 @@
-"""CLI handlers for ``hermes secrets bitwarden ...``.
+"""CLI handlers for ``kova secrets bitwarden ...``.
 
 Subcommands:
     setup    — interactive wizard: install bws, prompt for token + project, test fetch
@@ -42,7 +42,7 @@ def register_cli(parent_parser: argparse.ArgumentParser) -> None:
     """Attach the ``bitwarden`` subcommand tree to a parent parser.
 
     Called from ``kova_cli.main`` as part of building the top-level
-    ``hermes secrets`` parser.
+    ``kova secrets`` parser.
     """
     sub = parent_parser.add_subparsers(dest="secrets_bw_command")
 
@@ -352,7 +352,7 @@ def cmd_status(args: argparse.Namespace) -> int:
         console.print(message)
 
     if not enabled:
-        console.print("\n  Run [cyan]hermes secrets bitwarden setup[/cyan] to enable.")
+        console.print("\n  Run [cyan]kova secrets bitwarden setup[/cyan] to enable.")
         return 0
     if not token_set:
         console.print(
@@ -425,7 +425,7 @@ def cmd_token(args: argparse.Namespace) -> int:
             console.print(
                 f"[yellow]Warning: configured project {project_id} is not visible "
                 "to this machine account.  Grant it access in the Bitwarden web "
-                "app or re-run `hermes secrets bitwarden setup` to pick a "
+                "app or re-run `kova secrets bitwarden setup` to pick a "
                 "different project.[/yellow]"
             )
 
@@ -441,7 +441,7 @@ def cmd_token(args: argparse.Namespace) -> int:
     if not bw_cfg.get("enabled"):
         console.print(
             "[yellow]Note: the Bitwarden integration is currently disabled — "
-            "run `hermes secrets bitwarden setup` (or set "
+            "run `kova secrets bitwarden setup` (or set "
             "secrets.bitwarden.enabled: true) to turn it on.[/yellow]"
         )
     return 0
@@ -454,7 +454,7 @@ def cmd_sync(args: argparse.Namespace) -> int:
     if not bw_cfg.get("enabled"):
         console.print(
             "[yellow]Bitwarden integration is disabled.  Run "
-            "`hermes secrets bitwarden setup` first.[/yellow]"
+            "`kova secrets bitwarden setup` first.[/yellow]"
         )
         return 1
 

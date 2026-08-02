@@ -327,7 +327,7 @@ def test_delete_then_resave_round_trip(hermes_home):
     )
     assert resp.status_code == 200
     assert not is_source_suppressed("zai", "env:ZAI_API_KEY"), (
-        "an explicit re-save must lift the suppression (like `hermes auth add`)"
+        "an explicit re-save must lift the suppression (like `kova auth add`)"
     )
 
     from hermes_cli.config import load_env

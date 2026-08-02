@@ -115,7 +115,7 @@ def projects_command(args: argparse.Namespace) -> int:
         else:
             print(
                 "usage: hermes project <action> [options]\n"
-                "Run 'hermes project --help' for the full list.",
+                "Run 'kova project --help' for the full list.",
                 file=sys.stderr,
             )
         return 0
@@ -223,7 +223,7 @@ def _cmd_list(args: argparse.Namespace) -> int:
             conn, include_archived=getattr(args, "include_archived", False)
         )
     if not projs:
-        print("No projects yet. Create one with `hermes project create <name>`.")
+        print("No projects yet. Create one with `kova project create <name>`.")
         return 0
     for p in projs:
         marker = "*" if p.id == active else " "

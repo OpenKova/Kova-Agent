@@ -1775,13 +1775,13 @@ class SlackAdapter(BasePlatformAdapter):
         if not raw_token:
             logger.error(
                 "[Slack] SLACK_BOT_TOKEN not set — this is a permanent config "
-                "error; set SLACK_BOT_TOKEN via `hermes gateway setup` "
+                "error; set SLACK_BOT_TOKEN via `kova gateway setup` "
                 "or in the active profile's ~/.hermes/.env file, then restart "
                 "the gateway.",
             )
             self._set_fatal_error(
                 "missing_slack_bot_token",
-                "SLACK_BOT_TOKEN not configured. Use `hermes gateway setup` "
+                "SLACK_BOT_TOKEN not configured. Use `kova gateway setup` "
                 "or add it to your active profile's ~/.hermes/.env file, "
                 "then restart the gateway.",
                 retryable=False,
@@ -1790,13 +1790,13 @@ class SlackAdapter(BasePlatformAdapter):
         if not app_token:
             logger.error(
                 "[Slack] SLACK_APP_TOKEN not set — this is a permanent config "
-                "error; set SLACK_APP_TOKEN via `hermes gateway setup` "
+                "error; set SLACK_APP_TOKEN via `kova gateway setup` "
                 "or in the active profile's ~/.hermes/.env file, then restart "
                 "the gateway.",
             )
             self._set_fatal_error(
                 "missing_slack_app_token",
-                "SLACK_APP_TOKEN not configured. Use `hermes gateway setup` "
+                "SLACK_APP_TOKEN not configured. Use `kova gateway setup` "
                 "or add it to your active profile's ~/.hermes/.env file, "
                 "then restart the gateway.",
                 retryable=False,
@@ -7650,10 +7650,11 @@ class SlackAdapter(BasePlatformAdapter):
         if team_id and channel_id:
             self._remember_channel_team(channel_id, team_id)
 
-        if slash_name in {"hermes", ""}:
-            # Legacy /hermes <subcommand> [args] routing + free-form questions.
-            # Empty slash_name falls into this branch for backward compat
-            # with any caller that didn't populate command["command"].
+        if slash_name in {"hermes", "kova", ""}:
+            # Legacy /hermes <subcommand> [args] routing + free-form questions
+            # (and the /kova equivalent). Empty slash_name falls into this
+            # branch for backward compat with any caller that didn't populate
+            # command["command"].
             legacy_text = raw_text.strip()
             from hermes_cli.commands import slack_subcommand_map
 
@@ -8896,7 +8897,7 @@ def interactive_setup() -> None:
             # new commands (e.g. /btw, /stop, ...) get registered in Slack.
             if prompt_yes_no(
                 "Regenerate the Slack app manifest with the latest command "
-                "list? (recommended after `hermes update`)",
+                "list? (recommended after `kova update`)",
                 True,
             ):
                 _write_slack_manifest_and_instruct()
@@ -8910,7 +8911,7 @@ def interactive_setup() -> None:
     print_info("   3. Install to Workspace: Settings → Install App")
     print_info("   4. After installing, invite the bot to channels: /invite @YourBot")
     print()
-    print_info("   Full guide: https://hermes-agent.nousresearch.com/docs/user-guide/messaging/slack/")
+    print_info("   Full guide: https://kova-agent.nousresearch.com/docs/user-guide/messaging/slack/")
     print()
 
     # Generate and write manifest up-front so the user can paste it into
@@ -9052,7 +9053,7 @@ def register(ctx) -> None:
         check_fn=check_slack_requirements,
         is_connected=_is_connected,
         required_env=["SLACK_BOT_TOKEN", "SLACK_APP_TOKEN"],
-        install_hint="Run `hermes setup` to install Slack support.",
+        install_hint="Run `kova setup` to install Slack support.",
         # Interactive setup wizard — replaces hermes_cli/setup.py::_setup_slack
         # and the static _PLATFORMS["slack"] dict in hermes_cli/gateway.py.
         setup_fn=interactive_setup,

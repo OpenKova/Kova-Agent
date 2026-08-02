@@ -159,7 +159,7 @@ class TestCliResumeCommand:
 
 class TestCliResumeRestoresCwd:
     """Mid-chat /resume must retarget the working directory to where the
-    session was started — the same contract as a startup ``hermes -c`` /
+    session was started — the same contract as a startup ``kova -c`` /
     ``--resume``.
 
     Regression coverage for #38562: ``_restore_session_cwd()`` was wired into
@@ -344,7 +344,7 @@ class TestRestoreSessionCwdMarkup:
     ``rich.errors.MarkupError: closing tag [/] at position N has nothing to
     close`` because ``_DIM`` is an ANSI escape (``\\x1b[2;3m``), not a valid
     Rich tag.  The fix replaces ``[{_DIM}]`` with Rich's native ``[dim]`` tag.
-    See: https://github.com/NousResearch/hermes-agent/issues/39469
+    See: https://github.com/NousResearch/kova-agent/issues/39469
     """
 
     def test_missing_dir_does_not_raise_markup_error(self):

@@ -1,6 +1,6 @@
 """Tests for the Windows half-updated-venv hardening (July 2026 incident).
 
-Covers three additions to ``hermes update``:
+Covers three additions to ``kova update``:
 
 1. ``_venv_core_imports_healthy`` — the venv health probe that lets an
    "Already up to date" checkout still repair a broken dependency install.
@@ -179,7 +179,7 @@ def test_detect_venv_python_excludes_self_and_ancestors(_winp, tmp_path):
         process_iter=lambda attrs: iter(
             [
                 _proc(_os.getpid(), venv_py, "python.exe"),
-                _proc(555, venv_py, "hermes.exe"),
+                _proc(555, venv_py, "kova.exe"),
             ]
         ),
         Process=lambda *a, **k: me,
@@ -207,7 +207,7 @@ def test_format_venv_holders_message_flags_desktop_backend(tmp_path):
     assert "101" in msg
     assert "desktop app" in msg.lower()
     assert "gateway" in msg
-    assert "hermes update" in msg
+    assert "kova update" in msg
     assert "--force-venv" in msg
 
 

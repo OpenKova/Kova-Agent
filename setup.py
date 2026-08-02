@@ -32,15 +32,15 @@ from setuptools.command.sdist import sdist
 _IN_NIX_BUILD = os.environ.get("HERMES_NIX_BUILD") == "1"
 
 _BLOCK_MESSAGE = (
-    "Building wheels or sdists for hermes-agent is not supported.\n"
-    "Hermes is distributed via the shell installer, Docker image, or Nix.\n"
-    "See: https://hermes-agent.nousresearch.com/docs/getting-started/installation\n"
+    "Building wheels or sdists for kova-agent is not supported.\n"
+    "Kova Agent is distributed via the shell installer, Docker image, or Nix.\n"
+    "See: https://kova-agent.kova.ai/docs/getting-started/installation\n"
     "\n"
     "If you are developing, use an editable install instead:\n"
     "  uv sync          # or: uv pip install -e .\n"
     "\n"
     "If you are building with Nix (uv2nix), this error should not fire —\n"
-    "the Hermes Nix derivation sets HERMES_NIX_BUILD=1. If it does, file a bug."
+    "the Kova Agent Nix derivation sets HERMES_NIX_BUILD=1. If it does, file a bug."
 )
 
 

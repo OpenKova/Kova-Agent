@@ -351,7 +351,7 @@ def _check_version_consistency(issues: list[str]) -> None:
     """Verify pyproject.toml version matches kova_cli.__version__.
 
     A git conflict resolution (reset/merge) can revert one file without the
-    other, leaving ``hermes --version`` reporting a stale version while
+    other, leaving ``kova --version`` reporting a stale version while
     ``pyproject.toml`` is current. Detect that drift so users can re-sync.
     Silent no-op for installed wheels where pyproject.toml isn't present.
     """
@@ -2539,7 +2539,7 @@ def run_doctor(args):
                         continue
                     try:
                         content = wrapper.read_text()
-                        if "hermes -p" in content:
+                        if "kova -p" in content:
                             _m = _re.search(r"kova -p (\S+)", content)
                             if _m and not profile_exists(_m.group(1)):
                                 check_warn(f"Orphan alias: {wrapper.name} → profile '{_m.group(1)}' no longer exists")

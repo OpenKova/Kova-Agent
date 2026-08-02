@@ -1165,10 +1165,12 @@ _SLACK_PRIORITY_ALIASES = ("btw", "bg")
 # "Slack-via-/hermes" decision, not a silent clamp.
 #   - topup: the billing/balance surface; reached via /hermes topup on Slack.
 #     (the rehaul folded the old /credits + /billing surfaces into /topup.)
-#   - moa: high-cost slash mode, available through /hermes moa to avoid
+#   - moa: high-cost slash mode, available through /kova moa to avoid
 #     displacing existing native Slack slash commands at the 50-command cap.
 #   - debug: the log/report upload surface; reached via /hermes debug on Slack.
-_SLACK_VIA_HERMES_ONLY = frozenset({"topup", "moa", "debug"})
+#   - version: registry grew past the 50-slash cap; reached via /hermes version
+#     on Slack (native on CLI, TUI, Telegram, Discord).
+_SLACK_VIA_HERMES_ONLY = frozenset({"topup", "moa", "debug", "version"})
 
 
 def _sanitize_slack_name(raw: str) -> str:
@@ -1208,8 +1210,12 @@ def slack_native_slashes() -> list[tuple[str, str, str]]:
     entries: list[tuple[str, str, str]] = []
     seen: set[str] = set()
 
-    # Reserve /hermes as the catch-all top-level command.
+    # Reserve /kova and /hermes as the catch-all top-level commands so the
+    # legacy /hermes <subcommand> form keeps working (old workspace
+    # manifests) alongside the new /kova form.
     entries.append(("kova", "Talk to Kova or run a subcommand", "[subcommand] [args]"))
+    seen.add("kova")
+    entries.append(("hermes", "Talk to Hermes or run a subcommand", "[subcommand] [args]"))
     seen.add("hermes")
 
     def _add(name: str, desc: str, hint: str) -> None:

@@ -8,7 +8,7 @@ as ``HERMES_DASHBOARD_OAUTH_CLIENT_ID``.
 This command:
   1. Resolves a fresh Nous Portal access token from the existing login
      (``~/.hermes/auth.json``), refreshing it if needed. Fails fast with a
-     "run `hermes setup`" hint when the user isn't logged in.
+     "run `kova setup`" hint when the user isn't logged in.
   2. POSTs to ``{portal}/api/oauth/self-hosted-client`` with that bearer
      token, which creates a SELF_HOSTED agent client owned by the caller's
      org and returns the fully-formed ``agent:{id}`` client_id.
@@ -155,7 +155,7 @@ def _register_self_hosted_client(
         if exc.code == 401:
             raise RuntimeError(
                 "Nous Portal rejected the access token (401). "
-                "Try `hermes auth add nous` to re-authenticate."
+                "Try `kova auth add nous` to re-authenticate."
             ) from exc
         if exc.code == 403:
             raise RuntimeError(
@@ -216,7 +216,7 @@ def _print_post_register_hint(
         print("  at its /login page.")
     else:
         print("  To require Nous login (e.g. exposing on your LAN or a public host):")
-        print("    hermes dashboard --host 0.0.0.0")
+        print("    kova dashboard --host 0.0.0.0")
         print("  …then log in at the dashboard's /login page.")
     print()
     print(
@@ -251,7 +251,7 @@ def cmd_dashboard_register(args) -> None:
     except AuthError as exc:
         if getattr(exc, "relogin_required", False):
             print("✗ You're not logged into Nous Portal.")
-            print("  Run `hermes setup` (or `hermes auth add nous`) first, then retry.")
+            print("  Run `kova setup` (or `kova auth add nous`) first, then retry.")
         else:
             print(f"✗ Could not resolve a Nous Portal access token: {exc}")
         sys.exit(1)

@@ -40,6 +40,7 @@ def profile_env(tmp_path, monkeypatch):
     layout that profile users actually have on disk.
     """
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    monkeypatch.delenv("KOVA_HOME", raising=False)
     global_root = tmp_path / ".hermes"
     global_root.mkdir()
     profile_dir = global_root / "profiles" / "coder"
@@ -336,6 +337,7 @@ def test_load_provider_state_classic_mode_no_fallback(tmp_path, monkeypatch):
     fake_home = tmp_path / "home"
     fake_home.mkdir()
     monkeypatch.setattr(Path, "home", lambda: fake_home)
+    monkeypatch.delenv("KOVA_HOME", raising=False)
     hermes_home = tmp_path / "classic"
     hermes_home.mkdir()
     monkeypatch.setenv("HERMES_HOME", str(hermes_home))
@@ -386,6 +388,7 @@ def test_classic_mode_does_not_double_read_same_file(tmp_path, monkeypatch):
     fake_home = tmp_path / "home"
     fake_home.mkdir()
     monkeypatch.setattr(Path, "home", lambda: fake_home)
+    monkeypatch.delenv("KOVA_HOME", raising=False)
     hermes_home = tmp_path / "classic"
     hermes_home.mkdir()
     monkeypatch.setenv("HERMES_HOME", str(hermes_home))
@@ -533,6 +536,7 @@ def classic_env(tmp_path, monkeypatch):
     fake_home = tmp_path / "home"
     fake_home.mkdir()
     monkeypatch.setattr(Path, "home", lambda: fake_home)
+    monkeypatch.delenv("KOVA_HOME", raising=False)
     hermes_home = tmp_path / "classic"
     hermes_home.mkdir()
     monkeypatch.setenv("HERMES_HOME", str(hermes_home))

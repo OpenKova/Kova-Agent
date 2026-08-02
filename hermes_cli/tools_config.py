@@ -1,7 +1,7 @@
 """
-Unified tool configuration for Hermes Agent.
+Unified tool configuration for Kova Agent.
 
-`hermes tools` and `hermes setup tools` both enter this module.
+`hermes tools` and `kova setup tools` both enter this module.
 Select a platform → toggle toolsets on/off → for newly enabled tools
 that need API keys, run through provider-aware configuration.
 
@@ -638,7 +638,7 @@ TOOL_CATEGORIES = {
 # `vision` is listed here only so it registers as a *configurable* toolset
 # (the value gates the reconfigure menu + the "[no API key]" suffix). Its
 # actual setup runs through `_configure_vision_backend()` — a full
-# provider+model picker like `hermes model` — NOT this single-key prompt, so
+# provider+model picker like `kova model` — NOT this single-key prompt, so
 # users are never forced onto OpenRouter. `_toolset_has_keys("vision")`
 # resolves via `resolve_vision_provider_client()`, so the tuple below is never
 # prompted or read for vision; it's purely a presence marker.
@@ -805,7 +805,7 @@ def install_cua_driver(upgrade: bool = False) -> bool:
       installed, install otherwise. Used by the toolset enable flow where
       we don't want to surprise the user with a network fetch.
     * ``upgrade=True`` — always re-run the installer (or call ``cua-driver
-      update`` if the binary supports it). Used by ``hermes update`` and
+      update`` if the binary supports it). Used by ``kova update`` and
       by ``hermes computer-use install --upgrade``.
 
     Returns True iff cua-driver is installed (or successfully refreshed)
@@ -819,7 +819,7 @@ def install_cua_driver(upgrade: bool = False) -> bool:
     system = _plat.system()
     if system not in ("Darwin", "Windows", "Linux"):
         if upgrade:
-            # Silent on unsupported platforms — `hermes update` calls this
+            # Silent on unsupported platforms — `kova update` calls this
             # for every user; only macOS/Windows/Linux users care.
             return False
         _print_warning("    Computer Use (cua-driver) is unsupported on this platform; skipping.")
@@ -882,7 +882,7 @@ def install_cua_driver(upgrade: bool = False) -> bool:
             "    /Applications is not writable; skipping cua-driver refresh."
         )
         _print_info(
-            "    Run `hermes computer-use install --upgrade` from an admin account to update it."
+            "    Run `kova computer-use install --upgrade` from an admin account to update it."
         )
         return bool(binary)
 
@@ -1127,7 +1127,7 @@ def _run_cua_driver_installer(label: str = "Installing", verbose: bool = True) -
             proc.kill()
 
     try:
-        # When not verbose (e.g. `hermes update`'s refresh), capture the
+        # When not verbose (e.g. `kova update`'s refresh), capture the
         # installer's chatty "Next steps" wall instead of dumping it to the
         # terminal. The combined output is logged so a failure stays
         # debuggable. Verbose installs (interactive `computer-use install`)
@@ -1164,7 +1164,7 @@ def _run_cua_driver_installer(label: str = "Installing", verbose: bool = True) -
             result = subprocess.CompletedProcess(
                 install_cmd, proc.returncode, stdout=out, stderr=None
             )
-            # Preserve the full installer output. During `hermes update`,
+            # Preserve the full installer output. During `kova update`,
             # sys.stdout is the mirroring _UpdateOutputStream whose `_log`
             # handle is ~/.hermes/logs/update.log — write straight to it so
             # the captured "Next steps" wall is kept in full (success AND
@@ -1295,7 +1295,7 @@ def _run_post_setup(post_setup_key: str):
                 "    Pull the latest image to get the bundled Chromium:"
             )
             _print_info(
-                "      docker pull ghcr.io/nousresearch/hermes-agent:latest"
+                "      docker pull ghcr.io/nousresearch/kova-agent:latest"
             )
             return
 
@@ -1448,7 +1448,7 @@ def _run_post_setup(post_setup_key: str):
         _print_info("    Pair with an extract provider if you also need web_extract.")
 
     elif post_setup_key == "spotify":
-        # Run the full `hermes auth spotify` flow — if the user has no
+        # Run the full `kova auth spotify` flow — if the user has no
         # client_id yet, this drops them into the interactive wizard
         # (opens the Spotify dashboard, prompts for client_id, persists
         # to ~/.hermes/.env), then continues straight into PKCE. If they
@@ -1458,7 +1458,7 @@ def _run_post_setup(post_setup_key: str):
             from hermes_cli.auth import login_spotify_command
         except Exception as exc:
             _print_warning(f"    Could not load Spotify auth: {exc}")
-            _print_info("    Run manually: hermes auth spotify")
+            _print_info("    Run manually: kova auth spotify")
             return
         _print_info("    Starting Spotify login...")
         try:
@@ -1469,12 +1469,12 @@ def _run_post_setup(post_setup_key: str):
             _print_success("    Spotify authenticated")
         except SystemExit as exc:
             # User aborted the wizard, or OAuth failed — don't fail the
-            # toolset enable; they can retry with `hermes auth spotify`.
+            # toolset enable; they can retry with `kova auth spotify`.
             _print_warning(f"    Spotify login did not complete: {exc}")
-            _print_info("    Run later: hermes auth spotify")
+            _print_info("    Run later: kova auth spotify")
         except Exception as exc:
             _print_warning(f"    Spotify login failed: {exc}")
-            _print_info("    Run manually: hermes auth spotify")
+            _print_info("    Run manually: kova auth spotify")
 
     elif post_setup_key == "langfuse":
         # Install the langfuse SDK.
@@ -1502,9 +1502,9 @@ def _run_post_setup(post_setup_key: str):
                 _print_success("    Plugin observability/langfuse enabled")
         except Exception as exc:
             _print_warning(f"    Could not enable plugin automatically: {exc}")
-            _print_info("    Run manually: hermes plugins enable observability/langfuse")
+            _print_info("    Run manually: kova plugins enable observability/langfuse")
         _print_info("    Restart Hermes for tracing to take effect.")
-        _print_info("    Verify: hermes plugins list")
+        _print_info("    Verify: kova plugins list")
 
     elif post_setup_key == "xai_grok":
         # Shared credential bootstrap for any picker entry that talks to xAI
@@ -1539,7 +1539,7 @@ def _run_post_setup(post_setup_key: str):
             from hermes_cli.config import save_env_value
         except Exception as exc:
             _print_warning(f"    Could not load setup helpers: {exc}")
-            _print_info("    Run later: hermes auth add xai-oauth   (or set XAI_API_KEY)")
+            _print_info("    Run later: kova auth add xai-oauth   (or set XAI_API_KEY)")
             return
 
         idx = prompt_choice(
@@ -1547,7 +1547,7 @@ def _run_post_setup(post_setup_key: str):
             choices=[
                 "Sign in with xAI Grok OAuth (SuperGrok / Premium+) — browser login",
                 "Paste an xAI API key (console.x.ai)",
-                "Skip — configure later via `hermes auth add xai-oauth`",
+                "Skip — configure later via `kova auth add xai-oauth`",
             ],
             default=0,
         )
@@ -2000,7 +2000,7 @@ def _get_platform_tools(
     # `hermes-cli`), resolve_toolset() returns [] for each and the platform ends
     # up with no native tools — silently, with no error. Surface it at the point
     # tools are resolved for a session so an already-corrupted config is caught
-    # at runtime, not only during the next `hermes update`/`hermes doctor`.
+    # at runtime, not only during the next `kova update`/`kova doctor`.
     _explicit = platform_toolsets.get(platform)
     if isinstance(_explicit, list) and _explicit:
         from toolsets import validate_toolset
@@ -2014,7 +2014,7 @@ def _get_platform_tools(
             _warned_invalid_platform_toolsets.add(platform)
             logger.warning(
                 "platform '%s' has no valid toolsets configured (unknown "
-                "name(s): %s) - tools will be unavailable. Run `hermes tools` "
+                "name(s): %s) - tools will be unavailable. Run `kova tools` "
                 "to reconfigure. See issue #38798.",
                 platform,
                 ", ".join(_named),
@@ -3564,7 +3564,7 @@ def _configure_provider(
     # _visible_providers), but only *activate* once the user has paid Nous
     # Portal access. Selecting one runs an inline Portal login when needed —
     # auth + entitlement only, no inference-provider switch and no bulk
-    # "enable all tools" prompt (that lives in `hermes model`).
+    # "enable all tools" prompt (that lives in `kova model`).
     if managed_feature:
         from hermes_cli.nous_subscription import (
             MANAGED_FEATURE_COVERAGE_CATEGORY,
@@ -3734,7 +3734,7 @@ def _configure_vision_backend() -> None:
     ``auxiliary.vision.{provider,model,base_url}`` in config.yaml (see
     ``agent/auxiliary_client.resolve_vision_provider_client``). Rather than
     forcing the user onto OpenRouter, let them pick any authenticated
-    provider + model — the same surface as ``hermes model`` — or point at a
+    provider + model — the same surface as ``kova model`` — or point at a
     custom OpenAI-compatible endpoint. "Auto" leaves the config keys empty so
     the resolver uses the main model / aggregator fallback chain.
     """
@@ -3829,7 +3829,7 @@ def _configure_vision_provider_model(config: dict, vision_cfg: dict) -> None:
     if not providers:
         _print_warning(
             "  No authenticated providers found. Configure a provider first "
-            "with `hermes model`, then re-run this."
+            "with `kova model`, then re-run this."
         )
         return
 
@@ -4186,7 +4186,7 @@ def _reconfigure_simple_requirements(ts_key: str):
     """Reconfigure simple env var requirements."""
     if ts_key == "vision":
         # Vision has its own provider/model picker (any provider, like
-        # `hermes model`). Run it directly so reconfigure doesn't fall back to
+        # `kova model`). Run it directly so reconfigure doesn't fall back to
         # the generic single-key prompt (which would re-ask for OPENROUTER_API_KEY).
         _configure_vision_backend()
         return
@@ -4216,7 +4216,7 @@ def _reconfigure_simple_requirements(ts_key: str):
 # ─── Main Entry Point ─────────────────────────────────────────────────────────
 
 def tools_command(args=None, first_install: bool = False, config: dict = None):
-    """Entry point for `hermes tools` and `hermes setup tools`.
+    """Entry point for `hermes tools` and `kova setup tools`.
 
     Args:
         first_install: When True (set by the setup wizard on fresh installs),
@@ -4254,7 +4254,7 @@ def tools_command(args=None, first_install: bool = False, config: dict = None):
     print(color("⚕ Kova Tool Configuration", Colors.CYAN, Colors.BOLD))
     print(color("  Enable or disable tools per platform.", Colors.DIM))
     print(color("  Tools that need API keys will be configured when enabled.", Colors.DIM))
-    print(color("  Guide: https://hermes-agent.nousresearch.com/docs/user-guide/features/tools", Colors.DIM))
+    print(color("  Guide: https://kova-agent.nousresearch.com/docs/user-guide/features/tools", Colors.DIM))
     print()
 
     # ── First-time install: linear flow, no platform menu ──

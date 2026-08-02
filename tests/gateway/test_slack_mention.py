@@ -930,9 +930,9 @@ def test_mention_patterns_case_insensitive():
 
 
 def test_mention_patterns_single_string():
-    adapter = _make_adapter(mention_patterns="^hermes")
-    assert adapter._slack_message_matches_mention_patterns("hermes do this") is True
-    assert adapter._slack_message_matches_mention_patterns("ok hermes") is False
+    adapter = _make_adapter(mention_patterns="^kova")
+    assert adapter._slack_message_matches_mention_patterns("kova do this") is True
+    assert adapter._slack_message_matches_mention_patterns("ok kova") is False
 
 
 def test_mention_patterns_invalid_regex_skipped_without_crash():

@@ -62,7 +62,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 DEFAULT_CATALOG_URL = (
-    "https://hermes-agent.nousresearch.com/docs/api/model-catalog.json"
+    "https://kova-agent.nousresearch.com/docs/api/model-catalog.json"
 )
 # Fallback fetch chain. The Docusaurus site is served through Vercel, which
 # occasionally returns HTTP 403 + x-vercel-mitigated: challenge for non-
@@ -71,7 +71,7 @@ DEFAULT_CATALOG_URL = (
 # is the same manifest published from the same repo and is not bot-gated,
 # so we fall through to it whenever the primary URL fails.
 DEFAULT_CATALOG_FALLBACK_URLS: tuple[str, ...] = (
-    "https://raw.githubusercontent.com/NousResearch/hermes-agent/main/website/static/api/model-catalog.json",
+    "https://raw.githubusercontent.com/NousResearch/kova-agent/main/website/static/api/model-catalog.json",
 )
 DEFAULT_TTL_HOURS = 1
 DEFAULT_FETCH_TIMEOUT = 8.0
@@ -376,7 +376,7 @@ def get_default_model_from_cache(provider: str) -> str | None:
     the user never picked one. This accessor reads ONLY the in-process copy or
     the disk cache — it NEVER triggers a network fetch, so it is safe on hot
     resolution paths (agent build, gateway session setup) that must stay
-    network-free. The cache is kept fresh by the picker/`hermes update` paths;
+    network-free. The cache is kept fresh by the picker/`kova update` paths;
     when no cached manifest exists (fresh install, offline), returns None and
     the caller falls back to the in-repo constant.
     """
@@ -395,7 +395,7 @@ def get_default_model_from_cache(provider: str) -> str | None:
 def seed_cache_from_checkout(project_root: "Path | str") -> bool:
     """Overwrite the disk cache with the catalog shipped in a local checkout.
 
-    ``hermes update`` pulls the latest repo, so the freshly-pulled
+    ``kova update`` pulls the latest repo, so the freshly-pulled
     ``website/static/api/model-catalog.json`` IS the newest catalog — no
     network round-trip needed. Copying it straight over the disk cache keeps
     the model picker current even when the remote manifest fetch is bot-gated

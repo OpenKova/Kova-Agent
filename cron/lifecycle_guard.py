@@ -47,22 +47,24 @@ class GatewayLifecycleBlocked(ValueError):
 # actual shell-command-shaped strings, not on prose.
 _GATEWAY_LIFECYCLE_PATTERN = re.compile(
     r"(?i)"
-    # Branch A: `hermes gateway restart|stop` — the canonical foot-gun.
-    # `start` is intentionally excluded: starting a gateway from inside a
-    # gateway is benign (a no-op or "already running" error), and a
-    # legitimate cron job might start a sibling profile's gateway.
-    r"(?:hermes\s+gateway\s+(?:restart|stop))"
-    # Branch B: launchctl ops on a hermes-gateway label. macOS launchd
-    # labels look like `ai.hermes.gateway` / `hermes-gateway`. Requiring the
-    # gateway identifier prevents blocking unrelated hermes services (e.g.
-    # `launchctl unload ai.hermes.update-checker.plist`).
-    r"|(?:launchctl\s+(?:kickstart|unload|load|stop|restart)\b[^\n]*\bhermes[.\-]?gateway)"
-    # Branch C: systemctl ops on a hermes-gateway unit.
-    r"|(?:systemctl\s+(?:-\S+\s+)*(?:restart|stop|start)\b[^\n]*\bhermes[.\-]?gateway)"
-    # Branch D: pkill / kill targeting the hermes gateway process. Both
+    # Branch A: `hermes gateway restart|stop` / `kova gateway restart|stop` —
+    # the canonical foot-gun. `start` is intentionally excluded: starting a
+    # gateway from inside a gateway is benign (a no-op or "already running"
+    # error), and a legitimate cron job might start a sibling profile's
+    # gateway.
+    r"(?:(?:hermes|kova)\s+gateway\s+(?:restart|stop))"
+    # Branch B: launchctl ops on a hermes-gateway / kova-gateway label.
+    # macOS launchd labels look like `ai.hermes.gateway` / `hermes-gateway`
+    # (and the kova equivalents). Requiring the gateway identifier prevents
+    # blocking unrelated hermes/kova services (e.g. `launchctl unload
+    # ai.hermes.update-checker.plist`).
+    r"|(?:launchctl\s+(?:kickstart|unload|load|stop|restart)\b[^\n]*\b(?:hermes|kova)[.\-]?gateway)"
+    # Branch C: systemctl ops on a hermes-gateway / kova-gateway unit.
+    r"|(?:systemctl\s+(?:-\S+\s+)*(?:restart|stop|start)\b[^\n]*\b(?:hermes|kova)[.\-]?gateway)"
+    # Branch D: pkill / kill targeting the hermes/kova gateway process. Both
     # token orders because real reproductions show both.
-    r"|(?:p?kill\b[^\n]*\bhermes\b[^\n]*\bgateway)"
-    r"|(?:p?kill\b[^\n]*\bgateway\b[^\n]*\bhermes)"
+    r"|(?:p?kill\b[^\n]*\b(?:hermes|kova)\b[^\n]*\bgateway)"
+    r"|(?:p?kill\b[^\n]*\bgateway\b[^\n]*\b(?:hermes|kova))"
 )
 
 

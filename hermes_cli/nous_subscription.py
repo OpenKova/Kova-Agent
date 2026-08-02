@@ -395,7 +395,7 @@ def get_nous_subscription_features(
     )
 
     # use_gateway flags — when True, the user explicitly opted into the
-    # Tool Gateway via `hermes model`, so direct credentials should NOT
+    # Tool Gateway via `kova model`, so direct credentials should NOT
     # prevent gateway routing.
     web_use_gateway = _uses_gateway(web_cfg)
     tts_use_gateway = _uses_gateway(tts_cfg)
@@ -1144,7 +1144,7 @@ def ensure_nous_portal_access(
     needed.
 
     Used by ``hermes tools`` when a user selects a Nous-managed Tool Gateway
-    backend (e.g. "Firecrawl (Nous Portal)").  Unlike ``hermes model``'s Nous
+    backend (e.g. "Firecrawl (Nous Portal)").  Unlike ``kova model``'s Nous
     login, this:
 
     - does NOT change the inference provider (``model.provider`` is untouched),

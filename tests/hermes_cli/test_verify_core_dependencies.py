@@ -2,7 +2,7 @@
 
 Regression coverage for the partial-install bug where uv's incremental
 resolver silently failed to land ``pathspec`` (and similar newly-added
-base deps) during ``hermes update``, leaving the venv in a broken state
+base deps) during ``kova update``, leaving the venv in a broken state
 that only surfaced hours later when a downstream subprocess imported the
 missing module.
 
@@ -199,7 +199,7 @@ class TestVerifyCoreDependencies:
 
         That reinstall rewrites the editable entry-point shims, and on Windows
         pip can't overwrite the live launcher — so without quarantine the shim
-        is left missing and ``hermes`` drops off PATH. Previously this path
+        is left missing and ``kova`` drops off PATH. Previously this path
         called ``_run_install_with_heartbeat`` directly, bypassing the
         quarantine that the primary install path performs.
         """
@@ -238,7 +238,7 @@ class TestVerifyCoreDependencies:
 class TestResolveInstallTargetPython:
     def test_uses_virtual_env_from_environment(self, tmp_path):
         """When VIRTUAL_ENV is set, the verification step must probe THAT
-        venv's interpreter — not the outer Python that drove `hermes update`.
+        venv's interpreter — not the outer Python that drove `kova update`.
         If we probed sys.executable instead, we'd false-positive every dep
         the outer interpreter happens to lack."""
         venv_root = tmp_path / "newvenv"

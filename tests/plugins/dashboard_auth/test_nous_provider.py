@@ -159,7 +159,7 @@ class TestConstruction:
     def test_rejects_malformed_client_id(self):
         with pytest.raises(ValueError, match="agent:"):
             nous_plugin.NousDashboardAuthProvider(
-                client_id="hermes-dashboard", portal_url="https://x"
+                client_id="kova-dashboard", portal_url="https://x"
             )
 
 
@@ -196,14 +196,14 @@ class TestPluginRegister:
         assert nous_plugin.LAST_SKIP_REASON == ""
 
     def test_skips_when_client_id_malformed(self, monkeypatch):
-        monkeypatch.setenv("HERMES_DASHBOARD_OAUTH_CLIENT_ID", "hermes-dashboard")
+        monkeypatch.setenv("HERMES_DASHBOARD_OAUTH_CLIENT_ID", "kova-dashboard")
         monkeypatch.setenv("HERMES_DASHBOARD_PORTAL_URL", "https://p.example")
         ctx = MagicMock()
         nous_plugin.register(ctx)
         ctx.register_dashboard_auth_provider.assert_not_called()
         # Skip reason names the offending value + contract shape.
         assert "agent:" in nous_plugin.LAST_SKIP_REASON
-        assert "hermes-dashboard" in nous_plugin.LAST_SKIP_REASON
+        assert "kova-dashboard" in nous_plugin.LAST_SKIP_REASON
 
     def test_registers_with_explicit_portal_url(self, monkeypatch):
         monkeypatch.setenv("HERMES_DASHBOARD_OAUTH_CLIENT_ID", "agent:inst1")

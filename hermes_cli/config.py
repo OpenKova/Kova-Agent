@@ -149,7 +149,7 @@ def _warn_config_parse_failure(
         msg += f" A copy of the corrupted file was saved to {backup_path}."
     logger.warning(msg)
     try:
-        sys.stderr.write(f"⚠️  hermes config: {msg}\n")
+        sys.stderr.write(f"⚠️  kova config: {msg}\n")
         sys.stderr.flush()
     except Exception:
         pass
@@ -169,12 +169,12 @@ _ENV_VAR_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 #   ``PYTHONUSERBASE`` — Python interpreter init. Hermes itself starts
 #   from one of these on every restart.
 # * ``NODE_OPTIONS`` / ``NODE_PATH`` — Node interpreter; affects npm,
-#   ``hermes update``, the TUI build.
+#   ``kova update``, the TUI build.
 # * ``PATH`` — too broad to allow. The dashboard never needs to rewrite
 #   the operator's PATH; if a tool can't be found, the fix is to add an
 #   absolute path in the integration config, not to mutate PATH globally.
 # * ``GIT_SSH_COMMAND`` / ``GIT_EXEC_PATH`` — git rewrites that fire
-#   on every plugin install / ``hermes update``.
+#   on every plugin install / ``kova update``.
 # * ``BROWSER`` / ``EDITOR`` / ``VISUAL`` / ``PAGER`` — commands the
 #   shell or CLI invokes implicitly. Wrong values here = RCE on next
 #   ``$EDITOR``.
@@ -420,7 +420,7 @@ def detect_install_method(project_root: Optional[Path] = None) -> str:
     containerised gateway and a host install share one ``$HERMES_HOME``, a
     home-scoped stamp is a single slot describing two different installs:
     the container stamps ``docker`` on every boot, the host install then reads
-    ``docker`` and ``hermes update`` refuses to run ("doesn't apply inside the
+    ``docker`` and ``kova update`` refuses to run ("doesn't apply inside the
     Docker container") even though the host binary is a perfectly updatable
     git/pip install. Scoping the stamp to the install tree gives each install
     its own truthful marker.
@@ -435,7 +435,7 @@ def detect_install_method(project_root: Optional[Path] = None) -> str:
     The supported installs self-identify via the code-scoped stamp:
       - the curl installer (scripts/install.sh, the README/website install
         command) git-clones the repo and stamps ``git`` next to the code;
-      - the published ``nousresearch/hermes-agent`` image bakes a ``docker``
+      - the published ``nousresearch/kova-agent`` image bakes a ``docker``
         stamp into ``/opt/hermes`` at build time.
     An unsupported manual install dropped into a container (no stamp) falls
     through to the ``.git`` checks and behaves like any off-path install.
@@ -455,7 +455,7 @@ def detect_install_method(project_root: Optional[Path] = None) -> str:
     # 2. Legacy home-scoped stamp — back-compat. Ignore a ``docker`` value
     #    when we are not actually containerised: that is the signature of a
     #    host install whose shared $HERMES_HOME was stamped by a co-located
-    #    container, and honouring it wrongly blocks ``hermes update``.
+    #    container, and honouring it wrongly blocks ``kova update``.
     try:
         method = (
             (get_hermes_home() / ".install_method")
@@ -535,8 +535,8 @@ def recommended_update_command_for_method(method: str) -> str:
     if method in {"nix", "nixos"}:
         return _NIX_UPDATE_MSG
     if method == "docker":
-        return "docker pull nousresearch/hermes-agent:latest"
-    return "hermes update"
+        return "docker pull nousresearch/kova-agent:latest"
+    return "kova update"
 
 
 def recommended_update_command() -> str:
@@ -548,7 +548,7 @@ def recommended_update_command() -> str:
     return recommended_update_command_for_method(method)
 
 
-# Long-form text for ``hermes update`` / ``--check`` when running inside the
+# Long-form text for ``kova update`` / ``--check`` when running inside the
 # Docker image.  Surfaced by ``cmd_update`` and ``_cmd_update_check`` in
 # hermes_cli/main.py; lives here so the wording stays consistent and we
 # don't grow two slightly-different copies.
@@ -564,25 +564,25 @@ def recommended_update_command() -> str:
 #     helper spells that out, with notes on tag pinning and config
 #     persistence so users don't get blindsided.
 _DOCKER_UPDATE_MESSAGE = """\
-✗ ``hermes update`` doesn't apply inside the Docker container.
+✗ ``kova update`` doesn't apply inside the Docker container.
 
-Kova Agent runs as a published image (nousresearch/hermes-agent), not a
+Kova Agent runs as a published image (nousresearch/kova-agent), not a
 git checkout — the container has no working tree to pull into.  Update by
 pulling a fresh image and restarting your container instead:
 
-  docker pull nousresearch/hermes-agent:latest
+  docker pull nousresearch/kova-agent:latest
   # then restart whatever started the container, e.g.:
   docker compose up -d --force-recreate hermes-agent
   # or, for ad-hoc runs, exit the current container and `docker run` again
 
 Verify the new version after restart:
-  docker run --rm nousresearch/hermes-agent:latest --version
+  docker run --rm nousresearch/kova-agent:latest --version
 
 Notes:
   • If you pinned a specific tag (e.g. ``:v0.14.0``) the ``:latest`` tag
     won't move your container — pull the newer tag you actually want, or
     switch to ``:latest`` / ``:main`` for rolling updates.  See available
-    tags at https://hub.docker.com/r/nousresearch/hermes-agent/tags
+    tags at https://hub.docker.com/r/nousresearch/kova-agent/tags
   • Your config and session history live under ``$HERMES_HOME`` (``/opt/data``
     in the container, typically bind-mounted from the host) and persist
     across image upgrades — re-pulling doesn't lose any state.
@@ -591,7 +591,7 @@ Notes:
 
 
 def format_docker_update_message() -> str:
-    """Return the user-facing message for ``hermes update`` inside Docker.
+    """Return the user-facing message for ``kova update`` inside Docker.
 
     Centralised so ``cmd_update`` (the apply path) and ``_cmd_update_check``
     (the dry-run path) share the same wording.  See ``_DOCKER_UPDATE_MESSAGE``
@@ -661,7 +661,7 @@ def get_container_exec_info() -> Optional[dict]:
     # All other exceptions (PermissionError, malformed data, etc.) propagate
 
     backend = info.get("backend", "docker")
-    container_name = info.get("container_name", "hermes-agent")
+    container_name = info.get("container_name", "kova-agent")
     exec_user = info.get("exec_user", "hermes")
     hermes_bin = info.get("hermes_bin", "/data/current-package/bin/hermes")
 
@@ -1286,7 +1286,7 @@ DEFAULT_CONFIG = {
     #   - enabled: True -> False   (opt-in; most users never use /rollback)
     #   - max_snapshots: 50 -> 20  (now actually enforced via ref rewrite)
     #   - auto_prune:   False -> True (orphans/stale pruned automatically)
-    # Opt in via ``hermes chat --checkpoints`` or set enabled=True here.
+    # Opt in via ``kova chat --checkpoints`` or set enabled=True here.
     "checkpoints": {
         "enabled": False,
         # Max checkpoints to keep per working directory.  Pre-v2 this only
@@ -1779,7 +1779,7 @@ DEFAULT_CONFIG = {
         # Curator — skill-usage review fork. Timeout is generous because the
         # review pass can take several minutes on reasoning models (umbrella
         # building over hundreds of candidate skills). "auto" = use main chat
-        # model; override via `hermes model` → auxiliary → Curator to route
+        # model; override via `kova model` → auxiliary → Curator to route
         # to a cheaper aux model (e.g. openrouter google/gemini-3-flash-preview).
         "curator": {
             "provider": "auto",
@@ -1870,18 +1870,18 @@ DEFAULT_CONFIG = {
         # "Steered into current run" confirmation bubble by setting this false.
         # The mid-turn steering itself still happens.
         "busy_steer_ack_enabled": True,
-        # Which interface bare `hermes` (and `hermes chat`) launches by default:
+        # Which interface bare `hermes` (and `kova chat`) launches by default:
         #   "cli" — the classic prompt_toolkit REPL (default, preserves prior behavior)
         #   "tui" — the modern Ink TUI (same as passing `--tui`)
         # Explicit flags always win over this setting: `--cli` forces the classic
         # REPL and `--tui` (or HERMES_TUI=1) forces the TUI regardless of config.
         "interface": "cli",
-        # When true, `hermes --tui` auto-resumes the most recent human-
+        # When true, `kova --tui` auto-resumes the most recent human-
         # facing session on launch instead of forging a fresh one.
         # Mirrors `hermes -c` muscle memory.  Default off so existing
         # users aren't surprised.  HERMES_TUI_RESUME=<id> always wins.
         "tui_auto_resume_recent": False,
-        # When true (default), `hermes --tui` drops a one-time hint
+        # When true (default), `kova --tui` drops a one-time hint
         # ("subagents working · /agents to watch live") the first time a turn
         # starts delegating, nudging the user toward the live spawn-tree
         # dashboard. Set false to suppress the hint.
@@ -2516,7 +2516,7 @@ DEFAULT_CONFIG = {
     # and patch drift. Runs inactivity-triggered from session start — no
     # cron daemon.
     #
-    # See `hermes curator status` for the last run summary.
+    # See `kova curator status` for the last run summary.
     "curator": {
         "enabled": True,
         # How long to wait between curator runs (hours).  Default: 7 days.
@@ -2533,12 +2533,12 @@ DEFAULT_CONFIG = {
         # (mark stale / archive long-unused skills) and skips the forked
         # aux-model review entirely — no umbrella-building, no aux-model cost.
         # Set to true to opt back into merging overlapping skills into
-        # class-level umbrellas. `hermes curator run --consolidate` overrides
+        # class-level umbrellas. `kova curator run --consolidate` overrides
         # this for a single invocation.
         "consolidate": False,
         # Also prune (archive) bundled built-in skills after the inactivity
         # period, not just agent-created ones. ON by default. Built-ins are
-        # normally restored on every `hermes update`, so pruning them only
+        # normally restored on every `kova update`, so pruning them only
         # sticks because a suppression list tells the re-seeder to leave them
         # archived. Hub-installed skills are NEVER pruned here — they have an
         # external upstream owner. Built-ins accrue usage telemetry and their
@@ -2550,7 +2550,7 @@ DEFAULT_CONFIG = {
         # Pre-run backup: before every real curator pass (dry-run is
         # skipped), snapshot ~/.hermes/skills/ into
         # ~/.hermes/skills/.curator_backups/<utc-iso>/skills.tar.gz so the
-        # user can roll back with `hermes curator rollback`.
+        # user can roll back with `kova curator rollback`.
         "backup": {
             "enabled": True,
             "keep": 5,  # retain last N regular snapshots
@@ -2887,7 +2887,7 @@ DEFAULT_CONFIG = {
     # Kanban multi-agent coordination — controls the dispatcher loop that
     # spawns workers for ready tasks. The dispatcher ticks every N seconds
     # (default 60), reclaims stale claims, promotes dependency-satisfied
-    # todos to ready, and fires `hermes -p <assignee> chat -q ...` for
+    # todos to ready, and fires `kova -p <assignee> chat -q ...` for
     # each claimable ready task. One dispatcher per profile is sufficient;
     # running more than one on the same kanban.db will race for claims.
     "kanban": {
@@ -3006,9 +3006,9 @@ DEFAULT_CONFIG = {
     # The default URL is served by the docs site GitHub Pages deploy.
     "model_catalog": {
         "enabled": True,
-        "url": "https://hermes-agent.nousresearch.com/docs/api/model-catalog.json",
+        "url": "https://kova-agent.nousresearch.com/docs/api/model-catalog.json",
         # Disk cache TTL in hours.  Beyond this, the CLI refetches on the
-        # next /model or `hermes model` invocation; network failures
+        # next /model or `kova model` invocation; network failures
         # silently fall back to the stale cache.
         "ttl_hours": 1,
         # Optional per-provider override URLs for third parties that want
@@ -3253,7 +3253,7 @@ DEFAULT_CONFIG = {
         # user runs `hermes sessions optimize-storage`, because the rebuild is
         # disk-heavy and long on large DBs (see that command's disk preflight).
         #
-        #   "advise" (default): `hermes update` prints a one-line notice with
+        #   "advise" (default): `kova update` prints a one-line notice with
         #     the reclaimable size and the command, when a legacy index is
         #     detected. Nothing is changed automatically.
         #   "require": the notice is shown as a REQUIRED upgrade (firmer copy),
@@ -3292,7 +3292,7 @@ DEFAULT_CONFIG = {
         "profile_build": "ask",
     },
 
-    # ``hermes update`` behaviour.
+    # ``kova update`` behaviour.
     "updates": {
         # Pre-update safety backup — ONE consolidated mechanism, three modes:
         #
@@ -3318,7 +3318,7 @@ DEFAULT_CONFIG = {
         # Values below 1 are floored to 1 — the backup just created is
         # always preserved. The quick snapshot always keeps exactly 1.
         "backup_keep": 5,
-        # What `hermes update` does with uncommitted local changes to the
+        # What `kova update` does with uncommitted local changes to the
         # source tree when it runs NON-interactively — i.e. triggered from
         # the desktop/chat app or the gateway, where there's no TTY to answer
         # a restore prompt. Interactive (terminal) updates are unaffected:
@@ -3334,7 +3334,7 @@ DEFAULT_CONFIG = {
         #               ignored paths — node_modules, venv, build outputs —
         #               are never touched.
         "non_interactive_local_changes": "stash",
-        # Refresh an already-installed cua-driver during `hermes update`.
+        # Refresh an already-installed cua-driver during `kova update`.
         # The refresh is best-effort and macOS-only. Turn this off if the
         # upstream installer is not appropriate for the machine, for example
         # on non-admin accounts where `/Applications` is not writable.
@@ -3462,7 +3462,7 @@ DEFAULT_CONFIG = {
             # https://vault.bitwarden.eu for EU Cloud, or your own URL
             # for self-hosted Bitwarden.  Plumbed into the bws subprocess
             # as BWS_SERVER_URL.  Prompted for during
-            # `hermes secrets bitwarden setup`.
+            # `kova secrets bitwarden setup`.
             "server_url": "",
         },
         "onepassword": {
@@ -4011,7 +4011,7 @@ OPTIONAL_ENV_VARS = {
         "category": "provider",
     },
     "AZURE_FOUNDRY_BASE_URL": {
-        "description": "Azure Foundry base URL (set via 'hermes model' for endpoint-specific config)",
+        "description": "Azure Foundry base URL (set via 'kova model' for endpoint-specific config)",
         "prompt": "Azure Foundry base URL",
         "url": None,
         "password": False,
@@ -5037,7 +5037,7 @@ def get_missing_skill_config_vars() -> List[Dict[str, Any]]:
         all_vars = discover_all_skill_config_vars()
     except Exception as e:
         # A malformed SKILL.md, unreadable external skill dir, or similar
-        # should never break `hermes update`.  Skill-config prompting is a
+        # should never break `kova update`.  Skill-config prompting is a
         # post-migration nicety, not a blocker.
         import logging
         logging.getLogger(__name__).debug(
@@ -5688,7 +5688,7 @@ def validate_config_structure(config: Optional[Dict[str, Any]] = None) -> List["
         try:
             config = load_config()
         except Exception:
-            return [ConfigIssue("error", "Could not load config.yaml", "Run 'hermes setup' to create a valid config")]
+            return [ConfigIssue("error", "Could not load config.yaml", "Run 'kova setup' to create a valid config")]
 
     issues: List[ConfigIssue] = []
 
@@ -5843,7 +5843,7 @@ def print_config_warnings(config: Optional[Dict[str, Any]] = None) -> None:
     for ci in issues:
         marker = "\033[31m✗\033[0m" if ci.severity == "error" else "\033[33m⚠\033[0m"
         lines.append(f"  {marker} {ci.message}")
-    lines.append("  \033[2mRun 'hermes doctor' for fix suggestions.\033[0m")
+    lines.append("  \033[2mRun 'kova doctor' for fix suggestions.\033[0m")
     sys.stderr.write("\n".join(lines) + "\n\n")
 
 
@@ -5902,7 +5902,7 @@ def _persist_migration(config: Dict[str, Any]) -> None:
     them at read time, so writing them adds nothing and actively shadows future
     default changes (see ``save_config``'s docstring). Materialising defaults on
     every version bump is what rewrote hand-curated configs into full
-    DEFAULT_CONFIG dumps (the "hermes update / hermes -p blows up my config"
+    DEFAULT_CONFIG dumps (the "kova update / hermes -p blows up my config"
     reports).
 
     Every migration step MUST route its write through this helper instead of
@@ -6268,7 +6268,7 @@ def migrate_config(interactive: bool = True, quiet: bool = False) -> Dict[str, A
     # unification under `auxiliary.curator`) never wrote the curator section
     # to disk. The runtime deep-merge in `load_config()` fills defaults at
     # read time, so the curator *functions*; but users can't see/edit the
-    # settings in their `config.yaml`, and `hermes curator status` has no
+    # settings in their `config.yaml`, and `kova curator status` has no
     # stable logs dir to point at until the first run mkdir's it.
     #
     # This migration:
@@ -6624,7 +6624,7 @@ def migrate_config(interactive: bool = True, quiet: bool = False) -> Dict[str, A
                         print(f"  ✓ Saved {name}")
                     print()
             else:
-                print("  Set later with: hermes config set <key> <value>")
+                print("  Set later with: kova config set <key> <value>")
     
     # Check for missing config fields.
     #
@@ -6632,7 +6632,7 @@ def migrate_config(interactive: bool = True, quiet: bool = False) -> Dict[str, A
     # DEFAULT_CONFIG at read time, so a missing key already takes effect with
     # its default (see _persist_migration's invariant). We surface the list for
     # the informational "N new config option(s) available" display in
-    # `hermes update`, but only the version bump is persisted.
+    # `kova update`, but only the version bump is persisted.
     missing_config = get_missing_config_fields()
     if missing_config:
         results["config_added"].extend(field["key"] for field in missing_config)
@@ -6683,7 +6683,7 @@ def migrate_config(interactive: bool = True, quiet: bool = False) -> Dict[str, A
                 print()
             _persist_migration(config)
         else:
-            print("  Set later with: hermes config set <key> <value>")
+            print("  Set later with: kova config set <key> <value>")
 
     return results
 
@@ -7042,7 +7042,7 @@ def _normalize_root_model_keys(config: Dict[str, Any]) -> Dict[str, Any]:
     but ``model.name`` was not, so a custom-provider config like
     ``model: {name: <id>, provider: <custom>}`` resolved to an empty model and
     the API request went out with ``model=`` (HTTP 400 from OpenAI-compatible
-    backends) — while display paths (``hermes status``/``dump``) read ``name``
+    backends) — while display paths (``kova status``/``dump``) read ``name``
     and *showed* the model, making the failure silent. Normalizing here (the
     single load/save chokepoint) means every reader, present and future, sees a
     populated ``default`` and the stale alias is migrated out of config.yaml on
@@ -7821,7 +7821,7 @@ def load_env() -> Dict[str, str]:
 
     The parsed dict is memoised keyed on the .env file mtime, because
     ``get_env_value()`` is called dozens-to-hundreds of times per
-    interactive menu render (`hermes tools`, `hermes setup`, status
+    interactive menu render (`hermes tools`, `kova setup`, status
     panels). Sanitisation is O(lines × known-keys), so re-parsing the
     same file on every call was burning ~300ms of CPU per `hermes tools`
     menu paint on top of the OAuth-refresh slowness. The mtime check
@@ -8530,7 +8530,7 @@ def show_config():
         if _env_ghost is not None and str(_env_ghost).strip() != str(_cfg_max_turns).strip():
             print(color(
                 f"                ⚠ .env has stale HERMES_MAX_ITERATIONS={_env_ghost} "
-                f"(run 'hermes doctor --fix' to remove)",
+                f"(run 'kova doctor --fix' to remove)",
                 Colors.YELLOW,
             ))
     except Exception:
@@ -8660,9 +8660,9 @@ def show_config():
 
     print()
     print(color("─" * 60, Colors.DIM))
-    print(color("  hermes config edit     # Edit config file", Colors.DIM))
-    print(color("  hermes config set <key> <value>", Colors.DIM))
-    print(color("  hermes setup           # Run setup wizard", Colors.DIM))
+    print(color("  kova config edit     # Edit config file", Colors.DIM))
+    print(color("  kova config set <key> <value>", Colors.DIM))
+    print(color("  kova setup           # Run setup wizard", Colors.DIM))
     print()
 
 
@@ -9129,12 +9129,12 @@ def config_command(args):
     elif subcmd == "get":
         key = getattr(args, 'key', None)
         if not key:
-            print("Usage: hermes config get <key> [--json]")
+            print("Usage: kova config get <key> [--json]")
             print()
             print("Examples:")
-            print("  hermes config get model")
-            print("  hermes config get terminal.backend")
-            print("  hermes config get skills.config --json")
+            print("  kova config get model")
+            print("  kova config get terminal.backend")
+            print("  kova config get skills.config --json")
             sys.exit(1)
         get_config_value(key, as_json=getattr(args, 'json', False))
 
@@ -9143,12 +9143,12 @@ def config_command(args):
         value = getattr(args, 'value', None)
         force = bool(getattr(args, 'force', False))
         if not key or value is None:
-            print("Usage: hermes config set [--force] <key> <value>")
+            print("Usage: kova config set [--force] <key> <value>")
             print()
             print("Examples:")
-            print("  hermes config set model anthropic/claude-sonnet-4")
-            print("  hermes config set terminal.backend docker")
-            print("  hermes config set OPENROUTER_API_KEY sk-or-...")
+            print("  kova config set model anthropic/claude-sonnet-4")
+            print("  kova config set terminal.backend docker")
+            print("  kova config set OPENROUTER_API_KEY sk-or-...")
             print()
             print("  --force: skip the unknown-key notice for unrecognized keys")
             sys.exit(1)
@@ -9157,12 +9157,12 @@ def config_command(args):
     elif subcmd == "unset":
         key = getattr(args, 'key', None)
         if not key:
-            print("Usage: hermes config unset <key>")
+            print("Usage: kova config unset <key>")
             print()
             print("Examples:")
-            print("  hermes config unset model")
-            print("  hermes config unset terminal.backend")
-            print("  hermes config unset OPENROUTER_API_KEY")
+            print("  kova config unset model")
+            print("  kova config unset terminal.backend")
+            print("  kova config unset OPENROUTER_API_KEY")
             sys.exit(1)
         unset_config_value(key)
     
@@ -9262,7 +9262,7 @@ def config_command(args):
         if missing_config:
             print()
             print(color(f"  {len(missing_config)} new config option(s) available", Colors.YELLOW))
-            print("    Run 'hermes config migrate' to add them")
+            print("    Run 'kova config migrate' to add them")
         
         print()
     
@@ -9270,15 +9270,15 @@ def config_command(args):
         print(f"Unknown config command: {subcmd}")
         print()
         print("Available commands:")
-        print("  hermes config           Show current configuration")
-        print("  hermes config edit      Open config in editor")
-        print("  hermes config get <key>          Print a resolved config value")
-        print("  hermes config set <key> <value>   Set a config value")
-        print("  hermes config unset <key>        Remove a config value")
-        print("  hermes config check     Check for missing/outdated config")
-        print("  hermes config migrate   Update config with new options")
-        print("  hermes config path      Show config file path")
-        print("  hermes config env-path  Show .env file path")
+        print("  kova config           Show current configuration")
+        print("  kova config edit      Open config in editor")
+        print("  kova config get <key>          Print a resolved config value")
+        print("  kova config set <key> <value>   Set a config value")
+        print("  kova config unset <key>        Remove a config value")
+        print("  kova config check     Check for missing/outdated config")
+        print("  kova config migrate   Update config with new options")
+        print("  kova config path      Show config file path")
+        print("  kova config env-path  Show .env file path")
         sys.exit(1)
 
 

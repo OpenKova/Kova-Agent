@@ -196,7 +196,7 @@ def test_global_switch_clears_context_pin_owned_by_previous_route(monkeypatch):
             "agent.model_metadata.get_model_context_length",
             return_value=256_000,
         ),
-        patch("kova_cli.config.load_config_readonly", return_value=configured),
+        patch("hermes_cli.config.load_config_readonly", return_value=configured),
     ):
         cli_mod.HermesCLI._apply_model_switch_result(cli, result, True)
 

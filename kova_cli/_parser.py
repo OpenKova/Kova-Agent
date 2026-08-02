@@ -45,7 +45,7 @@ Examples:
     hermes --cli                  Force the classic REPL (overrides display.interface: tui)
     kova -c                     Resume the most recent session
     kova -c "my project"        Resume a session by name (latest in lineage)
-    hermes --resume <session_id>  Resume a specific session by ID
+    kova --resume <session_id>  Resume a specific session by ID
     kova setup                  Run setup wizard
     hermes logout                 Clear stored authentication
     kova auth add <provider>    Add a pooled credential
@@ -126,7 +126,7 @@ def build_top_level_parser():
     # --model / --provider are accepted at the top level so they can pair
     # with -z without needing the `chat` subcommand.  If neither -z nor a
     # subcommand consumes them, they fall through harmlessly as None.
-    # Mirrors `hermes chat --model ... --provider ...` semantics.
+    # Mirrors `kova chat --model ... --provider ...` semantics.
     _inherited_flag(
         parser,
         "-m",
