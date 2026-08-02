@@ -40,11 +40,11 @@ def _make_packaged_executable(root: Path, monkeypatch, platform: str = "darwin")
     monkeypatch.setattr(cli_main.sys, "platform", platform)
     desktop_dir = root / "apps" / "desktop"
     if platform == "darwin":
-        exe = desktop_dir / "release" / "mac-arm64" / "Hermes.app" / "Contents" / "MacOS" / "Hermes"
+        exe = desktop_dir / "release" / "mac-arm64" / "Kova.app" / "Contents" / "MacOS" / "Kova"
     elif platform == "win32":
-        exe = desktop_dir / "release" / "win-unpacked" / "Hermes.exe"
+        exe = desktop_dir / "release" / "win-unpacked" / "Kova.exe"
     else:
-        exe = desktop_dir / "release" / "linux-unpacked" / "hermes"
+        exe = desktop_dir / "release" / "linux-unpacked" / "kova"
     exe.parent.mkdir(parents=True)
     exe.write_text("", encoding="utf-8")
     return exe
@@ -105,7 +105,7 @@ def test_gui_install_env_prepends_managed_node_on_bare_path(tmp_path, monkeypatc
     monkeypatch.setenv("PATH", os.pathsep.join(["/usr/bin", "/bin"]))
 
     install_ok = subprocess.CompletedProcess(["npm", "ci"], 0)
-    launch_ok = subprocess.CompletedProcess(["hermes"], 0)
+    launch_ok = subprocess.CompletedProcess(["kova"], 0)
 
     with patch("hermes_cli.main._resolve_node_runtime_npm", return_value="/usr/bin/npm"), \
          patch("hermes_cli.main._run_npm_install_deterministic", return_value=install_ok) as mock_install, \
@@ -330,8 +330,8 @@ def test_gui_source_mode_uses_renderer_build_and_electron(tmp_path, monkeypatch)
 @pytest.mark.parametrize(
     "argv",
     [
-        ["hermes", "gui"],
-        ["hermes", "-m", "gpt5", "gui"],
+        ["kova", "gui"],
+        ["kova", "-m", "gpt5", "gui"],
     ],
 )
 def test_gui_is_known_builtin_for_plugin_gating(argv):
@@ -351,7 +351,8 @@ def test_desktop_build_stamp_skips_build_when_up_to_date(tmp_path, monkeypatch):
 
     launch_ok = subprocess.CompletedProcess([], 0)
 
-    with patch("hermes_cli.main._desktop_build_needed", return_value=False), \
+    with patch("hermes_cli.main.shutil.which", return_value="/usr/bin/npm"), \
+         patch("hermes_cli.main._desktop_build_needed", return_value=False), \
          patch("hermes_cli.main._run_npm_install_deterministic") as mock_install, \
          patch("hermes_cli.main.subprocess.run", return_value=launch_ok) as mock_run, \
          patch("hermes_cli.main._desktop_macos_relaunchable_fixup"), \
@@ -394,7 +395,7 @@ def test_compute_desktop_content_hash_stable(tmp_path, monkeypatch):
     """_compute_desktop_content_hash returns the same digest for identical trees."""
     root = _make_desktop_tree(tmp_path)
     (root / "apps" / "desktop" / "main.js").write_text("console.log('hi')", encoding="utf-8")
-    (root / "package.json").write_text('{"name":"hermes"}', encoding="utf-8")
+    (root / "package.json").write_text('{"name":"kova"}', encoding="utf-8")
     (root / "package-lock.json").write_text('{}', encoding="utf-8")
     monkeypatch.setattr(cli_main, "PROJECT_ROOT", root)
 
@@ -558,7 +559,7 @@ def test_gui_retries_pack_once_after_purging_build_cache(tmp_path, monkeypatch):
     # signature the cache purge + retry exist for (#40187). Only the successful
     # retry produces it (via the side_effect below).
     monkeypatch.setattr(cli_main.sys, "platform", "linux")
-    packaged_exe = root / "apps" / "desktop" / "release" / "linux-unpacked" / "hermes"
+    packaged_exe = root / "apps" / "desktop" / "release" / "linux-unpacked" / "kova"
 
     install_ok = subprocess.CompletedProcess(["npm", "ci"], 0)
     pack_fail = subprocess.CompletedProcess(["npm", "run", "pack"], 1)
@@ -961,7 +962,7 @@ class _FakeProc:
 def test_stop_desktop_build_lock_noop_off_windows(tmp_path, monkeypatch):
     """POSIX can unlink a running binary, so the helper is a no-op there."""
     desktop_dir = tmp_path / "apps" / "desktop"
-    exe = desktop_dir / "release" / "linux-unpacked" / "hermes"
+    exe = desktop_dir / "release" / "linux-unpacked" / "kova"
     exe.parent.mkdir(parents=True)
     exe.write_text("", encoding="utf-8")
     monkeypatch.setattr(cli_main.sys, "platform", "linux")
@@ -977,9 +978,9 @@ def test_stop_desktop_build_lock_terminates_only_release_procs(tmp_path, monkeyp
     desktop_dir = tmp_path / "apps" / "desktop"
     release = desktop_dir / "release" / "win-unpacked"
     release.mkdir(parents=True)
-    locker_exe = release / "Hermes.exe"
+    locker_exe = release / "Kova.exe"
     locker_exe.write_text("", encoding="utf-8")
-    other_exe = tmp_path / "elsewhere" / "Hermes.exe"
+    other_exe = tmp_path / "elsewhere" / "Kova.exe"
     other_exe.parent.mkdir(parents=True)
     other_exe.write_text("", encoding="utf-8")
 

@@ -453,7 +453,7 @@ def _rule_triage_aux_unavailable(task, events, runs, now, cfg) -> list[Diagnosti
     if not auto_decompose:
         actions.append(DiagnosticAction(
             kind="cli_hint",
-            label=f"Specify manually: hermes kanban specify {task_id}",
+            label=f"Specify manually: kova kanban specify {task_id}",
             payload={"command": f"kova kanban specify {task_id}"},
         ))
 

@@ -129,7 +129,7 @@ MIGRATION_OPTION_METADATA: Dict[str, Dict[str, str]] = {
     },
     "cron-jobs": {
         "label": "Cron / scheduled tasks",
-        "description": "Import cron job definitions. Archive for manual recreation via 'hermes cron'.",
+        "description": "Import cron job definitions. Archive for manual recreation via 'kova cron'.",
     },
     "hooks-config": {
         "label": "Hooks and webhooks",
@@ -2231,7 +2231,7 @@ class Migrator:
                 dest = self.archive_dir / "cron-config.json"
                 dest.write_text(json.dumps(cron, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
                 self.record("cron-jobs", "openclaw.json cron.*", str(dest), "archived",
-                            "Cron config archived. Use 'hermes cron' to recreate jobs manually.")
+                            "Cron config archived. Use 'kova cron' to recreate jobs manually.")
             else:
                 self.record("cron-jobs", "openclaw.json cron.*", "archive/cron-config.json",
                             "archived", "Would archive cron config")
@@ -2916,9 +2916,9 @@ class Migrator:
         ])
 
         if has_cron_config_archive:
-            notes.append("- Run `hermes cron` to recreate scheduled tasks (see archive/cron-config.json)")
+            notes.append("- Run `kova cron` to recreate scheduled tasks (see archive/cron-config.json)")
         elif has_cron_store_archive:
-            notes.append("- Run `hermes cron` to recreate scheduled tasks (see archived cron-store)")
+            notes.append("- Run `kova cron` to recreate scheduled tasks (see archived cron-store)")
 
         # Check if skills were imported
         has_skills = any(i.kind == "skills" and i.status == "migrated" for i in self.items)
@@ -3119,7 +3119,7 @@ def main() -> int:
         print("    1. Review ~/.hermes/config.yaml")
         print("    2. Run: hermes mcp list")
         if any(i["kind"] == "cron-jobs" and i["status"] == "archived" for i in items):
-            print("    3. Recreate cron jobs: hermes cron")
+            print("    3. Recreate cron jobs: kova cron")
         if report.get("output_dir"):
             print(f"    → Full report: {report['output_dir']}/MIGRATION_NOTES.md")
     elif not args.execute:

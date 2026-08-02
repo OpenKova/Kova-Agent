@@ -7650,10 +7650,11 @@ class SlackAdapter(BasePlatformAdapter):
         if team_id and channel_id:
             self._remember_channel_team(channel_id, team_id)
 
-        if slash_name in {"hermes", ""}:
-            # Legacy /hermes <subcommand> [args] routing + free-form questions.
-            # Empty slash_name falls into this branch for backward compat
-            # with any caller that didn't populate command["command"].
+        if slash_name in {"hermes", "kova", ""}:
+            # Legacy /hermes <subcommand> [args] routing + free-form questions
+            # (and the /kova equivalent). Empty slash_name falls into this
+            # branch for backward compat with any caller that didn't populate
+            # command["command"].
             legacy_text = raw_text.strip()
             from hermes_cli.commands import slack_subcommand_map
 

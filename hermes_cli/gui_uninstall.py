@@ -63,7 +63,14 @@ def log_warn(msg: str):
 
 
 def _agent_root(hermes_home: Path) -> Path:
-    """The agent checkout root — same layout install.sh / install.ps1 use."""
+    """The agent checkout root — same layout install.sh / install.ps1 use.
+
+    Prefers the current ``kova-agent`` checkout dir name, falling back to
+    the legacy pre-rebrand ``hermes-agent`` name for older installs.
+    """
+    kova = hermes_home / "kova-agent"
+    if kova.is_dir():
+        return kova
     return hermes_home / "hermes-agent"
 
 

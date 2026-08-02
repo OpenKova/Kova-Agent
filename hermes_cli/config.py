@@ -149,7 +149,7 @@ def _warn_config_parse_failure(
         msg += f" A copy of the corrupted file was saved to {backup_path}."
     logger.warning(msg)
     try:
-        sys.stderr.write(f"⚠️  hermes config: {msg}\n")
+        sys.stderr.write(f"⚠️  kova config: {msg}\n")
         sys.stderr.flush()
     except Exception:
         pass
@@ -661,7 +661,7 @@ def get_container_exec_info() -> Optional[dict]:
     # All other exceptions (PermissionError, malformed data, etc.) propagate
 
     backend = info.get("backend", "docker")
-    container_name = info.get("container_name", "hermes-agent")
+    container_name = info.get("container_name", "kova-agent")
     exec_user = info.get("exec_user", "hermes")
     hermes_bin = info.get("hermes_bin", "/data/current-package/bin/hermes")
 

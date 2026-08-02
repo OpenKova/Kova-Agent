@@ -22,7 +22,7 @@ def test_config_set_usage_marks_placeholders(capsys):
     # (schema validation for unknown keys). Placeholder convention is preserved:
     # the literal ``<key>`` and ``<value>`` markers must still be present so
     # downstream tooling can detect placeholder syntax.
-    assert "Usage: hermes config set" in out
+    assert "Usage: kova config set" in out
     assert "<key>" in out
     assert "<value>" in out
     # --force escape hatch must be documented in the usage line.

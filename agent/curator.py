@@ -1024,7 +1024,7 @@ def _build_rename_summary(
           • flaky-thing — pruned (stale)
           • old-utility → spreadsheet-ops
         full report: kova curator status
-        keep an umbrella stable: hermes curator pin document-tools
+        keep an umbrella stable: kova curator pin document-tools
 
     Cap is 10 entries so a 50-skill consolidation doesn't blow up
     agent.log; the full list is always in REPORT.md. The pin hint only
@@ -1087,7 +1087,7 @@ def _build_rename_summary(
         if umbrellas:
             example = umbrellas[0]
             lines.append(
-                f"keep an umbrella stable: hermes curator pin {example}"
+                f"keep an umbrella stable: kova curator pin {example}"
             )
     return "\n".join(lines)
 

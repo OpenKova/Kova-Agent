@@ -209,6 +209,15 @@ COPY --link --chmod=a+rX,go-w . .
 # resolution or downloads.
 RUN uv pip install --no-cache-dir --no-deps -e "."
 
+# Legacy brand-name console scripts.  pyproject.toml [project.scripts] now
+# installs kova / kova-agent / kova-acp into /opt/hermes/.venv/bin; keep the
+# legacy hermes* names working as symlinks so docs, `docker exec hermes ...`,
+# and any old orchestration that references the hermes names keep resolving
+# (both brands accepted; the kova binary is canonical).
+RUN ln -sf kova /opt/hermes/.venv/bin/hermes && \
+    ln -sf kova-agent /opt/hermes/.venv/bin/hermes-agent && \
+    ln -sf kova-acp /opt/hermes/.venv/bin/hermes-acp
+
 # Wire the exec shim and install-method stamp.  Files under /opt/hermes are
 # already root-owned (COPY, uv sync, npm install all run as root) and
 # read-only for the hermes user (go-w from the --chmod above).

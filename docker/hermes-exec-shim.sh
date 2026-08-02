@@ -40,7 +40,10 @@
 
 set -e
 
-REAL=/opt/hermes/.venv/bin/hermes
+# Resolve the venv binary by brand: the image installs the console script as
+# `kova` (canonical) with a legacy `hermes` symlink; pick whichever exists so
+# this shim works even on a build where the symlink step was skipped.
+REAL=$([ -x /opt/hermes/.venv/bin/kova ] && echo /opt/hermes/.venv/bin/kova || echo /opt/hermes/.venv/bin/hermes)
 
 # Defensive: if the venv binary is missing (corrupted image, partial
 # install), fail loudly rather than silently masking it.

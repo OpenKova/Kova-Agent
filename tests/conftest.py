@@ -681,11 +681,13 @@ def _live_system_guard(request, monkeypatch):
     # ── Subprocess command-string inspection (whole-line) ──────────
     _HERMES_TOKENS = (
         "kova-gateway",
+        "hermes-gateway",
         "hermes.service",
         "hermes_cli.main gateway",
         "hermes_cli/main.py gateway",
         "gateway/run.py",
         "kova gateway",
+        "hermes gateway",
     )
     _MUTATING_VERBS = (
         "restart", "start", "stop", "kill", "reload",

@@ -1125,7 +1125,7 @@ class TestPlatformToolsetConsistency:
         from kova_cli.tools_config import PLATFORMS
         from toolsets import TOOLSETS
 
-        gateway_includes = set(TOOLSETS["kova-gateway"]["includes"])
+        gateway_includes = set(TOOLSETS["hermes-gateway"]["includes"])
         # Exclude non-messaging platforms from the check
         non_messaging = {"cli", "api_server", "cron"}
         for platform, meta in PLATFORMS.items():

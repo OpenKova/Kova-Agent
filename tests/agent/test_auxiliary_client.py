@@ -288,7 +288,7 @@ class TestResolveTaskProviderModel:
             "hermes_cli.moa_config.resolve_moa_preset",
             lambda cfg, name: preset,
         )
-        monkeypatch.setattr("kova_cli.config.load_config", lambda: {"moa": {}})
+        monkeypatch.setattr("hermes_cli.config.load_config", lambda: {"moa": {}})
 
         resolved_provider, model, base_url, api_key, api_mode = _resolve_task_provider_model(
             task="title_generation",
@@ -323,7 +323,7 @@ class TestResolveTaskProviderModel:
             "hermes_cli.moa_config.resolve_moa_preset",
             lambda cfg, name: preset,
         )
-        monkeypatch.setattr("kova_cli.config.load_config", lambda: {"moa": {}})
+        monkeypatch.setattr("hermes_cli.config.load_config", lambda: {"moa": {}})
 
         resolved_provider, model, base_url, api_key, api_mode = _resolve_task_provider_model(
             task="title_generation",
@@ -353,7 +353,7 @@ class TestResolveTaskProviderModel:
             lambda task: {"provider": "moa"} if task == "title_generation" else {},
         )
         monkeypatch.setattr("hermes_cli.moa_config.resolve_moa_preset", fake_resolve)
-        monkeypatch.setattr("kova_cli.config.load_config", lambda: {"moa": {}})
+        monkeypatch.setattr("hermes_cli.config.load_config", lambda: {"moa": {}})
 
         resolved_provider, model, base_url, api_key, api_mode = _resolve_task_provider_model(
             task="title_generation",
@@ -371,7 +371,7 @@ class TestResolveTaskProviderModel:
             "hermes_cli.moa_config.resolve_moa_preset",
             lambda cfg, name: (_ for _ in ()).throw(KeyError("gone-preset")),
         )
-        monkeypatch.setattr("kova_cli.config.load_config", lambda: {"moa": {}})
+        monkeypatch.setattr("hermes_cli.config.load_config", lambda: {"moa": {}})
 
         resolved_provider, model, base_url, api_key, api_mode = _resolve_task_provider_model(
             task="title_generation",
@@ -606,7 +606,7 @@ class TestBuildCallKwargsMaxTokens:
             ("copilot", "gpt-5.5", "https://api.githubcopilot.com"),
             ("custom", "gpt-5", "https://api.openai.com/v1"),
             ("openrouter", "anthropic/claude-sonnet-4.6", "https://openrouter.ai/api/v1"),
-            ("nous", "hermes-4", "https://inference-api.nousresearch.com/v1"),
+            ("nous", "hermes-4", "https://inference-api.kova.ai/v1"),
             ("custom", "qwen", "http://localhost:8080/v1"),
             ("zai", "glm-4v-flash", "https://open.bigmodel.cn/api/paas/v4"),
         ],
@@ -664,7 +664,7 @@ class TestBuildCallKwargsMaxTokens:
             ("zai", "glm-5.2", "https://api.z.ai/api/coding/paas/v4", "max_tokens"),
             ("openrouter", "deepseek/deepseek-v4-flash:nitro", "https://openrouter.ai/api/v1", "max_tokens"),
             ("copilot", "gpt-5.5", "https://api.githubcopilot.com", "max_completion_tokens"),
-            ("nous", "hermes-4", "https://inference-api.nousresearch.com/v1", "max_tokens"),
+            ("nous", "hermes-4", "https://inference-api.kova.ai/v1", "max_tokens"),
         ],
     )
     def test_moa_task_sends_max_tokens_on_openai_compatible(self, provider, model, base_url, expected_key):
@@ -1893,7 +1893,7 @@ class TestAuxiliaryPoolAwareness:
 
     def test_try_nous_uses_portal_recommendation_for_text(self):
         """When the Portal recommends a compaction model, _try_nous honors it."""
-        fresh_base = "https://inference-api.nousresearch.com/v1"
+        fresh_base = "https://inference-api.kova.ai/v1"
         with (
             patch("agent.auxiliary_client._read_nous_auth", return_value={"access_token": "***"}),
             patch("agent.auxiliary_client._resolve_nous_runtime_api", return_value=("fresh-agent-key", fresh_base)),
@@ -1911,7 +1911,7 @@ class TestAuxiliaryPoolAwareness:
 
     def test_try_nous_uses_portal_recommendation_for_vision(self):
         """Vision tasks should ask for the vision-specific recommendation."""
-        fresh_base = "https://inference-api.nousresearch.com/v1"
+        fresh_base = "https://inference-api.kova.ai/v1"
         with (
             patch("agent.auxiliary_client._read_nous_auth", return_value={"access_token": "***"}),
             patch("agent.auxiliary_client._resolve_nous_runtime_api", return_value=("fresh-agent-key", fresh_base)),
@@ -1927,7 +1927,7 @@ class TestAuxiliaryPoolAwareness:
 
     def test_try_nous_falls_back_when_recommendation_lookup_raises(self):
         """If the Portal lookup throws, we must still return a usable model."""
-        fresh_base = "https://inference-api.nousresearch.com/v1"
+        fresh_base = "https://inference-api.kova.ai/v1"
         with (
             patch("agent.auxiliary_client._read_nous_auth", return_value={"access_token": "***"}),
             patch("agent.auxiliary_client._resolve_nous_runtime_api", return_value=("fresh-agent-key", fresh_base)),
@@ -1945,11 +1945,11 @@ class TestAuxiliaryPoolAwareness:
             status_code = 401
 
         stale_client = MagicMock()
-        stale_client.base_url = "https://inference-api.nousresearch.com/v1"
+        stale_client.base_url = "https://inference-api.kova.ai/v1"
         stale_client.chat.completions.create.side_effect = _Auth401("stale nous key")
 
         fresh_client = MagicMock()
-        fresh_client.base_url = "https://inference-api.nousresearch.com/v1"
+        fresh_client.base_url = "https://inference-api.kova.ai/v1"
         fresh_client.chat.completions.create.return_value = {"ok": True}
 
         with (
@@ -1957,7 +1957,7 @@ class TestAuxiliaryPoolAwareness:
             patch("agent.auxiliary_client._get_cached_client", return_value=(stale_client, "nous-model")),
             patch("agent.auxiliary_client.OpenAI", return_value=fresh_client),
             patch("agent.auxiliary_client._validate_llm_response", side_effect=lambda resp, _task, **_kw: resp),
-            patch("agent.auxiliary_client._resolve_nous_runtime_api", return_value=("fresh-agent-key", "https://inference-api.nousresearch.com/v1")),
+            patch("agent.auxiliary_client._resolve_nous_runtime_api", return_value=("fresh-agent-key", "https://inference-api.kova.ai/v1")),
         ):
             result = call_llm(
                 task="compression",
@@ -1975,13 +1975,13 @@ class TestAuxiliaryPoolAwareness:
             status_code = 404
 
         stale_client = MagicMock()
-        stale_client.base_url = "https://inference-api.nousresearch.com/v1"
+        stale_client.base_url = "https://inference-api.kova.ai/v1"
         stale_client.chat.completions.create.side_effect = _Payment404(
             "model_not_supported_on_free_tier: model is not available on the free tier"
         )
 
         fresh_client = MagicMock()
-        fresh_client.base_url = "https://inference-api.nousresearch.com/v1"
+        fresh_client.base_url = "https://inference-api.kova.ai/v1"
         fresh_client.chat.completions.create.return_value = {"ok": True}
 
         with (
@@ -1989,7 +1989,7 @@ class TestAuxiliaryPoolAwareness:
             patch("agent.auxiliary_client._get_cached_client", return_value=(stale_client, "nous-model")),
             patch("agent.auxiliary_client.OpenAI", return_value=fresh_client),
             patch("agent.auxiliary_client._validate_llm_response", side_effect=lambda resp, _task, **_kw: resp),
-            patch("agent.auxiliary_client._resolve_nous_runtime_api", return_value=("fresh-agent-key", "https://inference-api.nousresearch.com/v1")),
+            patch("agent.auxiliary_client._resolve_nous_runtime_api", return_value=("fresh-agent-key", "https://inference-api.kova.ai/v1")),
             patch(
                 "hermes_cli.nous_account.get_nous_portal_account_info",
                 return_value=NousPortalAccountInfo(
@@ -2015,11 +2015,11 @@ class TestAuxiliaryPoolAwareness:
             status_code = 401
 
         stale_client = MagicMock()
-        stale_client.base_url = "https://inference-api.nousresearch.com/v1"
+        stale_client.base_url = "https://inference-api.kova.ai/v1"
         stale_client.chat.completions.create = AsyncMock(side_effect=_Auth401("stale nous key"))
 
         fresh_async_client = MagicMock()
-        fresh_async_client.base_url = "https://inference-api.nousresearch.com/v1"
+        fresh_async_client.base_url = "https://inference-api.kova.ai/v1"
         fresh_async_client.chat.completions.create = AsyncMock(return_value={"ok": True})
 
         with (
@@ -2027,7 +2027,7 @@ class TestAuxiliaryPoolAwareness:
             patch("agent.auxiliary_client._get_cached_client", return_value=(stale_client, "nous-model")),
             patch("agent.auxiliary_client._to_async_client", return_value=(fresh_async_client, "nous-model")),
             patch("agent.auxiliary_client._validate_llm_response", side_effect=lambda resp, _task, **_kw: resp),
-            patch("agent.auxiliary_client._resolve_nous_runtime_api", return_value=("fresh-agent-key", "https://inference-api.nousresearch.com/v1")),
+            patch("agent.auxiliary_client._resolve_nous_runtime_api", return_value=("fresh-agent-key", "https://inference-api.kova.ai/v1")),
         ):
             result = await async_call_llm(
                 task="session_search",
@@ -2046,13 +2046,13 @@ class TestAuxiliaryPoolAwareness:
             status_code = 404
 
         stale_client = MagicMock()
-        stale_client.base_url = "https://inference-api.nousresearch.com/v1"
+        stale_client.base_url = "https://inference-api.kova.ai/v1"
         stale_client.chat.completions.create = AsyncMock(side_effect=_Payment404(
             "model_not_supported_on_free_tier: model is not available on the free tier"
         ))
 
         fresh_async_client = MagicMock()
-        fresh_async_client.base_url = "https://inference-api.nousresearch.com/v1"
+        fresh_async_client.base_url = "https://inference-api.kova.ai/v1"
         fresh_async_client.chat.completions.create = AsyncMock(return_value={"ok": True})
 
         with (
@@ -2060,7 +2060,7 @@ class TestAuxiliaryPoolAwareness:
             patch("agent.auxiliary_client._get_cached_client", return_value=(stale_client, "nous-model")),
             patch("agent.auxiliary_client._to_async_client", return_value=(fresh_async_client, "nous-model")),
             patch("agent.auxiliary_client._validate_llm_response", side_effect=lambda resp, _task, **_kw: resp),
-            patch("agent.auxiliary_client._resolve_nous_runtime_api", return_value=("fresh-agent-key", "https://inference-api.nousresearch.com/v1")),
+            patch("agent.auxiliary_client._resolve_nous_runtime_api", return_value=("fresh-agent-key", "https://inference-api.kova.ai/v1")),
             patch(
                 "hermes_cli.nous_account.get_nous_portal_account_info",
                 return_value=NousPortalAccountInfo(
@@ -3679,7 +3679,7 @@ class TestAuxiliaryTaskExtraBody:
             }
         }
 
-        with patch("kova_cli.config.load_config", return_value=config), patch(
+        with patch("hermes_cli.config.load_config", return_value=config), patch(
             "agent.auxiliary_client._get_cached_client",
             return_value=(client, "glm-4.5-air"),
         ):
@@ -3710,7 +3710,7 @@ class TestAuxiliaryTaskExtraBody:
             }
         }
 
-        with patch("kova_cli.config.load_config", return_value=config), patch(
+        with patch("hermes_cli.config.load_config", return_value=config), patch(
             "agent.auxiliary_client._get_cached_client",
             return_value=(client, "glm-4.5-air"),
         ):
@@ -3736,7 +3736,7 @@ class TestAuxiliaryTaskExtraBody:
             }
         }
 
-        with patch("kova_cli.config.load_config", return_value=config), patch(
+        with patch("hermes_cli.config.load_config", return_value=config), patch(
             "agent.auxiliary_client._get_cached_client",
             return_value=(client, "glm-4.5-air"),
         ):
@@ -3755,7 +3755,7 @@ class TestAuxiliaryTaskExtraBody:
 
         config = {"auxiliary": {"session_search": {"reasoning_effort": "none"}}}
 
-        with patch("kova_cli.config.load_config", return_value=config), patch(
+        with patch("hermes_cli.config.load_config", return_value=config), patch(
             "agent.auxiliary_client._get_cached_client",
             return_value=(client, "glm-4.5-air"),
         ):
@@ -3779,7 +3779,7 @@ class TestAuxiliaryTaskExtraBody:
             }
         }
 
-        with patch("kova_cli.config.load_config", return_value=config), patch(
+        with patch("hermes_cli.config.load_config", return_value=config), patch(
             "agent.auxiliary_client._get_cached_client",
             return_value=(client, "glm-4.5-air"),
         ):
@@ -3795,7 +3795,7 @@ class TestAuxiliaryTaskExtraBody:
 
         config = {"auxiliary": {"session_search": {"reasoning_effort": "warp9"}}}
 
-        with patch("kova_cli.config.load_config", return_value=config), patch(
+        with patch("hermes_cli.config.load_config", return_value=config), patch(
             "agent.auxiliary_client._get_cached_client",
             return_value=(client, "glm-4.5-air"),
         ), caplog.at_level(logging.WARNING, logger="agent.auxiliary_client"):
@@ -3810,7 +3810,7 @@ class TestAuxiliaryTaskExtraBody:
         from agent.auxiliary_client import _get_task_extra_body
 
         config = {"auxiliary": {"session_search": {"reasoning_effort": ""}}}
-        with patch("kova_cli.config.load_config", return_value=config):
+        with patch("hermes_cli.config.load_config", return_value=config):
             assert _get_task_extra_body("session_search") == {}
 
     @pytest.mark.parametrize("moa_task", ["moa_reference", "moa_aggregator"])
@@ -3820,7 +3820,7 @@ class TestAuxiliaryTaskExtraBody:
         from agent.auxiliary_client import _get_task_extra_body
 
         config = {"auxiliary": {moa_task: {"reasoning_effort": "xhigh"}}}
-        with patch("kova_cli.config.load_config", return_value=config), \
+        with patch("hermes_cli.config.load_config", return_value=config), \
              caplog.at_level(logging.WARNING, logger="agent.auxiliary_client"):
             result = _get_task_extra_body(moa_task)
 
@@ -5826,9 +5826,9 @@ class TestOpenRouterExplicitApiKey:
 def test_pool_runtime_base_url_uses_nous_env_override(monkeypatch):
     entry = SimpleNamespace(
         provider="nous",
-        runtime_base_url="https://inference-api.nousresearch.com/v1",
-        inference_base_url="https://inference-api.nousresearch.com/v1",
-        base_url="https://inference-api.nousresearch.com/v1",
+        runtime_base_url="https://inference-api.kova.ai/v1",
+        inference_base_url="https://inference-api.kova.ai/v1",
+        base_url="https://inference-api.kova.ai/v1",
     )
     monkeypatch.setenv("NOUS_INFERENCE_BASE_URL", "https://ai.wildebeest-newton.ts.net/v1")
 
@@ -6416,7 +6416,7 @@ class TestCustomEndpointApiKeyInheritance:
             captured.update(kwargs)
             return MagicMock()
 
-        with patch("kova_cli.config.load_config", return_value=fake_config), \
+        with patch("hermes_cli.config.load_config", return_value=fake_config), \
              patch.object(ac, "_create_openai_client", side_effect=_capture_create):
             client, model = resolve_provider_client(
                 "custom",
@@ -6444,7 +6444,7 @@ class TestCustomEndpointApiKeyInheritance:
             captured.update(kwargs)
             return MagicMock()
 
-        with patch("kova_cli.config.load_config", return_value=fake_config), \
+        with patch("hermes_cli.config.load_config", return_value=fake_config), \
              patch.object(ac, "_create_openai_client", side_effect=_capture_create):
             client, model = resolve_provider_client(
                 "custom",
@@ -6469,7 +6469,7 @@ class TestCustomEndpointApiKeyInheritance:
             captured.update(kwargs)
             return MagicMock()
 
-        with patch("kova_cli.config.load_config", return_value=fake_config), \
+        with patch("hermes_cli.config.load_config", return_value=fake_config), \
              patch.object(ac, "_create_openai_client", side_effect=_capture_create):
             client, model = resolve_provider_client(
                 "custom",
@@ -6495,7 +6495,7 @@ class TestCustomEndpointApiKeyInheritance:
 
         with patch.object(ac, "_RUNTIME_MAIN_API_KEY", "sk-runtime-key"), \
              patch.object(ac, "_RUNTIME_MAIN_BASE_URL", "https://gw.example.com/v1"), \
-             patch("kova_cli.config.load_config", return_value={"model": {}}), \
+             patch("hermes_cli.config.load_config", return_value={"model": {}}), \
              patch.object(ac, "_create_openai_client", side_effect=_capture_create):
             client, model = resolve_provider_client(
                 "custom",
@@ -6527,7 +6527,7 @@ class TestCustomEndpointApiKeyInheritance:
             captured.update(kwargs)
             return MagicMock()
 
-        with patch("kova_cli.config.load_config", return_value=fake_config), \
+        with patch("hermes_cli.config.load_config", return_value=fake_config), \
              patch.object(ac, "_create_openai_client", side_effect=_capture_create):
             client, model = resolve_provider_client(
                 "custom",
@@ -6552,7 +6552,7 @@ class TestCustomEndpointApiKeyInheritance:
             captured.update(kwargs)
             return MagicMock()
 
-        with patch("kova_cli.config.load_config", return_value=fake_config), \
+        with patch("hermes_cli.config.load_config", return_value=fake_config), \
              patch.object(ac, "_create_openai_client", side_effect=_capture_create):
             client, model = resolve_provider_client(
                 "custom",

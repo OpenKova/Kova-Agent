@@ -1208,8 +1208,12 @@ def slack_native_slashes() -> list[tuple[str, str, str]]:
     entries: list[tuple[str, str, str]] = []
     seen: set[str] = set()
 
-    # Reserve /hermes as the catch-all top-level command.
+    # Reserve /kova and /hermes as the catch-all top-level commands so the
+    # legacy /hermes <subcommand> form keeps working (old workspace
+    # manifests) alongside the new /kova form.
     entries.append(("kova", "Talk to Kova or run a subcommand", "[subcommand] [args]"))
+    seen.add("kova")
+    entries.append(("hermes", "Talk to Hermes or run a subcommand", "[subcommand] [args]"))
     seen.add("hermes")
 
     def _add(name: str, desc: str, hint: str) -> None:
