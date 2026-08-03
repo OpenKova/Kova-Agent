@@ -1845,7 +1845,7 @@ class TestOptionalSkillSourceMetadata:
         meta = src.inspect("official/finance/3-statement-model")
 
         assert meta is not None
-        assert meta.repo == "NousResearch/kova-agent"
+        assert meta.repo == "OpenKova/Kova-Agent"
         assert meta.path == "optional-skills/finance/3-statement-model"
 
 

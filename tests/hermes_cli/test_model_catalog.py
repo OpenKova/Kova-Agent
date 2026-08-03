@@ -182,7 +182,7 @@ class TestFallbackChain:
 
     PRIMARY = "https://kova-agent.nousresearch.com/docs/api/model-catalog.json"
     FALLBACK = (
-        "https://raw.githubusercontent.com/NousResearch/kova-agent"
+        "https://raw.githubusercontent.com/OpenKova/Kova-Agent"
         "/main/website/static/api/model-catalog.json"
     )
 

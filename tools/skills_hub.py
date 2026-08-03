@@ -3176,7 +3176,7 @@ class OptionalSkillSource(SkillSource):
     (search / install / inspect) and labelled "official" with "builtin" trust.
     """
 
-    OFFICIAL_REPO = "NousResearch/kova-agent"
+    OFFICIAL_REPO = "OpenKova/Kova-Agent"
 
     def __init__(self):
         from hermes_constants import get_optional_skills_dir
