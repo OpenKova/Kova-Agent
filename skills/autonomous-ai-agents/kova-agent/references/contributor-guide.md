@@ -1,11 +1,11 @@
 # Contributor Quick Reference
 
-For occasional contributors and PR authors. Full developer docs: https://hermes-agent.nousresearch.com/docs/developer-guide/
+For occasional contributors and PR authors. Full developer docs: https://kova-agent.kova.ai/docs/developer-guide/
 
 ### Project Layout
 
 ```
-hermes-agent/
+hermes-agent/            # on-disk install dir (git checkout of OpenKova/Kova-Agent)
 ├── run_agent.py          # AIAgent — core conversation loop
 ├── model_tools.py        # Tool discovery and dispatch
 ├── toolsets.py           # Toolset definitions
