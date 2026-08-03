@@ -205,7 +205,7 @@ def test_nix_store_path_detected_as_nix(tmp_path, monkeypatch):
     # fake install path under it.
     fake_nix_store = tmp_path / "fake-nix-store"
     fake_nix_store.mkdir(parents=True)
-    fake_nix = fake_nix_store / "abc123-kova-agent-0.19.0"
+    fake_nix = fake_nix_store / "abc123-kova-agent-0.1.0"
     fake_nix.mkdir(parents=True)
 
     monkeypatch.setattr("kova_cli.config._NIX_STORE", fake_nix_store)
