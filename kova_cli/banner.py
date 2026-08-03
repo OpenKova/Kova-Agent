@@ -115,8 +115,8 @@ _UPDATE_CHECK_CACHE_SECONDS = 6 * 3600
 # (e.g. nix-built hermes Ã¢â‚¬â€ no local git history to count against).
 UPDATE_AVAILABLE_NO_COUNT = -1
 
-_UPSTREAM_REPO_URL = "https://github.com/NousResearch/kova-agent.git"
-_OFFICIAL_REPO_CANONICAL = "github.com/nousresearch/kova-agent"
+_UPSTREAM_REPO_URL = "https://github.com/OpenKova/Kova-Agent.git"
+_OFFICIAL_REPO_CANONICAL = "github.com/openkova/kova-agent"
 
 
 def _canonical_github_remote(url: str | None) -> str:
@@ -405,7 +405,7 @@ def get_git_banner_state(repo_dir: Optional[Path] = None) -> Optional[dict]:
     return {"upstream": upstream, "local": local, "ahead": max(ahead, 0)}
 
 
-_RELEASE_URL_BASE = "https://github.com/NousResearch/kova-agent/releases/tag"
+_RELEASE_URL_BASE = "https://github.com/OpenKova/Kova-Agent/releases/tag"
 _latest_release_cache: Optional[tuple] = None  # (tag, url) once resolved
 
 
@@ -414,7 +414,7 @@ def get_latest_release_tag(repo_dir: Optional[Path] = None) -> Optional[tuple]:
 
     Local-only Ã¢â‚¬â€ runs ``git describe --tags --abbrev=0`` against the
     Kova checkout. Cached per-process. Release URL always points at the
-    canonical NousResearch/kova-agent repo (forks don't get a link).
+    canonical OpenKova/Kova-Agent repo (forks don't get a link).
     """
     global _latest_release_cache
     if _latest_release_cache is not None:
