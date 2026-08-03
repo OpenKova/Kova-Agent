@@ -859,7 +859,7 @@ mod tests {
         } else {
             let dir = release.join("linux-unpacked");
             std::fs::create_dir_all(&dir).unwrap();
-            let exe = dir.join("hermes");
+            let exe = dir.join("kova");
             std::fs::write(&exe, b"stub").unwrap();
             exe
         }
