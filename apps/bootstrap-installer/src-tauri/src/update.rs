@@ -577,7 +577,7 @@ fn format_locked_paths(paths: &[PathBuf]) -> String {
 /// taskkill, excluding our own PID.
 ///
 /// Safe w.r.t. our own update child: this runs inside the install-lock wait,
-/// which completes BEFORE we spawn `venv\Scripts\hermes.exe update`. And a
+/// which completes BEFORE we spawn `venv\Scripts\kova.exe update`. And a
 /// desktop the user relaunches mid-update will NOT have spawned a backend —
 /// `startHermes()` in the desktop gates local-backend startup on our
 /// update-in-progress marker and parks until we finish (#50238). So the only
@@ -701,8 +701,18 @@ struct CmdResult {
     exit_code: Option<i32>,
 }
 
-/// Path to the venv hermes shim under an install root, regardless of existence.
+/// Path to the venv CLI shim under an install root, regardless of existence.
 fn venv_hermes(install_root: &Path) -> PathBuf {
+    if cfg!(target_os = "windows") {
+        install_root.join("venv").join("Scripts").join("kova.exe")
+    } else {
+        install_root.join("venv").join("bin").join("kova")
+    }
+}
+
+/// Legacy venv shim name from before the CLI rename; kept so installs that
+/// still carry the old entry point can update without a manual repair.
+fn venv_hermes_legacy(install_root: &Path) -> PathBuf {
     if cfg!(target_os = "windows") {
         install_root.join("venv").join("Scripts").join("hermes.exe")
     } else {
@@ -710,21 +720,28 @@ fn venv_hermes(install_root: &Path) -> PathBuf {
     }
 }
 
-/// Resolve the hermes CLI to drive. Prefer the venv shim in the install we
-/// just updated; fall back to `hermes` on PATH.
+/// Resolve the kova CLI to drive. Prefer the venv shim in the install we
+/// just updated; fall back to the legacy `hermes` shim, then the CLI on PATH.
 fn resolve_hermes(install_root: &Path) -> Option<PathBuf> {
-    let shim = venv_hermes(install_root);
-    if shim.exists() {
-        return Some(shim);
+    for shim in [venv_hermes(install_root), venv_hermes_legacy(install_root)] {
+        if shim.exists() {
+            return Some(shim);
+        }
     }
     // PATH fallback. which-style probe via env, kept dependency-free.
-    let exe = if cfg!(target_os = "windows") { "hermes.exe" } else { "hermes" };
+    let names: &[&str] = if cfg!(target_os = "windows") {
+        &["kova.exe", "hermes.exe"]
+    } else {
+        &["kova", "hermes"]
+    };
     if let Ok(path) = std::env::var("PATH") {
         let sep = if cfg!(target_os = "windows") { ';' } else { ':' };
         for dir in path.split(sep) {
-            let cand = Path::new(dir).join(exe);
-            if cand.exists() {
-                return Some(cand);
+            for name in names {
+                let cand = Path::new(dir).join(name);
+                if cand.exists() {
+                    return Some(cand);
+                }
             }
         }
     }
