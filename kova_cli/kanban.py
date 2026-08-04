@@ -1,4 +1,4 @@
-"""CLI for the Hermes Kanban board — ``hermes kanban …`` subcommand.
+"""CLI for the Kova Kanban board — ``kova kanban …`` subcommand.
 
 Exposes the full Kanban command surface documented in the design spec
 (``docs/hermes-kanban-v1-spec.pdf``).  All DB work is delegated to
@@ -144,7 +144,7 @@ def _check_dispatcher_presence() -> tuple[bool, str]:
       is running but the config flag is off. Message is human guidance
       explaining the next step.
 
-    Used by ``hermes kanban create`` (and callers) to warn when a task
+    Used by ``kova kanban create`` (and callers) to warn when a task
     will sit in ``ready`` because nothing is there to pick it up.
     Defensive against import failures and config-read errors — if the
     probe itself errors, we return ``(True, "")`` so we don't spam
@@ -175,7 +175,7 @@ def _check_dispatcher_presence() -> tuple[bool, str]:
             "Gateway is running but kanban.dispatch_in_gateway=false in "
             "config.yaml — the task will sit in 'ready' until you flip it "
             "back on and restart the gateway, OR run the legacy "
-            "standalone daemon (`hermes kanban daemon --force`)."
+            "standalone daemon (`kova kanban daemon --force`)."
         )
     return (
         False,
@@ -201,7 +201,7 @@ def build_parser(parent_subparsers: argparse._SubParsersAction) -> argparse.Argu
         "kanban",
         help="Multi-profile collaboration board (tasks, links, comments)",
         description=(
-            "Durable SQLite-backed task board shared across Hermes profiles. "
+            "Durable SQLite-backed task board shared across Kova profiles. "
             "Tasks are claimed atomically, can depend on other tasks, and "
             "are executed by a named profile in an isolated workspace. "
             "See https://kova-agent.nousresearch.com/docs/user-guide/features/kanban "
@@ -219,8 +219,8 @@ def build_parser(parent_subparsers: argparse._SubParsersAction) -> argparse.Argu
         metavar="<slug>",
         help=(
             "Board slug to operate on. Defaults to the current board "
-            "(set via `hermes kanban boards switch <slug>` or the "
-            "HERMES_KANBAN_BOARD env var). Use `hermes kanban boards list` "
+            "(set via `kova kanban boards switch <slug>` or the "
+            "HERMES_KANBAN_BOARD env var). Use `kova kanban boards list` "
             "to see all boards."
         ),
     )
@@ -320,7 +320,7 @@ def build_parser(parent_subparsers: argparse._SubParsersAction) -> argparse.Argu
     p_create.add_argument("--project", default=None,
                           help="Link to a project (id or slug). Anchors the task's "
                                "worktree under the project's primary repo with a "
-                               "deterministic branch. See `hermes project list`.")
+                               "deterministic branch. See `kova project list`.")
     p_create.add_argument("--tenant", default=None, help="Tenant namespace")
     p_create.add_argument("--priority", type=int, default=0, help="Priority tiebreaker")
     p_create.add_argument("--triage", action="store_true",
@@ -937,7 +937,7 @@ def build_parser(parent_subparsers: argparse._SubParsersAction) -> argparse.Argu
 # ---------------------------------------------------------------------------
 
 def kanban_command(args: argparse.Namespace) -> int:
-    """Entry point from ``hermes kanban …`` argparse dispatch.
+    """Entry point from ``kova kanban …`` argparse dispatch.
 
     Returns a shell-style exit code (0 on success, non-zero on error).
     """
@@ -993,7 +993,7 @@ def kanban_command(args: argparse.Namespace) -> int:
         if normed != kb.DEFAULT_BOARD and not kb.board_exists(normed):
             print(
                 f"kanban: board {normed!r} does not exist. "
-                f"Create it with `hermes kanban boards create {normed}`.",
+                f"Create it with `kova kanban boards create {normed}`.",
                 file=sys.stderr,
             )
             return 1
@@ -1009,7 +1009,7 @@ def kanban_command(args: argparse.Namespace) -> int:
     with board_scope:
         # `repair` must dispatch BEFORE the auto-init below: on a corrupt DB
         # init_db() itself raises KanbanDbCorruptError, which would turn
-        # every `hermes kanban repair` into "could not initialize database"
+        # every `kova kanban repair` into "could not initialize database"
         # without ever reaching the repair path.
         if action == "repair":
             return _cmd_repair(args)
@@ -1156,7 +1156,7 @@ def _is_delegated_child_cli_mutation(args: argparse.Namespace) -> bool:
 # ---------------------------------------------------------------------------
 
 def _dispatch_boards(args: argparse.Namespace) -> int:
-    """Handle ``hermes kanban boards <action>``.
+    """Handle ``kova kanban boards <action>``.
 
     Boards management is deliberately separate from the task-level
     commands: it operates on the filesystem (board directories,
@@ -1264,7 +1264,7 @@ def _cmd_boards_create(args: argparse.Namespace) -> int:
 
 
 def _cmd_boards_rm(args: argparse.Namespace) -> int:
-    # When the user runs `hermes kanban boards delete <slug>` (alias), the
+    # When the user runs `kova kanban boards delete <slug>` (alias), the
     # boards_action is 'delete' but args.delete is never set to True because
     # the --delete flag belongs to the 'rm' subparser only.  Detect the alias
     # and treat it identically to `boards rm --delete` (fixes #23139).
@@ -1295,7 +1295,7 @@ def _cmd_boards_switch(args: argparse.Namespace) -> int:
     if not kb.board_exists(normed):
         print(
             f"kanban boards switch: board {normed!r} does not exist. "
-            f"Create it with `hermes kanban boards create {normed}`.",
+            f"Create it with `kova kanban boards create {normed}`.",
             file=sys.stderr,
         )
         return 1
@@ -1584,7 +1584,7 @@ def _cmd_list(args: argparse.Namespace) -> int:
         print(
             f"Board: {current} "
             f"({other_count} other board{'s' if other_count != 1 else ''} — "
-            f"`hermes kanban boards list`)\n"
+            f"`kova kanban boards list`)\n"
         )
     if not tasks:
         print("(no matching tasks)")
@@ -1731,7 +1731,7 @@ def _cmd_show(args: argparse.Namespace) -> int:
         print(task.result)
     elif latest_summary:
         # Worker handoff lives on the latest run, not on tasks.result.
-        # Surface it at top-level so a glance at ``hermes kanban show <id>``
+        # Surface it at top-level so a glance at ``kova kanban show <id>``
         # tells you what the worker did even if tasks.result is empty.
         print()
         print("Latest summary:")
@@ -2150,7 +2150,7 @@ def _cmd_complete(args: argparse.Namespace) -> int:
             # Goal-mode pre-completion judge gate (mirrors the gate in
             # tools/kanban_tools.py:_handle_complete — Issue #38367).
             # Without this, a goal_mode worker can call
-            # `hermes kanban complete <id>` from the terminal tool and
+            # `kova kanban complete <id>` from the terminal tool and
             # bypass the auxiliary judge that the tool-call path enforces.
             task = kb.get_task(conn, tid)
             if task and task.goal_mode:
@@ -2604,8 +2604,8 @@ def _cmd_daemon(args: argparse.Namespace) -> int:
                     f"ready queue non-empty for {health_state['bad_ticks']} "
                     f"consecutive ticks but 0 workers spawned successfully. "
                     f"Check profile health (venv, PATH, credentials) and "
-                    f"`hermes kanban list --status ready` / "
-                    f"`hermes kanban list --status blocked` for recent "
+                    f"`kova kanban list --status ready` / "
+                    f"`kova kanban list --status blocked` for recent "
                     f"spawn_failed tasks.",
                     file=sys.stderr, flush=True,
                 )
@@ -2628,7 +2628,7 @@ def _cmd_daemon(args: argparse.Namespace) -> int:
 
     def _ready_queue_nonempty() -> bool:
         """Cheap probe — is there at least one ready+assigned+unclaimed
-        task whose assignee maps to a real Hermes profile (i.e. one the
+        task whose assignee maps to a real Kova profile (i.e. one the
         dispatcher would actually try to spawn for)?
 
         Filters out tasks assigned to control-plane lanes

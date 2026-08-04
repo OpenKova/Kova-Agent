@@ -4,7 +4,7 @@ Backup and import commands for hermes CLI.
 `hermes backup` creates a zip archive of the entire ~/.hermes/ directory
 (excluding the hermes-agent repo and transient files).
 
-`hermes import` restores from a backup zip, overlaying onto the current
+`kova import` restores from a backup zip, overlaying onto the current
 HERMES_HOME root.
 """
 
@@ -89,7 +89,7 @@ _EXCLUDED_NAMES = {
     "cron.pid",
 }
 
-# File names that ``hermes import`` must never overwrite, matched by basename so
+# File names that ``kova import`` must never overwrite, matched by basename so
 # they're caught for the root profile (``gateway_state.json``) and for named
 # profiles alike (``profiles/<name>/gateway_state.json``).
 #
@@ -482,7 +482,7 @@ def run_backup(args) -> None:
 # ---------------------------------------------------------------------------
 
 def _validate_backup_zip(zf: zipfile.ZipFile) -> tuple[bool, str]:
-    """Check that a zip looks like a Hermes backup.
+    """Check that a zip looks like a Kova backup.
 
     Returns (ok, reason).
     """
@@ -824,7 +824,7 @@ def create_quick_snapshot(
             never stall ``kova update`` or silently eat disk — the small
             pairing/cron/config files the snapshot exists to protect are
             always captured. ``None`` (default) copies everything, which
-            preserves manual ``/snapshot`` and ``hermes backup --quick``
+            preserves manual ``/snapshot`` and ``kova backup --quick``
             behavior.
 
     Returns:
@@ -1105,7 +1105,7 @@ def restore_cron_jobs_if_emptied(
     Args:
         snapshot_id: The pre-update quick-snapshot id (from
             :func:`create_quick_snapshot`).
-        hermes_home: Override for the Hermes home directory (tests).
+        hermes_home: Override for the Kova home directory (tests).
 
     Returns:
         ``None`` when no action was taken (the common, healthy path). On a
@@ -1372,7 +1372,7 @@ def create_pre_update_backup(
 
 
 # ---------------------------------------------------------------------------
-# Pre-migration auto-backup (used by `hermes claw migrate`)
+# Pre-migration auto-backup (used by `kova claw migrate`)
 # ---------------------------------------------------------------------------
 
 _PRE_MIGRATION_PREFIX = "pre-migration-"
@@ -1412,11 +1412,11 @@ def create_pre_migration_backup(
     keep: int = _PRE_MIGRATION_DEFAULT_KEEP,
 ) -> Optional[Path]:
     """Create a full zip backup of HERMES_HOME under ``backups/`` before a
-    ``hermes claw migrate`` apply.
+    ``kova claw migrate`` apply.
 
     Shares implementation with :func:`create_pre_update_backup` via
     ``_write_full_zip_backup`` — same exclusions, same SQLite safe-copy,
-    restorable with ``hermes import <archive>``.  Writes to
+    restorable with ``kova import <archive>``.  Writes to
     ``<HERMES_HOME>/backups/pre-migration-<timestamp>.zip`` and auto-prunes
     old pre-migration backups.
 
@@ -1428,7 +1428,7 @@ def create_pre_migration_backup(
     if not hermes_root.is_dir():
         return None
 
-    # Reuses the shared backups/ directory so `hermes import` and the
+    # Reuses the shared backups/ directory so `kova import` and the
     # update-backup listing pick up pre-migration archives too.
     backup_dir = _pre_update_backup_dir(hermes_root)
     try:

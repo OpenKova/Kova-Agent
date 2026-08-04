@@ -13,8 +13,8 @@ Matches OpenClaw's 9-tool MCP channel bridge surface:
 Plus: channels_list (Kova-specific extra)
 
 Usage:
-    hermes mcp serve
-    hermes mcp serve --verbose
+    kova mcp serve
+    kova mcp serve --verbose
 
 MCP client config (e.g. claude_desktop_config.json):
     {
@@ -41,7 +41,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
-logger = logging.getLogger("hermes.mcp_serve")
+logger = logging.getLogger("kova.mcp_serve")
 
 # ---------------------------------------------------------------------------
 # Lazy MCP SDK import

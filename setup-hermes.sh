@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================================
-# Hermes Agent Setup Script
+# Kova Agent Setup Script
 # ============================================================================
 # Quick setup for developers who cloned the repo manually.
 # Uses uv for desktop/server setup and Python's stdlib venv + pip on Termux.

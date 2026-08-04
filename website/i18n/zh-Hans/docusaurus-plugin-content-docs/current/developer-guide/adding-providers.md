@@ -1,16 +1,16 @@
 ---
 sidebar_position: 5
 title: "添加 Provider"
-description: "如何向 Hermes Agent 添加新的推理 provider——认证、运行时解析、CLI 流程、适配器、测试与文档"
+description: "如何向 Kova Agent 添加新的推理 provider——认证、运行时解析、CLI 流程、适配器、测试与文档"
 ---
 
 # 添加 Provider
 
-Hermes 已经可以通过自定义 provider 路径与任何 OpenAI 兼容的端点通信。除非你需要为某个服务提供一流的用户体验，否则不要添加内置 provider：
+Kova 已经可以通过自定义 provider 路径与任何 OpenAI 兼容的端点通信。除非你需要为某个服务提供一流的用户体验，否则不要添加内置 provider：
 
 - provider 专属的认证或 token 刷新
 - 精选的模型目录
-- setup / `hermes model` 菜单条目
+- setup / `kova model` 菜单条目
 - 用于 `provider:model` 语法的 provider 别名
 - 需要适配器的非 OpenAI API 格式
 
@@ -112,8 +112,8 @@ Hermes 已经可以通过自定义 provider 路径与任何 OpenAI 兼容的端�
 4. 按优先级顺序检查 `env_vars` 以获取 API key
 5. 为该 provider 注册 `fallback_models` 列表
 6. `--provider` CLI 标志接受该 provider id
-7. `hermes model` 菜单包含该 provider
-8. `hermes setup` 向导自动委托给 `main.py`
+7. `kova model` 菜单包含该 provider
+8. `kova setup` 向导自动委托给 `main.py`
 9. `provider:model` 别名语法正常工作
 10. 运行时解析器返回正确的 `base_url` 和 `api_key`
 11. `--provider <name>` CLI 标志接受该 provider id
@@ -131,7 +131,7 @@ Hermes 已经可以通过自定义 provider 路径与任何 OpenAI 兼容的端�
 - 需要新适配器的非 OpenAI API 格式（Anthropic Messages、Codex Responses）
 - 自定义端点检测或多区域探测（z.ai、Kimi）
 - 精选的静态模型目录或实时 `/models` 获取
-- 带有特定认证流程的 provider 专属 `hermes model` 菜单条目
+- 带有特定认证流程的 provider 专属 `kova model` 菜单条目
 
 ## 第 1 步：选择一个规范的 provider id
 
@@ -177,7 +177,7 @@ Hermes 已经可以通过自定义 provider 路径与任何 OpenAI 兼容的端�
 
 需要在此回答的问题：
 
-- Hermes 应该检查哪些环境变量，按什么优先级顺序？
+- Kova 应该检查哪些环境变量，按什么优先级顺序？
 - provider 是否需要 base URL 覆盖？
 - 是否需要端点探测或 token 刷新？
 - 当凭据缺失时，认证错误应该显示什么？
@@ -226,11 +226,11 @@ kimi:model-name
 
 如果 provider 与 OpenAI 兼容，`api_mode` 通常应保持为 `chat_completions`。
 
-注意 API key 优先级。Hermes 已经包含避免将 OpenRouter key 泄露给无关端点的逻辑。新 provider 应同样明确地指定哪个 key 对应哪个 base URL。
+注意 API key 优先级。Kova 已经包含避免将 OpenRouter key 泄露给无关端点的逻辑。新 provider 应同样明确地指定哪个 key 对应哪个 base URL。
 
 ## 第 5 步：在 `hermes_cli/main.py` 中接线 CLI
 
-在交互式 `hermes model` 流程中出现之前，provider 是不可发现的。
+在交互式 `kova model` 流程中出现之前，provider 是不可发现的。
 
 在 `hermes_cli/main.py` 中更新以下内容：
 
@@ -313,7 +313,7 @@ Prompt（提示词）缓存和 provider 专属的调节项很容易出现回归�
 - OpenRouter 获得 provider 路由字段
 - 并非每个 provider 都应该接收每个请求端选项
 
-添加原生 provider 时，仔细检查 Hermes 只向该 provider 发送它实际理解的字段。
+添加原生 provider 时，仔细检查 Kova 只向该 provider 发送它实际理解的字段。
 
 ## 第 8 步：测试
 
@@ -434,7 +434,7 @@ python -m hermes_cli.main setup
 
 provider 路由等字段只属于支持它们的 provider。
 
-### 7. 更新了 `hermes model` 但未更新 `hermes setup`
+### 7. 更新了 `kova model` 但未更新 `kova setup`
 
 两个流程都需要了解该 provider。
 

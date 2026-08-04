@@ -1,7 +1,7 @@
 """
 Unified tool configuration for Kova Agent.
 
-`hermes tools` and `kova setup tools` both enter this module.
+`kova tools` and `kova setup tools` both enter this module.
 Select a platform → toggle toolsets on/off → for newly enabled tools
 that need API keys, run through provider-aware configuration.
 
@@ -40,7 +40,7 @@ def _post_setup_no_window_flags(*, streams_to_console: bool = False) -> int:
     """Win32 creationflags that stop post-setup children flashing a console.
 
     The dashboard/GUI runs post-setup hooks through a detached, console-less
-    ``hermes tools post-setup <key>`` child. On Windows, every console child
+    ``kova tools post-setup <key>`` child. On Windows, every console child
     (npm.cmd, npx, pip, powershell, curl) spawned from that console-less
     parent materializes a brand-new console window — the "terminal flash"
     users see when clicking "Run setup". ``CREATE_NO_WINDOW`` (via
@@ -141,13 +141,13 @@ def gui_toolset_label(label: str) -> str:
 # but the setup checklist won't pre-select them for first-time users.
 #
 # Video gen is off by default — it's a niche, paid, slow feature. Users
-# who want it opt in via `hermes tools` → Video Generation, which walks
+# who want it opt in via `kova tools` → Video Generation, which walks
 # them through provider + model selection.
 #
 # X search is off by default for users without xAI credentials, but
 # auto-enables when SuperGrok OAuth tokens are stored OR XAI_API_KEY is
 # set — mirroring the HASS_TOKEN → homeassistant auto-enable below. The
-# `hermes tools` → X (Twitter) Search setup walks users through credential
+# `kova tools` → X (Twitter) Search setup walks users through credential
 # setup. The tool's check_fn means the schema still won't appear to the
 # model if the credential later goes missing or expires.
 _DEFAULT_OFF_TOOLSETS = {"homeassistant", "spotify", "discord", "discord_admin", "video", "video_gen", "x_search"}
@@ -180,7 +180,7 @@ def _xai_credentials_present() -> bool:
         pass
     return bool(str(os.environ.get("XAI_API_KEY") or "").strip())
 
-# Platform-scoped toolsets: only appear in the `hermes tools` checklist for
+# Platform-scoped toolsets: only appear in the `kova tools` checklist for
 # these platforms, and only resolve/save for these platforms.  A toolset
 # absent from this map is available on every platform (current behaviour).
 #
@@ -224,7 +224,7 @@ def _get_effective_configurable_toolsets():
     already appears in ``CONFIGURABLE_TOOLSETS`` is skipped — bundled
     plugins (e.g. ``plugins/spotify``) share their toolset key with the
     built-in entry, and we want the built-in label/description to win.
-    Without the dedupe, ``hermes tools`` → "reconfigure existing" would
+    Without the dedupe, ``kova tools`` → "reconfigure existing" would
     list the same toolset twice.
     """
     result = list(CONFIGURABLE_TOOLSETS)
@@ -253,7 +253,7 @@ def _get_plugin_toolset_keys() -> set:
 
 
 def _checklist_toolset_keys(platform: str) -> Set[str]:
-    """Return the toolset keys the ``hermes tools`` checklist actually offers
+    """Return the toolset keys the ``kova tools`` checklist actually offers
     for ``platform``.
 
     This mirrors exactly what ``_prompt_toolset_checklist`` renders:
@@ -265,7 +265,7 @@ def _checklist_toolset_keys(platform: str) -> Set[str]:
     time — ``kanban`` and other check_fn-gated toolsets, recovered platform
     composites, MCP server names — are NOT in this set because the checklist
     never shows them. Use this to scope the added/removed diff the UI prints,
-    so ``hermes tools`` never claims to add or remove a toolset the user was
+    so ``kova tools`` never claims to add or remove a toolset the user was
     never given a checkbox for. The underlying config is unaffected — those
     entries are preserved by ``_save_platform_tools`` regardless.
     """
@@ -474,7 +474,7 @@ TOOL_CATEGORIES = {
         "name": "X (Twitter) Search",
         "setup_title": "Select xAI Credential Source",
         "setup_note": (
-            "Hermes routes X searches through xAI's built-in x_search "
+            "Kova routes X searches through xAI's built-in x_search "
             "Responses tool for read-only public X discovery. Use the xurl "
             "skill for authenticated X API reads and account actions. Both "
             "credential sources hit the same "
@@ -663,7 +663,7 @@ def _resolved_cua_driver_cmd() -> Optional[str]:
 
 
 def _cua_driver_env() -> dict:
-    """cua-driver child env with the Hermes telemetry policy applied.
+    """cua-driver child env with the Kova telemetry policy applied.
 
     Delegates to ``cua_backend.cua_driver_child_env`` (telemetry disabled by
     default; user opt-in via ``computer_use.cua_telemetry``). Falls back to the
@@ -806,7 +806,7 @@ def install_cua_driver(upgrade: bool = False) -> bool:
       we don't want to surprise the user with a network fetch.
     * ``upgrade=True`` — always re-run the installer (or call ``cua-driver
       update`` if the binary supports it). Used by ``kova update`` and
-      by ``hermes computer-use install --upgrade``.
+      by ``kova computer-use install --upgrade``.
 
     Returns True iff cua-driver is installed (or successfully refreshed)
     when the function returns. Supported on macOS, Windows, and Linux
@@ -1195,7 +1195,7 @@ def _run_cua_driver_installer(label: str = "Installing", verbose: bool = True) -
                     _print_info("    IMPORTANT — grant macOS permissions now:")
                     _print_info("      System Settings > Privacy & Security > Accessibility")
                     _print_info("      System Settings > Privacy & Security > Screen Recording")
-                    _print_info("    Both must allow the terminal / Hermes process.")
+                    _print_info("    Both must allow the terminal / Kova process.")
             return True
         _print_warning(f"    cua-driver {label.lower()} did not complete. Re-run manually:")
         _print_info(f"      {manual_hint}")
@@ -1503,7 +1503,7 @@ def _run_post_setup(post_setup_key: str):
         except Exception as exc:
             _print_warning(f"    Could not enable plugin automatically: {exc}")
             _print_info("    Run manually: kova plugins enable observability/langfuse")
-        _print_info("    Restart Hermes for tracing to take effect.")
+        _print_info("    Restart Kova for tracing to take effect.")
         _print_info("    Verify: kova plugins list")
 
     elif post_setup_key == "xai_grok":
@@ -1579,7 +1579,7 @@ def valid_post_setup_keys() -> Set[str]:
 
     Collected from ``TOOL_CATEGORIES`` plus the plugin-registered web /
     image-gen / video-gen / browser providers (which can also carry a
-    ``post_setup``). This is the allowlist the ``hermes tools post-setup``
+    ``post_setup``). This is the allowlist the ``kova tools post-setup``
     command and the dashboard post-setup endpoint validate against, so a
     caller can't drive ``_run_post_setup`` with an arbitrary key.
     """
@@ -1607,7 +1607,7 @@ def valid_post_setup_keys() -> Set[str]:
 
 
 def run_post_setup_command(args) -> int:
-    """``hermes tools post-setup <key>`` — non-interactive post-setup runner.
+    """``kova tools post-setup <key>`` — non-interactive post-setup runner.
 
     Runs the install/bootstrap hook a provider declares (npm install for
     browser/Camofox, pip install for kittentts/piper/ddgs, cua-driver fetch,
@@ -1774,7 +1774,7 @@ def _get_platform_tools(
             if ts in configurable_keys and _toolset_allowed_for_platform(ts, platform)
         }
         # Mixed config: composite toolset alongside configurables (e.g.
-        # ``[hermes-cli, spotify]`` after enabling Spotify via ``hermes
+        # ``[hermes-cli, spotify]`` after enabling Spotify via ``kova
         # tools``). Without expansion the composite name is silently dropped,
         # leaving sessions with only the configurable opt-ins and no native
         # tools. Mirror the else-branch's subset inference, but apply
@@ -1839,7 +1839,7 @@ def _get_platform_tools(
         # NOT include, so the subset loop never picks it up. Inject it
         # directly here, mirroring the HASS_TOKEN → ``homeassistant`` rule
         # below: once you have working creds, you don't have to also click
-        # through ``hermes tools`` to flip the toolset on. Only fires when
+        # through ``kova tools`` to flip the toolset on. Only fires when
         # the user has not yet saved an explicit toolset list — once they
         # do, the saved list is authoritative.
         x_search_auto_enabled = (
@@ -1880,7 +1880,7 @@ def _get_platform_tools(
     # feishu_drive).  These are part of the platform's default composite but
     # absent from CONFIGURABLE_TOOLSETS, so they can't appear in the TUI
     # checklist or in a user-saved config.  Must run in BOTH branches —
-    # otherwise saving via `hermes tools` (which flips has_explicit_config
+    # otherwise saving via `kova tools` (which flips has_explicit_config
     # to True) silently drops them.
     _plat_info = PLATFORMS.get(platform)
     _default_ts = _plat_info["default_toolset"] if _plat_info else f"hermes-{platform}"
@@ -1917,9 +1917,9 @@ def _get_platform_tools(
 
     # Plugin toolsets: enabled by default unless explicitly disabled, or
     # unless the toolset is in _DEFAULT_OFF_TOOLSETS (e.g. spotify —
-    # shipped as a bundled plugin but user must opt in via `hermes tools`
+    # shipped as a bundled plugin but user must opt in via `kova tools`
     # so we don't ship 7 Spotify tool schemas to users who don't use it).
-    # A plugin toolset is "known" for a platform once `hermes tools`
+    # A plugin toolset is "known" for a platform once `kova tools`
     # has been saved for that platform (tracked via known_plugin_toolsets).
     # Unknown plugins default to enabled; known-but-absent = disabled.
     if plugin_ts_keys:
@@ -1996,7 +1996,7 @@ def _get_platform_tools(
         enabled_toolsets -= disabled_set
 
     # #38798: if this platform was explicitly configured but every toolset name
-    # is invalid (e.g. a migration or hand-edit left `hermes` instead of
+    # is invalid (e.g. a migration or hand-edit left `kova` instead of
     # `hermes-cli`), resolve_toolset() returns [] for each and the platform ends
     # up with no native tools — silently, with no error. Surface it at the point
     # tools are resolved for a session so an already-corrupted config is caught
@@ -2061,7 +2061,7 @@ def _save_platform_tools(config: dict, platform: str, enabled_toolset_keys: Set[
         entry for entry in existing_toolsets
         if entry not in configurable_keys and entry not in platform_default_keys
     }
-    # Opening `hermes tools` is the user's opt-in to reconfigure tools, so treat
+    # Opening `kova tools` is the user's opt-in to reconfigure tools, so treat
     # saving from the picker as consent to clear the "no_mcp" sentinel. The
     # picker has no checkbox for no_mcp, so without this users who once set it
     # by hand could never re-enable MCP servers through the UI.
@@ -2672,7 +2672,7 @@ _POST_SETUP_INSTALLED: dict = {
     # is already satisfied. Used by `_toolset_needs_configuration_prompt`
     # to force the provider-setup flow when a no-key provider still needs
     # a binary/dependency install (otherwise an already-configured user
-    # who toggles the toolset on via `hermes tools` gets a silent no-op
+    # who toggles the toolset on via `kova tools` gets a silent no-op
     # because the gate sees "no env vars to ask about" and skips the
     # provider-setup flow that would have run the post_setup hook).
     #
@@ -4216,7 +4216,7 @@ def _reconfigure_simple_requirements(ts_key: str):
 # ─── Main Entry Point ─────────────────────────────────────────────────────────
 
 def tools_command(args=None, first_install: bool = False, config: dict = None):
-    """Entry point for `hermes tools` and `kova setup tools`.
+    """Entry point for `kova tools` and `kova setup tools`.
 
     Args:
         first_install: When True (set by the setup wizard on fresh installs),

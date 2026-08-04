@@ -193,7 +193,7 @@ test('shellQuote neutralizes single quotes and metacharacters', () => {
 test('buildRelaunchScript embeds pid/exec/args/env/cwd and is valid bash', () => {
   const script = buildRelaunchScript({
     pid: 4242,
-    execPath: '/home/u/.hermes/hermes-agent/apps/desktop/release/linux-unpacked/Hermes',
+    execPath: '/home/u/.hermes/hermes-agent/apps/desktop/release/linux-unpacked/Kova',
     args: ['hermes://open/agent/42', "--note=it's fine"],
     env: { HERMES_HOME: '/home/u/.hermes', HERMES_DESKTOP_REMOTE_URL: 'http://box:9119' },
     cwd: '/home/u/work dir'
@@ -208,7 +208,7 @@ test('buildRelaunchScript embeds pid/exec/args/env/cwd and is valid bash', () =>
   assert.match(script, /export HERMES_HOME='\/home\/u\/\.hermes'/)
   assert.match(script, /export HERMES_DESKTOP_REMOTE_URL='http:\/\/box:9119'/)
   assert.match(script, /cd '\/home\/u\/work dir'/)
-  assert.match(script, /exec '.*\/linux-unpacked\/Hermes' 'hermes:\/\/open\/agent\/42' '--note=it'\\''s fine'/)
+  assert.match(script, /exec '.*\/linux-unpacked\/Kova' 'hermes:\/\/open\/agent\/42' '--note=it'\\''s fine'/)
 
   // It must be syntactically valid bash (`bash -n`). Write to a temp file and lint.
   const tmp = path.join(os.tmpdir(), `hermes-relaunch-test-${Date.now()}.sh`)
@@ -240,5 +240,5 @@ test('buildRelaunchScript with no args/env still lints clean', () => {
   }
 
   // exec line has no trailing args.
-  assert.match(script, /exec '\/opt\/Hermes\/Hermes'\n/)
+  assert.match(script, /exec '\/opt\/Kova\/Kova'\n/)
 })

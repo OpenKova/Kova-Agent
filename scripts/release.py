@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Hermes Agent Release Script
+"""Kova Agent Release Script
 
 Generates changelogs and creates GitHub releases with CalVer tags.
 
@@ -1971,7 +1971,7 @@ LEGACY_AUTHOR_MAP = {
     "ethie@nous": "ethernet8023",  # PR #29342 (TUI clipboard copy on linux/wayland)
     "jiahuigu@sjtu.edu.cn": "Jiahui-Gu",  # PR #29276 (guard pickle.loads in darwinian-evolver)
     "justinccdev@gmail.com": "justincc",  # PR #28914 (set tool_name on tool-result messages)
-    "kdkcfp@gmail.com": "slowtokki0409",  # PR #29025 (ignore local Hermes runtime files)
+    "kdkcfp@gmail.com": "slowtokki0409",  # PR #29025 (ignore local Kova runtime files)
     "peter.yuqin@gmail.com": "WuKongAI-CMU",  # PR #10082 (reject symlinked audio inputs)
     "sunil.nitie@gmail.com": "Sunil123135",  # PR #31031 (Windows Docker Desktop compose)
     "weichangyuwcy@gmail.com": "ChyuWei",  # PR #30987 (TUI TTS env var on voice off)
@@ -2186,7 +2186,7 @@ def update_version_files(semver: str, calver_date: str):
     PYPROJECT_FILE.write_text(pyproject)
 
     # Keep the desktop Electron app's package.json version in lockstep with the
-    # Python package version. The desktop About panel reads the live Hermes
+    # Python package version. The desktop About panel reads the live Kova
     # version at runtime, but app.getVersion()/packaging metadata still come
     # from this field, so it must track pyproject to avoid drift.
     desktop_pkg = REPO_ROOT / "apps" / "desktop" / "package.json"
@@ -2358,14 +2358,14 @@ def generate_changelog(commits, tag_name, semver, repo_url="https://github.com/O
     # Header
     now = datetime.now()
     date_str = now.strftime("%B %d, %Y")
-    lines.append(f"# Hermes Agent v{semver} ({tag_name})")
+    lines.append(f"# Kova Agent v{semver} ({tag_name})")
     lines.append("")
     lines.append(f"**Release Date:** {date_str}")
     lines.append("")
 
     if first_release:
         lines.append("> 🎉 **First official release!** This marks the beginning of regular weekly releases")
-        lines.append("> for Hermes Agent. See below for everything included in this initial release.")
+        lines.append("> for Kova Agent. See below for everything included in this initial release.")
         lines.append("")
 
     # Group commits by category
@@ -2455,7 +2455,7 @@ def generate_changelog(commits, tag_name, semver, repo_url="https://github.com/O
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Hermes Agent Release Tool")
+    parser = argparse.ArgumentParser(description="Kova Agent Release Tool")
     parser.add_argument("--bump", choices=["major", "minor", "patch"],
                         help="Which semver component to bump")
     parser.add_argument("--publish", action="store_true",
@@ -2503,7 +2503,7 @@ def main():
             return
 
     print(f"{'='*60}")
-    print("  Hermes Agent Release Preview")
+    print("  Kova Agent Release Preview")
     print(f"{'='*60}")
     print(f"  CalVer tag:      {tag_name}")
     print(f"  SemVer:          v{current_version} → v{new_version}")
@@ -2555,7 +2555,7 @@ def main():
         # Create annotated tag
         tag_result = git_result(
             "tag", "-a", tag_name, "-m",
-            f"Hermes Agent v{new_version} ({calver_date})\n\nWeekly release"
+            f"Kova Agent v{new_version} ({calver_date})\n\nWeekly release"
         )
         if tag_result.returncode != 0:
             print(f"  ✗ Failed to create tag {tag_name}: {tag_result.stderr.strip()}")
@@ -2577,7 +2577,7 @@ def main():
 
         gh_cmd = [
             "gh", "release", "create", tag_name,
-            "--title", f"Hermes Agent v{new_version} ({calver_date})",
+            "--title", f"Kova Agent v{new_version} ({calver_date})",
             "--notes-file", str(changelog_file),
         ]
 
@@ -2603,7 +2603,7 @@ def main():
             print(f"    Release notes kept at: {changelog_file}")
             print("    Tag was created locally. Create the release manually:")
             print(
-                f"    gh release create {tag_name} --title 'Hermes Agent v{new_version} ({calver_date})' "
+                f"    gh release create {tag_name} --title 'Kova Agent v{new_version} ({calver_date})' "
                 f"--notes-file .release_notes.md"
             )
             print(f"\n  ✓ Release v{new_version} ({tag_name}) prepared for manual publish.")

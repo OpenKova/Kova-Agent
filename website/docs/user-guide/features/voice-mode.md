@@ -8,7 +8,7 @@ description: "Real-time voice conversations with Kova Agent — CLI, Telegram, D
 
 Kova Agent supports full voice interaction across CLI and messaging platforms. Talk to the agent using your microphone, hear spoken replies, and have live voice conversations in Discord voice channels.
 
-If you want a practical setup walkthrough with recommended configurations and real usage patterns, see [Use Voice Mode with Hermes](/guides/use-voice-mode-with-hermes).
+If you want a practical setup walkthrough with recommended configurations and real usage patterns, see [Use Voice Mode with Kova](/guides/use-voice-mode-with-hermes).
 
 ## Prerequisites
 
@@ -16,14 +16,14 @@ Before using voice features, make sure you have:
 
 1. **Kova Agent installed** — via the install script (see [Installation](/getting-started/installation))
 2. **An LLM provider configured** — run `hermes model` or set your preferred provider credentials in `~/.hermes/.env`
-3. **A working base setup** — run `hermes` to verify the agent responds to text before enabling voice
+3. **A working base setup** — run `kova` to verify the agent responds to text before enabling voice
 
 :::tip
 The `~/.hermes/` directory and default `config.yaml` are created automatically the first time you run `hermes`. You only need to create `~/.hermes/.env` manually for API keys.
 :::
 
 :::tip Nous Portal covers both
-A paid [Nous Portal](/user-guide/features/tool-gateway) subscription supplies the LLM (step 2) **and** OpenAI TTS via the Tool Gateway — no separate OpenAI key needed. On a fresh install, `hermes setup --portal` wires both up at once.
+A paid [Nous Portal](/user-guide/features/tool-gateway) subscription supplies the LLM (step 2) **and** OpenAI TTS via the Tool Gateway — no separate OpenAI key needed. On a fresh install, `kova setup --portal` wires both up at once.
 :::
 
 ## Overview
@@ -116,7 +116,7 @@ Voice mode is available in both the **classic CLI** (`hermes chat`) and the **TU
 Start the CLI and enable voice mode:
 
 ```bash
-hermes                # Start the interactive CLI
+kova                # Start the interactive CLI
 ```
 
 Then use these commands inside the CLI:
@@ -131,7 +131,7 @@ Then use these commands inside the CLI:
 
 ### How It Works
 
-1. Start the CLI with `hermes` and enable voice mode with `/voice on`
+1. Start the CLI with `kova` and enable voice mode with `/voice on`
 2. **Press Ctrl+B** — a beep plays (880Hz), recording starts
 3. **Speak** — a live audio level bar shows your input: `● [▁▂▃▅▇▇▅▂] ❯`
 4. **Stop speaking** — after 3 seconds of silence, recording auto-stops
@@ -191,8 +191,8 @@ If you haven't set up your messaging bots yet, see the platform-specific guides:
 Start the gateway to connect to your messaging platforms:
 
 ```bash
-hermes gateway        # Start the gateway (connects to configured platforms)
-hermes gateway setup  # Interactive setup wizard for first-time configuration
+kova gateway        # Start the gateway (connects to configured platforms)
+kova gateway setup  # Interactive setup wizard for first-time configuration
 ```
 
 ### Discord: Channels vs DMs
@@ -337,7 +337,7 @@ DISCORD_ALLOWED_USERS=your-user-id
 ### Start the Gateway
 
 ```bash
-hermes gateway        # Start with existing configuration
+kova gateway        # Start with existing configuration
 ```
 
 The bot should come online in Discord within a few seconds.
@@ -498,7 +498,7 @@ brew install portaudio    # macOS
 sudo apt install portaudio19-dev  # Ubuntu
 ```
 
-If you are running Hermes inside Docker on a Linux desktop, the container also needs access to your host audio socket. See the [Docker audio bridge](/user-guide/docker#optional-linux-desktop-audio-bridge) notes for a PulseAudio/PipeWire-compatible setup.
+If you are running Kova inside Docker on a Linux desktop, the container also needs access to your host audio socket. See the [Docker audio bridge](/user-guide/docker#optional-linux-desktop-audio-bridge) notes for a PulseAudio/PipeWire-compatible setup.
 
 ### Bot doesn't respond in Discord server channels
 

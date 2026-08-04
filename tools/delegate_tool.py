@@ -3328,7 +3328,7 @@ def _resolve_delegation_credentials(cfg: dict, parent_agent) -> dict:
 
 
 def _load_config() -> dict:
-    """Load delegation config from the active Hermes config.
+    """Load delegation config from the active Kova config.
 
     Prefer the shared persistent loader because it follows the active
     HERMES_HOME/profile. ``cli.CLI_CONFIG`` is a legacy fallback for entry

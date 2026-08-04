@@ -41,7 +41,7 @@ The `homeassistant` toolset is automatically enabled when `HASS_TOKEN` is set. B
 ### 3. Start the Gateway
 
 ```bash
-hermes gateway
+kova gateway
 ```
 
 Home Assistant will appear as a connected platform alongside any other messaging platforms (Telegram, Discord, etc.).
@@ -255,7 +255,7 @@ Agent automatically:
 
 **Environment variables not picked up.**
 The adapter reads credentials from `~/.hermes/.env` (auto-merged at startup) or
-from `config.yaml`. Double-check the file lives under the active Hermes profile
+from `config.yaml`. Double-check the file lives under the active Kova profile
 home and that there's no stray quoting around the URL/token. Restart the gateway
 after editing — env changes are only applied on process start.
 
@@ -265,5 +265,5 @@ The token must be a *Long-Lived Access Token* created from your HA user profile
 page (**Profile → Security → Long-lived access tokens**). Short-lived UI
 session tokens won't work. Also verify the base URL includes the scheme and
 port (e.g. `http://homeassistant.local:8123`) and is reachable from the host
-running Hermes — `curl -H "Authorization: Bearer <token>" <url>/api/` should
+running Kova — `curl -H "Authorization: Bearer <token>" <url>/api/` should
 return `{"message": "API running."}`.

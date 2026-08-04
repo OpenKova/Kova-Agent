@@ -137,12 +137,12 @@ describe('SidebarSessionRow', () => {
         onDelete={noop}
         onPin={noop}
         onResume={noop}
-        session={makeSession({ title: 'Hermes doctor health check results' })}
+        session={makeSession({ title: 'Kova doctor health check results' })}
       />
     )
 
     expect(screen.getByTestId('session-actions-menu').getAttribute('data-tooltip')).toBe(
-      'Actions for Hermes doctor health check results'
+      'Actions for Kova doctor health check results'
     )
   })
 

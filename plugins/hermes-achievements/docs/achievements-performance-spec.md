@@ -1,4 +1,4 @@
-# Hermes Achievements Performance Spec (Post-Hackathon)
+# Kova Achievements Performance Spec (Post-Hackathon)
 
 Status: Draft (no code changes yet)
 Owner: hermes-achievements plugin

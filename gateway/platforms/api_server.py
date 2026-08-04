@@ -8,8 +8,8 @@ Exposes an HTTP server with endpoints:
 - DELETE /v1/responses/{response_id} — Delete a stored response
 - GET  /v1/models                  — lists kova-agent and any configured model_routes aliases
 - GET  /v1/capabilities            — machine-readable API capabilities for external UIs
-- GET  /api/sessions               — list client-visible Hermes sessions
-- POST /api/sessions               — create an empty Hermes session
+- GET  /api/sessions               — list client-visible Kova sessions
+- POST /api/sessions               — create an empty Kova session
 - GET/PATCH/DELETE /api/sessions/{session_id} — read/update/delete a session
 - GET  /api/sessions/{session_id}/messages — read session message history
 - POST /api/sessions/{session_id}/fork — branch a session using SessionDB lineage
@@ -931,7 +931,7 @@ def _derive_chat_session_id(
     conversation history with every request.  The system prompt and first user
     message are constant across all turns of the same conversation, so hashing
     them produces a deterministic session ID that lets the API server reuse
-    the same Hermes session (and therefore the same Docker container sandbox
+    the same Kova session (and therefore the same Docker container sandbox
     directory) across turns.
     """
     seed = f"{system_prompt or ''}\n{first_user_message}"
@@ -1695,7 +1695,7 @@ class APIServerAdapter(BasePlatformAdapter):
     def _ensure_session_db(self):
         """Lazily initialise and return the SessionDB for the active profile home.
 
-        Sessions are persisted to ``state.db`` so that ``hermes sessions list``
+        Sessions are persisted to ``state.db`` so that ``kova sessions list``
         shows API-server conversations alongside CLI and gateway ones.
 
         Under multiplex ``/p/<profile>/`` requests the profile runtime scope
@@ -2078,14 +2078,14 @@ class APIServerAdapter(BasePlatformAdapter):
 
         External UIs and orchestrators use this endpoint to discover the API
         server's plugin-safe contract without scraping docs or assuming that
-        every Hermes version exposes the same endpoints.
+        every Kova version exposes the same endpoints.
         """
         auth_err = self._check_auth(request)
         if auth_err:
             return auth_err
 
         return web.json_response({
-            "object": "hermes.api_server.capabilities",
+            "object": "kova.api_server.capabilities",
             "platform": "kova-agent",
             "model": self._model_name,
             "auth": {
@@ -2097,7 +2097,7 @@ class APIServerAdapter(BasePlatformAdapter):
                 "tool_execution": "server",
                 "split_runtime": False,
                 "description": (
-                    "The API server creates a server-side Hermes AIAgent; "
+                    "The API server creates a server-side Kova AIAgent; "
                     "tools execute on the API-server host unless a future "
                     "explicit split-runtime mode is enabled."
                 ),
@@ -2314,7 +2314,7 @@ class APIServerAdapter(BasePlatformAdapter):
             return []
 
     async def _handle_list_sessions(self, request: "web.Request") -> "web.Response":
-        """GET /api/sessions — list persisted Hermes sessions."""
+        """GET /api/sessions — list persisted Kova sessions."""
         auth_err = self._check_auth(request)
         if auth_err:
             return auth_err
@@ -2343,7 +2343,7 @@ class APIServerAdapter(BasePlatformAdapter):
         })
 
     async def _handle_create_session(self, request: "web.Request") -> "web.Response":
-        """POST /api/sessions -- create an empty Hermes session row.
+        """POST /api/sessions -- create an empty Kova session row.
 
         The existence check, insert, title handling, and invalid-title
         rollback run as a single off-loop operation to avoid a TOCTOU
@@ -2431,7 +2431,7 @@ class APIServerAdapter(BasePlatformAdapter):
             return web.json_response(_openai_error(f"Session already exists: {session_id}", code="session_exists"), status=409)
         if err and err.startswith("title:"):
             return web.json_response(_openai_error(err[len("title:"):], code="invalid_title"), status=400)
-        return web.json_response({"object": "hermes.session", "session": self._session_response(session)}, status=201)
+        return web.json_response({"object": "kova.session", "session": self._session_response(session)}, status=201)
 
     async def _handle_get_session(self, request: "web.Request") -> "web.Response":
         """GET /api/sessions/{session_id}."""
@@ -2441,7 +2441,7 @@ class APIServerAdapter(BasePlatformAdapter):
         session, err = await self._get_existing_session_or_404(request.match_info["session_id"])
         if err:
             return err
-        return web.json_response({"object": "hermes.session", "session": self._session_response(session)})
+        return web.json_response({"object": "kova.session", "session": self._session_response(session)})
 
     async def _handle_patch_session(self, request: "web.Request") -> "web.Response":
         """PATCH /api/sessions/{session_id} — update client-safe session metadata."""
@@ -2469,7 +2469,7 @@ class APIServerAdapter(BasePlatformAdapter):
         if body.get("end_reason"):
             await asyncio.to_thread(db.end_session, session_id, str(body["end_reason"]))
         session = await asyncio.to_thread(db.get_session, session_id) or session
-        return web.json_response({"object": "hermes.session", "session": self._session_response(session)})
+        return web.json_response({"object": "kova.session", "session": self._session_response(session)})
 
     async def _handle_delete_session(self, request: "web.Request") -> "web.Response":
         """DELETE /api/sessions/{session_id}."""
@@ -2482,7 +2482,7 @@ class APIServerAdapter(BasePlatformAdapter):
             return err
         db = await self._ensure_session_db_async()
         deleted = await asyncio.to_thread(db.delete_session, session_id)
-        return web.json_response({"object": "hermes.session.deleted", "id": session_id, "deleted": bool(deleted)})
+        return web.json_response({"object": "kova.session.deleted", "id": session_id, "deleted": bool(deleted)})
 
     async def _handle_session_messages(self, request: "web.Request") -> "web.Response":
         """GET /api/sessions/{session_id}/messages."""
@@ -2547,7 +2547,7 @@ class APIServerAdapter(BasePlatformAdapter):
         except ValueError as exc:
             return web.json_response(_openai_error(str(exc), code="invalid_title"), status=400)
         fork = await asyncio.to_thread(db.get_session, fork_id) or {"id": fork_id, "parent_session_id": source_id}
-        return web.json_response({"object": "hermes.session", "session": self._session_response(fork)}, status=201)
+        return web.json_response({"object": "kova.session", "session": self._session_response(fork)}, status=201)
 
     @_admit_api_agent_request
     async def _handle_session_chat(self, request: "web.Request") -> "web.Response":
@@ -2583,7 +2583,7 @@ class APIServerAdapter(BasePlatformAdapter):
             headers["X-Hermes-Session-Key"] = gateway_session_key
         return web.json_response(
             {
-                "object": "hermes.session.chat.completion",
+                "object": "kova.session.chat.completion",
                 "session_id": effective_session_id or session_id,
                 "message": {"role": "assistant", "content": final_response},
                 "usage": usage,
@@ -2846,7 +2846,7 @@ class APIServerAdapter(BasePlatformAdapter):
         else:
             # Derive a stable session ID from the conversation fingerprint so
             # that consecutive messages from the same Open WebUI (or similar)
-            # conversation map to the same Hermes session.  The first user
+            # conversation map to the same Kova session.  The first user
             # message + system prompt are constant across all turns.
             first_user = ""
             for cm in conversation_messages:
@@ -2887,7 +2887,7 @@ class APIServerAdapter(BasePlatformAdapter):
             _started_tool_call_ids: set[str] = set()
 
             def _on_tool_start(tool_call_id, function_name, function_args):
-                """Emit ``hermes.tool.progress`` with ``status: running``.
+                """Emit ``kova.tool.progress`` with ``status: running``.
 
                 Replaces the old ``tool_progress_callback("tool.started",
                 ...)`` emit so SSE consumers receive a single event per
@@ -3034,7 +3034,7 @@ class APIServerAdapter(BasePlatformAdapter):
 
         # Soft-partial path: we have *some* text but the run did not complete
         # (e.g. truncation with partial buffered output). Still 200 but signal
-        # truncation via finish_reason="length" + Hermes-specific extras.
+        # truncation via finish_reason="length" + Kova-specific extras.
         response_data = {
             "id": completion_id,
             "object": "chat.completion",
@@ -3120,7 +3120,7 @@ class APIServerAdapter(BasePlatformAdapter):
 
                 Plain strings are sent as normal ``delta.content`` chunks.
                 Tagged tuples ``("__tool_progress__", payload)`` are sent
-                as a custom ``event: hermes.tool.progress`` SSE event so
+                as a custom ``event: kova.tool.progress`` SSE event so
                 frontends can display them without storing the markers in
                 conversation history.  See #6972 for the original event,
                 #16588 for the ``toolCallId``/``status`` lifecycle fields.
@@ -3128,7 +3128,7 @@ class APIServerAdapter(BasePlatformAdapter):
                 if isinstance(item, tuple) and len(item) == 2 and item[0] == "__tool_progress__":
                     event_data = json.dumps(item[1])
                     await response.write(
-                        f"event: hermes.tool.progress\ndata: {event_data}\n\n".encode()
+                        f"event: kova.tool.progress\ndata: {event_data}\n\n".encode()
                     )
                 else:
                     content_chunk = {
@@ -4847,7 +4847,7 @@ class APIServerAdapter(BasePlatformAdapter):
         now = time.time()
         current = self._run_statuses.get(run_id, {})
         current.update({
-            "object": "hermes.run",
+            "object": "kova.run",
             "run_id": run_id,
             "status": status,
             "updated_at": now,
@@ -5410,7 +5410,7 @@ class APIServerAdapter(BasePlatformAdapter):
                 pass
 
         return web.json_response({
-            "object": "hermes.run.approval_response",
+            "object": "kova.run.approval_response",
             "run_id": run_id,
             "choice": choice,
             "resolved": resolved,
@@ -5580,7 +5580,7 @@ class APIServerAdapter(BasePlatformAdapter):
             for method, path, handler in self._http_route_table():
                 self._app.router.add_route(method, path, handler)
                 self._app.router.add_route(method, f"/p/{{profile}}{path}", handler)
-            # Store the adapter after native routes are registered. Local Hermes-Relay
+            # Store the adapter after native routes are registered. Local Kova-Relay
             # bootstrap shims use this key as a feature-detection hook; registering
             # native routes first lets those shims no-op instead of shadowing the
             # upstream session-control handlers.

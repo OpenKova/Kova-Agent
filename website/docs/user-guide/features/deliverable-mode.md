@@ -77,7 +77,7 @@ mutilated.
 
 ## Kanban: artifacts ride completion notifications
 
-If you use Hermes' kanban multi-agent workflow, workers can attach
+If you use Kova' kanban multi-agent workflow, workers can attach
 deliverable files to their `kanban_complete` call:
 
 ```python

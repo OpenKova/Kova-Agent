@@ -24,7 +24,7 @@ from typing import Any, Dict, List
 
 
 def hooks_command(args) -> None:
-    """Entry point for ``hermes hooks`` — dispatches to the requested action."""
+    """Entry point for ``kova hooks`` — dispatches to the requested action."""
     sub = getattr(args, "hooks_action", None)
 
     if not sub:
@@ -107,7 +107,7 @@ def _cmd_list(_args) -> None:
 # Synthetic kwargs matching the real invoke_hook() call sites — these are
 # passed verbatim to agent.shell_hooks.run_once(), which routes them through
 # the same _serialize_payload() that production firings use.  That way the
-# stdin a script sees under `hermes hooks test` and `hermes hooks doctor`
+# stdin a script sees under `kova hooks test` and `kova hooks doctor`
 # is identical in shape to what it will see at runtime.
 _DEFAULT_PAYLOADS = {
     "pre_tool_call": {
@@ -268,7 +268,7 @@ def _print_run_result(result: Dict[str, Any]) -> None:
 
     parsed = result.get("parsed")
     if parsed:
-        print(f"      parsed (Hermes wire shape): {json.dumps(parsed)}")
+        print(f"      parsed (Kova wire shape): {json.dumps(parsed)}")
     else:
         print("      parsed: <none — hook contributed nothing to the dispatcher>")
 
@@ -351,12 +351,12 @@ def _doctor_one(spec, shell_hooks) -> int:
             problems += 1
             print(f"      ⚠ script modified since approval "
                   f"(was {mtime_at}, now {mtime_now}) — review changes, "
-                  f"then `hermes hooks revoke` + re-approve to refresh")
+                  f"then `kova hooks revoke` + re-approve to refresh")
         elif mtime_now and mtime_at and mtime_now == mtime_at:
             print("      ✓ script unchanged since approval")
 
     # 4. Produces valid JSON for a synthetic payload — only when the entry
-    # is already allowlisted.  Otherwise `hermes hooks doctor` would execute
+    # is already allowlisted.  Otherwise `kova hooks doctor` would execute
     # every script listed in a freshly-pulled config before the user has
     # reviewed them, which directly contradicts the documented workflow
     # ("spot newly-added hooks *before they register*").

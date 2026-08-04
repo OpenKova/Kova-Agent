@@ -54,7 +54,7 @@ nous = NousProfile(
     aliases=("nous-portal", "nousresearch"),
     env_vars=("NOUS_API_KEY",),
     display_name="Kova AI",
-    description="Kova AI — Hermes model family",
+    description="Kova AI — Kova model family",
     signup_url="https://nousresearch.com/",
     fallback_models=(
         "hermes-3-405b",

@@ -1,4 +1,4 @@
-"""``hermes plugins`` CLI subcommand — install, update, remove, and list plugins.
+"""``kova plugins`` CLI subcommand — install, update, remove, and list plugins.
 
 Plugins are installed from Git repositories into ``~/.hermes/plugins/``.
 Supports full URLs and ``owner/repo`` shorthand (resolves to GitHub).
@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 def _resolve_git_executable() -> Optional[str]:
     """Resolve a git binary for subprocess use when ``PATH`` may be minimal.
 
-    Matches other Hermes subprocess resolution: :func:`shutil.which` first,
+    Matches other Kova subprocess resolution: :func:`shutil.which` first,
     then common Git for Windows install paths and POSIX defaults.
     """
     found = shutil.which("git")
@@ -519,7 +519,7 @@ def _install_plugin_core(identifier: str, *, force: bool) -> tuple[Path, dict, s
                 raise PluginOperationError(
                     f"Plugin '{plugin_name}' requires manifest_version {mv}, "
                     f"but this installer only supports up to {_SUPPORTED_MANIFEST_VERSION}. "
-                    f"Run {recommended_update_command()} to update Hermes.",
+                    f"Run {recommended_update_command()} to update Kova.",
                 ) from None
 
         if target.exists():
@@ -592,7 +592,7 @@ def cmd_install(
     ).exists():
         console.print(
             f"[yellow]Warning:[/yellow] {installed_name} doesn't contain plugin.yaml "
-            f"or __init__.py. It may not be a valid Hermes plugin.",
+            f"or __init__.py. It may not be a valid Kova plugin.",
         )
 
     _prompt_plugin_env_vars(installed_manifest, console)
@@ -721,7 +721,7 @@ _BASIC_AUTH_PLUGIN_KEYS = frozenset({"basic", "dashboard_auth/basic"})
 def ensure_basic_auth_plugin_enabled_in_config(cfg: dict) -> bool:
     """Re-enable the bundled basic dashboard-auth plugin in *cfg*.
 
-    ``kova setup`` / ``hermes plugins disable basic`` can park the plugin
+    ``kova setup`` / ``kova plugins disable basic`` can park the plugin
     in ``plugins.disabled`` while ``dashboard.basic_auth`` is configured.
     The basic provider is a bundled backend that still respects the
     deny-list, so password auth silently fails until the block is removed.
@@ -778,7 +778,7 @@ def _resolve_plugin_key(name: str) -> Optional[str]:
     returns the canonical key the loader gates on (``manifest.key`` or, for a
     flat plugin, the bare name). Returns ``None`` when no plugin matches.
 
-    This is the single normalization point so ``hermes plugins enable`` /
+    This is the single normalization point so ``kova plugins enable`` /
     ``disable`` write the same key that ``PluginManager`` matches against —
     nested category plugins (e.g. ``observability/nemo_relay``) included.
     """
@@ -892,7 +892,7 @@ def cmd_enable(name: str, allow_tool_override: Optional[bool] = None) -> None:
         console.print(f"[dim]Plugin '{key}' is already enabled.[/dim]")
 
     # Built-in tool override is a privileged grant. Bundled plugins ship with
-    # Hermes core and are trusted; every other source needs operator opt-in.
+    # Kova core and are trusted; every other source needs operator opt-in.
     if source == "bundled":
         return
 
@@ -934,7 +934,7 @@ def _resolve_tool_override_grant(
     else:
         console.print(
             f"[dim]{key} may not override built-in tools. Re-run "
-            f"`hermes plugins enable {key} --allow-tool-override` to grant "
+            f"`kova plugins enable {key} --allow-tool-override` to grant "
             "this later.[/dim]"
         )
 
@@ -1071,7 +1071,7 @@ def _discover_entrypoint_plugins() -> list[tuple[str, str, str, str]]:
 
     Entry-point plugins are installed as Python packages, so they do not have a
     plugin directory under ``~/.hermes/plugins``. Include package metadata here
-    so ``hermes plugins list`` can show and enable them.
+    so ``kova plugins list`` can show and enable them.
     """
     from hermes_cli.plugins import ENTRY_POINTS_GROUP
 
@@ -1110,7 +1110,7 @@ def _plugin_status(name: str, enabled: set, disabled: set, key: str = "") -> str
 
 
 def _filter_plugin_entries(entries: list, args: Any, enabled: set, disabled: set) -> list:
-    """Apply ``hermes plugins list`` CLI filters."""
+    """Apply ``kova plugins list`` CLI filters."""
     filtered = entries
     if getattr(args, "no_bundled", False) or getattr(args, "user", False):
         filtered = [entry for entry in filtered if entry[3] != "bundled"]
@@ -1206,7 +1206,7 @@ def _discover_context_engines() -> list[tuple[str, str]]:
     """Return [(name, description), ...] for available context engines.
 
     Includes repo-shipped engines from ``plugins/context_engine/`` AND
-    plugin-registered engines (third-party engines installed as Hermes
+    plugin-registered engines (third-party engines installed as Kova
     plugins via ``ctx.register_context_engine``). Repo-shipped descriptions
     win when a plugin-registered engine collides on name.
     """
@@ -1371,7 +1371,7 @@ def cmd_toggle() -> None:
     # canonical key (``web/firecrawl``), while the manifest name may differ
     # (``web-firecrawl``). Persisting the bare name here caused the two
     # forms to drift: the menu would write ``web-firecrawl`` to
-    # plugins.disabled, but ``hermes plugins enable web/firecrawl`` cleared
+    # plugins.disabled, but ``kova plugins enable web/firecrawl`` cleared
     # only the key — so "explicit disable wins" kept a bundled backend off
     # forever (pi314's #40190 symptom). Keys keep every surface aligned.
     plugin_keys = []

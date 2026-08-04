@@ -1,4 +1,4 @@
-"""``kova logs`` — view and filter Hermes log files.
+"""``kova logs`` — view and filter Kova log files.
 
 Supports tailing, following, session filtering, level filtering,
 component filtering, and relative time ranges.  All log files live
@@ -179,7 +179,7 @@ def tail_log(
     log_path = get_hermes_home() / "logs" / filename
     if not log_path.exists():
         print(f"Log file not found: {log_path}")
-        print("(Logs are created when Hermes runs — try 'kova chat' first)")
+        print("(Logs are created when Kova runs — try 'kova chat' first)")
         sys.exit(1)
 
     # Parse --since into a datetime cutoff

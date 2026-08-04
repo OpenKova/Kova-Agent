@@ -1,6 +1,6 @@
 """Dependency-light venv recovery that runs BEFORE kova_cli.main's imports.
 
-The ``hermes`` console entry point is ``kova_cli.main:main``.  Importing
+The ``kova`` console entry point is ``kova_cli.main:main``.  Importing
 ``kova_cli.main`` pulls in third-party packages at module level (``dotenv``
 via ``kova_cli.env_loader``, ``yaml`` via ``kova_cli.config``, ...).  In
 the exact failure state the update-recovery markers exist for — a failed lazy

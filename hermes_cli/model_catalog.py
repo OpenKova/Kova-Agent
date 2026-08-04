@@ -1,6 +1,6 @@
 """Remote model catalog fetcher.
 
-The Hermes docs site hosts a JSON manifest of curated models for providers
+The Kova docs site hosts a JSON manifest of curated models for providers
 we want to update without shipping a release (currently OpenRouter and
 Nous Portal). This module fetches, validates, and caches that manifest,
 falling back to the in-repo hardcoded lists when the network is unavailable.
@@ -372,7 +372,7 @@ def get_default_model_from_cache(provider: str) -> str | None:
     """Return the catalog's labeled default model for ``provider`` — cache only.
 
     The manifest marks exactly one model entry per provider with
-    ``"default": true``; that entry is the model Hermes silently lands on when
+    ``"default": true``; that entry is the model Kova silently lands on when
     the user never picked one. This accessor reads ONLY the in-process copy or
     the disk cache — it NEVER triggers a network fetch, so it is safe on hot
     resolution paths (agent build, gateway session setup) that must stay
@@ -424,7 +424,7 @@ def seed_cache_from_checkout(project_root: "Path | str") -> bool:
 
 
 def reset_cache() -> None:
-    """Clear the in-process cache. Used by tests and ``hermes model --refresh``."""
+    """Clear the in-process cache. Used by tests and ``kova model --refresh``."""
     global _catalog_cache, _catalog_cache_source_mtime
     _catalog_cache = None
     _catalog_cache_source_mtime = 0.0

@@ -257,7 +257,7 @@ def _build_codex_gpt5_autoraise_notice(
         f"ℹ Codex {model} caps context at {cap}, so auto-compaction was raised "
         f"to {to_pct}% (from {from_pct}%) to use more of the window before "
         f"summarizing.\n"
-        f"  Opt back out: hermes config set compression.codex_gpt55_autoraise false"
+        f"  Opt back out: kova config set compression.codex_gpt55_autoraise false"
     )
 
 
@@ -1249,7 +1249,7 @@ def init_agent(
                         raise RuntimeError(
                             f"Provider '{_explicit}' is set in config.yaml but no API key "
                             f"was found. Set the {_env_hint} environment "
-                            f"variable, or switch to a different provider with `hermes model`."
+                            f"variable, or switch to a different provider with `kova model`."
                         )
                 if not getattr(agent, "_fallback_activated", False):
                     # No provider configured — reject with a clear message.
@@ -1552,7 +1552,7 @@ def init_agent(
         agent.show_commentary = True
 
     # LM Studio can either be explicitly preloaded through LM Studio's
-    # management API (the historical Hermes behavior) or left to LM Studio's
+    # management API (the historical Kova behavior) or left to LM Studio's
     # just-in-time / Auto-Evict chat-completions path.  Keep the default
     # explicit for backward compatibility; users with LM Studio Auto-Evict can
     # opt into JIT via ``model.lmstudio_load_mode: jit``.
@@ -1738,7 +1738,7 @@ def init_agent(
             pass
 
     # Per-platform prompt-hint overrides (config.yaml → platform_hints).
-    # Lets an enterprise admin append to or replace Hermes' built-in
+    # Lets an enterprise admin append to or replace Kova' built-in
     # platform hint for a single messaging platform (e.g. WhatsApp) without
     # affecting other platforms. Shape:
     #   platform_hints:
@@ -2408,7 +2408,7 @@ def init_agent(
             f"(this must be at least {MINIMUM_CONTEXT_LENGTH // 1000}K)."
         )
 
-    # Nous Hermes 3/4 are chat models, not tool-call-tuned. The interactive
+    # Nous Kova 3/4 are chat models, not tool-call-tuned. The interactive
     # CLI already warns via cli.py show_banner() (richer output + /model hint),
     # so skip platform=="cli" here to avoid emitting the warning twice per
     # startup. (Gateway/TUI/cron construct with quiet_mode=True and are already

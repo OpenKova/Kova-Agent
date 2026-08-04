@@ -26,7 +26,7 @@ try:
     import hermes_bootstrap  # noqa: F401
 except ModuleNotFoundError:
     # Graceful fallback when hermes_bootstrap isn't registered in the venv
-    # yet — happens during partial ``hermes update`` where git-reset landed
+    # yet — happens during partial ``kova update`` where git-reset landed
     # new code but ``uv pip install -e .`` didn't finish.  Missing bootstrap
     # means UTF-8 stdio setup is skipped on Windows; POSIX is unaffected.
     pass
@@ -69,7 +69,7 @@ def _launch_cwd_for_session(source: str) -> Optional[str]:
     """Working directory to stamp on a new session row, or None.
 
     Only local CLI sessions get a recorded cwd: the directory the process was
-    launched from is meaningful for ``hermes -c`` / ``--resume`` (relaunch
+    launched from is meaningful for ``kova -c`` / ``--resume`` (relaunch
     where you left off). Gateway/cron/remote-backend sessions have no stable
     host cwd to restore, so they record nothing.
 
@@ -849,7 +849,7 @@ class AIAgent:
         all non-forced output is suppressed.
 
         ``suppress_status_output`` is a stricter CLI automation mode used by
-        parseable single-query flows such as ``hermes chat -q``. In that mode,
+        parseable single-query flows such as ``kova chat -q``. In that mode,
         all status/diagnostic prints routed through ``_vprint`` are suppressed
         so stdout stays machine-readable.
         """
@@ -2242,7 +2242,7 @@ class AIAgent:
         That body covers several real causes we cannot distinguish without
         more info from xAI.  The most common (and least obvious) one is
         that **X Premium+ does NOT include API access** — only standalone
-        SuperGrok subscribers can use Hermes against xai-oauth.  Lots of
+        SuperGrok subscribers can use Kova against xai-oauth.  Lots of
         users see Grok in their X app, assume it works here too, and hit
         this 403 with no idea why.  Lead the hint with that.
 
@@ -2874,7 +2874,7 @@ class AIAgent:
             self._pending_redirect = None
 
         # Codex app-server owns its model/tool loop and watches a private
-        # interrupt event rather than Hermes' per-thread flag.
+        # interrupt event rather than Kova' per-thread flag.
         if getattr(self, "api_mode", None) == "codex_app_server":
             _codex_session = getattr(self, "_codex_session", None)
             _request_interrupt = getattr(_codex_session, "request_interrupt", None)
@@ -3031,7 +3031,7 @@ class AIAgent:
     def redirect(self, text: str) -> bool:
         """Redirect the active turn without converting it into a new task.
 
-        During a normal Hermes model request this cancels only that request;
+        During a normal Kova model request this cancels only that request;
         the conversation loop retains completed messages/tool results, records
         the displayed partial reasoning as plain assistant context, appends the
         correction as a real user message, and retries. During tool execution
@@ -3528,7 +3528,7 @@ class AIAgent:
             self._credits_session_start_micros = state.remaining_micros
         if _dev:
             # HERMES_DEV_CREDITS: stream each capture to agent.log — watch live with
-            # `hermes logs -f` (grep 'credits ▸'). Dev-only; silent for normal users.
+            # `kova logs -f` (grep 'credits ▸'). Dev-only; silent for normal users.
             spent = self.get_credits_spent_micros()
             used = state.used_fraction
             logger.info(
@@ -4636,7 +4636,7 @@ class AIAgent:
         # Guard against silent account swap.
         #
         # When an agent is using a non-singleton credential — e.g. a manual
-        # pool entry (``hermes auth add xai-oauth``) whose tokens belong to
+        # pool entry (``kova auth add xai-oauth``) whose tokens belong to
         # a different account than the device_code singleton, or an agent
         # constructed with an explicit ``api_key=`` arg — force-refreshing
         # the singleton here and adopting its tokens silently re-routes the

@@ -1,4 +1,4 @@
-"""``hermes claw`` subcommand parser.
+"""``kova claw`` subcommand parser.
 
 Extracted from ``kova_cli/main.py:main()`` (god-file Phase 2 follow-up).
 Handler injected to avoid importing ``main``.

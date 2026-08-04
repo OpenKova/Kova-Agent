@@ -6,7 +6,7 @@ description: "How the ACP adapter works: lifecycle, sessions, event bridge, appr
 
 # ACP Internals
 
-The ACP adapter wraps Hermes' synchronous `AIAgent` in an async JSON-RPC stdio server.
+The ACP adapter wraps Kova' synchronous `AIAgent` in an async JSON-RPC stdio server.
 
 Key implementation files:
 
@@ -21,7 +21,7 @@ Key implementation files:
 ## Boot flow
 
 ```text
-hermes acp / hermes-acp / python -m acp_adapter
+kova acp / hermes-acp / python -m acp_adapter
   -> acp_adapter.entry.main()
   -> parse --version / --check / --setup before server startup
   -> load ~/.hermes/.env
@@ -91,15 +91,15 @@ asyncio.run_coroutine_threadsafe(...)
 
 Mapping:
 
-- `allow_once` -> Hermes `once`
-- `allow_always` -> Hermes `always`
-- reject options -> Hermes `deny`
+- `allow_once` -> Kova `once`
+- `allow_always` -> Kova `always`
+- reject options -> Kova `deny`
 
 Timeouts and bridge failures deny by default.
 
 ### Tool rendering helpers
 
-`acp_adapter/tools.py` maps Hermes tools to ACP tool kinds and builds editor-facing content.
+`acp_adapter/tools.py` maps Kova tools to ACP tool kinds and builds editor-facing content.
 
 Examples:
 
@@ -141,12 +141,12 @@ prompt(..., session_id)
 
 ACP does not implement its own auth store.
 
-Instead it reuses Hermes' runtime resolver:
+Instead it reuses Kova' runtime resolver:
 
 - `acp_adapter/auth.py`
 - `hermes_cli/runtime_provider.py`
 
-So ACP advertises and uses the currently configured Hermes provider/credentials. It also always advertises a terminal setup auth method (`hermes-setup`, args `--setup`) so first-run ACP clients can open Hermes' interactive model/provider configuration before starting a normal ACP session.
+So ACP advertises and uses the currently configured Kova provider/credentials. It also always advertises a terminal setup auth method (`hermes-setup`, args `--setup`) so first-run ACP clients can open Kova' interactive model/provider configuration before starting a normal ACP session.
 
 ## Working directory binding
 

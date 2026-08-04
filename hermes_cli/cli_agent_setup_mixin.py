@@ -267,7 +267,7 @@ class CLIAgentSetupMixin:
             # In quiet mode (`kova chat -Q` / --quiet, surfaced via
             # tool_progress_mode == "off"), resume status lines go to stderr
             # so stdout stays machine-readable for automation wrappers that
-            # do `$(hermes chat -Q --resume <id> -q "...")`. Without this,
+            # do `$(kova chat -Q --resume <id> -q "...")`. Without this,
             # the resume banner pollutes captured stdout. See #11793.
             _quiet_mode = getattr(self, "tool_progress_mode", "full") == "off"
             if not session_meta:

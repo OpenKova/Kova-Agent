@@ -14,7 +14,7 @@ SAM: zero-shot image segmentation via points, boxes, masks.
 
 | | |
 |---|---|
-| Source | Optional — install with `hermes skills install official/mlops/segment-anything` |
+| Source | Optional — install with `kova skills install official/mlops/segment-anything` |
 | Path | `optional-skills/mlops/models/segment-anything` |
 | Version | `1.0.0` |
 | Author | Orchestra Research |
@@ -26,7 +26,7 @@ SAM: zero-shot image segmentation via points, boxes, masks.
 ## Reference: full SKILL.md
 
 :::info
-The following is the complete skill definition that Hermes loads when this skill is triggered. This is what the agent sees as instructions when the skill is active.
+The following is the complete skill definition that Kova loads when this skill is triggered. This is what the agent sees as instructions when the skill is active.
 :::
 
 # Segment Anything Model (SAM)

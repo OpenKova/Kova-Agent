@@ -8,8 +8,8 @@ description: "Running Kova Agent in Docker and using Docker as a terminal backen
 
 There are two distinct ways Docker intersects with Kova Agent:
 
-1. **Running Hermes IN Docker** — the agent itself runs inside a container (this page's primary focus)
-2. **Docker as a terminal backend** — the agent runs on your host but executes every command inside a single, persistent Docker sandbox container that survives across tool calls, `/new`, and subagents for the life of the Hermes process (see [Configuration → Docker Backend](./configuration.md#docker-backend))
+1. **Running Kova IN Docker** — the agent itself runs inside a container (this page's primary focus)
+2. **Docker as a terminal backend** — the agent runs on your host but executes every command inside a single, persistent Docker sandbox container that survives across tool calls, `/new`, and subagents for the life of the Kova process (see [Configuration → Docker Backend](./configuration.md#docker-backend))
 
 This page covers option 1. The container stores all user data (config, API keys, sessions, skills, memories) in a single directory mounted from the host at `/opt/data`. The image itself is stateless and can be upgraded by pulling a new version without losing any configuration.
 
@@ -49,7 +49,7 @@ Once configured, run the container in the background as a persistent gateway (Te
 
 ```sh
 docker run -d \
-  --name hermes \
+  --name kova \
   --restart unless-stopped \
   -v ~/.hermes:/opt/data \
   -p 8642:8642 \
@@ -86,7 +86,7 @@ Note: the API server is gated on `API_SERVER_ENABLED=true`. To expose it beyond 
 
 ```sh
 docker run -d \
-  --name hermes \
+  --name kova \
   --restart unless-stopped \
   -v ~/.hermes:/opt/data \
   -p 8642:8642 \
@@ -105,7 +105,7 @@ The built-in web dashboard runs as a supervised s6-rc service alongside the gate
 
 ```sh
 docker run -d \
-  --name hermes \
+  --name kova \
   --restart unless-stopped \
   -v ~/.hermes:/opt/data \
   -p 8642:8642 \
@@ -164,17 +164,17 @@ Or if you have already opened a terminal in your running container (via Docker D
 
 ## Persistent volumes
 
-The `/opt/data` volume is the single source of truth for all Hermes state. It maps to your host's `~/.hermes/` directory and contains:
+The `/opt/data` volume is the single source of truth for all Kova state. It maps to your host's `~/.hermes/` directory and contains:
 
 | Path | Contents |
 |------|----------|
 | `.env` | API keys and secrets |
-| `config.yaml` | All Hermes configuration |
+| `config.yaml` | All Kova configuration |
 | `SOUL.md` | Agent personality/identity |
 | `sessions/` | Conversation history |
 | `memories/` | Persistent memory store |
 | `skills/` | Installed skills |
-| `home/` | Per-profile HOME for Hermes tool subprocesses (`git`, `ssh`, `gh`, `npm`, and skill CLIs) |
+| `home/` | Per-profile HOME for Kova tool subprocesses (`git`, `ssh`, `gh`, `npm`, and skill CLIs) |
 | `cron/` | Scheduled job definitions |
 | `hooks/` | Event hooks |
 | `logs/` | Runtime logs |
@@ -184,60 +184,60 @@ The `/opt/data` volume is the single source of truth for all Hermes state. It ma
 
 In hosted and published Docker images, `/opt/hermes` is the installed application tree. It is root-owned and read-only to the runtime `hermes` user, so agent turns, gateway sessions, dashboard actions, and normal `docker exec hermes hermes ...` commands cannot edit the core source, bundled `.venv`, `node_modules`, or TUI bundle in place.
 
-All mutable Hermes state belongs under `/opt/data`: config, `.env`, profiles, skills, memories, sessions, logs, dashboard uploads, plugins, and other user-managed files. The image also disables runtime `.pyc` writes and Hermes lazy dependency installs into `/opt/hermes`; optional platform dependencies needed by the published image should be baked into the image or installed through a new image build.
+All mutable Kova state belongs under `/opt/data`: config, `.env`, profiles, skills, memories, sessions, logs, dashboard uploads, plugins, and other user-managed files. The image also disables runtime `.pyc` writes and Kova lazy dependency installs into `/opt/hermes`; optional platform dependencies needed by the published image should be baked into the image or installed through a new image build.
 
 On hosted/published images, agent self-improvement is scoped to skills, memory, plugins, and config under `/opt/data`. The installed core source under `/opt/hermes` is immutable; core changes are made via PRs to the repo and shipped by updating the image, not by live-editing the running install.
 
-If an operator needs to repair or inspect files outside `/opt/data`, use a root shell intentionally. The `hermes` shim normally drops `docker exec hermes hermes ...` back to the runtime user; set `HERMES_DOCKER_EXEC_AS_ROOT=1` for a one-off root invocation when you explicitly need root semantics.
+If an operator needs to repair or inspect files outside `/opt/data`, use a root shell intentionally. The `kova` shim normally drops `docker exec kova kova ...` back to the runtime user; set `HERMES_DOCKER_EXEC_AS_ROOT=1` for a one-off root invocation when you explicitly need root semantics.
 
-Skill CLIs that store credentials under `~` must be initialized against the subprocess HOME, not just the data-volume root. For example, the [xurl skill](./skills/bundled/social-media/social-media-xurl.md) stores OAuth state in `~/.xurl`; in the official Docker layout, Hermes tool calls read that as `/opt/data/home/.xurl`, so run manual xurl auth with `HOME=/opt/data/home` and verify with `HOME=/opt/data/home xurl auth status`.
+Skill CLIs that store credentials under `~` must be initialized against the subprocess HOME, not just the data-volume root. For example, the [xurl skill](./skills/bundled/social-media/social-media-xurl.md) stores OAuth state in `~/.xurl`; in the official Docker layout, Kova tool calls read that as `/opt/data/home/.xurl`, so run manual xurl auth with `HOME=/opt/data/home` and verify with `HOME=/opt/data/home xurl auth status`.
 
 :::warning
-Never run two Hermes **gateway** containers against the same data directory simultaneously — session files and memory stores are not designed for concurrent write access.
+Never run two Kova **gateway** containers against the same data directory simultaneously — session files and memory stores are not designed for concurrent write access.
 :::
 
 ## Multi-profile support
 
-Hermes supports [multiple profiles](../reference/profile-commands.md) — separate `~/.hermes/` subdirectories that let you run independent agents (different SOUL, skills, memory, sessions, credentials) from a single installation. **Inside the official Docker image, the s6 supervision tree treats each profile as a first-class supervised service**, so the recommended deployment is **one container hosting all profiles**.
+Kova supports [multiple profiles](../reference/profile-commands.md) — separate `~/.hermes/` subdirectories that let you run independent agents (different SOUL, skills, memory, sessions, credentials) from a single installation. **Inside the official Docker image, the s6 supervision tree treats each profile as a first-class supervised service**, so the recommended deployment is **one container hosting all profiles**.
 
-Each profile created with `hermes profile create <name>` gets:
+Each profile created with `kova profile create <name>` gets:
 
 - A dedicated s6 service slot at `/run/service/gateway-<name>/`, registered dynamically by the runtime — no container rebuild required.
 - Auto-restart on crash, backoff-managed by `s6-supervise`.
 - Per-profile rotated logs at `${HERMES_HOME}/logs/gateways/<name>/current` (10 archives × 1 MB each).
-- State persistence across container restarts: the boot-time reconciler reads `gateway_state.json` from each profile directory and brings the slot back up only for profiles whose last recorded state was `running`. Only a gateway you explicitly stopped (`hermes gateway stop`) stays down across a restart — a container restart, image upgrade, or unexpected exit leaves the recorded state as `running`, so the gateway auto-starts on the next boot.
+- State persistence across container restarts: the boot-time reconciler reads `gateway_state.json` from each profile directory and brings the slot back up only for profiles whose last recorded state was `running`. Only a gateway you explicitly stopped (`kova gateway stop`) stays down across a restart — a container restart, image upgrade, or unexpected exit leaves the recorded state as `running`, so the gateway auto-starts on the next boot.
 
 The lifecycle commands you'd run on the host work the same way from inside the container:
 
 ```sh
 # Create a profile — registers the gateway-<name> s6 slot.
-docker exec hermes hermes profile create coder
+docker exec kova kova profile create coder
 
 # Start / stop / restart — dispatches s6-svc; the gateway lifecycle survives docker restart.
-docker exec hermes hermes -p coder gateway start
-docker exec hermes hermes -p coder gateway stop
-docker exec hermes hermes -p coder gateway restart
+docker exec kova kova -p coder gateway start
+docker exec kova kova -p coder gateway stop
+docker exec kova kova -p coder gateway restart
 
 # Status — reports `Manager: s6 (container supervisor)` inside the container.
-docker exec hermes hermes -p coder gateway status
+docker exec kova kova -p coder gateway status
 
 # Remove a profile — tears down the s6 slot too.
-docker exec hermes hermes profile delete coder
+docker exec kova kova profile delete coder
 ```
 
-Under the hood, `hermes gateway start/stop/restart` inside the container is intercepted and routed to `s6-svc` against the right service directory; you don't need to learn the s6 commands directly. For raw supervisor state, use `/command/s6-svstat /run/service/gateway-<name>` (note `/command/` is on PATH only for processes spawned by the supervision tree — when calling from `docker exec`, pass the absolute path).
+Under the hood, `kova gateway start/stop/restart` inside the container is intercepted and routed to `s6-svc` against the right service directory; you don't need to learn the s6 commands directly. For raw supervisor state, use `/command/s6-svstat /run/service/gateway-<name>` (note `/command/` is on PATH only for processes spawned by the supervision tree — when calling from `docker exec`, pass the absolute path).
 
 ### Reaching more than one profile from outside the container
 
 Two different surfaces reach a profile's gateway from outside, and they behave differently — don't conflate them:
 
-**Hermes Desktop (and the web dashboard).** The Desktop app's **Remote Gateway** connection talks to a `hermes dashboard` backend (default **port 9119**, enabled by `HERMES_DASHBOARD=1`) — *not* the OpenAI API server. One dashboard backend serves **every** co-located profile: the app's profile switcher sends the target profile with each request and the backend opens that profile's `HERMES_HOME` on disk. So you do **not** need a second port — or a second connection — per profile for Desktop; one `:9119` connection covers them all through the switcher.
+**Kova Desktop (and the web dashboard).** The Desktop app's **Remote Gateway** connection talks to a `kova dashboard` backend (default **port 9119**, enabled by `HERMES_DASHBOARD=1`) — *not* the OpenAI API server. One dashboard backend serves **every** co-located profile: the app's profile switcher sends the target profile with each request and the backend opens that profile's `HERMES_HOME` on disk. So you do **not** need a second port — or a second connection — per profile for Desktop; one `:9119` connection covers them all through the switcher.
 
 **OpenAI-compatible API clients (Open WebUI, LobeChat, `/v1/...`).** These talk to each profile's **API server**, which binds **port 8642 for every profile** (resolved from `API_SERVER_PORT` / `platforms.api_server.extra.port` — there is no auto-allocation and no `config.yaml`/`gateway.port` key). If you want a client to reach a *specific* second profile, give that profile a distinct `API_SERVER_PORT` in **its own** `.env`, otherwise its gateway tries to bind 8642 too and conflicts with the default profile:
 
 ```sh
 # Create the profile (registers its gateway-<name> s6 slot)
-docker exec hermes hermes profile create work
+docker exec kova kova profile create work
 
 # Point its API server at a free port (write to the profile's own .env)
 cat >> /opt/data/profiles/work/.env <<'EOF'
@@ -245,7 +245,7 @@ API_SERVER_ENABLED=true
 API_SERVER_PORT=8643
 EOF
 
-docker exec hermes hermes -p work gateway restart
+docker exec kova kova -p work gateway restart
 ```
 
 Keep `API_SERVER_PORT` in each profile's **own** `.env`, never in the container-wide `environment:` block — a global value would force every profile onto the same port and they would collide. With bridge networking, publish the extra port in `docker-compose.yml` (`- "8643:8643"`); with `network_mode: host` it is already reachable on the host. The default profile's 8642 connection is untouched.
@@ -258,7 +258,7 @@ Before the s6 migration, "one container per profile" was the recommended pattern
 |---|---|---|
 | Disk overhead | One image, one bundled venv, one Playwright cache | N images / N caches |
 | Memory overhead | Shared Python interpreter cache, shared node_modules | Duplicated per container |
-| Profile creation | `docker exec ... hermes profile create <name>` (seconds) | New `docker run` invocation + port allocation + bind-mount config |
+| Profile creation | `docker exec ... kova profile create <name>` (seconds) | New `docker run` invocation + port allocation + bind-mount config |
 | Per-profile crash recovery | `s6-supervise` auto-restart | Docker's `--restart unless-stopped` (slower, kills sibling work) |
 | Logs | Per-profile rotated file via `s6-log`, plus container-boot audit log | `docker logs <name>` per container — no built-in rotation |
 | Backup | One `~/.hermes` directory | N directories to coordinate |
@@ -308,9 +308,9 @@ The s6 container has four distinct log surfaces, and "why isn't my gateway showi
 | Source | Where it lands | How to read it |
 |---|---|---|
 | **Per-profile gateway** (`hermes gateway run` and per-profile gateways under s6) | Tee'd to two places: `docker logs <container>` (real time, no extra prefix) **and** `${HERMES_HOME}/logs/gateways/<profile>/current` (rotated, ISO-8601 timestamped, 10 archives × 1 MB each) | `docker logs -f hermes` or `tail -F ~/.hermes/logs/gateways/default/current` on the host |
-| **Dashboard** (when `HERMES_DASHBOARD=1`) | `docker logs <container>` (no prefix) | `docker logs -f hermes` — interleaved with gateway lines |
+| **Dashboard** (when `HERMES_DASHBOARD=1`) | `docker logs <container>` (no prefix) | `docker logs -f kova` — interleaved with gateway lines |
 | **Boot reconciler** (records which profile gateways were restored on each container start) | `${HERMES_HOME}/logs/container-boot.log` (append-only audit log) | `tail -F ~/.hermes/logs/container-boot.log` |
-| **Generic Hermes logs** (`agent.log`, `errors.log`) | `${HERMES_HOME}/logs/` (profile-aware) | `docker exec hermes hermes logs --follow [--level WARNING] [--session <id>]` |
+| **Generic Kova logs** (`agent.log`, `errors.log`) | `${HERMES_HOME}/logs/` (profile-aware) | `docker exec kova kova logs --follow [--level WARNING] [--session <id>]` |
 
 Two practical consequences worth knowing:
 
@@ -332,7 +332,7 @@ docker run -it --rm \
 Direct `-e` flags override values from `.env`. This is useful for CI/CD or secrets-manager integrations where you don't want keys on disk.
 
 :::note Looking for Docker as the **terminal backend**?
-This page covers running Hermes itself inside Docker. If you want Hermes to execute the agent's `terminal` / `execute_code` calls inside a Docker sandbox container (one long-lived container shared across Hermes processes — see issue #20561), that's a separate config block — `terminal.backend: docker` plus `terminal.docker_image`, `terminal.docker_volumes`, `terminal.docker_forward_env`, `terminal.docker_env`, `terminal.docker_run_as_host_user`, `terminal.docker_extra_args`, `terminal.docker_persist_across_processes`, and `terminal.docker_orphan_reaper`. See [Configuration → Docker Backend](configuration.md#docker-backend) for the full set including container-lifecycle rules.
+This page covers running Kova itself inside Docker. If you want Kova to execute the agent's `terminal` / `execute_code` calls inside a Docker sandbox container (one long-lived container shared across Kova processes — see issue #20561), that's a separate config block — `terminal.backend: docker` plus `terminal.docker_image`, `terminal.docker_volumes`, `terminal.docker_forward_env`, `terminal.docker_env`, `terminal.docker_run_as_host_user`, `terminal.docker_extra_args`, `terminal.docker_persist_across_processes`, and `terminal.docker_orphan_reaper`. See [Configuration → Docker Backend](configuration.md#docker-backend) for the full set including container-lifecycle rules.
 :::
 
 ## Docker Compose example
@@ -343,7 +343,7 @@ For persistent deployment with both the gateway and dashboard, a `docker-compose
 services:
   hermes:
     image: nousresearch/hermes-agent:latest
-    container_name: hermes
+    container_name: kova
     restart: unless-stopped
     command: gateway run
     ports:
@@ -368,10 +368,10 @@ Start with `docker compose up -d` and view logs with `docker compose logs -f`. T
 
 ## Optional: Linux desktop audio bridge
 
-Voice mode in Docker needs two separate things to work: Hermes must be allowed to probe audio devices inside the container, and the container must be able to reach your host audio server. The setup below covers the host audio plumbing for Linux desktops that expose a PulseAudio-compatible socket, including many PipeWire setups.
+Voice mode in Docker needs two separate things to work: Kova must be allowed to probe audio devices inside the container, and the container must be able to reach your host audio server. The setup below covers the host audio plumbing for Linux desktops that expose a PulseAudio-compatible socket, including many PipeWire setups.
 
 :::caution
-This is a Linux desktop workaround, not a general Docker Desktop feature. It is useful when you already have host audio working and want CLI voice mode inside the Hermes container. If Hermes still reports `Running inside Docker container -- no audio devices`, use a build that includes Docker audio probing support for `PULSE_SERVER` / `PIPEWIRE_REMOTE`.
+This is a Linux desktop workaround, not a general Docker Desktop feature. It is useful when you already have host audio working and want CLI voice mode inside the Kova container. If Kova still reports `Running inside Docker container -- no audio devices`, use a build that includes Docker audio probing support for `PULSE_SERVER` / `PIPEWIRE_REMOTE`.
 :::
 
 First, create an ALSA config next to your Compose file:
@@ -414,7 +414,7 @@ services:
       context: .
       dockerfile: Dockerfile.audio
     image: hermes-agent-audio
-    container_name: hermes
+    container_name: kova
     restart: unless-stopped
     command: gateway run
     volumes:
@@ -446,7 +446,7 @@ docker exec hermes /opt/hermes/.venv/bin/python -c "import sounddevice as sd; pr
 
 ## Resource limits
 
-The Hermes container needs moderate resources. Recommended minimums:
+The Kova container needs moderate resources. Recommended minimums:
 
 | Resource | Minimum | Recommended |
 |----------|---------|-------------|
@@ -460,7 +460,7 @@ Set limits in Docker:
 
 ```sh
 docker run -d \
-  --name hermes \
+  --name kova \
   --restart unless-stopped \
   --memory=4g --cpus=2 \
   -v ~/.hermes:/opt/data \
@@ -471,7 +471,7 @@ docker run -d \
 
 The official image is based on `debian:13.4` and includes:
 
-- Python 3.13 with dependencies synced from the lockfile via `uv sync --frozen --no-install-project` for the baked extras (`all`, `messaging`, Anthropic/Bedrock/Azure identity, Hindsight, Matrix), followed by a no-dependency editable install of Hermes itself.
+- Python 3.13 with dependencies synced from the lockfile via `uv sync --frozen --no-install-project` for the baked extras (`all`, `messaging`, Anthropic/Bedrock/Azure identity, Hindsight, Matrix), followed by a no-dependency editable install of Kova itself.
 - Node.js 22 + npm (for browser automation, WhatsApp bridge, TUI/Desktop bundles, and workspace build tooling)
 - Playwright with Chromium (`npx playwright install --with-deps chromium --only-shell`)
 - ripgrep, ffmpeg, git, and `xz-utils` as system utilities
@@ -487,9 +487,9 @@ The container's `ENTRYPOINT` is s6-overlay's `/init`. On boot it:
 2. Runs `/etc/cont-init.d/02-reconcile-profiles` (= `hermes_cli.container_boot`): walks `$HERMES_HOME/profiles/<name>/`, recreates the per-profile gateway s6 service slot under `/run/service/gateway-<profile>/`, and auto-starts only those whose last recorded state was `running` (see [Per-profile gateway supervision](#per-profile-gateway-supervision)).
 3. Starts the static `main-hermes` and `dashboard` s6-rc services.
 4. Exec's the container's CMD as the main program (`/opt/hermes/docker/main-wrapper.sh`), which routes the arguments the user passed to `docker run`:
-   - no args → `hermes` (the default)
+   - no args → `kova` (the default)
    - first arg is an executable on PATH (e.g. `sleep`, `bash`) → exec it directly
-   - anything else → `hermes <args>` (subcommand passthrough)
+   - anything else → `kova <args>` (subcommand passthrough)
    The container exits when this main program exits, with its exit code.
 
 :::warning Breaking change vs. pre-s6 images
@@ -497,47 +497,47 @@ The container ENTRYPOINT is now `/init` (s6-overlay), not `/usr/bin/tini`. All f
 :::
 
 :::warning Privilege model
-Do not override the image entrypoint unless you keep `/init` (or, equivalently, the legacy `docker/entrypoint.sh` shim that forwards to the stage2 hook) in the command chain. s6-overlay's `/init` runs as root so it can chown the volume on first boot, then drops to the `hermes` user via `s6-setuidgid` for every supervised service AND for the main program. Starting `hermes gateway run` as root inside the official image is refused by default because it can leave root-owned files in `/opt/data` and break later dashboard or gateway starts. Set `HERMES_ALLOW_ROOT_GATEWAY=1` only when you intentionally accept that risk.
+Do not override the image entrypoint unless you keep `/init` (or, equivalently, the legacy `docker/entrypoint.sh` shim that forwards to the stage2 hook) in the command chain. s6-overlay's `/init` runs as root so it can chown the volume on first boot, then drops to the `kova` user via `s6-setuidgid` for every supervised service AND for the main program. Starting `kova gateway run` as root inside the official image is refused by default because it can leave root-owned files in `/opt/data` and break later dashboard or gateway starts. Set `HERMES_ALLOW_ROOT_GATEWAY=1` only when you intentionally accept that risk.
 :::
 
-### `docker exec` automatically drops to the `hermes` user
+### `docker exec` automatically drops to the `kova` user
 
 `docker exec hermes <cmd>` defaults to running as root inside the container, but the image ships a thin shim at `/opt/hermes/bin/hermes` (earliest on PATH) that detects root callers and transparently re-execs through `s6-setuidgid hermes`. So `docker exec hermes login`, `docker exec hermes profile create …`, `docker exec hermes setup`, etc. all write files owned by UID 10000 — i.e. readable by the supervised gateway — with no extra `--user` flag needed. Non-root callers (the supervised processes themselves, `docker exec --user hermes`, kanban subagents inside the container) hit a short-circuit that exec's the venv binary directly, so there's no overhead on the hot paths.
 
 If you specifically need a `docker exec` that retains root semantics (diagnostic sessions, inspecting root-only state, files outside `/opt/data` that root happens to own), opt out per invocation:
 
 ```sh
-docker exec -e HERMES_DOCKER_EXEC_AS_ROOT=1 hermes <cmd>
+docker exec -e HERMES_DOCKER_EXEC_AS_ROOT=1 kova <cmd>
 ```
 
-The shim accepts `1` / `true` / `yes` (case-insensitive). Anything else — including typos like `=0` — falls through to the drop, so silent opt-outs aren't possible. If `s6-setuidgid` isn't available (custom builds that stripped s6-overlay), the shim refuses to run as root and exits 126 instead, surfacing the broken privilege model loudly rather than regressing to the historical footgun where `docker exec hermes login` would write `auth.json` as `root:root` and break the supervised gateway's auth on every chat platform message.
+The shim accepts `1` / `true` / `yes` (case-insensitive). Anything else — including typos like `=0` — falls through to the drop, so silent opt-outs aren't possible. If `s6-setuidgid` isn't available (custom builds that stripped s6-overlay), the shim refuses to run as root and exits 126 instead, surfacing the broken privilege model loudly rather than regressing to the historical footgun where `docker exec kova login` would write `auth.json` as `root:root` and break the supervised gateway's auth on every chat platform message.
 
 ### Per-profile gateway supervision
 
-Each profile created with `hermes profile create <name>` automatically gets an s6-supervised gateway service registered at `/run/service/gateway-<name>/`, with state-persistent auto-restart across container restarts. See [Multi-profile support](#multi-profile-support) above for the user-facing workflow and the lifecycle commands.
+Each profile created with `kova profile create <name>` automatically gets an s6-supervised gateway service registered at `/run/service/gateway-<name>/`, with state-persistent auto-restart across container restarts. See [Multi-profile support](#multi-profile-support) above for the user-facing workflow and the lifecycle commands.
 
 **Supervision benefits over the pre-s6 image:**
 
 - Gateway crashes are auto-restarted by `s6-supervise` after a ~1s backoff.
 - Dashboard, when enabled with `HERMES_DASHBOARD=1`, is supervised on the same supervision tree and gets the same auto-restart treatment.
-- `docker restart`, image upgrades (`docker compose up -d --force-recreate`), and unexpected exits preserve running gateways: the cont-init reconciler reads `$HERMES_HOME/profiles/<name>/gateway_state.json` and brings the slot back up if the last recorded state was `running`. Only an explicit `hermes gateway stop` records `stopped` and keeps the gateway down across the restart; the container/s6 SIGTERM sent on a restart or upgrade is treated as "still running" and auto-starts.
+- `docker restart`, image upgrades (`docker compose up -d --force-recreate`), and unexpected exits preserve running gateways: the cont-init reconciler reads `$HERMES_HOME/profiles/<name>/gateway_state.json` and brings the slot back up if the last recorded state was `running`. Only an explicit `kova gateway stop` records `stopped` and keeps the gateway down across the restart; the container/s6 SIGTERM sent on a restart or upgrade is treated as "still running" and auto-starts.
 - Per-profile gateway logs persist under `$HERMES_HOME/logs/gateways/<profile>/current` (rotated by `s6-log`), and the reconciler's actions are appended to `$HERMES_HOME/logs/container-boot.log` per boot. See [Where the logs go](#where-the-logs-go) for the full routing map.
 
-`hermes status` inside the container reports `Manager: s6 (container supervisor)`. Use `/command/s6-svstat /run/service/gateway-<name>` for the raw supervisor view (note `/command/` is on PATH for supervision-tree processes only; pass the absolute path when calling from `docker exec`).
+`kova status` inside the container reports `Manager: s6 (container supervisor)`. Use `/command/s6-svstat /run/service/gateway-<name>` for the raw supervisor view (note `/command/` is on PATH for supervision-tree processes only; pass the absolute path when calling from `docker exec`).
 
 ## Upgrading
 
 Pull the latest image and recreate the container. Your data directory is
 preserved, and the container runs non-interactive config-schema migrations
 against the mounted `$HERMES_HOME/config.yaml` before starting the gateway.
-When a migration is needed, Hermes writes timestamped backups next to
+When a migration is needed, Kova writes timestamped backups next to
 `config.yaml` and `.env` first.
 
 ```sh
 docker pull nousresearch/hermes-agent:latest
-docker rm -f hermes
+docker rm -f kova
 docker run -d \
-  --name hermes \
+  --name kova \
   --restart unless-stopped \
   -v ~/.hermes:/opt/data \
   nousresearch/hermes-agent gateway run
@@ -555,7 +555,7 @@ persisted config manually before letting the new image rewrite it.
 
 ## Skills and credential files
 
-When using Docker as the execution environment (not the methods above, but when the agent runs commands inside a Docker sandbox — see [Configuration → Docker Backend](./configuration.md#docker-backend)), Hermes reuses a single long-lived container for all tool calls and automatically bind-mounts the skills directory (`~/.hermes/skills/`) and any credential files declared by skills into that container as read-only volumes. Skill scripts, templates, and references are available inside the sandbox without manual configuration, and because the container persists for the life of the Hermes process, any dependencies you install or files you write stay around for the next tool call.
+When using Docker as the execution environment (not the methods above, but when the agent runs commands inside a Docker sandbox — see [Configuration → Docker Backend](./configuration.md#docker-backend)), Kova reuses a single long-lived container for all tool calls and automatically bind-mounts the skills directory (`~/.hermes/skills/`) and any credential files declared by skills into that container as read-only volumes. Skill scripts, templates, and references are available inside the sandbox without manual configuration, and because the container persists for the life of the Kova process, any dependencies you install or files you write stay around for the next tool call.
 
 The same syncing happens for SSH and Modal backends — skills and credential files are uploaded via rsync or the Modal mount API before each command.
 
@@ -565,13 +565,13 @@ The official image ships with a curated set of utilities (see [What the Dockerfi
 
 ### npm or Python tools — use `npx` or `uvx`
 
-For any tool published to npm or PyPI, instruct Hermes to run it via `npx` (npm) or `uvx` (Python) and to remember that command in its persistent memory. If the tool needs a config file or credentials, instruct it to drop those under `/opt/data` (e.g. `/opt/data/<tool>/config.yaml`).
+For any tool published to npm or PyPI, instruct Kova to run it via `npx` (npm) or `uvx` (Python) and to remember that command in its persistent memory. If the tool needs a config file or credentials, instruct it to drop those under `/opt/data` (e.g. `/opt/data/<tool>/config.yaml`).
 
 Dependencies are fetched on demand and cached for the life of the container. Configuration written under `/opt/data` survives container restarts because it lives on the bind-mounted host directory. The package cache itself is rebuilt after a `docker rm`, but `npx` and `uvx` re-fetch transparently the next time the tool runs.
 
 ### Other tools (apt packages, binaries) — install and remember
 
-For anything outside npm or PyPI — `apt` packages, prebuilt binaries, language runtimes not already in the image — instruct Hermes how to install it (e.g. `apt-get update && apt-get install -y <package>`) and tell it to remember the install command. The tool persists for the rest of the container's lifetime, and Hermes will re-run the install command after a container restart when it next needs the tool.
+For anything outside npm or PyPI — `apt` packages, prebuilt binaries, language runtimes not already in the image — instruct Kova how to install it (e.g. `apt-get update && apt-get install -y <package>`) and tell it to remember the install command. The tool persists for the rest of the container's lifetime, and Kova will re-run the install command after a container restart when it next needs the tool.
 
 This is a good fit for tools that are quick to install and used occasionally. For tools used constantly, prefer the next approach.
 
@@ -586,7 +586,7 @@ USER root
 RUN apt-get update \
     && apt-get install -y --no-install-recommends <your-package> \
     && rm -rf /var/lib/apt/lists/*
-USER hermes
+USER kova
 ```
 
 Build it and use it in place of the official image:
@@ -594,7 +594,7 @@ Build it and use it in place of the official image:
 ```sh
 docker build -t my-hermes:latest .
 docker run -d \
-  --name hermes \
+  --name kova \
   --restart unless-stopped \
   -v ~/.hermes:/opt/data \
   -p 8642:8642 \
@@ -605,13 +605,13 @@ The entrypoint script and `/opt/data` semantics are inherited unchanged, so the 
 
 ### Complex tools or multi-service stacks — run a sidecar container
 
-For tools that bring their own service (a database, a web server, a queue, a headless browser farm) or that are too heavy to live inside the Hermes container, run them as a separate container on a shared Docker network. Hermes reaches the sidecar by container name, the same way it reaches a local inference server (see [Connecting to local inference servers](#connecting-to-local-inference-servers-vllm-ollama-etc)).
+For tools that bring their own service (a database, a web server, a queue, a headless browser farm) or that are too heavy to live inside the Kova container, run them as a separate container on a shared Docker network. Kova reaches the sidecar by container name, the same way it reaches a local inference server (see [Connecting to local inference servers](#connecting-to-local-inference-servers-vllm-ollama-etc)).
 
 ```yaml
 services:
   hermes:
     image: nousresearch/hermes-agent:latest
-    container_name: hermes
+    container_name: kova
     restart: unless-stopped
     command: gateway run
     ports:
@@ -633,7 +633,7 @@ networks:
     driver: bridge
 ```
 
-From inside the Hermes container, the sidecar is reachable at `http://my-tool:<port>` (or whatever protocol it serves). This pattern keeps each service's lifecycle, resource limits, and upgrade cadence independent, and avoids bloating the Hermes image with dependencies that are only needed by one tool.
+From inside the Kova container, the sidecar is reachable at `http://my-tool:<port>` (or whatever protocol it serves). This pattern keeps each service's lifecycle, resource limits, and upgrade cadence independent, and avoids bloating the Kova image with dependencies that are only needed by one tool.
 
 ### Broadly useful tools — open an issue or pull request
 
@@ -641,7 +641,7 @@ If a tool is likely to be useful to most Kova Agent users, consider contributing
 
 ## Connecting to local inference servers (vLLM, Ollama, etc.)
 
-When running Hermes in Docker and your inference server (vLLM, Ollama, text-generation-inference, etc.) is also running on the host or in another container, networking requires extra attention.
+When running Kova in Docker and your inference server (vLLM, Ollama, text-generation-inference, etc.) is also running on the host or in another container, networking requires extra attention.
 
 ### Docker Compose (recommended)
 
@@ -669,7 +669,7 @@ services:
 
   hermes:
     image: nousresearch/hermes-agent:latest
-    container_name: hermes
+    container_name: kova
     restart: unless-stopped
     command: gateway run
     ports:
@@ -695,7 +695,7 @@ model:
 ```
 
 :::tip Key points
-- Use the **container name** (`vllm`) as the hostname — not `localhost` or `127.0.0.1`, which refer to the Hermes container itself.
+- Use the **container name** (`vllm`) as the hostname — not `localhost` or `127.0.0.1`, which refer to the Kova container itself.
 - The `model` value must match the `--served-model-name` you passed to vLLM.
 - Set `api_key` to any non-empty string (vLLM requires the header but doesn't validate it by default).
 - Do **not** include a trailing slash in `base_url`.
@@ -709,7 +709,7 @@ If your inference server runs directly on the host (not in Docker), use `host.do
 
 ```sh
 docker run -d \
-  --name hermes \
+  --name kova \
   -v ~/.hermes:/opt/data \
   -p 8642:8642 \
   nousresearch/hermes-agent gateway run
@@ -728,7 +728,7 @@ model:
 
 ```sh
 docker run -d \
-  --name hermes \
+  --name kova \
   --network host \
   -v ~/.hermes:/opt/data \
   nousresearch/hermes-agent gateway run
@@ -748,10 +748,10 @@ model:
 
 ### Verifying connectivity
 
-From inside the Hermes container, confirm the inference server is reachable:
+From inside the Kova container, confirm the inference server is reachable:
 
 ```sh
-docker exec hermes curl -s http://vllm:8000/v1/models
+docker exec kova curl -s http://vllm:8000/v1/models
 ```
 
 You should see a JSON response listing your served model. If this fails, check:
@@ -776,7 +776,7 @@ model:
 
 ### Container exits immediately
 
-Check logs: `docker logs hermes`. Common causes:
+Check logs: `docker logs kova`. Common causes:
 - Missing or invalid `.env` file — run interactively first to complete setup
 - Port conflicts if running with exposed ports
 
@@ -792,13 +792,13 @@ On a NAS (UGOS, Synology, unRAID) the data directory is typically a **bind mount
 
 ```sh
 docker run -d \
-  --name hermes \
+  --name kova \
   -e PUID=1000 -e PGID=10 \
   -v /volume1/docker/hermes:/opt/data \
   nousresearch/hermes-agent gateway run
 ```
 
-`docker exec hermes <cmd>` automatically drops to UID 10000 too — see [`docker exec` automatically drops to the `hermes` user](#docker-exec-automatically-drops-to-the-hermes-user) for details and the per-invocation opt-out.
+`docker exec kova <cmd>` automatically drops to UID 10000 too — see [`docker exec` automatically drops to the `kova` user](#docker-exec-automatically-drops-to-the-hermes-user) for details and the per-invocation opt-out.
 
 ### Browser tools not working
 
@@ -806,7 +806,7 @@ Playwright needs shared memory. Add `--shm-size=1g` to your Docker run command:
 
 ```sh
 docker run -d \
-  --name hermes \
+  --name kova \
   --shm-size=1g \
   -v ~/.hermes:/opt/data \
   nousresearch/hermes-agent gateway run
@@ -817,13 +817,13 @@ docker run -d \
 The `--restart unless-stopped` flag handles most transient failures. If the gateway is stuck, restart the container:
 
 ```sh
-docker restart hermes
+docker restart kova
 ```
 
 ### Checking container health
 
 ```sh
-docker logs --tail 50 hermes          # Recent logs
+docker logs --tail 50 kova          # Recent logs
 docker run -it --rm nousresearch/hermes-agent:latest version     # Verify version
-docker stats hermes                    # Resource usage
+docker stats kova                    # Resource usage
 ```

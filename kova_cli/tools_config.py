@@ -474,7 +474,7 @@ TOOL_CATEGORIES = {
         "name": "X (Twitter) Search",
         "setup_title": "Select xAI Credential Source",
         "setup_note": (
-            "Hermes routes X searches through xAI's built-in x_search "
+            "Kova routes X searches through xAI's built-in x_search "
             "Responses tool for read-only public X discovery. Use the xurl "
             "skill for authenticated X API reads and account actions. Both "
             "credential sources hit the same "
@@ -663,7 +663,7 @@ def _resolved_cua_driver_cmd() -> Optional[str]:
 
 
 def _cua_driver_env() -> dict:
-    """cua-driver child env with the Hermes telemetry policy applied.
+    """cua-driver child env with the Kova telemetry policy applied.
 
     Delegates to ``cua_backend.cua_driver_child_env`` (telemetry disabled by
     default; user opt-in via ``computer_use.cua_telemetry``). Falls back to the
@@ -806,7 +806,7 @@ def install_cua_driver(upgrade: bool = False) -> bool:
       we don't want to surprise the user with a network fetch.
     * ``upgrade=True`` — always re-run the installer (or call ``cua-driver
       update`` if the binary supports it). Used by ``kova update`` and
-      by ``hermes computer-use install --upgrade``.
+      by ``kova computer-use install --upgrade``.
 
     Returns True iff cua-driver is installed (or successfully refreshed)
     when the function returns. Supported on macOS, Windows, and Linux
@@ -1195,7 +1195,7 @@ def _run_cua_driver_installer(label: str = "Installing", verbose: bool = True) -
                     _print_info("    IMPORTANT — grant macOS permissions now:")
                     _print_info("      System Settings > Privacy & Security > Accessibility")
                     _print_info("      System Settings > Privacy & Security > Screen Recording")
-                    _print_info("    Both must allow the terminal / Hermes process.")
+                    _print_info("    Both must allow the terminal / Kova process.")
             return True
         _print_warning(f"    cua-driver {label.lower()} did not complete. Re-run manually:")
         _print_info(f"      {manual_hint}")
@@ -1503,7 +1503,7 @@ def _run_post_setup(post_setup_key: str):
         except Exception as exc:
             _print_warning(f"    Could not enable plugin automatically: {exc}")
             _print_info("    Run manually: kova plugins enable observability/langfuse")
-        _print_info("    Restart Hermes for tracing to take effect.")
+        _print_info("    Restart Kova for tracing to take effect.")
         _print_info("    Verify: kova plugins list")
 
     elif post_setup_key == "xai_grok":
@@ -1774,7 +1774,7 @@ def _get_platform_tools(
             if ts in configurable_keys and _toolset_allowed_for_platform(ts, platform)
         }
         # Mixed config: composite toolset alongside configurables (e.g.
-        # ``[hermes-cli, spotify]`` after enabling Spotify via ``hermes
+        # ``[hermes-cli, spotify]`` after enabling Spotify via ``kova
         # tools``). Without expansion the composite name is silently dropped,
         # leaving sessions with only the configurable opt-ins and no native
         # tools. Mirror the else-branch's subset inference, but apply
@@ -1996,7 +1996,7 @@ def _get_platform_tools(
         enabled_toolsets -= disabled_set
 
     # #38798: if this platform was explicitly configured but every toolset name
-    # is invalid (e.g. a migration or hand-edit left `hermes` instead of
+    # is invalid (e.g. a migration or hand-edit left `kova` instead of
     # `hermes-cli`), resolve_toolset() returns [] for each and the platform ends
     # up with no native tools — silently, with no error. Surface it at the point
     # tools are resolved for a session so an already-corrupted config is caught
@@ -4251,7 +4251,7 @@ def tools_command(args=None, first_install: bool = False, config: dict = None):
                 print(color("    (none enabled)", Colors.DIM))
         print()
         return
-    print(color("⚕ Hermes Tool Configuration", Colors.CYAN, Colors.BOLD))
+    print(color("⚕ Kova Tool Configuration", Colors.CYAN, Colors.BOLD))
     print(color("  Enable or disable tools per platform.", Colors.DIM))
     print(color("  Tools that need API keys will be configured when enabled.", Colors.DIM))
     print(color("  Guide: https://kova-agent.nousresearch.com/docs/user-guide/features/tools", Colors.DIM))

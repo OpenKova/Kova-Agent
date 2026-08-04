@@ -1,7 +1,7 @@
 """
 Dump command for hermes CLI.
 
-Outputs a compact, plain-text summary of the user's Hermes setup
+Outputs a compact, plain-text summary of the user's Kova setup
 that can be copy-pasted into Discord/GitHub/Telegram for support context.
 No ANSI colors, no checkmarks — just data.
 """
@@ -117,7 +117,7 @@ def _redact(value: str) -> str:
 
     Thin wrapper over :func:`agent.redact.mask_secret`. Returns ``""`` for
     an empty value (matches the historical behavior of this helper —
-    ``hermes dump`` formats empty values as blank, not as ``"(not set)"``).
+    ``kova dump`` formats empty values as blank, not as ``"(not set)"``).
     """
     from agent.redact import mask_secret
     return mask_secret(value)

@@ -7,7 +7,7 @@ const config: Config = {
   tagline: 'The self-improving AI agent',
   favicon: 'img/favicon.ico',
 
-  url: 'https://hermes-agent.nousresearch.com',
+  url: 'https://kova-agent.kova.ai',
   baseUrl: '/docs/',
 
   organizationName: 'NousResearch',

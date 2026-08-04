@@ -188,7 +188,7 @@ Beyond MEMORY.md and USER.md, the agent can search its past conversations using 
 - The agent can also scroll forward/backward inside any session it finds
 
 ```bash
-hermes sessions list    # Browse past sessions
+kova sessions list    # Browse past sessions
 ```
 
 See [Session Search Tool](/user-guide/sessions#session-search-tool) for the three calling shapes (discovery / scroll / browse) and the response format.
@@ -248,7 +248,7 @@ ones — waits for your yes/no before it ever enters your profile.
 ## Background review notifications (`display.memory_notifications`)
 
 After a turn, the background self-improvement review may quietly save a memory
-or update a skill. This is Hermes' consent-aware learning loop: repeated
+or update a skill. This is Kova' consent-aware learning loop: repeated
 corrections and durable workflow lessons become compact memory entries or
 procedural skills, while `write_approval` can stage those writes for review
 before they affect future sessions. By default it surfaces a short
@@ -325,13 +325,13 @@ Full details in [Gating agent skill writes](/user-guide/features/skills#gating-a
 
 ## External Memory Providers
 
-For deeper, persistent memory that goes beyond MEMORY.md and USER.md, Hermes ships with 8 external memory provider plugins — including Honcho, OpenViking, Mem0, Hindsight, Holographic, RetainDB, ByteRover, and Supermemory.
+For deeper, persistent memory that goes beyond MEMORY.md and USER.md, Kova ships with 8 external memory provider plugins — including Honcho, OpenViking, Mem0, Hindsight, Holographic, RetainDB, ByteRover, and Supermemory.
 
 External providers run **alongside** built-in memory (never replacing it) and add capabilities like knowledge graphs, semantic search, automatic fact extraction, and cross-session user modeling.
 
 ```bash
-hermes memory setup      # pick a provider and configure it
-hermes memory status     # check what's active
+kova memory setup      # pick a provider and configure it
+kova memory status     # check what's active
 ```
 
 See the [Memory Providers](./memory-providers.md) guide for full details on each provider, setup instructions, and comparison.

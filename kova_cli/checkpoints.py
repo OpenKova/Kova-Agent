@@ -1,9 +1,9 @@
-"""`hermes checkpoints` CLI subcommand.
+"""`kova checkpoints` CLI subcommand.
 
 Gives users direct visibility and control over the filesystem checkpoint
 store at ``~/.hermes/checkpoints/``.  Actions:
 
-    hermes checkpoints               # same as `status`
+    kova checkpoints               # same as `status`
     hermes checkpoints status        # total size, project count, breakdown
     hermes checkpoints list          # per-project checkpoint counts + workdir
     hermes checkpoints prune [opts]  # force a sweep (ignores the 24h marker)
@@ -195,8 +195,8 @@ def cmd_clear_legacy(args: argparse.Namespace) -> int:
 
 
 def register_cli(parser: argparse.ArgumentParser) -> None:
-    """Wire subcommands onto the ``hermes checkpoints`` parser."""
-    parser.set_defaults(func=cmd_status)  # bare `hermes checkpoints` → status
+    """Wire subcommands onto the ``kova checkpoints`` parser."""
+    parser.set_defaults(func=cmd_status)  # bare `kova checkpoints` → status
     subs = parser.add_subparsers(dest="checkpoints_command", metavar="COMMAND")
 
     p_status = subs.add_parser(

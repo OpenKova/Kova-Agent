@@ -15,7 +15,7 @@ Subcommands:
   tools    List Tool Gateway tools and which are active in the current config.
 
 This command is intentionally minimal — it does not duplicate functionality
-already in ``kova auth`` or ``hermes tools``. It's the onboarding + discovery
+already in ``kova auth`` or ``kova tools``. It's the onboarding + discovery
 surface for the Portal subscription itself.
 """
 from __future__ import annotations

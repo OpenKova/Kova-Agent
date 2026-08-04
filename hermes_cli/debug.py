@@ -529,7 +529,7 @@ def _capture_default_log_snapshots(
 # ---------------------------------------------------------------------------
 
 def _capture_dump() -> str:
-    """Run ``hermes dump`` and return its stdout as a string."""
+    """Run ``kova dump`` and return its stdout as a string."""
     from hermes_cli.dump import run_dump
 
     class _FakeArgs:
@@ -560,7 +560,7 @@ def collect_debug_report(
     log_lines
         Number of recent lines to include per log file.
     dump_text
-        Pre-captured dump output.  If empty, ``hermes dump`` is run
+        Pre-captured dump output.  If empty, ``kova dump`` is run
         internally.
 
     Returns the report as a plain-text string ready for upload.
@@ -882,7 +882,7 @@ def run_debug_share(args):
 _NOUS_PRIVACY_NOTICE = """\
 ⚠️  --nous: This uploads your debug bundle to Nous-INTERNAL storage (AWS S3),
     NOT a public paste service. The following is included:
-  • System info (OS, Python/Hermes version, provider, which API keys are
+  • System info (OS, Python/Kova version, provider, which API keys are
     configured — NOT the actual keys)
   • Full agent.log, gateway.log, and desktop.log (up to 512 KB each — likely
     contains conversation content, tool outputs, and file paths)

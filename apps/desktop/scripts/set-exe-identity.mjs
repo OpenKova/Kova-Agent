@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// set-exe-identity.mjs — stamp the Hermes icon + version metadata onto the
+// set-exe-identity.mjs — stamp the Kova icon + version metadata onto the
 // built Hermes.exe using rcedit, completely decoupled from electron-builder's
 // signing path.
 //
@@ -42,7 +42,7 @@ import { rcedit } from 'rcedit'
 
 import { isMain } from './utils.mjs'
 
-// Stamp the Hermes icon + identity onto `exe`. Resolves on success, throws on
+// Stamp the Kova icon + identity onto `exe`. Resolves on success, throws on
 // failure. `desktopRoot` defaults to this script's package root so the icon and
 // the rcedit dependency resolve regardless of cwd.
 async function stampExeIdentity(exe, desktopRoot = resolve(import.meta.dirname, '..')) {
@@ -62,14 +62,14 @@ async function stampExeIdentity(exe, desktopRoot = resolve(import.meta.dirname, 
   await rcedit(exe, {
     icon,
     'version-string': {
-      ProductName: 'Hermes',
-      FileDescription: 'Hermes',
+      ProductName: 'Kova',
+      FileDescription: 'Kova',
       CompanyName: 'Nous Research',
       LegalCopyright: 'Copyright (c) 2026 Nous Research'
     }
   })
 
-  console.log('[set-exe-identity] done — Hermes icon + identity stamped')
+  console.log('[set-exe-identity] done — Kova icon + identity stamped')
 }
 
 export { stampExeIdentity }

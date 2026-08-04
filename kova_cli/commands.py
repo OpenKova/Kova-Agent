@@ -1213,7 +1213,7 @@ def slack_native_slashes() -> list[tuple[str, str, str]]:
     # manifests) alongside the new /kova form.
     entries.append(("kova", "Talk to Kova or run a subcommand", "[subcommand] [args]"))
     seen.add("kova")
-    entries.append(("hermes", "Talk to Hermes or run a subcommand", "[subcommand] [args]"))
+    entries.append(("hermes", "Talk to Kova or run a subcommand", "[subcommand] [args]"))
     seen.add("hermes")
 
     def _add(name: str, desc: str, hint: str) -> None:

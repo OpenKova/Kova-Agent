@@ -443,7 +443,7 @@ function Get-PowerShellHostExe {
 }
 
 function Install-Uv {
-    # Hermes owns its own uv at $HermesHome\bin\uv.exe.  Always install there --
+    # Kova owns its own uv at $HermesHome\bin\uv.exe.  Always install there --
     # no PATH probing, no conda guards, no multi-location resolution chains.
     # The runtime update path (hermes_cli/managed_uv.py) looks in the same
     # place, so install.ps1 and `hermes update` stay in sync.
@@ -575,7 +575,7 @@ function Resolve-AvailablePythonVersion {
     # when none are available.
     #
     # This is the cross-process-safe counterpart to Test-Python's in-memory
-    # ``$script:PythonVersion = $fallbackVer`` mutation.  Under Hermes-Setup.exe
+    # ``$script:PythonVersion = $fallbackVer`` mutation.  Under Kova-Setup.exe
     # each ``-Stage NAME`` runs in a *fresh* powershell.exe, so the fallback the
     # ``python`` stage settled on (e.g. 3.12 when 3.11 is absent) does NOT
     # survive into the ``venv`` stage's process -- there $PythonVersion is back
@@ -1802,7 +1802,7 @@ function Install-Venv {
         return
     }
 
-    # Re-resolve the interpreter before creating the venv.  Under Hermes-Setup.exe
+    # Re-resolve the interpreter before creating the venv.  Under Kova-Setup.exe
     # each stage runs in its own powershell.exe, so the fallback the `python`
     # stage picked (e.g. 3.12 when 3.11 is absent) did NOT propagate into this
     # fresh process -- $PythonVersion is back at its "3.11" default.  Trusting it
@@ -2288,7 +2288,7 @@ function Set-PathVariable {
 }
 
 function Write-BootstrapMarker {
-    # Writes $InstallDir\.hermes-bootstrap-complete which tells the Hermes
+    # Writes $InstallDir\.hermes-bootstrap-complete which tells the Kova
     # desktop app (apps/desktop/electron/main.ts) "install.ps1 ran
     # successfully -- DON'T trigger the legacy first-launch bootstrap
     # runner."
@@ -2299,7 +2299,7 @@ function Write-BootstrapMarker {
     #   BOOTSTRAP_MARKER_SCHEMA_VERSION = 1 (line 187)
     #
     # Pinned commit/branch come from -Commit + -Branch flags (passed by
-    # Hermes-Setup.exe) or fall back to whatever git resolves in the
+    # Kova-Setup.exe) or fall back to whatever git resolves in the
     # checkout. The desktop validates schemaVersion + pinnedCommit
     # length but doesn't enforce that HEAD matches the pin (users
     # update via `hermes update` which moves HEAD legitimately).
@@ -2409,7 +2409,7 @@ function Copy-ConfigTemplates {
     # Create SOUL.md if it doesn't exist (global persona file).
     # IMPORTANT: write without a BOM.  Windows PowerShell 5.1's
     # ``Set-Content -Encoding UTF8`` writes UTF-8 WITH a byte-order-mark
-    # (the default PS5 behaviour), and Hermes's prompt-injection scanner
+    # (the default PS5 behaviour), and Kova's prompt-injection scanner
     # flags the BOM as an invisible unicode character and refuses to
     # load the file.  PS7's ``-Encoding utf8NoBOM`` fixes that but we
     # don't control which PowerShell version the user has.  Go direct
@@ -2451,7 +2451,7 @@ You are Kova Agent, an intelligent AI assistant. You are helpful, knowledgeable,
 
 function Install-NodeDeps {
     if (-not $HasNode) {
-        # Cross-process driver mode (Hermes-Setup.exe runs each -Stage NAME
+        # Cross-process driver mode (Kova-Setup.exe runs each -Stage NAME
         # in a fresh powershell.exe) means $script:HasNode set by Stage-Node
         # in the previous process isn't visible here. Re-probe rather than
         # trust the stale global -- Stage-Node already ran successfully or
@@ -2684,7 +2684,7 @@ function Install-NodeDeps {
 # the per-user Electron download cache - most often a partial download resumed
 # into the same file, leaving concatenated junk - makes electron-builder's
 # `app-builder unpack-electron` extract a tree MISSING the electron binary, so
-# the final `electron` -> `Hermes` rename dies with ENOENT and every re-run
+# the final `electron` -> `Kova` rename dies with ENOENT and every re-run
 # repeats the broken extraction forever.
 #
 # We deliberately do not validate the zip ourselves: the common
@@ -2817,7 +2817,7 @@ function Install-Desktop {
 
     # Always re-resolve Node here. Stages run in separate PowerShell processes,
     # so $script:HasNode from Stage-Node isn't visible; more importantly Test-Node
-    # enforces the build floor (^20.19 || >=22.12) and prepends the Hermes-managed
+    # enforces the build floor (^20.19 || >=22.12) and prepends the Kova-managed
     # Node to PATH, so the build never runs on a too-old system Node -- the cause
     # of the opaque "Build desktop app ... exit code 1" failure (Vite crashes on
     # old Node).
@@ -3138,7 +3138,7 @@ function New-DesktopShortcuts {
         # Bust the Windows shell icon cache so the desktop/Start-Menu shortcut
         # repaints with the (possibly newly-stamped) icon instead of a stale
         # cached bitmap. Critical on the --update path: the exe was re-stamped
-        # with the Hermes icon, but without this the shortcut can keep drawing
+        # with the Kova icon, but without this the shortcut can keep drawing
         # the old Electron icon until the user manually refreshes / reboots.
         # Best-effort and silent -- never fail the install over a cosmetic cache.
         try {
@@ -3512,7 +3512,7 @@ $InstallStages = @(
 if ($IncludeDesktop) {
     # Insert AFTER node-deps so workspace npm is already installed when
     # the desktop build runs. Inserted only when explicitly requested
-    # (Hermes-Setup.exe), never via the irm|iex CLI one-liner.
+    # (Kova-Setup.exe), never via the irm|iex CLI one-liner.
     $InstallStages += @{ Name = "desktop"; Title = "Building desktop app"; Category = "install"; NeedsUserInput = $false; Worker = "Stage-Desktop" }
 }
 $InstallStages += @(

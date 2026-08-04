@@ -592,7 +592,7 @@ def test_fireworks_plugin_fallback_models_all_have_pricing():
 
 def test_fireworks_rows_all_carry_cache_read_pricing():
     """Invariant: Fireworks publishes cached-input rates for every serverless
-    model, and Hermes prompt caching is active on Fireworks sessions — every
+    model, and Kova prompt caching is active on Fireworks sessions — every
     snapshot row must carry a cache_read rate cheaper than fresh input."""
     from agent.usage_pricing import _OFFICIAL_DOCS_PRICING
 

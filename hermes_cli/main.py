@@ -219,7 +219,7 @@ def _set_process_title() -> None:
     Purely cosmetic — non-fatal on any platform.
 
     Strategy (try in order):
-      1. ``setproctitle`` (opt-in dep — installed via ``hermes tools`` or
+      1. ``setproctitle`` (opt-in dep — installed via ``kova tools`` or
          ``pip install setproctitle``, or bundled in a future release).
       2. ctypes ``prctl(PR_SET_NAME)`` (Linux only, 15-char limit).
       3. ctypes ``pthread_setname_np`` (macOS only, kernel thread name —
@@ -300,7 +300,7 @@ def _wants_tui_early(argv: "list[str] | None" = None) -> bool:
     boots it there), then ``display.interface`` in config.
 
     The TTY gate is load-bearing for headless spawners — kanban workers,
-    cron jobs, pipes run ``hermes … chat -q`` with stdio on a pipe. This
+    cron jobs, pipes run ``kova … chat -q`` with stdio on a pipe. This
     is the earliest launch decision (it runs before ``cmd_chat`` /
     ``_resolve_use_tui``), so a ``display.interface: tui`` default used to
     boot the TUI here — whose no-TTY bail-out exits 0 without doing the
@@ -523,7 +523,7 @@ def _apply_profile_override() -> None:
         return True
 
     def _resolve_sudo_user_profile_env(name: str) -> str | None:
-        """Resolve `sudo hermes -p <name>` against the invoking user's home.
+        """Resolve `sudo kova -p <name>` against the invoking user's home.
 
         `_apply_profile_override()` runs before argparse, so `--run-as-user`
         is not available yet. For sudo invocations, the best available signal
@@ -614,7 +614,7 @@ def _apply_profile_override() -> None:
     # /opt/data/profiles/coder).  If HERMES_HOME points to the hermes root
     # instead (e.g. systemd hardcodes HERMES_HOME=/root/.hermes), we must
     # still read active_profile — the user may have switched profiles via
-    # `hermes profile use` and the gateway should honour that choice.
+    # `kova profile use` and the gateway should honour that choice.
     # See issue #22502.
     hermes_home_env = os.environ.get("HERMES_HOME", "")
     if profile_name is None and hermes_home_env:
@@ -726,7 +726,7 @@ try:
 except Exception:
     pass  # best-effort — redaction stays at default (enabled) on config errors
 
-# Initialize centralized file logging early — all `hermes` subcommands
+# Initialize centralized file logging early — all `kova` subcommands
 # (chat, setup, gateway, config, etc.) write to agent.log + errors.log.
 # Dashboard entrypoints bootstrap with GUI mode so gui.log is always present
 # during GUI testing, including pre-dispatch startup failures.
@@ -2361,9 +2361,9 @@ def _pin_kanban_board_env() -> None:
     """Pin the active kanban board into ``HERMES_KANBAN_BOARD`` for the chat session.
 
     Without this, in-process tools (``kanban_*``) and shelled-out CLI calls
-    (``hermes kanban …``) resolve the board on different paths: the env-pin if
+    (``kova kanban …``) resolve the board on different paths: the env-pin if
     set, otherwise the global ``<root>/kanban/current`` file. A concurrent
-    ``hermes kanban boards switch`` from another session can flip the file
+    ``kova kanban boards switch`` from another session can flip the file
     mid-turn, so the same chat sees its tool calls hit board A while its shell
     calls hit board B (#20074). Pinning at chat boot mirrors what the
     dispatcher already does for spawned workers.
@@ -2414,7 +2414,7 @@ def _resolve_use_tui(args) -> bool:
 
     The TTY gate (3) is load-bearing: ambient TUI preferences (env var or
     config default) must never hijack a NON-interactive invocation. Kanban
-    workers, cron jobs, and pipelines run ``hermes … chat -q`` with stdout
+    workers, cron jobs, and pipelines run ``kova … chat -q`` with stdout
     on a pipe; booting the Ink TUI there hits its no-TTY bail-out, which
     prints a resume hint and exits 0 — a kanban worker then dies with
     "exited cleanly without calling kanban_complete — protocol violation"
@@ -2915,7 +2915,7 @@ def cmd_whatsapp_cloud(args):
     common setup mistakes (e.g. pasting a phone number into the Phone
     Number ID field).
 
-    Distinct from ``hermes whatsapp`` (the Baileys bridge wizard) — the
+    Distinct from ``kova whatsapp`` (the Baileys bridge wizard) — the
     two adapters are complementary, not alternatives. See
     ``hermes_cli/setup_whatsapp_cloud.py``.
     """
@@ -4103,7 +4103,7 @@ def _remove_custom_provider(config):
 # Lazy-export the model catalog at module level. Tests and a handful of
 # downstream call sites read `hermes_cli.main._PROVIDER_MODELS` directly,
 # so the symbol needs to be reachable as a module attribute. But importing
-# the catalog eagerly costs ~55ms on every `hermes` invocation — including
+# the catalog eagerly costs ~55ms on every `kova` invocation — including
 # fast paths like `kova --version` and slash-command dispatch that never
 # touch the catalog. PEP 562 module-level __getattr__ defers the import
 # until first attribute access, so the cost is only paid by callers that
@@ -4476,7 +4476,7 @@ def cmd_webhook(args):
 def cmd_slack(args):
     """Slack integration helpers.
 
-    Dispatches ``hermes slack <subcommand>``. Currently supports:
+    Dispatches ``kova slack <subcommand>``. Currently supports:
       manifest — print or write a Slack app manifest with every gateway
                  command registered as a first-class slash.
     """
@@ -4536,7 +4536,7 @@ def cmd_doctor(args):
 
 
 def cmd_security(args):
-    """Dispatch `hermes security <subcmd>`."""
+    """Dispatch `kova security <subcmd>`."""
     sub = getattr(args, "security_command", None)
     if sub in ("audit", None):
         from hermes_cli.security_audit import cmd_security_audit
@@ -4740,7 +4740,7 @@ def _capture_head_sha(git_cmd, cwd) -> str | None:
 def _validate_critical_files_syntax(root) -> tuple[bool, str | None, str | None]:
     """Compile each file in ``_UPDATE_CRITICAL_FILES`` to catch SyntaxErrors.
 
-    These are the files imported on every ``hermes`` startup; if any of them
+    These are the files imported on every ``kova`` startup; if any of them
     has a syntax error (orphan merge-conflict markers, bad ref to a name
     that no longer exists, etc.) the CLI can't bootstrap at all. We validate
     them after a successful ``git pull`` so we can auto-roll-back instead of
@@ -5218,7 +5218,7 @@ def _do_build_web_ui(web_dir: Path, *, fatal: bool = False) -> bool:
     Args:
         web_dir: Path to the dashboard frontend source directory.
         fatal: If True, print error guidance and return False on failure
-               instead of a soft warning (used by ``hermes web``).
+               instead of a soft warning (used by ``kova web``).
 
     Returns True if the build succeeded or was skipped (no package.json).
     """
@@ -5352,9 +5352,9 @@ def _desktop_dist_exists(desktop_dir: Path) -> bool:
 # SHA-256 content hash of the source tree so that:
 #   - ``git checkout`` / ``git pull`` that touch mtimes but not content
 #     don't trigger a rebuild
-#   - ``kova update`` can unconditionally call ``hermes desktop --build-only``
+#   - ``kova update`` can unconditionally call ``kova desktop --build-only``
 #     and it will skip if nothing actually changed
-#   - ``hermes desktop`` (interactive launch) skips the build when the
+#   - ``kova desktop`` (interactive launch) skips the build when the
 #     stamp matches, making repeated launches fast
 #
 # Stamp file: $HERMES_HOME/desktop-build-stamp.json
@@ -5829,7 +5829,7 @@ def _force_adhoc_macos_signing(env: dict, *, source_mode: bool) -> bool:
     """Stop electron-builder grabbing a random keychain identity on self-update.
 
     The desktop self-updater rebuilds *and re-signs the .app on the end user's
-    machine* (``hermes desktop --build-only`` → electron-builder ``--dir``).
+    machine* (``kova desktop --build-only`` → electron-builder ``--dir``).
     With ``CSC_IDENTITY_AUTO_DISCOVERY`` on (its default), electron-builder
     signs the ``type=distribution``, hardened-runtime bundle with whatever it
     finds in that user's keychain — typically a personal "Apple Development"
@@ -6000,7 +6000,7 @@ def cmd_gui(args: argparse.Namespace):
     # Desktop launch options from config.yaml (`desktop.electron_flags`,
     # `desktop.disable_gpu`). The GPU policy is bridged to the env var the
     # Electron app already reads; an explicit env var still wins over config so
-    # `HERMES_DESKTOP_DISABLE_GPU=... hermes desktop` keeps working.
+    # `HERMES_DESKTOP_DISABLE_GPU=... kova desktop` keeps working.
     config_electron_flags, config_disable_gpu = _desktop_launch_options()
     if config_disable_gpu != "auto" and "HERMES_DESKTOP_DISABLE_GPU" not in os.environ:
         env["HERMES_DESKTOP_DISABLE_GPU"] = config_disable_gpu
@@ -6202,9 +6202,9 @@ def _find_stale_dashboard_pids(
     *,
     exclude_pids: set[int] | None = None,
 ) -> list[int]:
-    """Return PIDs of ``hermes dashboard`` processes other than ourselves.
+    """Return PIDs of ``kova dashboard`` processes other than ourselves.
 
-    ``hermes dashboard`` is a long-lived server process commonly started and
+    ``kova dashboard`` is a long-lived server process commonly started and
     forgotten.  When ``kova update`` replaces files on disk, the running
     process keeps the old Python backend in memory while the JS bundle on
     disk is updated, causing a silent frontend/backend mismatch (e.g. new
@@ -6217,7 +6217,7 @@ def _find_stale_dashboard_pids(
 
     *exclude_pids* is an optional set of PIDs that must never be returned.
     This is used by the Kova Desktop Electron app to protect its own
-    backend child process: when the desktop spawns ``hermes serve`` as
+    backend child process: when the desktop spawns ``kova serve`` as
     a backend and triggers an auto-update, the update must not kill the
     backend that the desktop itself manages.  The desktop sets the
     environment variable ``HERMES_DESKTOP_CHILD_PID`` on the spawned
@@ -6233,7 +6233,7 @@ def _find_stale_dashboard_pids(
         "kova dashboard",
         "kova_cli.main dashboard",
         "kova_cli/main.py dashboard",
-        # The headless backend (`hermes serve` / `kova serve`) is the same
+        # The headless backend (`kova serve` / `kova serve`) is the same
         # long-lived server under a different command name — the desktop app
         # spawns it. Reap it on update for the same frontend/backend-mismatch
         # reason.
@@ -6446,7 +6446,7 @@ def _print_fts_optimize_available_notice() -> None:
         print()
         print("◆ Session database optimization incomplete")
         print(
-            "  A previous `hermes sessions optimize-storage` run was "
+            "  A previous `kova sessions optimize-storage` run was "
             "interrupted. Search still works; re-run the command to resume "
             "and finish reclaiming disk:"
         )
@@ -6680,10 +6680,10 @@ def _kill_stale_dashboard_processes(
     *,
     restart_managed: bool = False,
 ) -> None:
-    """Kill running ``hermes dashboard`` processes.
+    """Kill running ``kova dashboard`` processes.
 
     Called at the end of ``kova update`` (default ``reason``) and also
-    from ``hermes dashboard --stop`` (which overrides ``reason``).  The
+    from ``kova dashboard --stop`` (which overrides ``reason``).  The
     dashboard has no service manager, so after a code update the running
     process is guaranteed to be serving stale Python against a
     freshly-updated JS bundle.  Leaving it alive produces silent
@@ -8234,7 +8234,7 @@ def _quarantine_running_hermes_exe(
 
     We rename live shims to ``hermes.exe.old.<unix-ms>`` first. uv then writes
     fresh shims at the original paths. The ``.old`` files are cleaned up on
-    the next hermes invocation by ``_cleanup_quarantined_exes``.
+    the next kova invocation by ``_cleanup_quarantined_exes``.
 
     Rename can still fail when *another* process has opened the .exe without
     ``FILE_SHARE_DELETE`` — typically AV real-time scanners with transient
@@ -8317,7 +8317,7 @@ def _quarantine_running_hermes_exe(
             f"another process is holding it open)."
         )
         print(
-            "    Close Kova Desktop, exit other `hermes` REPLs, stop the "
+            "    Close Kova Desktop, exit other `kova` REPLs, stop the "
             "gateway, or pause AV scanning, then re-run `kova update`."
         )
 
@@ -8380,7 +8380,7 @@ def _run_quarantined_install(
     Any ``pip install -e .`` (or ``--reinstall``) rewrites the entry-point
     shims, and on Windows the live ``hermes.exe`` is the running process —
     pip can neither delete nor overwrite it, so without quarantine the shim
-    is left missing and ``hermes`` drops off PATH. This wraps
+    is left missing and ``kova`` drops off PATH. This wraps
     :func:`_run_install_with_heartbeat` with the same rename-out-of-the-way /
     restore-on-failure dance that the primary install path uses, so EVERY
     install that touches the shims is protected — including the
@@ -9042,7 +9042,7 @@ def _verify_core_dependencies_installed(
     #
     # Quarantine the running ``hermes.exe`` first: ``--reinstall -e .``
     # rewrites the entry-point shims, and on Windows pip can't overwrite the
-    # live launcher, which would leave ``hermes`` off PATH.
+    # live launcher, which would leave ``kova`` off PATH.
     scripts_dir = _venv_scripts_dir() if _is_windows() else None
     repair_args = ["install", "--reinstall", "-e", "."]
     try:
@@ -9084,7 +9084,7 @@ def _verify_core_dependencies_installed(
         logger.warning("dep verification: per-package repair failed: %s", e)
         print(
             f"  ⚠ Could not install: {', '.join(still_missing)}. "
-            "Run `kova update --force` after closing other hermes processes."
+            "Run `kova update --force` after closing other kova processes."
         )
         return
 
@@ -9092,7 +9092,7 @@ def _verify_core_dependencies_installed(
     if final_missing:
         print(
             f"  ⚠ Still missing after repair: {', '.join(final_missing)}. "
-            "Run `kova update --force` after closing other hermes processes."
+            "Run `kova update --force` after closing other kova processes."
         )
     else:
         print("  ✓ All declared core dependencies now installed")
@@ -9852,7 +9852,7 @@ def _ensure_fhs_path_guard() -> None:
     standard shell breaks on those distros in non-login interactive shells
     (su, sudo -s, tmux panes, some web terminals): /etc/bashrc doesn't
     add /usr/local/bin and /root/.bash_profile doesn't either.  Symptom:
-    ``hermes`` prints ``command not found`` even though the symlink lives
+    ``kova`` prints ``command not found`` even though the symlink lives
     at /usr/local/bin/hermes.
 
     Silent no-op on: non-Linux, non-root, non-FHS installs, and any system
@@ -9998,7 +9998,7 @@ def _run_pre_update_backup(args) -> Optional[str]:
       warning so a bloated state.db can never stall the update
       (issues #15733, #34600 are the reason this safety net exists).
     - ``full``  — the quick snapshot PLUS a full zip of HERMES_HOME under
-      ``backups/`` (restorable via ``hermes import``; the #48200 wrong-path
+      ``backups/`` (restorable via ``kova import``; the #48200 wrong-path
       wipe is the reason this level exists).
 
     ``--backup`` forces ``full`` for one run; ``--no-backup`` forces ``off``.
@@ -10246,7 +10246,7 @@ def _detect_venv_python_processes(
     backend and respawns it within seconds — so the caller should refuse and
     tell the user to close the app instead. Returns ``(pid, name, cmdline)``
     tuples; empty off-Windows / without psutil / when nothing matches. The
-    calling process and its ancestors are always excluded (a CLI ``hermes
+    calling process and its ancestors are always excluded (a CLI ``kova
     update`` itself runs from the venv python). Never raises.
     """
     if not _is_windows():
@@ -10807,7 +10807,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
         )
 
     # With gateways paused, anything still running from the venv interpreter
-    # (most commonly the Desktop app's `hermes serve` backend) will keep .pyd
+    # (most commonly the Desktop app's `kova serve` backend) will keep .pyd
     # files locked and corrupt the dependency sync below. Refuse rather than
     # race: killing the desktop backend is futile (the app supervises and
     # respawns it), so the user must close the app. Deliberately NOT bypassed
@@ -11116,7 +11116,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
             # parse before declaring the update successful. If a bad commit
             # made it through CI (e.g. admin-merge bypass of a failing
             # ruff check), this catches it on the user side and rolls back
-            # so the CLI stays bootable. The user can then retry ``hermes
+            # so the CLI stays bootable. The user can then retry ``kova
             # update`` later once a fix lands upstream.
             syntax_ok, failing_path, syntax_error = _validate_critical_files_syntax(
                 PROJECT_ROOT
@@ -11202,7 +11202,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
         #
         # Drop the core-install breadcrumb BEFORE touching the venv. If the
         # install is killed mid-flight (Ctrl-C, terminal close, WSL OOM), the
-        # marker survives and the next ``hermes`` launch finishes the install
+        # marker survives and the next ``kova`` launch finishes the install
         # via ``_recover_from_interrupted_install``. Cleared after the core
         # ``.[all]`` install completes — lazy refresh uses a separate marker.
         _write_update_incomplete_marker()
@@ -11280,7 +11280,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
             _clear_lazy_refresh_incomplete_marker()
         else:
             print(
-                "  ⚠ Lazy-refresh recovery incomplete — run `hermes` again "
+                "  ⚠ Lazy-refresh recovery incomplete — run `kova` again "
                 "to finish import-based venv repair."
             )
 
@@ -11288,11 +11288,11 @@ def _cmd_update_impl(args, gateway_mode: bool):
         _build_web_ui(PROJECT_ROOT / "web")
 
         # Rebuild the desktop app if the source tree changed since the last
-        # build.  ``hermes desktop --build-only`` uses the content-hash stamp
+        # build.  ``kova desktop --build-only`` uses the content-hash stamp
         # internally, so this is effectively a no-op when nothing changed.
         # Only bother if the user has a desktop app installed (indicated by
         # an existing packaged executable or desktop dist); people who have
-        # never run ``hermes desktop`` shouldn't be forced into a full
+        # never run ``kova desktop`` shouldn't be forced into a full
         # Electron build by ``kova update``.
         desktop_dir = PROJECT_ROOT / "apps" / "desktop"
         has_desktop_app = _desktop_packaged_executable(desktop_dir) is not None or _desktop_dist_exists(desktop_dir)
@@ -12442,7 +12442,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
 def _coalesce_session_name_args(argv: list) -> list:
     """Join unquoted multi-word session names after -c/--continue and -r/--resume.
 
-    When a user types ``hermes -c Pokemon Agent Dev`` without quoting the
+    When a user types ``kova -c Pokemon Agent Dev`` without quoting the
     session name, argparse sees three separate tokens.  This function merges
     them into a single argument so argparse receives
     ``['-c', 'Pokemon Agent Dev']`` instead.
@@ -12538,7 +12538,7 @@ def cmd_profile(args):
     action = getattr(args, "profile_action", None)
 
     if action is None:
-        # Bare `hermes profile` — show current profile status
+        # Bare `kova profile` — show current profile status
         profile_name = get_active_profile_name()
         dhh = display_hermes_home()
         print(f"\nActive profile: {profile_name}")
@@ -13029,7 +13029,7 @@ def cmd_profile(args):
             if current is None:
                 print(
                     f"Error: Profile '{canon}' is not a distribution (no distribution.yaml). "
-                    "Only profiles installed via `hermes profile install` can be updated."
+                    "Only profiles installed via `kova profile install` can be updated."
                 )
                 sys.exit(1)
 
@@ -13166,10 +13166,10 @@ def _render_distribution_plan(plan) -> None:
 
 
 def _report_dashboard_status() -> int:
-    """Print ``hermes dashboard`` PIDs and return the count.
+    """Print ``kova dashboard`` PIDs and return the count.
 
     Uses the same detection logic as ``_find_stale_dashboard_pids`` (the
-    current process is excluded, but since ``hermes dashboard --status``
+    current process is excluded, but since ``kova dashboard --status``
     runs in a short-lived CLI process that never matches the pattern,
     the exclusion is irrelevant here).
     """
@@ -13226,7 +13226,7 @@ def _maybe_setup_dashboard_auth_interactively(args) -> None:
     ``DashboardAuthProvider`` is registered. Rather than greet an interactive
     operator with that hard error, prompt them to set up the bundled
     username/password provider on the spot — or point them at
-    ``hermes dashboard register`` for OAuth.
+    ``kova dashboard register`` for OAuth.
 
     No-ops (so the existing fail-closed ``SystemExit`` remains the backstop)
     when:
@@ -13456,7 +13456,7 @@ def _is_electron_packaged_web_dist(path: str) -> bool:
     """True when *path* looks like an Electron-packaged renderer dist.
 
     Packaged Desktop sets ``HERMES_WEB_DIST`` to ``.../app.asar/dist`` or
-    ``.../app.asar.unpacked/dist``. A standalone ``hermes dashboard`` that
+    ``.../app.asar.unpacked/dist``. A standalone ``kova dashboard`` that
     inherits that value serves the desktop frontend in the browser
     (issue #52945 — "Desktop IPC bridge is unavailable").
     """
@@ -13508,7 +13508,7 @@ def cmd_dashboard(args):
     # Desktop Electron spawns its backend with HERMES_DESKTOP=1 plus
     # HERMES_WEB_DIST=<packaged app.asar[/unpacked]/dist> (and often
     # HERMES_SERVE_HEADLESS=1 on the serve path). A shell that inherits
-    # those vars then runs `hermes dashboard` would otherwise:
+    # those vars then runs `kova dashboard` would otherwise:
     #   - serve the desktop renderer → "Desktop IPC bridge is unavailable"
     #     (issue #52945), or
     #   - disable the SPA via inherited HERMES_SERVE_HEADLESS.
@@ -13888,7 +13888,7 @@ _BUILTIN_SUBCOMMANDS = frozenset(
 
 
 # Top-level flags that take a value. Needed by ``_first_positional_argv``
-# so that in ``hermes -m gpt5 chat``, ``gpt5`` is correctly skipped as a
+# so that in ``kova -m gpt5 chat``, ``gpt5`` is correctly skipped as a
 # flag value rather than misclassified as a subcommand. Kept in sync with
 # the top-level flags declared in ``hermes_cli/_parser.py``.
 #
@@ -13918,7 +13918,7 @@ def _first_positional_argv() -> str | None:
 
     Used by ``main()`` to decide whether plugin discovery has to run at
     argparse-setup time. Handles common invocations like
-    ``hermes -m gpt5 --provider openai chat "msg"`` by skipping the
+    ``kova -m gpt5 --provider openai chat "msg"`` by skipping the
     values attached to known top-level flags.
 
     Does NOT fully simulate argparse — unknown ``--foo=bar`` / ``--foo
@@ -13957,7 +13957,7 @@ def _plugin_cli_discovery_needed() -> bool:
     """
     first = _first_positional_argv()
     if first is None:
-        # Bare ``hermes`` or only flags → defaults to ``chat``.
+        # Bare ``kova`` or only flags → defaults to ``chat``.
         return False
     if first in _BUILTIN_SUBCOMMANDS:
         return False
@@ -14391,7 +14391,7 @@ def main():
     #
     # The substring match is deliberately loose: argv isn't parsed yet at this
     # point, and the failure modes are asymmetric. Over-matching (e.g.
-    # ``hermes skills install update``) merely defers recovery one launch;
+    # ``kova skills install update``) merely defers recovery one launch;
     # under-matching (missing ``kova -p work update``) would race a recovery
     # install against the real one. Loose wins.
     try:
@@ -14589,7 +14589,7 @@ def main():
         description=(
             "Configure the official Meta WhatsApp Business Cloud API "
             "adapter (Business account required, public webhook URL "
-            "required). Distinct from `hermes whatsapp` which sets up "
+            "required). Distinct from `kova whatsapp` which sets up "
             "the Baileys bridge for personal accounts."
         ),
     )
@@ -14763,7 +14763,7 @@ def main():
     # own argparse tree.  No hardcoded plugin commands in main.py.
     #
     # Skipped when the invocation is already targeting a known built-in
-    # subcommand — ``kova --help``, ``hermes version``, ``hermes logs``,
+    # subcommand — ``kova --help``, ``kova version``, ``kova logs``,
     # etc.  This avoids eagerly importing every bundled plugin module
     # (google.cloud.pubsub_v1, aiohttp, grpc, PIL …) which costs
     # 500-650ms on typical installs.
@@ -14884,13 +14884,13 @@ def main():
             "Install or check the cua-driver binary used by the\n"
             "`computer_use` toolset. Supported on macOS, Windows, and\n"
             "Linux.\n\n"
-            "Use `hermes computer-use install` to fetch and run the\n"
+            "Use `kova computer-use install` to fetch and run the\n"
             "upstream cua-driver installer. This is equivalent to the\n"
-            "post-setup hook that `hermes tools` runs when you first\n"
+            "post-setup hook that `kova tools` runs when you first\n"
             "enable the Computer Use toolset, and is a stable target\n"
             "for re-running the install if it didn't fire (e.g. when\n"
             "toggling the toolset on a returning-user setup).\n\n"
-            "Use `hermes computer-use doctor` to run cua-driver's\n"
+            "Use `kova computer-use doctor` to run cua-driver's\n"
             "`health_report` MCP tool and surface its check matrix\n"
             "(TCC, bundle identity, version, platform support, ...)\n"
             "in human-readable form."
@@ -15959,7 +15959,7 @@ def main():
             )
 
             # Preserve the historical default ONLY for a truly bare
-            # `hermes sessions prune`: no time window and no filters at all
+            # `kova sessions prune`: no time window and no filters at all
             # means "older than 90 days". ANY filter — including --source —
             # suppresses the implicit cutoff, so `prune --source cron`
             # matches ALL cron sessions regardless of age. The preview +
@@ -16214,7 +16214,7 @@ def main():
             )
             if result.get("vacuumed") is False:
                 print("  (VACUUM was skipped or failed — run "
-                      "`hermes sessions optimize` later to reclaim freed space.)")
+                      "`kova sessions optimize` later to reclaim freed space.)")
 
         elif action == "stats":
             total = db.session_count()
@@ -16326,7 +16326,7 @@ def main():
     # =========================================================================
     # Pre-process argv so unquoted multi-word session names after -c / -r
     # are merged into a single token before argparse sees them.
-    # e.g. ``hermes -c Pokemon Agent Dev`` → ``hermes -c 'Pokemon Agent Dev'``
+    # e.g. ``kova -c Pokemon Agent Dev`` → ``kova -c 'Pokemon Agent Dev'``
     # ── Container-aware routing ────────────────────────────────────────
     # When NixOS container mode is active, route ALL subcommands into
     # the managed container.  This MUST run before parse_args() so that

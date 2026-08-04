@@ -129,7 +129,7 @@ def _check_local_runtime() -> tuple[bool, str | None]:
 
     On older CPUs, importing the local Hindsight stack can raise a runtime
     error from NumPy before the daemon starts. Treat that as "unavailable"
-    so Hermes can degrade gracefully instead of repeatedly trying to start
+    so Kova can degrade gracefully instead of repeatedly trying to start
     a broken local memory backend.
     """
     try:
@@ -485,7 +485,7 @@ def _utc_timestamp() -> str:
 
 
 def _embedded_profile_name(config: dict[str, Any]) -> str:
-    """Return the Hindsight embedded profile name for this Hermes config."""
+    """Return the Hindsight embedded profile name for this Kova config."""
     profile = config.get("profile", "hermes")
     return str(profile or "hermes")
 
@@ -585,14 +585,14 @@ def _resolve_bank_id_template(template: str, fallback: str, **placeholders: str)
     """Resolve a bank_id template string with the given placeholders.
 
     Supported placeholders (each is sanitized before substitution):
-      {profile}   — active Hermes profile name (from agent_identity)
-      {workspace} — Hermes workspace name (from agent_workspace)
+      {profile}   — active Kova profile name (from agent_identity)
+      {workspace} — Kova workspace name (from agent_workspace)
       {platform}  — "cli", "telegram", "discord", etc.
       {user}      — platform user id (gateway sessions)
       {session}   — current session id
 
     Missing/empty placeholders are rendered as the empty string and then
-    collapsed — e.g. ``hermes-{user}`` with no user becomes ``hermes``.
+    collapsed — e.g. ``hermes-{user}`` with no user becomes ``kova``.
 
     If the template is empty, resolution falls back to *fallback*.
     Returns the sanitized bank id.
@@ -1385,13 +1385,13 @@ class HindsightMemoryProvider(MemoryProvider):
                 msg = (
                     "Hindsight local_embedded mode cannot run as root "
                     "(PostgreSQL initdb refuses root). Skipping the embedded "
-                    "memory daemon. Run Hermes as a non-root user, or switch "
+                    "memory daemon. Run Kova as a non-root user, or switch "
                     "to cloud / local_external mode via 'hermes memory setup'."
                 )
                 logger.warning(msg)
                 # Surface to the terminal too — a daemon that never starts
                 # would otherwise fail silently and the user would only see
-                # Hermes get sluggish. (issue #13125)
+                # Kova get sluggish. (issue #13125)
                 try:
                     print(f"  ⚠ {msg}", file=sys.stderr, flush=True)
                 except Exception:
@@ -1929,7 +1929,7 @@ class HindsightMemoryProvider(MemoryProvider):
             try:
                 if self._mode == "local_embedded":
                     # HindsightEmbedded.close() delegates to its sync client.close().
-                    # When Hermes created/used that client on the shared async loop,
+                    # When Kova created/used that client on the shared async loop,
                     # closing it from this thread can raise "attached to a different
                     # loop" before aiohttp releases the session. Close the embedded
                     # inner async client on the shared loop first, then let the

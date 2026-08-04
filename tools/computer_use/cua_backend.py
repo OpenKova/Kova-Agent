@@ -14,7 +14,7 @@ Linux is the most recent runtime (X11 today, Wayland via XWayland; pure-
 Wayland progress tracked upstream). It is enabled in
 `check_computer_use_requirements` alongside macOS and Windows. The plumbing
 in this file is OS-agnostic; per-host gaps (no DISPLAY, missing AT-SPI,
-etc.) surface as specific blocked checks via `hermes computer-use doctor`
+etc.) surface as specific blocked checks via `kova computer-use doctor`
 rather than failing silently.
 
 Install:
@@ -195,7 +195,7 @@ def _computer_use_cfg() -> Dict[str, Any]:
 
 
 def _cua_no_overlay() -> bool:
-    """True when Hermes should pass ``--no-overlay`` to cua-driver.
+    """True when Kova should pass ``--no-overlay`` to cua-driver.
 
     Reads ``computer_use.no_overlay``. Default ``None`` (auto-detect):
     disable the overlay where idle CPU burn is a known failure mode —
@@ -225,7 +225,7 @@ def _cua_no_overlay() -> bool:
 
 
 def _cua_telemetry_disabled() -> bool:
-    """True when Hermes should disable cua-driver telemetry for this user.
+    """True when Kova should disable cua-driver telemetry for this user.
 
     Reads ``computer_use.cua_telemetry`` (default False → telemetry off).
     Unreadable config falls SAFE toward disabling telemetry.
@@ -362,7 +362,7 @@ def _resolve_mcp_invocation(
     (trycua/cua#1961). The manifest carries a stable ``mcp_invocation``
     pointer with both ``command`` and ``args``, so a future cua-driver
     that renames or relocates the subcommand keeps working without a
-    Hermes patch.
+    Kova patch.
 
     Falls back to ``(driver_cmd, ["mcp"])`` for older drivers that don't
     expose ``manifest``, or any indeterminate failure — the wrapper must
@@ -507,8 +507,8 @@ def _candidate_cua_driver_commands(override: Optional[str] = None) -> List[str]:
     Desktop apps launched from Finder/Dock often inherit a narrow PATH that
     omits user-local install directories. The upstream cua-driver installer
     commonly places the binary under ``~/.local/bin`` on POSIX systems, so a
-    Hermes Desktop/TUI session can otherwise filter out the `computer_use`
-    tool even though `hermes computer-use doctor` succeeds from a login shell.
+    Kova Desktop/TUI session can otherwise filter out the `computer_use`
+    tool even though `kova computer-use doctor` succeeds from a login shell.
     """
     configured = (override if override is not None else os.environ.get(_CUA_DRIVER_CMD_ENV, "")).strip()
     if configured:
@@ -611,7 +611,7 @@ def cua_driver_update_nudge() -> Optional[str]:
     current = state.get("current_version") or "?"
     return (
         f"cua-driver {latest} is available (you have {current}); "
-        f"update with `hermes computer-use install --upgrade`."
+        f"update with `kova computer-use install --upgrade`."
     )
 
 
@@ -653,7 +653,7 @@ def cua_driver_install_hint() -> str:
         )
     return (
         "cua-driver is not installed. Install with one of:\n"
-        "  hermes computer-use install\n"
+        "  kova computer-use install\n"
         "Or run the upstream installer directly:\n"
         f"{installer}\n"
         "Or run `kova tools` and enable the Computer Use toolset to install it automatically."
@@ -943,7 +943,7 @@ class _CuaDriverSession:
                 command=command,
                 args=args,
                 # Apply the telemetry policy first (default: disabled), then
-                # sanitize Hermes-managed secrets out of the child env.
+                # sanitize Kova-managed secrets out of the child env.
                 env=_sanitize_subprocess_env(cua_driver_child_env()),
             )
 
@@ -1556,14 +1556,14 @@ class CuaDriverBackend(ComputerUseBackend):
         # instructions ask every consumer to declare a stable session
         # at the start of a run (start_session) and tear it down at
         # the end (end_session). Doing so:
-        #   - Gets a distinct agent-cursor color per Hermes run, with
+        #   - Gets a distinct agent-cursor color per Kova run, with
         #     overlay rendering visualising where actions land
         #     (without moving the real OS cursor).
         #   - Isolates per-session config + recording ownership so
-        #     concurrent Hermes runs / subagents don't step on each
+        #     concurrent Kova runs / subagents don't step on each
         #     other.
         # We mint a UUID4-based id once per CuaDriverBackend instance —
-        # one Hermes run = one backend = one session — and pass it as
+        # one Kova run = one backend = one session — and pass it as
         # `session` on every cua-driver tool call. Sessions are an
         # additive feature on the cua-driver side: when our id is
         # unknown to the driver (older builds), the tool calls
@@ -1575,7 +1575,7 @@ class CuaDriverBackend(ComputerUseBackend):
     def start(self) -> None:
         _maybe_nudge_update()
         # The MCP client SDK (`mcp`) is an optional dependency (the
-        # `computer-use` / `mcp` extras), not part of Hermes' minimal core.
+        # `computer-use` / `mcp` extras), not part of Kova' minimal core.
         # Lazy-install it on first use — the same pattern every other optional
         # backend uses — so users never hit an opaque `No module named 'mcp'`
         # at invoke time. Auto-install is gated by `security.allow_lazy_installs`
@@ -1819,7 +1819,7 @@ class CuaDriverBackend(ComputerUseBackend):
     ) -> CaptureResult:
         """Capture the frontmost on-screen window or an exact known target.
 
-        Maps hermes `capture(mode, app)` → cua-driver `list_windows` +
+        Maps kova `capture(mode, app)` → cua-driver `list_windows` +
         `get_window_state` (ax/som) or `screenshot` (vision).
         """
         # Step 1: enumerate on-screen windows to find target pid/window_id.

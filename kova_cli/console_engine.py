@@ -1,6 +1,6 @@
 """Safe Kova Console command engine.
 
-This module backs ``hermes console`` and is intentionally narrower than the
+This module backs ``kova console`` and is intentionally narrower than the
 full Kova CLI. It exposes a curated set of native adapters that can later be
 shared by the dashboard console websocket without becoming a raw shell.
 """
@@ -1585,7 +1585,7 @@ def run_console_repl(
     stderr=None,
     interactive: bool | None = None,
 ) -> int:
-    """Run the local ``hermes console`` REPL."""
+    """Run the local ``kova console`` REPL."""
 
     stdin = stdin or sys.stdin
     stdout = stdout or sys.stdout

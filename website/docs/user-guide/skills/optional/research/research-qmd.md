@@ -14,7 +14,7 @@ Hybrid local search over notes, docs, and transcripts.
 
 | | |
 |---|---|
-| Source | Optional — install with `hermes skills install official/research/qmd` |
+| Source | Optional — install with `kova skills install official/research/qmd` |
 | Path | `optional-skills/research/qmd` |
 | Version | `1.0.0` |
 | Author | Kova Agent + Teknium |
@@ -26,7 +26,7 @@ Hybrid local search over notes, docs, and transcripts.
 ## Reference: full SKILL.md
 
 :::info
-The following is the complete skill definition that Hermes loads when this skill is triggered. This is what the agent sees as instructions when the skill is active.
+The following is the complete skill definition that Kova loads when this skill is triggered. This is what the agent sees as instructions when the skill is active.
 :::
 
 # QMD — Query Markup Documents

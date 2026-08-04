@@ -149,7 +149,7 @@ def get_process_hermes_home() -> Path:
     return _hermes_home_from_env()
 
 
-# Alias for callers updated during the Hermes→Kova rebranding.
+# Alias for callers updated during the Kova→Kova rebranding.
 # Keeps both names working so old and new imports coexist without
 # an immediate migration of every caller.
 get_kova_home = get_hermes_home

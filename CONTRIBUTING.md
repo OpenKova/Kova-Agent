@@ -32,7 +32,7 @@ A quick search before you build saves your time and keeps the PR queue clean —
 - **If an open PR already addresses it**, consider reviewing or improving that one instead of opening a competing duplicate.
 - **For larger work**, comment on the issue to signal you're working on it, so others don't start the same thing.
 
-Related: #38284 covers the agent-side analog — Hermes itself checking existing issues and PRs before deep self-troubleshooting. This section is the human-contributor complement.
+Related: #38284 covers the agent-side analog — Kova itself checking existing issues and PRs before deep self-troubleshooting. This section is the human-contributor complement.
 
 ---
 
@@ -539,7 +539,7 @@ required_environment_variables:
     required_for: full functionality
 ```
 
-The user may skip setup and keep loading the skill. Hermes only exposes metadata (`stored_as`, `skipped`, `validated`) to the model — never the secret value.
+The user may skip setup and keep loading the skill. Kova only exposes metadata (`stored_as`, `skipped`, `validated`) to the model — never the secret value.
 
 Legacy `prerequisites.env_vars` remains supported and is normalized into the new representation.
 
@@ -577,7 +577,7 @@ Every new or modernized skill — bundled, optional, or contributed — must mee
    Good: `Search arXiv papers by keyword, author, category, or ID.`
    Bad: `A powerful and comprehensive skill that allows the agent to search arXiv for relevant academic papers using various criteria including keywords, authors, and categories.`
 
-2. **Tools referenced in SKILL.md prose must be native Hermes tools or MCP servers the skill explicitly expects.** When the skill needs a capability, point at the proper tool by name in backticks: `` `terminal` ``, `` `web_extract` ``, `` `web_search` ``, `` `read_file` ``, `` `write_file` ``, `` `patch` ``, `` `search_files` ``, `` `vision_analyze` ``, `` `browser_navigate` ``, `` `delegate_task` ``, `` `image_generate` ``, `` `text_to_speech` ``, `` `cronjob` ``, `` `memory` ``, `` `skill_view` ``, `` `todo` ``, `` `execute_code` ``.
+2. **Tools referenced in SKILL.md prose must be native Kova tools or MCP servers the skill explicitly expects.** When the skill needs a capability, point at the proper tool by name in backticks: `` `terminal` ``, `` `web_extract` ``, `` `web_search` ``, `` `read_file` ``, `` `write_file` ``, `` `patch` ``, `` `search_files` ``, `` `vision_analyze` ``, `` `browser_navigate` ``, `` `delegate_task` ``, `` `image_generate` ``, `` `text_to_speech` ``, `` `cronjob` ``, `` `memory` ``, `` `skill_view` ``, `` `todo` ``, `` `execute_code` ``.
 
    Do NOT name shell utilities the agent already has wrapped:
 
@@ -615,7 +615,7 @@ Every new or modernized skill — bundled, optional, or contributed — must mee
 
 ### Skill guidelines
 
-- **No external dependencies unless absolutely necessary.** Prefer stdlib Python, curl, and existing Hermes tools (`web_extract`, `terminal`, `read_file`).
+- **No external dependencies unless absolutely necessary.** Prefer stdlib Python, curl, and existing Kova tools (`web_extract`, `terminal`, `read_file`).
 - **Progressive disclosure.** Put the most common workflow first. Edge cases and advanced usage go at the bottom.
 - **Include helper scripts** for XML/JSON parsing or complex logic — don't expect the LLM to write parsers inline every time.
 - **Test it.** Run `hermes --toolsets skills -q "Use the X skill to do Y"` and verify the agent follows the instructions correctly.

@@ -1,5 +1,5 @@
 """
-``hermes photon ...`` CLI subcommands — registered by the plugin via
+``kova photon ...`` CLI subcommands — registered by the plugin via
 ``ctx.register_cli_command()``.
 
 Subcommands:
@@ -10,7 +10,7 @@ Subcommands:
     telemetry          show or toggle Spectrum SDK telemetry (on/off)
 
 The device-code login runs automatically as the first step of ``setup``;
-there is no standalone ``login`` verb (matching how every other Hermes
+there is no standalone ``login`` verb (matching how every other Kova
 gateway channel onboards through a single setup surface).
 
 Photon uses the spectrum-ts gRPC stream for inbound — there is no webhook
@@ -37,7 +37,7 @@ _SIDECAR_DIR = Path(__file__).parent / "sidecar"
 # argparse wiring
 
 def register_cli(parser: argparse.ArgumentParser) -> None:
-    """Wire up `hermes photon ...` subcommands."""
+    """Wire up `kova photon ...` subcommands."""
     subs = parser.add_subparsers(dest="photon_command", required=False)
 
     p_setup = subs.add_parser(
@@ -98,7 +98,7 @@ def _run_device_login(args: argparse.Namespace) -> int:
     """Run the RFC 8628 device-code login flow and persist the token.
 
     Internal helper — invoked as the first step of ``setup``. There is
-    no standalone ``hermes photon login`` command; Photon onboards
+    no standalone ``kova photon login`` command; Photon onboards
     through the single ``setup`` surface like every other channel.
     """
     def _print_code(code):
@@ -407,7 +407,7 @@ def _install_sidecar() -> int:
 # entry's zero-arg ``setup_fn``. Photon registers this function so it appears
 # in the unified setup wizard alongside every other channel — same onboarding
 # surface, no Photon-specific detour. It runs the identical device-login +
-# project + user + sidecar flow as ``hermes photon setup`` with interactive
+# project + user + sidecar flow as ``kova photon setup`` with interactive
 # defaults (phone is prompted when stdin is a TTY).
 
 def gateway_setup() -> None:

@@ -163,7 +163,7 @@ def reconcile_profile_gateways(
         for entry in sorted(profiles_root.iterdir()):
             if not entry.is_dir():
                 continue
-            # SOUL.md is always seeded by `hermes profile create` (config.yaml
+            # SOUL.md is always seeded by `kova profile create` (config.yaml
             # is not — that comes later via `kova setup`). Use it as the
             # "real profile" marker so stray dirs (backups, manual mkdir)
             # aren't picked up.
@@ -303,9 +303,9 @@ def _strip_container_argv_prefix(argv: Sequence[str]) -> list[str]:
     in the v2→v3 bump), drop everything up to and including the
     ``main-wrapper.sh`` token: that wrapper path is the stable boundary the
     image owns, and the subcommand always follows it. Pre-s6 / direct
-    ``hermes`` invocations carry no wrapper, so fall back to peeling a bare
-    ``init`` prefix. The wrapper re-execs ``hermes <subcommand>``, so an
-    explicit leading ``hermes`` is peeled too. Shared by the legacy-gateway
+    ``kova`` invocations carry no wrapper, so fall back to peeling a bare
+    ``init`` prefix. The wrapper re-execs ``kova <subcommand>``, so an
+    explicit leading ``kova`` is peeled too. Shared by the legacy-gateway
     and dashboard role detectors.
     """
     args = list(argv)
@@ -323,7 +323,7 @@ def _strip_container_argv_prefix(argv: Sequence[str]) -> list[str]:
         # Defensive: an `init` prefix with no wrapper token in argv.
         args = args[1:]
 
-    # The wrapper re-execs `hermes <subcommand>`; peel an explicit hermes.
+    # The wrapper re-execs `kova <subcommand>`; peel an explicit hermes.
     if args and Path(args[0]).name == "hermes":
         args = args[1:]
     return args
@@ -340,7 +340,7 @@ def _is_legacy_gateway_run_request(argv: Sequence[str]) -> bool:
 def _is_dashboard_container(argv: Sequence[str]) -> bool:
     """Return True when the container's command is the dashboard.
 
-    A dashboard-only container (``hermes dashboard ...``) never spawns or
+    A dashboard-only container (``kova dashboard ...``) never spawns or
     supervises per-profile gateways — that is the gateway container's job.
     Reconciling profile gateway s6 slots there is not just wasted work: when
     the gateway and dashboard containers share a bind-mounted HERMES_HOME,

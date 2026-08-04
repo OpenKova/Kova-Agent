@@ -22,8 +22,8 @@ We value contributions in this order:
 
 ## Common contribution paths
 
-- Building a custom/local tool without modifying Hermes core? Start with [Build a Hermes Plugin](../developer-guide/plugins/index.md)
-- Building a new built-in core tool for Hermes itself? Start with [Adding Tools](./adding-tools.md)
+- Building a custom/local tool without modifying Kova core? Start with [Build a Kova Plugin](../developer-guide/plugins/index.md)
+- Building a new built-in core tool for Kova itself? Start with [Adding Tools](./adding-tools.md)
 - Building a new skill? Start with [Creating Skills](./creating-skills.md)
 - Building a new inference provider? Start with [Adding Providers](./adding-providers.md)
 
@@ -42,8 +42,8 @@ We value contributions in this order:
 
 For most contributors, the best development bootstrap is the same path users
 take: run the standard installer, then work inside the repository it cloned.
-The installer creates the Hermes venv, wires the `hermes` command, stamps the
-install method for `hermes update`, and clones the full git project into
+The installer creates the Kova venv, wires the `kova` command, stamps the
+install method for `kova update`, and clones the full git project into
 `$HERMES_HOME/hermes-agent` (usually `~/.hermes/hermes-agent`). That keeps your
 development environment on the same layout the CLI, updater, lazy dependency
 installer, gateway, and docs assume.
@@ -66,7 +66,7 @@ git checkout -b fix/description
 scripts/run_tests.sh
 ```
 
-You can also run a fully isolated Hermes instance (throwaway HERMES_HOME, separate Electron
+You can also run a fully isolated Kova instance (throwaway HERMES_HOME, separate Electron
 userData, distinct Electron app name to avoid the single-instance lock):
 
 ```bash
@@ -76,9 +76,9 @@ scripts/dev-sandbox.sh --persistent python -m hermes_cli.main desktop  # state s
 
 ### Manual clone fallback
 
-Use this only if you intentionally do not want Hermes' managed install layout
+Use this only if you intentionally do not want Kova' managed install layout
 (for example, a throwaway clone inside a container or CI job). If you install
-this way, make sure you run the `hermes` entrypoint from this venv; running the
+this way, make sure you run the `kova` entrypoint from this venv; running the
 system `python3 -m hermes_cli.main` can pick up unrelated system Python
 packages.
 
@@ -118,9 +118,9 @@ echo 'OPENROUTER_API_KEY=sk-or-v1-your-key' >> ~/.hermes/.env
 ### Run
 
 ```bash
-# The standard installer already put `hermes` on PATH.
-hermes doctor
-hermes chat -q "Hello"
+# The standard installer already put `kova` on PATH.
+kova doctor
+kova chat -q "Hello"
 ```
 
 If you used the manual clone fallback, run `./hermes` from the checkout or
@@ -202,7 +202,7 @@ Use `pathlib.Path` instead of string concatenation with `/`.
 
 ## Security Considerations
 
-Hermes has terminal access. Security matters.
+Kova has terminal access. Security matters.
 
 ### Existing Protections
 
@@ -239,7 +239,7 @@ refactor/description   # Code restructuring
 ### Before Submitting
 
 1. **Run tests**: `scripts/run_tests.sh` for CI-parity. Use direct `python -m pytest ...` only when the wrapper is unavailable or you are intentionally debugging outside the wrapper.
-2. **Test manually**: Run `hermes` and exercise the code path you changed
+2. **Test manually**: Run `kova` and exercise the code path you changed
 3. **Check cross-platform impact**: Consider macOS, Linux, WSL2, and native Windows. If you touch file I/O, process management, terminal handling, subprocesses, or signals, run `scripts/check-windows-footguns.py`.
 4. **Keep PRs focused**: One logical change per PR
 
@@ -282,7 +282,7 @@ fix(security): prevent shell injection in sudo password piping
 ## Reporting Issues
 
 - Use [GitHub Issues](https://github.com/NousResearch/hermes-agent/issues)
-- Include: OS, Python version, Hermes version (`hermes version`), full error traceback
+- Include: OS, Python version, Kova version (`kova version`), full error traceback
 - Include steps to reproduce
 - Check existing issues before creating duplicates
 - For security vulnerabilities, please report privately

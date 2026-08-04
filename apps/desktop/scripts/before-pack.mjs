@@ -10,7 +10,7 @@
  * ---------------
  * electron-builder's final packaging step copies the stock `electron`
  * binary into `release/<platform>-unpacked/` and then renames it to the
- * product name (`Hermes`). If a PREVIOUS `npm run pack` was interrupted
+ * product name (`Kova`). If a PREVIOUS `npm run pack` was interrupted
  * (Ctrl-C, OOM kill, crash, full disk) the unpacked directory is left in a
  * corrupted partial state: it keeps the already-renamed `LICENSE.electron.txt`
  * and the Chromium payload (.pak/.so/icudtl.dat/chrome-sandbox) but is MISSING
@@ -21,7 +21,7 @@
  * rename a `electron` file that no longer exists. The build dies with:
  *
  *   ENOENT: no such file or directory, rename
- *   '.../release/linux-unpacked/electron' -> '.../release/linux-unpacked/Hermes'
+ *   '.../release/linux-unpacked/electron' -> '.../release/linux-unpacked/Kova'
  *
  * This is a hard failure with no obvious cause for the user — `hermes desktop`
  * just prints "Desktop GUI build failed" and the only fix is to manually

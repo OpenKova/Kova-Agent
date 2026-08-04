@@ -60,7 +60,7 @@ conservative at the waist.
   including large ones (a new messaging channel, a session-cap feature, a
   Windows PTY bridge). Breadth in the product is a goal, not a footprint
   concern — as long as it integrates with the existing setup/config UX
-  (`hermes tools`, `hermes setup`, auto-install) rather than bolting on a raw
+  (`kova tools`, `kova setup`, auto-install) rather than bolting on a raw
   env var.
 - **Refactor god-files into clean modules.** Extracting a multi-thousand-line
   cluster out of `cli.py` / `run_agent.py` / `gateway/run.py` into a focused
@@ -117,7 +117,7 @@ conservative at the waist.
   feature.
 - **Outbound telemetry / usage attribution without opt-in gating.** No new
   analytics, third-party identifier tagging, or attribution tags until a
-  generic user-facing opt-in (config gate + setup prompt + `hermes tools`
+  generic user-facing opt-in (config gate + setup prompt + `kova tools`
   toggle) exists. Park behind a label, do not merge.
 - **Change-detector tests, cache-breaking mid-conversation, dead code wired in
   without E2E proof, and plugins that touch core files.** Plugins live in their
@@ -187,9 +187,9 @@ Each rung adds more permanent surface than the one above. Choose the highest
 1. **Extend existing code** — the capability is a variation of something that
    already exists. Zero new surface.
 2. **CLI command + skill** — manages config/state/infra expressible as shell
-   commands. The agent runs `hermes <subcommand>` guided by a skill. Zero
+   commands. The agent runs `kova <subcommand>` guided by a skill. Zero
    model-tool footprint. Default choice for subscriptions, scheduled tasks,
-   service setup. Examples: `hermes webhook`, `hermes cron`, `hermes tools`.
+   service setup. Examples: `kova webhook`, `kova cron`, `kova tools`.
 3. **Service-gated tool (`check_fn`)** — needs structured params/returns AND
    only appears when a prerequisite is configured. Zero footprint otherwise.
    Examples: Home Assistant tools (gated on token), memory-provider tools.
@@ -259,7 +259,7 @@ hermes-agent/
 │                         #   strike-freedom-cockpit, ...
 ├── optional-skills/      # Heavier/niche skills shipped but NOT active by default
 ├── skills/               # Built-in skills bundled with the repo
-├── ui-tui/               # Ink (React) terminal UI — `hermes --tui`
+├── ui-tui/               # Ink (React) terminal UI — `kova --tui`
 │   └── src/              # entry.tsx, app.tsx, gatewayClient.ts + app/components/hooks/lib
 ├── tui_gateway/          # Python JSON-RPC backend for the TUI
 ├── acp_adapter/          # ACP server (VS Code / Zed / JetBrains integration)
@@ -272,7 +272,7 @@ hermes-agent/
 **User config:** `~/.hermes/config.yaml` (settings), `~/.hermes/.env` (API keys only).
 **Logs:** `~/.hermes/logs/` — `agent.log` (INFO+), `errors.log` (WARNING+),
 `gateway.log` when running the gateway. Profile-aware via `get_hermes_home()`.
-Browse with `hermes logs [--follow] [--level ...] [--session ...]`.
+Browse with `kova logs [--follow] [--level ...] [--session ...]`.
 
 ## TypeScript Style
 
@@ -427,12 +427,12 @@ if canonical == "mycommand":
 
 ## TUI Architecture (ui-tui + tui_gateway)
 
-The TUI is a full replacement for the classic (prompt_toolkit) CLI, activated via `hermes --tui` or `HERMES_TUI=1`.
+The TUI is a full replacement for the classic (prompt_toolkit) CLI, activated via `kova --tui` or `HERMES_TUI=1`.
 
 ### Process Model
 
 ```
-hermes --tui
+kova --tui
   └─ Node (Ink)  ──stdio JSON-RPC──  Python (tui_gateway)
        │                                  └─ AIAgent + tools + sessions
        └─ renders transcript, composer, prompts, activity
@@ -476,16 +476,16 @@ npm run fmt       # prettier
 npm test          # vitest
 ```
 
-### TUI in the Dashboard (`hermes dashboard` → `/chat`)
+### TUI in the Dashboard (`kova dashboard` → `/chat`)
 
 The dashboard embeds the real `hermes --tui` — **not** a rewrite.  See `hermes_cli/pty_bridge.py` + the `@app.websocket("/api/pty")` endpoint in `hermes_cli/web_server.py`.
 
 - Browser loads `web/src/pages/ChatPage.tsx`, which mounts xterm.js's `Terminal` with the WebGL renderer, `@xterm/addon-fit` for container-driven resize, and `@xterm/addon-unicode11` for modern wide-character widths.
 - `/api/pty?token=…` upgrades to a WebSocket; auth uses the same ephemeral `_SESSION_TOKEN` as REST, via query param (browsers can't set `Authorization` on WS upgrade).
-- The server spawns whatever `hermes --tui` would spawn, through `ptyprocess` (POSIX PTY — WSL works, native Windows does not).
+- The server spawns whatever `kova --tui` would spawn, through `ptyprocess` (POSIX PTY — WSL works, native Windows does not).
 - Frames: raw PTY bytes each direction; resize via `\x1b[RESIZE:<cols>;<rows>]` intercepted on the server and applied with `TIOCSWINSZ`.
 
-**Do not re-implement the primary chat experience in React.** The main transcript, composer/input flow (including slash-command behavior), and PTY-backed terminal belong to the embedded `hermes --tui` — anything new you add to Ink shows up in the dashboard automatically. If you find yourself rebuilding the transcript or composer for the dashboard, stop and extend Ink instead.
+**Do not re-implement the primary chat experience in React.** The main transcript, composer/input flow (including slash-command behavior), and PTY-backed terminal belong to the embedded `kova --tui` — anything new you add to Ink shows up in the dashboard automatically. If you find yourself rebuilding the transcript or composer for the dashboard, stop and extend Ink instead.
 
 **Structured React UI around the TUI is allowed when it is not a second chat surface.** Sidebar widgets, inspectors, summaries, status panels, and similar supporting views (e.g. `ChatSidebar`, `ModelPickerDialog`, `ToolCall`) are fine when they complement the embedded TUI rather than replacing the transcript / composer / terminal. Keep their state independent of the PTY child's session and surface their failures non-destructively so the terminal pane keeps working unimpaired.
 
@@ -749,8 +749,8 @@ can:
   `on_session_start`, `on_session_end`
 - Register new tools via `ctx.register_tool(...)`
 - Register CLI subcommands via `ctx.register_cli_command(...)` — the
-  plugin's argparse tree is wired into `hermes` at startup so
-  `hermes <pluginname> <subcmd>` works with no change to `main.py`
+  plugin's argparse tree is wired into `kova` at startup so
+  `kova <pluginname> <subcmd>` works with no change to `main.py`
 
 Hooks are invoked from `model_tools.py` (pre/post tool) and `run_agent.py`
 (lifecycle). **Discovery timing pitfall:** `discover_plugins()` only runs
@@ -771,10 +771,10 @@ and is orchestrated by `agent/memory_manager.py`. Lifecycle hooks include
 
 **CLI commands via `plugins/memory/<name>/cli.py`:** if a memory plugin
 defines `register_cli(subparser)`, `discover_plugin_cli_commands()` finds
-it at argparse setup time and wires it into `hermes <plugin>`. The
+it at argparse setup time and wires it into `kova <plugin>`. The
 framework only exposes CLI commands for the **currently active** memory
 provider (read from `memory.provider` in config.yaml), so disabled
-providers don't clutter `hermes --help`.
+providers don't clutter `kova --help`.
 
 **Rule (Teknium, May 2026):** plugins MUST NOT modify core files
 (`run_agent.py`, `cli.py`, `gateway/run.py`, `hermes_cli/main.py`, etc.).
@@ -788,7 +788,7 @@ built-in memory providers under `plugins/memory/` is closed. New memory
 backends must ship as **standalone plugin repos** that users install
 into `~/.hermes/plugins/` (or via pip entry points) — they implement
 the same `MemoryProvider` ABC, register through the same discovery
-path, and integrate via `hermes memory setup` / `post_setup()` without
+path, and integrate via `kova memory setup` / `post_setup()` without
 landing in this tree. PRs that add a new directory under
 `plugins/memory/` will be closed with a pointer to publish the
 provider as its own repo. Existing in-tree providers stay; bug fixes
@@ -858,7 +858,7 @@ Two parallel surfaces:
   Organized by category directories (e.g. `skills/github/`, `skills/mlops/`).
 - **`optional-skills/`** — heavier or niche skills shipped with the repo but
   NOT active by default. Installed explicitly via
-  `hermes skills install official/<category>/<skill>`. Adapter lives in
+  `kova skills install official/<category>/<skill>`. Adapter lives in
   `tools/skills_hub.py` (`OptionalSkillSource`). Categories include
   `autonomous-ai-agents`, `blockchain`, `communication`, `creative`,
   `devops`, `email`, `health`, `mcp`, `migration`, `mlops`, `productivity`,
@@ -974,7 +974,7 @@ Current toolset keys: `browser`, `clarify`, `code_execution`, `cronjob`,
 `messaging`, `moa`, `rl`, `safe`, `search`, `session_search`, `skills`,
 `spotify`, `terminal`, `todo`, `tts`, `video`, `vision`, `web`, `yuanbao`.
 
-Enable/disable per platform via `hermes tools` (the curses UI) or the
+Enable/disable per platform via `kova tools` (the curses UI) or the
 `tools.<platform>.enabled` / `tools.<platform>.disabled` lists in
 `config.yaml`.
 
@@ -1052,7 +1052,7 @@ Full user-facing docs: `website/docs/user-guide/features/curator.md`.
 ## Cron (scheduled jobs)
 
 `cron/jobs.py` (job store) + `cron/scheduler.py` (tick loop). Agents
-schedule jobs via the `cronjob` tool; users via `hermes cron <verb>`
+schedule jobs via the `cronjob` tool; users via `kova cron <verb>`
 (`list`, `add`, `edit`, `pause`, `resume`, `run`, `remove`) or the
 `/cron` slash command.
 
@@ -1088,7 +1088,7 @@ main conversation's message-role alternation stays intact.
 ## Kanban (multi-agent work queue)
 
 Durable SQLite-backed board that lets multiple profiles / workers
-collaborate on shared tasks. Users drive it via `hermes kanban <verb>`;
+collaborate on shared tasks. Users drive it via `kova kanban <verb>`;
 workers spawned by the dispatcher drive it via a dedicated `kanban_*`
 toolset so their schema footprint is zero when they're not inside a
 kanban task.
@@ -1211,7 +1211,7 @@ automatically scope to the active profile.
 
 6. **Profile operations are HOME-anchored, not HERMES_HOME-anchored** — `_get_profiles_root()`
    returns `Path.home() / ".hermes" / "profiles"`, NOT `get_hermes_home() / "profiles"`.
-   This is intentional — it lets `hermes -p coder profile list` see all profiles regardless
+   This is intentional — it lets `kova -p coder profile list` see all profiles regardless
    of which one is active.
 
 ## Known Pitfalls

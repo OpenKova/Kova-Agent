@@ -1,7 +1,7 @@
 """Auto-installation of LSP server binaries.
 
 Tries to install missing servers using whatever package manager is
-appropriate.  All installs go to a Hermes-owned bin staging dir,
+appropriate.  All installs go to a Kova-owned bin staging dir,
 ``<HERMES_HOME>/lsp/bin/``, so we don't pollute the user's global
 toolchain.
 
@@ -10,7 +10,7 @@ Strategies:
 - ``auto`` — attempt to install with the best available package
   manager.  This is the default.
 - ``manual`` — never install; if a binary is missing, the server is
-  silently skipped and the user is told about it via ``hermes lsp
+  silently skipped and the user is told about it via ``kova lsp
   status``.
 - ``off`` — same as ``manual`` for now (kept distinct so we can
   evolve behavior later, e.g. logging differently).
@@ -107,7 +107,7 @@ INSTALL_RECIPES: Dict[str, Dict[str, Any]] = {
     # PowerShell — PowerShellEditorServices ships as a GitHub release
     # zip driven by a pwsh bootstrap script, not a single binary.  We
     # require a manual bundle install and probe for the pwsh host so
-    # `hermes lsp status` reports the host's presence.
+    # `kova lsp status` reports the host's presence.
     "powershell": {"strategy": "manual", "pkg": "", "bin": "pwsh"},
 }
 
@@ -123,7 +123,7 @@ def _is_windows() -> bool:
 
 
 def hermes_lsp_bin_dir() -> Path:
-    """Return the Hermes-owned bin staging dir for LSP servers."""
+    """Return the Kova-owned bin staging dir for LSP servers."""
     home = os.environ.get("HERMES_HOME")
     if home is None:
         home = os.path.join(os.path.expanduser("~"), ".hermes")
@@ -390,7 +390,7 @@ def _install_pip(pkg: str, bin_name: str) -> Optional[str]:
 def detect_status(pkg: str) -> str:
     """Return ``installed``, ``missing``, or ``manual-only`` for a package.
 
-    Used by the ``hermes lsp status`` CLI to give users a quick
+    Used by the ``kova lsp status`` CLI to give users a quick
     overview of what's available without spawning anything.
     """
     recipe = INSTALL_RECIPES.get(pkg)

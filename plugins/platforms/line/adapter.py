@@ -1620,7 +1620,7 @@ def interactive_setup() -> None:
 
 
 def register(ctx) -> None:
-    """Plugin entry point — called by the Hermes plugin system at startup."""
+    """Plugin entry point — called by the Kova plugin system at startup."""
     ctx.register_platform(
         name="line",
         label="LINE",

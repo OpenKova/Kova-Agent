@@ -348,7 +348,7 @@ class TestDisplayResumedHistory:
 
         # The assistant entry should be skipped, only the user message shown
         assert "You:" in output
-        assert "Hermes:" not in output
+        assert "Kova:" not in output
 
     def test_only_system_messages_no_output(self):
         cli = _make_cli()

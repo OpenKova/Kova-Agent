@@ -13,7 +13,7 @@ Design goals:
 - **Loud when it matters, silent otherwise.** If no compromised package is
   installed, the user sees nothing.
 - **Acknowledgeable.** Once the user has read and acted on an advisory they
-  can dismiss it via ``hermes doctor --ack <id>``; the ack is persisted to
+  can dismiss it via ``kova doctor --ack <id>``; the ack is persisted to
   ``config.security.acked_advisories`` and survives restart.
 - **Extensible.** Adding a new advisory is one entry in ``ADVISORIES``;
   adding a new compromised version is a one-line edit. No code changes
@@ -21,14 +21,14 @@ Design goals:
 
 The check is invoked from three places:
 
-1. ``kova doctor`` (and ``hermes doctor --ack <id>``)
+1. ``kova doctor`` (and ``kova doctor --ack <id>``)
 2. CLI startup banner (one short line, then full guidance via
    ``kova doctor``)
 3. Gateway startup (logged to gateway.log; first interactive message gets
    a one-line operator banner)
 
 This module is intentionally dependency-free beyond the stdlib so it can
-run in environments where the rest of Hermes failed to import.
+run in environments where the rest of Kova failed to import.
 """
 
 from __future__ import annotations
@@ -151,7 +151,7 @@ def _installed_version(pkg_name: str) -> Optional[str]:
     """
     try:
         from importlib.metadata import PackageNotFoundError, version
-    except ImportError:  # py<3.8 — Hermes requires 3.10+ but defensive.
+    except ImportError:  # py<3.8 — Kova requires 3.10+ but defensive.
         return None
     try:
         return version(pkg_name)

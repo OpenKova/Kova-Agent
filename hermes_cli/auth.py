@@ -1693,7 +1693,7 @@ def is_provider_explicitly_configured(provider_id: str) -> bool:
                 return True
 
         # MoA presets are explicit model selections too.  A user who configured
-        # ``provider: anthropic`` as a MoA advisor/aggregator has opted Hermes
+        # ``provider: anthropic`` as a MoA advisor/aggregator has opted Kova
         # into using Anthropic credentials for that slot even when the main
         # session model is another provider.  Without this, Claude Code OAuth
         # entries are pruned/ignored by credential_pool.load_pool("anthropic"),
@@ -1727,7 +1727,7 @@ def is_provider_explicitly_configured(provider_id: str) -> bool:
 
     # 3. Check provider-specific env vars
     # Exclude CLAUDE_CODE_OAUTH_TOKEN — it's set by Claude Code itself,
-    # not by the user explicitly configuring anthropic in Hermes.
+    # not by the user explicitly configuring anthropic in Kova.
     _IMPLICIT_ENV_VARS = {"CLAUDE_CODE_OAUTH_TOKEN"}
     pconfig = PROVIDER_REGISTRY.get(normalized)
     # Fallback to ProviderDef from models.dev catalog when the provider
@@ -1744,7 +1744,7 @@ def is_provider_explicitly_configured(provider_id: str) -> bool:
                 return True
 
     # 4. Check persisted credential-pool entries that came from EXPLICIT flows
-    # the user initiated inside Hermes (manual add / device-code / PKCE), plus
+    # the user initiated inside Kova (manual add / device-code / PKCE), plus
     # env-backed pool entries. This intentionally excludes ambient borrowed
     # sources like gh_cli / claude_code / qwen-cli.
     try:
@@ -1775,7 +1775,7 @@ def is_provider_explicitly_configured(provider_id: str) -> bool:
 
 def clear_provider_auth(provider_id: Optional[str] = None) -> bool:
     """
-    Clear auth state for a provider. Used by `hermes logout`.
+    Clear auth state for a provider. Used by `kova logout`.
     If provider_id is None, clears the active provider.
     Returns True if something was cleared.
     """
@@ -2208,7 +2208,7 @@ def _nous_portal_env_override() -> Optional[str]:
 
     Mirrors ``_nous_inference_env_override()``: ``HERMES_PORTAL_BASE_URL`` /
     ``NOUS_PORTAL_BASE_URL`` are the documented dev/staging escape hatch for
-    pointing Hermes at a non-production Nous Portal (e.g. a hosted agent
+    pointing Kova at a non-production Nous Portal (e.g. a hosted agent
     provisioned on nous-account-service's `staging` environment, which stamps
     ``HERMES_PORTAL_BASE_URL=https://portal.staging-nousresearch.com`` into
     the container env). The env source is trusted (the OS user/deployment
@@ -3436,13 +3436,13 @@ def _print_loopback_ssh_hint(redirect_uri: str, *, docs_url: str | None = None) 
 # =============================================================================
 # OpenAI Codex auth — tokens stored in ~/.hermes/auth.json (not ~/.codex/)
 #
-# Hermes maintains its own Codex OAuth session separate from the Codex CLI
+# Kova maintains its own Codex OAuth session separate from the Codex CLI
 # and VS Code extension. This prevents refresh token rotation conflicts
 # where one app's refresh invalidates the other's session.
 # =============================================================================
 
 def _read_codex_tokens(*, _lock: bool = True) -> Dict[str, Any]:
-    """Read Codex OAuth tokens from Hermes auth store (~/.hermes/auth.json).
+    """Read Codex OAuth tokens from Kova auth store (~/.hermes/auth.json).
     
     Returns dict with 'tokens' (access_token, refresh_token) and 'last_refresh'.
     Raises AuthError if no Codex tokens are stored.
@@ -3592,7 +3592,7 @@ def _sync_codex_pool_entries(
 
 
 def _save_codex_tokens(tokens: Dict[str, str], last_refresh: str = None, label: str = None) -> None:
-    """Save Codex OAuth tokens to Hermes auth store (~/.hermes/auth.json)."""
+    """Save Codex OAuth tokens to Kova auth store (~/.hermes/auth.json)."""
     if last_refresh is None:
         last_refresh = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     with _auth_store_lock():
@@ -3620,7 +3620,7 @@ def _save_codex_tokens(tokens: Dict[str, str], last_refresh: str = None, label: 
 
 
 def _recover_codex_tokens_from_cli(reason: str) -> Optional[Dict[str, str]]:
-    """Adopt a valid Codex CLI token pair into Hermes auth, if available."""
+    """Adopt a valid Codex CLI token pair into Kova auth, if available."""
     imported = _import_codex_cli_tokens()
     # Require BOTH tokens before adopting: persisting a payload without a
     # usable refresh_token would only break the next refresh cycle.
@@ -3641,7 +3641,7 @@ def refresh_codex_oauth_pure(
     *,
     timeout_seconds: float = 20.0,
 ) -> Dict[str, Any]:
-    """Refresh Codex OAuth tokens without mutating Hermes auth state."""
+    """Refresh Codex OAuth tokens without mutating Kova auth state."""
     del access_token  # Access token is only used by callers to decide whether to refresh.
     if not isinstance(refresh_token, str) or not refresh_token.strip():
         raise AuthError(
@@ -3775,7 +3775,7 @@ def _refresh_codex_auth_tokens(
 ) -> Dict[str, str]:
     """Refresh Codex access token using the refresh token.
     
-    Saves the new tokens to Hermes auth store automatically.
+    Saves the new tokens to Kova auth store automatically.
     """
     try:
         refreshed = refresh_codex_oauth_pure(
@@ -3784,10 +3784,10 @@ def _refresh_codex_auth_tokens(
             timeout_seconds=timeout_seconds,
         )
     except AuthError as exc:
-        # Self-heal cross-store refresh_token rotation. Hermes keeps its OWN
+        # Self-heal cross-store refresh_token rotation. Kova keeps its OWN
         # Codex OAuth token (per profile + top-level), separate from the Codex
         # CLI's ~/.codex/auth.json. OAuth refresh_tokens are single-use, so when
-        # the Codex CLI (or another Hermes process) rotates the shared token,
+        # the Codex CLI (or another Kova process) rotates the shared token,
         # this frozen copy's refresh_token goes stale and the refresh fails with
         # a relogin-required error (invalid_grant / refresh_token_reused / 401).
         # Before surfacing that as a hard 401 to the turn, adopt the canonical
@@ -3853,7 +3853,7 @@ def resolve_codex_runtime_credentials(
     refresh_if_expiring: bool = True,
     refresh_skew_seconds: int = CODEX_ACCESS_TOKEN_REFRESH_SKEW_SECONDS,
 ) -> Dict[str, Any]:
-    """Resolve runtime credentials from Hermes's own Codex token store.
+    """Resolve runtime credentials from Kova's own Codex token store.
 
     Falls back to the credential pool when the singleton (``providers.openai-codex.tokens``)
     has no usable access_token but the pool (``credential_pool.openai-codex``) does. This
@@ -3962,7 +3962,7 @@ def resolve_codex_runtime_credentials(
     if (not should_refresh) and refresh_if_expiring:
         should_refresh = _codex_access_token_is_expiring(access_token, refresh_skew_seconds)
     if should_refresh:
-        # Re-read under lock to avoid racing with other Hermes processes
+        # Re-read under lock to avoid racing with other Kova processes
         with _auth_store_lock(timeout_seconds=max(float(AUTH_LOCK_TIMEOUT_SECONDS), refresh_timeout_seconds + 5.0)):
             data = _read_codex_tokens(_lock=False)
             tokens = dict(data["tokens"])
@@ -4047,7 +4047,7 @@ def _probe_codex_quota_restored(
 ) -> Optional[bool]:
     """Ask the Codex usage endpoint whether this account's quota is usable again.
 
-    Hermes persists a Codex 429's ``reset_at`` locally and freezes the
+    Kova persists a Codex 429's ``reset_at`` locally and freezes the
     credential until it elapses — but the upstream window can reopen EARLY
     (the user redeems a banked rate-limit reset via the Codex CLI/ChatGPT UI,
     upgrades their plan, or OpenAI resets the window).  This probe detects
@@ -4691,7 +4691,7 @@ def refresh_xai_oauth_pure(
         )
     endpoint = token_endpoint.strip() or _xai_oauth_discovery(timeout_seconds)["token_endpoint"]
     # Re-validate cached endpoints on the refresh hot path: an auth.json
-    # written by an older Hermes (or hand-edited) may carry a non-xAI
+    # written by an older Kova (or hand-edited) may carry a non-xAI
     # token_endpoint that would receive every future refresh_token in
     # plaintext if we trusted it blindly. Cheap suffix check; fast-fail
     # with a clear error so the user can re-run `kova model` to refetch.
@@ -5050,7 +5050,7 @@ def _poll_for_token(
 
 # -----------------------------------------------------------------------------
 # Shared Nous token store — lets OAuth credentials persist across profiles
-# so a new `hermes --profile <name> auth add nous --type oauth` can one-tap
+# so a new `kova --profile <name> auth add nous --type oauth` can one-tap
 # import instead of running the full device-code flow every time.
 #
 # File lives at ${HERMES_SHARED_AUTH_DIR}/nous_auth.json, defaulting to
@@ -5094,7 +5094,7 @@ def _nous_shared_auth_dir() -> Path:
 def _nous_shared_store_path() -> Path:
     path = _nous_shared_auth_dir() / NOUS_SHARED_STORE_FILENAME
     # Seat belt: if pytest is running and this resolves to a path under the
-    # real user's Hermes root, refuse rather than silently corrupt cross-profile
+    # real user's Kova root, refuse rather than silently corrupt cross-profile
     # state. Tests must set HERMES_SHARED_AUTH_DIR to a tmp_path (conftest
     # does not do this automatically — mirror the _auth_file_path() guard
     # so forgetting to set it fails loudly instead of writing to the real
@@ -5355,7 +5355,7 @@ def _quarantine_nous_oauth_state(
     #
     # Redaction safety: emit ONLY the 12-char SHA-256 hex prefix of the refresh
     # token (correlates to NAS's refreshTokenHash without leaking the secret) plus
-    # sizes/booleans. NEVER pass a raw token/agent_key into the log call — Hermes
+    # sizes/booleans. NEVER pass a raw token/agent_key into the log call — Kova
     # has a known bug class where credential-shaped literals get corrupted in logs.
     forensic: Dict[str, Any] = {
         "reason": reason,
@@ -5565,19 +5565,19 @@ def _refresh_access_token(
     # Detect the OAuth 2.1 "refresh token reuse" signal from the Nous portal
     # server and surface an actionable message.  This fires when an external
     # process (health-check script, monitoring tool, custom self-heal hook)
-    # called POST /api/oauth/token with Hermes's refresh_token without
+    # called POST /api/oauth/token with Kova's refresh_token without
     # persisting the rotated token back to auth.json — the server then
-    # retires the original RT, Hermes's next refresh uses it, and the whole
+    # retires the original RT, Kova's next refresh uses it, and the whole
     # session chain gets revoked as a token-theft signal (#15099).
     lowered = description.lower()
     if code == "refresh_token_reused" or "reuse" in lowered or "reuse detected" in lowered:
         description = (
             "Nous Portal detected refresh-token reuse and revoked this session.\n"
             "This usually means an external process (monitoring script, "
-            "custom self-heal hook, or another Hermes install sharing "
-            "~/.hermes/auth.json) called POST /api/oauth/token with Hermes's "
+            "custom self-heal hook, or another Kova install sharing "
+            "~/.hermes/auth.json) called POST /api/oauth/token with Kova's "
             "refresh token without persisting the rotated token back.\n"
-            "Nous refresh tokens are single-use — only Hermes may call the "
+            "Nous refresh tokens are single-use — only Kova may call the "
             "refresh endpoint. For health checks, use `kova auth status` "
             "instead.\n"
             "Re-authenticate with: kova auth add nous"
@@ -5623,7 +5623,7 @@ def fetch_nous_models(
         model_id = item.get("id")
         if isinstance(model_id, str) and model_id.strip():
             mid = model_id.strip()
-            # Skip Hermes models — they're not reliable for agentic tool-calling
+            # Skip Kova models — they're not reliable for agentic tool-calling
             if "hermes" in mid.lower():
                 continue
             model_ids.append(mid)
@@ -6384,8 +6384,8 @@ def _snapshot_nous_pool_status() -> Dict[str, Any]:
 # ── Process-level memo for get_nous_auth_status() ──
 # get_nous_auth_status() validates state by calling resolve_nous_runtime_credentials(),
 # which does a synchronous OAuth refresh POST to portal.nousresearch.com. That can take
-# ~350ms even on the failure path, and read-only UI surfaces (`hermes tools`, status panels,
-# subscription-feature checks) call it many times per render — `hermes tools` → "All Platforms"
+# ~350ms even on the failure path, and read-only UI surfaces (`kova tools`, status panels,
+# subscription-feature checks) call it many times per render — `kova tools` → "All Platforms"
 # was firing the refresh ~31× during one menu paint, racking up >13s of HTTP and burning
 # single-use refresh tokens. Cache the snapshot for a few seconds, keyed on the auth.json
 # path + mtime so that profile switches do not share a process memo and
@@ -6834,7 +6834,7 @@ def _get_azure_foundry_auth_status() -> Dict[str, Any]:
             if not installed:
                 info["hint"] = (
                     "azure-identity not installed. Install with: "
-                    "pip install azure-identity  (or rely on Hermes' "
+                    "pip install azure-identity  (or rely on Kova' "
                     "lazy-install at first use)."
                 )
             else:
@@ -7074,7 +7074,7 @@ def _should_reset_config_provider_on_logout(provider_id: Optional[str]) -> bool:
 def _logout_default_provider_from_config() -> Optional[str]:
     """Fallback logout target when auth.json has no active provider.
 
-    `hermes logout` historically keyed off auth.json.active_provider only.
+    `kova logout` historically keyed off auth.json.active_provider only.
     That left users stuck when auth state had already been cleared but
     config.yaml still selected an OAuth provider such as openai-codex for the
     agent model: there was no active auth provider to target, so logout printed
@@ -7446,7 +7446,7 @@ def _login_openai_codex(
 
     del args, pconfig  # kept for parity with other provider login helpers
 
-    # Check for existing Hermes-owned credentials
+    # Check for existing Kova-owned credentials
     if not force_new_login:
         try:
             existing = resolve_codex_runtime_credentials()
@@ -7492,7 +7492,7 @@ def _login_openai_codex(
                 print(f"  Config updated: {config_path} (model.provider=openai-codex)")
                 return
 
-    # Run a fresh device code flow — Hermes gets its own OAuth session
+    # Run a fresh device code flow — Kova gets its own OAuth session
     print()
     print("Signing in to OpenAI Codex...")
     print("(Kova creates its own session — won't affect Codex CLI or VS Code)")
@@ -7500,7 +7500,7 @@ def _login_openai_codex(
 
     creds = _codex_device_code_login()
 
-    # Save tokens to Hermes auth store
+    # Save tokens to Kova auth store
     _save_codex_tokens(creds["tokens"], creds.get("last_refresh"))
     config_path = _update_config_for_provider("openai-codex", creds.get("base_url", DEFAULT_CODEX_BASE_URL))
     print()
@@ -8093,7 +8093,7 @@ def _minimax_poll_token(
 
 
 def _minimax_save_auth_state(auth_state: Dict[str, Any]) -> None:
-    """Persist MiniMax OAuth state to Hermes auth store (~/.hermes/auth.json)."""
+    """Persist MiniMax OAuth state to Kova auth store (~/.hermes/auth.json)."""
     with _auth_store_lock():
         auth_store = _load_auth_store()
         _save_provider_state(auth_store, "minimax-oauth", auth_state)
@@ -8746,7 +8746,7 @@ def _login_nous(args, pconfig: ProviderConfig) -> None:
                     # The Portal's freeRecommendedModels endpoint is the
                     # source of truth for what's free *right now*. Augment
                     # the curated list with anything new the Portal flags
-                    # as free so users on older Hermes builds still see
+                    # as free so users on older Kova builds still see
                     # newly-launched free models without a CLI release.
                     model_ids, pricing = union_with_portal_free_recommendations(
                         model_ids, pricing, _portal_for_recs,

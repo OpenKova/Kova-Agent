@@ -1,6 +1,6 @@
 """Welcome banner, ASCII art, skills summary, and update check for the CLI.
 
-Pure display functions with no KovaCLI state dependency.
+Pure display functions with no HermesCLI state dependency.
 """
 import json
 import logging
@@ -60,23 +60,28 @@ def _skin_color(key: str, fallback: str) -> str:
 
 from kova_cli import __version__ as VERSION, __release_date__ as RELEASE_DATE
 
-HERMES_AGENT_LOGO = """[bold #FFD700]Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€” Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€” Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€” Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”   Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”       Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€” Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”   Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”[/]
-[bold #FFD700]Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜ Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜   Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”      Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â[/]
-[#FFBF00]Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢Â Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜   Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€” Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜   Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜[/]
-[#FFBF00]Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€” Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜   Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜   Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€¢Å¡Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜   Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜[/]
-[#CD7F32]Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€¢Å¡Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜         Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜  Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜Ã¢â€¢Å¡Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€Ã¢â€¢ÂÃ¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€”Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜ Ã¢â€¢Å¡Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜   Ã¢â€“Ë†Ã¢â€“Ë†Ã¢â€¢â€˜[/]
-[#CD7F32]Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â  Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â  Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â  Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â  Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â         Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â  Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â  Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â   Ã¢â€¢Å¡Ã¢â€¢ÂÃ¢â€¢Â[/]"""
+AGENT_LOGO = """[bold #FFD700]██╗  ██╗ ██████╗ ██╗   ██╗ █████╗        █████╗  ██████╗ ███████╗███╗   ██╗████████╗[/]
+[bold #FFD700]██║ ██╔╝██╔═══██╗██║   ██║██╔══██╗      ██╔══██╗██╔════╝ ██╔════╝████╗  ██║╚══██╔══╝[/]
+[#FFBF00]█████╔╝ ██║   ██║██║   ██║███████║█████╗███████║██║  ███╗█████╗  ██╔██╗ ██║   ██║[/]
+[#FFBF00]██╔═██╗ ██║   ██║╚██╗ ██╔╝██╔══██║╚════╝██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║[/]
+[#CD7F32]██║  ██╗╚██████╔╝ ╚████╔╝ ██║  ██║      ██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║[/]
+[#CD7F32]╚═╝  ╚═╝ ╚═════╝   ╚═══╝  ╚═╝  ╚═╝      ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝[/]"""
 
-HERMES_CADUCEUS = """[#CD7F32]Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â¡â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â¡â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬[/]
-[#CD7F32]Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â£â‚¬Ã¢Â£Â´Ã¢Â£Â¿Ã¢Â£Â¿Ã¢Â£·Ã¢Â¡â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â¢â‚¬Ã¢Â£Â´Ã¢Â£Â¿Ã¢Â£Â¿Ã¢Â£·Ã¢Â£â€žÃ¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬[/]
-[#FFBF00]Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â£Â Ã¢Â£Â¾Ã¢Â Â¿Ã¢Â â€¹Ã¢Â ÂÃ¢Â â‚¬Ã¢Â â‚¬Ã¢Â â„¢Ã¢Â¢·Ã¢Â£Â´Ã¢Â Â¿Ã¢Â â€¹Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â€°Ã¢Â Â»Ã¢Â£·Ã¢Â£â€žÃ¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬[/]
-[#FFBF00]Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â£Â´Ã¢Â¡Â¿Ã¢Â ÂÃ¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â¢Â»Ã¢Â£Â¿Ã¢Â£â€ Ã¢Â â‚¬[/]
-[#FFD700]Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â£Â¼Ã¢Â¡Å¸Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â£Â»Ã¢Â£Â§[/]
-[#FFD700]Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â£Â¿Ã¢Â¡â€¡Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â¢Â¸Ã¢Â£Â¿[/]
-[#FFBF00]Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â Â¹Ã¢Â£Â¿Ã¢Â£â€žÃ¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â£Â Ã¢Â£Â¿Ã¢Â Â[/]
-[#FFBF00]Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â Ë†Ã¢Â Â»Ã¢Â£·Ã¢Â£â€žÃ¢Â¡â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â¢â‚¬Ã¢Â£Â Ã¢Â£Â¾Ã¢Â Â¿Ã¢Â ÂÃ¢Â â‚¬[/]
-[#CD7F32]Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â€°Ã¢Â â€ºÃ¢Â Â¿Ã¢Â Â¶Ã¢Â£Â¶Ã¢Â£Â¶Ã¢Â£Â¶Ã¢Â£Â¶Ã¢Â£Â¶Ã¢Â Â¶Ã¢Â Â¿Ã¢Â Â¿Ã¢Â â€ºÃ¢Â â€°Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬[/]
-[#CD7F32]Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬Ã¢Â â‚¬[/]"""
+CADUCEUS_ART = """[#CD7F32]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡀⠀⣀⣀⠀⢀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+[#CD7F32]⠀⠀⠀⠀⠀⠀⢀⣠⣴⣾⣿⣿⣇⠸⣿⣿⠇⣸⣿⣿⣷⣦⣄⡀⠀⠀⠀⠀⠀⠀[/]
+[#FFBF00]⠀⢀⣠⣴⣶⠿⠋⣩⡿⣿⡿⠻⣿⡇⢠⡄⢸⣿⠟⢿⣿⢿⣍⠙⠿⣶⣦⣄⡀⠀[/]
+[#FFBF00]⠀⠀⠉⠉⠁⠶⠟⠋⠀⠉⠀⢀⣈⣁⡈⢁⣈⣁⡀⠀⠉⠀⠙⠻⠶⠈⠉⠉⠀⠀[/]
+[#FFD700]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⡿⠛⢁⡈⠛⢿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+[#FFD700]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠿⣿⣦⣤⣈⠁⢠⣴⣿⠿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+[#FFBF00]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠻⢿⣿⣦⡉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+[#FFBF00]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢷⣦⣈⠛⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+[#CD7F32]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣴⠦⠈⠙⠿⣦⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+[#CD7F32]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⣤⡈⠁⢤⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+[#B8860B]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠷⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+[#B8860B]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⠑⢶⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+[#B8860B]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠁⢰⡆⠈⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+[#B8860B]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⠈⣡⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+[#B8860B]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]"""
 
 
 
@@ -112,7 +117,7 @@ def get_available_skills() -> Dict[str, List[str]]:
 _UPDATE_CHECK_CACHE_SECONDS = 6 * 3600
 
 # Sentinel returned when we know an update exists but can't count commits
-# (e.g. nix-built hermes Ã¢â‚¬â€ no local git history to count against).
+# (e.g. nix-built hermes — no local git history to count against).
 UPDATE_AVAILABLE_NO_COUNT = -1
 
 _UPSTREAM_REPO_URL = "https://github.com/OpenKova/Kova-Agent.git"
@@ -218,7 +223,7 @@ def _check_via_local_git(repo_dir: Path) -> Optional[int]:
             cwd=str(repo_dir),
         )
     except Exception:
-        pass  # Offline or timeout Ã¢â‚¬â€ use stale refs, that's fine
+        pass  # Offline or timeout — use stale refs, that's fine
 
     if is_shallow:
         # No history to count across the shallow boundary. `origin/main` may not
@@ -261,7 +266,7 @@ def check_for_updates() -> Optional[int]:
     cache_file = hermes_home / ".update_check"
     embedded_rev = os.environ.get("HERMES_REVISION") or None
 
-    # Docker images have no working tree to count commits against Ã¢â‚¬â€ the
+    # Docker images have no working tree to count commits against — the
     # published image excludes `.git` (see .dockerignore) and sets no
     # HERMES_REVISION (that's nix-only). Returning None makes both the Rich
     # banner (build_welcome_banner) and the Ink badge (branding.tsx, guarded
@@ -275,7 +280,7 @@ def check_for_updates() -> Optional[int]:
     except Exception:
         pass
 
-    # Read cache Ã¢â‚¬â€ invalidate if the embedded rev OR installed version has
+    # Read cache — invalidate if the embedded rev OR installed version has
     # changed since the last check.
     now = time.time()
     try:
@@ -294,13 +299,13 @@ def check_for_updates() -> Optional[int]:
         behind = _check_via_rev(embedded_rev)
     else:
         # Prefer the running code's location over the profile-scoped path.
-        # $HERMES_HOME/kova-agent/ may be a stale copy from --clone-all;
+        # $HERMES_HOME/hermes-agent/ may be a stale copy from --clone-all;
         # Path(__file__) always resolves to the actual installed checkout.
         repo_dir = Path(__file__).parent.parent.resolve()
         if not (repo_dir / ".git").exists():
-            repo_dir = hermes_home / "kova-agent"
+            repo_dir = hermes_home / "hermes-agent"
         if not (repo_dir / ".git").exists():
-            # No git checkout and no embedded revision Ã¢â‚¬â€ can't determine
+            # No git checkout and no embedded revision — can't determine
             # update status. This is the Docker path (already short-circuited
             # above) or an unsupported install without a source tree.
             behind = None
@@ -318,16 +323,16 @@ def check_for_updates() -> Optional[int]:
 
 
 def _resolve_repo_dir() -> Optional[Path]:
-    """Return the active Hermes git checkout, or None if this isn't a git install.
+    """Return the active Kova git checkout, or None if this isn't a git install.
 
     Prefers the running code's location over the profile-scoped path
-    because ``$HERMES_HOME/kova-agent/`` may be a stale copy carried
+    because ``$HERMES_HOME/hermes-agent/`` may be a stale copy carried
     over by ``--clone-all``.
     """
     repo_dir = Path(__file__).parent.parent.resolve()
     if not (repo_dir / ".git").exists():
         hermes_home = get_hermes_home()
-        repo_dir = hermes_home / "kova-agent"
+        repo_dir = hermes_home / "hermes-agent"
     return repo_dir if (repo_dir / ".git").exists() else None
 
 
@@ -353,18 +358,18 @@ def get_git_banner_state(repo_dir: Optional[Path] = None) -> Optional[dict]:
     """Return upstream/local git hashes for the startup banner.
 
     For source installs and dev images this runs ``git rev-parse`` against
-    the active checkout.  When no checkout is available Ã¢â‚¬â€ the canonical case
+    the active checkout.  When no checkout is available — the canonical case
     is the published Docker image, which excludes ``.git`` from the build
-    context Ã¢â‚¬â€ we fall back to the baked-in build SHA (see
+    context — we fall back to the baked-in build SHA (see
     ``kova_cli/build_info.py``) and return it as a frozen
     ``upstream == local`` state with ``ahead=0``.  A built image is by
     definition pinned to one commit, so "ahead" is always zero and the
-    banner correctly shows ``Ã‚· upstream <sha>`` with no carried-commits
+    banner correctly shows ``· upstream <sha>`` with no carried-commits
     annotation.
     """
     repo_dir = repo_dir or _resolve_repo_dir()
     if repo_dir is None:
-        # No git checkout Ã¢â‚¬â€ try the baked build SHA (Docker image path).
+        # No git checkout — try the baked build SHA (Docker image path).
         try:
             from kova_cli.build_info import get_build_sha
             baked = get_build_sha(short=8)
@@ -412,7 +417,7 @@ _latest_release_cache: Optional[tuple] = None  # (tag, url) once resolved
 def get_latest_release_tag(repo_dir: Optional[Path] = None) -> Optional[tuple]:
     """Return ``(tag, release_url)`` for the latest git tag, or None.
 
-    Local-only Ã¢â‚¬â€ runs ``git describe --tags --abbrev=0`` against the
+    Local-only — runs ``git describe --tags --abbrev=0`` against the
     Kova checkout. Cached per-process. Release URL always points at the
     canonical OpenKova/Kova-Agent repo (forks don't get a link).
     """
@@ -422,7 +427,7 @@ def get_latest_release_tag(repo_dir: Optional[Path] = None) -> Optional[tuple]:
 
     repo_dir = repo_dir or _resolve_repo_dir()
     if repo_dir is None:
-        _latest_release_cache = ()  # falsy sentinel Ã¢â‚¬â€ skip future lookups
+        _latest_release_cache = ()  # falsy sentinel — skip future lookups
         return None
 
     try:
@@ -463,10 +468,10 @@ def format_banner_version_label() -> str:
     ahead = int(state.get("ahead") or 0)
 
     if ahead <= 0 or upstream == local:
-        return f"{base} Ã‚· upstream {upstream}"
+        return f"{base} · upstream {upstream}"
 
     carried_word = "commit" if ahead == 1 else "commits"
-    return f"{base} Ã‚· upstream {upstream} Ã‚· local {local} (+{ahead} carried {carried_word})"
+    return f"{base} · upstream {upstream} · local {local} (+{ahead} carried {carried_word})"
 
 
 # =========================================================================
@@ -498,7 +503,7 @@ def get_update_result(timeout: float = 0.5) -> Optional[int]:
 # =========================================================================
 
 def _format_context_length(tokens: int) -> str:
-    """Format a token count for display (e.g. 128000 Ã¢â€ â€™ '128K', 1048576 Ã¢â€ â€™ '1M')."""
+    """Format a token count for display (e.g. 128000 → '128K', 1048576 → '1M')."""
     if tokens >= 1_000_000:
         val = tokens / 1_000_000
         rounded = round(val)
@@ -560,7 +565,7 @@ def build_welcome_banner(console: "Console", model: str, cwd: str,
     # The availability check walks the GLOBAL toolset registry, so it includes
     # toolsets that aren't part of this agent's platform set at all (e.g.
     # `discord`, `feishu_doc` on a CLI session). Those must never surface in the
-    # banner's "Available Tools" Ã¢â‚¬â€ they aren't exposed to the agent. Restrict to
+    # banner's "Available Tools" — they aren't exposed to the agent. Restrict to
     # toolsets actually enabled for this agent; a toolset that's enabled but
     # currently has unmet deps legitimately shows as disabled/lazy below.
     _enabled_ts = {str(t) for t in enabled_toolsets}
@@ -571,7 +576,7 @@ def build_welcome_banner(console: "Console", model: str, cwd: str,
         ]
     disabled_tools = set()
     # Tools whose toolset has a check_fn are lazy-initialized (e.g. honcho,
-    # homeassistant) Ã¢â‚¬â€ they show as unavailable at banner time because the
+    # homeassistant) — they show as unavailable at banner time because the
     # check hasn't run yet, but they aren't misconfigured.
     lazy_tools = set()
     for item in unavailable_toolsets:
@@ -597,10 +602,10 @@ def build_welcome_banner(console: "Console", model: str, cwd: str,
     try:
         from kova_cli.skin_engine import get_active_skin
         _bskin = get_active_skin()
-        _hero = _bskin.banner_hero if hasattr(_bskin, 'banner_hero') and _bskin.banner_hero else HERMES_CADUCEUS
+        _hero = _bskin.banner_hero if hasattr(_bskin, 'banner_hero') and _bskin.banner_hero else CADUCEUS_ART
     except Exception:
         _bskin = None
-        _hero = HERMES_CADUCEUS
+        _hero = CADUCEUS_ART
     left_lines = ["", _hero, ""]
     if (provider or "").strip().lower() == "moa":
         # MoA virtual provider: ``model`` is a preset name. Show the preset and
@@ -621,20 +626,20 @@ def build_welcome_banner(console: "Console", model: str, cwd: str,
             agg_label = ""
         if len(preset_name) > 28:
             preset_name = preset_name[:25] + "..."
-        agg_str = f" [dim {dim}]Ã‚·[/] [dim {dim}]agg {agg_label}[/]" if agg_label else ""
-        ctx_str = f" [dim {dim}]Ã‚·[/] [dim {dim}]{_format_context_length(context_length)} context[/]" if context_length else ""
-        left_lines.append(f"[{accent}]MoA: {preset_name}[/]{agg_str}{ctx_str} [dim {dim}]Ã‚·[/] [dim {dim}]Kova[/]")
+        agg_str = f" [dim {dim}]·[/] [dim {dim}]agg {agg_label}[/]" if agg_label else ""
+        ctx_str = f" [dim {dim}]·[/] [dim {dim}]{_format_context_length(context_length)} context[/]" if context_length else ""
+        left_lines.append(f"[{accent}]MoA: {preset_name}[/]{agg_str}{ctx_str} [dim {dim}]·[/] [dim {dim}]Kova AI[/]")
     else:
         model_short = model.split("/")[-1] if "/" in model else model
         if model_short.endswith(".gguf"):
             model_short = model_short[:-5]
         if len(model_short) > 28:
             model_short = model_short[:25] + "..."
-        ctx_str = f" [dim {dim}]Ã‚·[/] [dim {dim}]{_format_context_length(context_length)} context[/]" if context_length else ""
-        left_lines.append(f"[{accent}]{model_short}[/]{ctx_str} [dim {dim}]Ã‚·[/] [dim {dim}]Kova[/]")
+        ctx_str = f" [dim {dim}]·[/] [dim {dim}]{_format_context_length(context_length)} context[/]" if context_length else ""
+        left_lines.append(f"[{accent}]{model_short}[/]{ctx_str} [dim {dim}]·[/] [dim {dim}]Kova AI[/]")
 
     if os.getenv("HERMES_YOLO_MODE"):
-        left_lines.append(f"[bold red]Ã¢Å¡Â  YOLO mode[/] [dim {dim}]Ã¢â‚¬â€ all approval prompts bypassed[/]")
+        left_lines.append(f"[bold red]⚠ YOLO mode[/] [dim {dim}]— all approval prompts bypassed[/]")
     left_lines.append(f"[dim {dim}]{cwd}[/]")
     if session_id:
         left_lines.append(f"[dim {session_color}]Session: {session_id}[/]")
@@ -714,34 +719,34 @@ def build_welcome_banner(console: "Console", model: str, cwd: str,
             if srv["connected"]:
                 right_lines.append(
                     f"[dim {dim}]{srv['name']}[/] [{text}]({srv['transport']})[/] "
-                    f"[dim {dim}]Ã¢â‚¬â€[/] [{text}]{srv['tools']} tool(s)[/]"
+                    f"[dim {dim}]—[/] [{text}]{srv['tools']} tool(s)[/]"
                 )
             elif srv.get("disabled") or status == "disabled":
                 right_lines.append(
                     f"[dim {dim}]{srv['name']}[/] [dim]({srv['transport']})[/] "
-                    f"[dim {dim}]Ã¢â‚¬â€ disabled[/]"
+                    f"[dim {dim}]— disabled[/]"
                 )
             elif status == "connecting":
                 right_lines.append(
                     f"[dim {dim}]{srv['name']}[/] [dim]({srv['transport']})[/] "
-                    f"[yellow]Ã¢â‚¬â€ connecting[/]"
+                    f"[yellow]— connecting[/]"
                 )
             elif status == "configured":
                 right_lines.append(
                     f"[dim {dim}]{srv['name']}[/] [dim]({srv['transport']})[/] "
-                    f"[dim {dim}]Ã¢â‚¬â€ configured[/]"
+                    f"[dim {dim}]— configured[/]"
                 )
             else:
                 right_lines.append(
                     f"[red]{srv['name']}[/] [dim]({srv['transport']})[/] "
-                    f"[red]Ã¢â‚¬â€ failed[/]"
+                    f"[red]— failed[/]"
                 )
 
     right_lines.append("")
     right_lines.append(f"[bold {accent}]Available Skills[/]")
     # The skills catalog is only reachable when the `skills` toolset is enabled
-    # (it exposes skill_view / skill_manage). When it's disabled Ã¢â‚¬â€ e.g. a Blank
-    # Slate install Ã¢â‚¬â€ the agent literally cannot load any skill, so advertising
+    # (it exposes skill_view / skill_manage). When it's disabled — e.g. a Blank
+    # Slate install — the agent literally cannot load any skill, so advertising
     # the on-disk catalog here is misleading. Reflect the real state instead.
     _skills_enabled = (not _enabled_ts) or ("skills" in _enabled_ts)
     if _skills_enabled:
@@ -811,9 +816,9 @@ def build_welcome_banner(console: "Console", model: str, cwd: str,
     except Exception:
         pass  # Never break the banner over a profiles.py bug
 
-    right_lines.append(f"[dim {dim}]{' Ã‚· '.join(summary_parts)}[/]")
+    right_lines.append(f"[dim {dim}]{' · '.join(summary_parts)}[/]")
 
-    # Update check Ã¢â‚¬â€ use prefetched result if available
+    # Update check — use prefetched result if available
     try:
         behind = get_update_result(timeout=0.5)
         if behind is not None and behind != 0:
@@ -821,17 +826,17 @@ def build_welcome_banner(console: "Console", model: str, cwd: str,
             if behind > 0:
                 commits_word = "commit" if behind == 1 else "commits"
                 right_lines.append(
-                    f"[bold yellow]Ã¢Å¡Â  {behind} {commits_word} behind[/]"
-                    f"[dim yellow] Ã¢â‚¬â€ run [bold]{recommended_update_command()}[/bold] to update[/]"
+                    f"[bold yellow]⚠ {behind} {commits_word} behind[/]"
+                    f"[dim yellow] — run [bold]{recommended_update_command()}[/bold] to update[/]"
                 )
             else:
                 # UPDATE_AVAILABLE_NO_COUNT: nix-built hermes; we know an update
                 # exists but not by how much, and we don't know how the user
                 # installed it (nix run, profile, system flake, home-manager).
                 managed_cmd = get_managed_update_command()
-                line = "[bold yellow]Ã¢Å¡Â  update available[/]"
+                line = "[bold yellow]⚠ update available[/]"
                 if managed_cmd:
-                    line += f"[dim yellow] Ã¢â‚¬â€ run [bold]{managed_cmd}[/bold][/]"
+                    line += f"[dim yellow] — run [bold]{managed_cmd}[/bold][/]"
                 right_lines.append(line)
     except Exception:
         pass  # Never break the banner over an update check
@@ -858,7 +863,7 @@ def build_welcome_banner(console: "Console", model: str, cwd: str,
     console.print()
     term_width = shutil.get_terminal_size().columns
     if term_width >= 95:
-        _logo = _bskin.banner_logo if _bskin and hasattr(_bskin, 'banner_logo') and _bskin.banner_logo else HERMES_AGENT_LOGO
+        _logo = _bskin.banner_logo if _bskin and hasattr(_bskin, 'banner_logo') and _bskin.banner_logo else AGENT_LOGO
         console.print(_logo)
         console.print()
     console.print(outer_panel)

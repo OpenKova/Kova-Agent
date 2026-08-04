@@ -40,7 +40,7 @@ HERMES_HOME = get_hermes_home()
 SKILLS_DIR = HERMES_HOME / "skills"
 MANIFEST_FILE = SKILLS_DIR / ".bundled_manifest"
 
-# Marker file written by `hermes profile create --no-skills` (named profiles)
+# Marker file written by `kova profile create --no-skills` (named profiles)
 # and by the installer's `--no-skills` flag (the default ~/.hermes profile).
 # When present in HERMES_HOME, sync_skills() is a no-op so neither the
 # installer, `kova update`, nor a direct sync re-injects bundled skills.
@@ -806,7 +806,7 @@ def reset_bundled_skill(name: str, restore: bool = False) -> dict:
             "action": "not_in_manifest",
             "message": (
                 f"'{name}' is not a tracked bundled skill. Nothing to reset. "
-                f"(Hub-installed skills use `hermes skills uninstall`.)"
+                f"(Hub-installed skills use `kova skills uninstall`.)"
             ),
             "synced": None,
         }
@@ -939,7 +939,7 @@ def diff_bundled_skill(name: str) -> dict:
     """Diff a user's copy of a bundled skill against the current stock version.
 
     Lets a user see exactly what diverged before deciding whether to keep their
-    edits or ``hermes skills reset`` back to upstream.
+    edits or ``kova skills reset`` back to upstream.
 
     Returns a dict:
         ``ok`` (bool), ``name`` (str), ``found`` (bool — bundled source exists),
@@ -962,7 +962,7 @@ def diff_bundled_skill(name: str) -> dict:
             "diffs": [],
             "message": (
                 f"'{name}' is not a tracked bundled skill (no stock version to "
-                f"diff against). Hub-installed skills use `hermes skills inspect`."
+                f"diff against). Hub-installed skills use `kova skills inspect`."
             ),
         }
     dest = _compute_relative_dest(bundled_src, bundled_dir)
@@ -1040,7 +1040,7 @@ def set_bundled_skills_opt_out(enabled: bool) -> dict:
     When ``enabled`` is True, writes HERMES_HOME/.no-bundled-skills so the
     installer, ``kova update``, and any direct sync stop seeding bundled
     skills. When False, removes the marker so seeding resumes on the next
-    sync. This is the on-disk-state half of ``hermes skills opt-out`` /
+    sync. This is the on-disk-state half of ``kova skills opt-out`` /
     ``opt-in``; removal of already-present skills is a separate, explicit
     step (see ``remove_pristine_bundled_skills``).
 
@@ -1055,7 +1055,7 @@ def set_bundled_skills_opt_out(enabled: bool) -> dict:
             HERMES_HOME.mkdir(parents=True, exist_ok=True)
             marker.write_text(
                 "This profile opted out of bundled-skill seeding "
-                "(`hermes skills opt-out`).\n"
+                "(`kova skills opt-out`).\n"
                 "Delete this file to re-enable sync on the next `kova update`.\n",
                 encoding="utf-8",
             )
@@ -1071,7 +1071,7 @@ def set_bundled_skills_opt_out(enabled: bool) -> dict:
                 marker.unlink()
             changed = existed
             message = (
-                "Opted back in. The next `kova update` (or `hermes skills "
+                "Opted back in. The next `kova update` (or `kova skills "
                 "opt-in --sync`) will re-seed bundled skills."
                 if changed
                 else "Not opted out — no marker to remove."

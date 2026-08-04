@@ -487,7 +487,7 @@ def _print_setup_summary(config: dict, hermes_home):
         else:
             tool_status.append(("Image Generation", False, "FAL_KEY or OPENAI_API_KEY"))
 
-    # Video generation — opt-in via `hermes tools` → Video Generation.
+    # Video generation — opt-in via `kova tools` → Video Generation.
     # Only show the row when a plugin reports available so we don't badger
     # users who don't care about video gen with a "missing" status line.
     if subscription_features.video_gen.managed_by_nous:
@@ -716,7 +716,7 @@ def _prompt_container_resources(config: dict):
 
 
 # Tool categories and provider config are now in tools_config.py (shared
-# between `hermes tools` and `kova setup tools`).
+# between `kova tools` and `kova setup tools`).
 
 
 # =============================================================================
@@ -1041,7 +1041,7 @@ def _setup_tts_provider(config: dict):
 
     elif selected == "xai":
         # Resolution order: existing OAuth tokens (free for SuperGrok subscribers
-        # via the Hermes auth store) > existing XAI_API_KEY > prompt the user.
+        # via the Kova auth store) > existing XAI_API_KEY > prompt the user.
         # When neither is configured, offer both options instead of forcing the
         # API-key path — xAI TTS works fine with OAuth bearer tokens too.
         oauth_logged_in = _xai_oauth_logged_in_for_setup()
@@ -2187,7 +2187,7 @@ def setup_gateway(config: dict):
 def setup_tools(config: dict, first_install: bool = False):
     """Configure tools — delegates to the unified tools_command() in tools_config.py.
 
-    Both `kova setup tools` and `hermes tools` use the same flow:
+    Both `kova setup tools` and `kova tools` use the same flow:
     platform selection → toolset toggles → provider/API key configuration.
 
     Args:
@@ -2385,15 +2385,15 @@ def _load_openclaw_migration_module():
 
 # Item kinds that represent high-impact changes warranting explicit warnings.
 # Gateway tokens/channels can hijack messaging platforms from the old agent.
-# Config values may have different semantics between OpenClaw and Hermes.
+# Config values may have different semantics between OpenClaw and Kova.
 # Instruction/context files (.md) can contain incompatible setup procedures.
 _HIGH_IMPACT_KIND_KEYWORDS = {
-    "gateway": "⚠ Gateway/messaging — this will configure Hermes to use your OpenClaw messaging channels",
-    "telegram": "⚠ Telegram — this will point Hermes at your OpenClaw Telegram bot",
-    "slack": "⚠ Slack — this will point Hermes at your OpenClaw Slack workspace",
-    "discord": "⚠ Discord — this will point Hermes at your OpenClaw Discord bot",
-    "whatsapp": "⚠ WhatsApp — this will point Hermes at your OpenClaw WhatsApp connection",
-    "config": "⚠ Config values — OpenClaw settings may not map 1:1 to Hermes equivalents",
+    "gateway": "⚠ Gateway/messaging — this will configure Kova to use your OpenClaw messaging channels",
+    "telegram": "⚠ Telegram — this will point Kova at your OpenClaw Telegram bot",
+    "slack": "⚠ Slack — this will point Kova at your OpenClaw Slack workspace",
+    "discord": "⚠ Discord — this will point Kova at your OpenClaw Discord bot",
+    "whatsapp": "⚠ WhatsApp — this will point Kova at your OpenClaw WhatsApp connection",
+    "config": "⚠ Config values — OpenClaw settings may not map 1:1 to Kova equivalents",
     "soul": "⚠ Instruction file — may contain OpenClaw-specific setup/restart procedures",
     "memory": "⚠ Memory/context file — may reference OpenClaw-specific infrastructure",
     "context": "⚠ Context file — may contain OpenClaw-specific instructions",
@@ -2458,8 +2458,8 @@ def _print_migration_preview(report: dict):
         for warning in sorted(warnings_shown):
             print(color(f"    {warning}", Colors.YELLOW))
         print()
-        print(color("  Note: OpenClaw config values may have different semantics in Hermes.", Colors.YELLOW))
-        print(color("  For example, OpenClaw's tool_call_execution: \"auto\" ≠ Hermes's yolo mode.", Colors.YELLOW))
+        print(color("  Note: OpenClaw config values may have different semantics in Kova.", Colors.YELLOW))
+        print(color("  For example, OpenClaw's tool_call_execution: \"auto\" ≠ Kova's yolo mode.", Colors.YELLOW))
         print(color("  Instruction files (.md) from OpenClaw may contain incompatible procedures.", Colors.YELLOW))
         print()
 
@@ -2552,7 +2552,7 @@ def _offer_openclaw_migration(hermes_home: Path) -> bool:
         )
         return False
 
-    # Execute the migration — overwrite=False so existing Hermes configs are
+    # Execute the migration — overwrite=False so existing Kova configs are
     # preserved. The user saw the preview; conflicts are skipped by default.
     try:
         migrator = mod.Migrator(
@@ -2560,7 +2560,7 @@ def _offer_openclaw_migration(hermes_home: Path) -> bool:
             target_root=hermes_home.resolve(),
             execute=True,
             workspace_target=None,
-            overwrite=False,  # preserve existing Hermes config
+            overwrite=False,  # preserve existing Kova config
             migrate_secrets=True,
             output_dir=None,
             selected_options=selected,
@@ -2617,7 +2617,7 @@ def _run_portal_one_shot(config: dict) -> None:
     Wired into ``kova setup --portal`` and ``kova portal``. This is the
     Nous-Portal slice of the first-time quick setup, collapsed into a single
     shareable command so a brand-new user goes from zero to a fully working
-    Hermes session — model selected, provider set, and web/image/tts/browser
+    Kova session — model selected, provider set, and web/image/tts/browser
     tools routed via their Portal sub — without being told to run
     ``kova setup`` and hunt for the quick-setup option.
 
@@ -2868,7 +2868,7 @@ def run_setup_wizard(args):
             config = load_config()
 
         setup_mode = prompt_choice(
-            "How would you like to set up Hermes?",
+            "How would you like to set up Kova?",
             [
                 "Quick Setup (Nous Portal) — free OAuth login, no API keys, model + tools (recommended)",
                 "Full setup — configure every provider, tool & option yourself (bring your own keys)",
@@ -3016,7 +3016,7 @@ def _blank_slate_minimal_toolsets(config: dict):
        non-configurable platform-toolset recovery that would otherwise re-add
        toolsets like ``kanban``). We list every known toolset except the two we
        keep, guaranteeing a true blank slate regardless of platform/recovery
-       quirks. The user re-enables any of them later via ``hermes tools`` (which
+       quirks. The user re-enables any of them later via ``kova tools`` (which
        rewrites ``platform_toolsets``) or by editing ``agent.disabled_toolsets``.
     """
     keep = {"file", "terminal"}
@@ -3055,7 +3055,7 @@ def _blank_slate_minimize_config(config: dict):
     """Turn OFF the optional config features for a Blank Slate install.
 
     Everything here is opt-in afterwards via ``kova setup agent`` /
-    ``hermes config set``. We keep only what's needed to run.
+    ``kova config set``. We keep only what's needed to run.
     """
     config.setdefault("agent", {})["max_turns"] = 90
 

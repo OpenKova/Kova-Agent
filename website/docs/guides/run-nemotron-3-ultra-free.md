@@ -20,11 +20,11 @@ The simplest path: a one-click installer with a guided, point-and-click setup. N
 
 ### 1. Download and install
 
-[Download the Hermes Desktop installer](https://hermes-agent.nousresearch.com/) for macOS or Windows, then open it. On first launch it finishes setting itself up (usually under a minute).
+[Download the Kova Desktop installer](https://hermes-agent.nousresearch.com/) for macOS or Windows, then open it. On first launch it finishes setting itself up (usually under a minute).
 
 ### 2. Connect Nous Portal
 
-When the app opens, you'll see a "Let's get you set up" screen. Click **Nous Portal** (marked **Recommended**). Your browser opens — create a [Nous Portal](https://portal.nousresearch.com) account (or sign in), choose the **Free** plan, and authorize Hermes. The app connects automatically.
+When the app opens, you'll see a "Let's get you set up" screen. Click **Nous Portal** (marked **Recommended**). Your browser opens — create a [Nous Portal](https://portal.nousresearch.com) account (or sign in), choose the **Free** plan, and authorize Kova. The app connects automatically.
 
 ### 3. Pick the free Nemotron 3 Ultra model
 
@@ -69,10 +69,10 @@ source ~/.bashrc   # or source ~/.zshrc
 ### 2. Run Quick Setup
 
 ```bash
-hermes setup
+kova setup
 ```
 
-Select **Quick Setup**. Hermes opens a browser tab and waits for you to finish the next steps.
+Select **Quick Setup**. Kova opens a browser tab and waits for you to finish the next steps.
 
 ### 3. Create a Nous Portal account
 
@@ -97,7 +97,7 @@ The `:free` tag is what keeps it on the no-cost tier, so make sure you pick that
 Complete the remaining Quick Setup prompts, then run:
 
 ```bash
-hermes
+kova
 ```
 
 That's it — you're talking to Nemotron 3 Ultra, free.
@@ -111,7 +111,7 @@ Already set up with another model?
 
 ## Troubleshooting
 
-- **Don't see the model in the list?** Make sure you finished the Nous Portal connection and that you're on the **Free** plan. In the CLI, `hermes portal info` confirms you're logged in and routing through Nous.
+- **Don't see the model in the list?** Make sure you finished the Nous Portal connection and that you're on the **Free** plan. In the CLI, `kova portal info` confirms you're logged in and routing through Nous.
 - **Picked the wrong variant?** Re-select `nvidia/nemotron-3-ultra:free` — the `:free` suffix is required to stay on the no-cost tier.
 - **Browser didn't open / you're on a remote host (CLI)?** See [OAuth over SSH / Remote Hosts](/guides/oauth-over-ssh) for port-forwarding workarounds.
 

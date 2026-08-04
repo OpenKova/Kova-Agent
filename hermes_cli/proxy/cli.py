@@ -1,4 +1,4 @@
-"""CLI handlers for the ``hermes proxy`` subcommand."""
+"""CLI handlers for the ``kova proxy`` subcommand."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 def _print_aiohttp_missing() -> None:
     print(
-        "hermes proxy requires aiohttp. Run `kova setup` to install it.",
+        "kova proxy requires aiohttp. Run `kova setup` to install it.",
         file=sys.stderr,
     )
 
@@ -54,7 +54,7 @@ def cmd_proxy_start(args: Any) -> int:
     port = getattr(args, "port", None) or DEFAULT_PORT
 
     print(
-        f"Starting Hermes proxy for {adapter.display_name}\n"
+        f"Starting Kova proxy for {adapter.display_name}\n"
         f"  Listening on:  http://{host}:{port}/v1\n"
         f"  Forwarding to: (resolved per-request from your subscription)\n"
         f"  Use any bearer token in the client — the proxy attaches your real credential.\n"
@@ -107,7 +107,7 @@ def cmd_proxy_list_providers(args: Any) -> int:
 
 
 def cmd_proxy(args: Any) -> int:
-    """Dispatch ``hermes proxy <subcommand>``."""
+    """Dispatch ``kova proxy <subcommand>``."""
     sub = getattr(args, "proxy_command", None)
     if sub == "start":
         return cmd_proxy_start(args)

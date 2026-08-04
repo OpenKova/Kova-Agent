@@ -1,4 +1,4 @@
-"""Tests for the Hermes plugin system (kova_cli.plugins)."""
+"""Tests for the Kova plugin system (kova_cli.plugins)."""
 
 import logging
 import sys

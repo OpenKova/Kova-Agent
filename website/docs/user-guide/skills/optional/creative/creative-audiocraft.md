@@ -14,7 +14,7 @@ AudioCraft: MusicGen text-to-music, AudioGen text-to-sound.
 
 | | |
 |---|---|
-| Source | Optional — install with `hermes skills install official/creative/audiocraft` |
+| Source | Optional — install with `kova skills install official/creative/audiocraft` |
 | Path | `optional-skills/creative/audiocraft` |
 | Version | `1.0.0` |
 | Author | Orchestra Research |
@@ -27,7 +27,7 @@ AudioCraft: MusicGen text-to-music, AudioGen text-to-sound.
 ## Reference: full SKILL.md
 
 :::info
-The following is the complete skill definition that Hermes loads when this skill is triggered. This is what the agent sees as instructions when the skill is active.
+The following is the complete skill definition that Kova loads when this skill is triggered. This is what the agent sees as instructions when the skill is active.
 :::
 
 # AudioCraft: Audio Generation

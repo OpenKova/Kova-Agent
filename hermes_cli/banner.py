@@ -252,7 +252,7 @@ def _check_via_local_git(repo_dir: Path) -> Optional[int]:
 
 
 def check_for_updates() -> Optional[int]:
-    """Check whether a Hermes update is available.
+    """Check whether a Kova update is available.
 
     Two paths: if ``HERMES_REVISION`` is set (nix builds embed it), compare
     it to upstream main via ``git ls-remote``. Otherwise look for a local
@@ -323,7 +323,7 @@ def check_for_updates() -> Optional[int]:
 
 
 def _resolve_repo_dir() -> Optional[Path]:
-    """Return the active Hermes git checkout, or None if this isn't a git install.
+    """Return the active Kova git checkout, or None if this isn't a git install.
 
     Prefers the running code's location over the profile-scoped path
     because ``$HERMES_HOME/hermes-agent/`` may be a stale copy carried
@@ -418,7 +418,7 @@ def get_latest_release_tag(repo_dir: Optional[Path] = None) -> Optional[tuple]:
     """Return ``(tag, release_url)`` for the latest git tag, or None.
 
     Local-only — runs ``git describe --tags --abbrev=0`` against the
-    Hermes checkout. Cached per-process. Release URL always points at the
+    Kova checkout. Cached per-process. Release URL always points at the
     canonical OpenKova/Kova-Agent repo (forks don't get a link).
     """
     global _latest_release_cache

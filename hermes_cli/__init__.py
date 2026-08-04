@@ -1,5 +1,5 @@
 """
-Hermes CLI - Unified command-line interface for Kova Agent.
+Kova CLI - Unified command-line interface for Kova Agent.
 
 Provides subcommands for:
 - hermes chat          - Interactive chat (same as ./hermes)

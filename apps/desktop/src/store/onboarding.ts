@@ -361,8 +361,8 @@ function providerResolutionFailure(reason: null | string) {
   const detail = reason?.trim()
 
   return detail
-    ? `Connected, but Hermes still cannot resolve a usable provider. ${detail}`
-    : 'Connected, but Hermes still cannot resolve a usable provider.'
+    ? `Connected, but Kova still cannot resolve a usable provider. ${detail}`
+    : 'Connected, but Kova still cannot resolve a usable provider.'
 }
 
 async function refreshProviders() {
@@ -739,7 +739,7 @@ export async function recheckExternalSignin(ctx: OnboardingContext) {
       provider,
       message:
         reason?.trim() ||
-        `Hermes still cannot reach ${provider.name}. Run \`${provider.cli_command}\` in a terminal first.`
+        `Kova still cannot reach ${provider.name}. Run \`${provider.cli_command}\` in a terminal first.`
     })
   )
 }
@@ -854,7 +854,7 @@ export async function saveOnboardingLocalEndpoint(baseUrl: string, apiKey: strin
     if (!runtime.ready) {
       const detail = (runtime.reason ?? '').trim()
 
-      return { ok: false, message: detail || `Saved, but Hermes still cannot reach ${url}.` }
+      return { ok: false, message: detail || `Saved, but Kova still cannot reach ${url}.` }
     }
 
     notifyReady('Local / custom endpoint')

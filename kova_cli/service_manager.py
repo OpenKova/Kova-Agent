@@ -134,8 +134,8 @@ def _s6_running() -> bool:
     — only works as root: for any other UID, the symlink at
     ``/proc/1/exe`` is unreadable and ``resolve()`` silently returns the
     path unchanged, so the resolved name is the literal ``"exe"`` and
-    detection always fails. Since every Hermes runtime call inside the
-    container drops to hermes via ``s6-setuidgid``, that silent failure
+    detection always fails. Since every Kova runtime call inside the
+    container drops to kova via ``s6-setuidgid``, that silent failure
     made the entire service-manager runtime-registration path inert in
     production (PR #30136 review).
 
@@ -405,7 +405,7 @@ def _write_gateway_desired_state(name: str, desired_state: str) -> None:
 _S6_BIN_DIR = "/command"
 
 
-# UID/GID of the in-image ``hermes`` user. Hardcoded to match what
+# UID/GID of the in-image ``kova`` user. Hardcoded to match what
 # ``stage2-hook.sh`` enforces (the runtime invariant — see also
 # tests/docker/test_uid_remap.py). The container starts s6-supervise
 # under root and immediately drops to this UID via ``s6-setuidgid``.
@@ -424,7 +424,7 @@ def _seed_supervise_skeleton(svc_dir: Path) -> None:
     ``0700``. It also ``mkfifo``s ``<svc>/supervise/control`` with mode
     ``0600``. Because s6-supervise runs as PID 1's effective UID (root)
     these dirs end up root-owned mode 0700, and an unprivileged client
-    (the ``hermes`` user — UID 10000 — running every Hermes runtime
+    (the ``kova`` user — UID 10000 — running every Kova runtime
     operation via ``s6-setuidgid``) gets ``EACCES`` on any ``s6-svc``,
     ``s6-svstat``, or ``s6-svwait`` invocation against the slot.
 
@@ -441,7 +441,7 @@ def _seed_supervise_skeleton(svc_dir: Path) -> None:
     chown/chmod fix-up that would normally make event/ ``03730
     root:root`` is **skipped** entirely — s6-supervise just opens the
     pre-existing FIFOs and proceeds. So if we lay the skeleton down
-    with hermes ownership before triggering ``s6-svscanctl -a``,
+    with kova ownership before triggering ``s6-svscanctl -a``,
     s6-supervise inherits our layout and never touches it.
 
     Layout produced
@@ -636,7 +636,7 @@ class S6ServiceManager:
              unprivileged gateway process.
           3. Activates the bundled venv.
           4. Drops to the hermes user and exec's
-             ``kova -p <profile> gateway run`` (or just ``hermes
+             ``kova -p <profile> gateway run`` (or just ``kova
              gateway run`` for the default profile — see below).
 
         Special case: ``profile == "default"`` emits ``kova gateway

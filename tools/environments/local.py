@@ -54,7 +54,7 @@ def _resolve_local_initial_cwd(cwd: str) -> str:
 
     ``TERMINAL_CWD`` can be populated from config.yaml before the terminal
     backend is created.  If that value is relative and happens to match the
-    directory Hermes was already launched from (for example ``hermes-agent``
+    directory Kova was already launched from (for example ``hermes-agent``
     while the process cwd is ``~/.hermes/hermes-agent``), passing it through
     unchanged makes the wrapper run ``cd hermes-agent`` *inside* the project
     and fail with a confusing nested-path error.  Anchor relative local cwd
@@ -76,7 +76,7 @@ def _resolve_local_initial_cwd(cwd: str) -> str:
     candidate = os.path.abspath(expanded)
     current = os.getcwd()
 
-    # Common recovery for config values like ``hermes-agent`` when Hermes was
+    # Common recovery for config values like ``hermes-agent`` when Kova was
     # launched from that directory already.  ``os.path.abspath`` would point at
     # a nonexistent nested ``./hermes-agent``; use the current directory instead.
     if not os.path.isdir(candidate):
@@ -196,12 +196,12 @@ def _resolve_safe_cwd(cwd: str) -> str:
     return tempfile.gettempdir()
 
 
-# Hermes-internal env vars that should NOT leak into terminal subprocesses.
+# Kova-internal env vars that should NOT leak into terminal subprocesses.
 _HERMES_PROVIDER_ENV_FORCE_PREFIX = "_HERMES_FORCE_"
 
-# Hermes-managed AWS *inference* credentials for ``auth_type="aws_sdk"``
+# Kova-managed AWS *inference* credentials for ``auth_type="aws_sdk"``
 # providers (Bedrock).  Scoped DELIBERATELY NARROW: this lists only the
-# Bedrock-specific bearer token, which is a Hermes inference secret exactly
+# Bedrock-specific bearer token, which is a Kova inference secret exactly
 # analogous to ``OPENAI_API_KEY`` — nobody drives the ``aws``/``terraform``/
 # ``boto3`` toolchain off it, so stripping it from terminal/execute_code
 # subprocesses costs no user capability.
@@ -318,8 +318,8 @@ def _build_provider_env_blocklist() -> frozenset:
     })
     # CLAUDE_CODE_OAUTH_TOKEN is deliberately NOT stripped.  It is set and
     # owned by the user's Claude Code install (subscription OAuth), not a
-    # Hermes-managed inference credential — Claude subscription auth is not a
-    # working Hermes provider path.  Stripping it broke agent-spawned
+    # Kova-managed inference credential — Claude subscription auth is not a
+    # working Kova provider path.  Stripping it broke agent-spawned
     # ``claude`` CLIs: the child fell through to the shared macOS Keychain /
     # ``~/.claude/.credentials.json`` store and, on auth failure, cleared it,
     # logging the user out of their interactive Claude sessions (#55878).
@@ -336,16 +336,16 @@ _HERMES_PROVIDER_ENV_BLOCKLIST = _build_provider_env_blocklist()
 # VIRTUAL_ENV (and possibly CONDA_PREFIX). If those leak into commands the
 # agent runs against OTHER Python projects, tools like ``uv``/``poetry`` treat
 # the inherited value as the active environment and build/sync that other
-# project's dependencies into the Hermes venv path instead of the project's own
-# ``.venv`` — silently clobbering the Hermes environment (e.g. a project pinned
+# project's dependencies into the Kova venv path instead of the project's own
+# ``.venv`` — silently clobbering the Kova environment (e.g. a project pinned
 # to a different Python version overwrites it and breaks the gateway). The
-# Hermes venv stays reachable via PATH (its bin dir is first), so stripping
+# Kova venv stays reachable via PATH (its bin dir is first), so stripping
 # these markers is safe and only prevents the cross-project clobber (#23473).
 _ACTIVE_VENV_MARKER_VARS = ("VIRTUAL_ENV", "CONDA_PREFIX")
 
 
 def _is_hermes_internal_secret(key: str) -> bool:
-    """Return True for Hermes-internal secrets injected under *dynamic* names.
+    """Return True for Kova-internal secrets injected under *dynamic* names.
 
     ``_HERMES_PROVIDER_ENV_BLOCKLIST`` is name-based and derived from the
     provider/tool registries, but the gateway and CLI also inject secrets into
@@ -369,7 +369,7 @@ def _is_hermes_internal_secret(key: str) -> bool:
     ``KEY`` / ``SECRET`` / ``TOKEN``; the terminal backend's narrower name-based
     blocklist did not, which is the leak this predicate closes.
 
-    This is the single source of truth for "Hermes-internal dynamic secret"
+    This is the single source of truth for "Kova-internal dynamic secret"
     across every spawn path — the terminal ``_make_run_env`` /
     ``_sanitize_subprocess_env`` filters, the Docker passthrough filter, and the
     non-terminal :func:`hermes_subprocess_env` helper all call it, so the
@@ -390,7 +390,7 @@ def _is_hermes_internal_secret(key: str) -> bool:
 
 
 def _inject_context_hermes_home(env: dict) -> None:
-    """Bridge the context-local Hermes home override into subprocess env."""
+    """Bridge the context-local Kova home override into subprocess env."""
     try:
         from hermes_constants import get_hermes_home_override
 
@@ -449,7 +449,7 @@ def _inject_session_context_env(env: dict) -> None:
 
 
 def _sanitize_subprocess_env(base_env: dict | None, extra_env: dict | None = None) -> dict:
-    """Filter Hermes-managed secrets from a subprocess environment."""
+    """Filter Kova-managed secrets from a subprocess environment."""
     try:
         from tools.env_passthrough import is_env_passthrough as _is_passthrough
     except Exception:
@@ -513,7 +513,7 @@ def _scrub_delegated_child_kanban_env(env: dict[str, str]) -> dict[str, str]:
 # Tier-1 secrets: stripped from EVERY spawned subprocess unconditionally —
 # even when the caller opts into credential inheritance for a model-driving
 # CLI (claude / codex / gemini).  These are not LLM provider credentials; no
-# legitimate child Hermes spawns needs them, and they are the highest-value
+# legitimate child Kova spawns needs them, and they are the highest-value
 # secrets to keep out of a compromised dependency's reach (gateway bot tokens,
 # GitHub auth, remote-compute tokens, dashboard session secret).  The set is a
 # narrow subset of _HERMES_PROVIDER_ENV_BLOCKLIST; provider keys are handled by
@@ -569,7 +569,7 @@ def hermes_subprocess_env(*, inherit_credentials: bool = False) -> dict[str, str
 
     * **Tier 1 (always):** ``_ALWAYS_STRIP_KEYS`` — gateway bot tokens, GitHub
       auth, and remote-compute secrets are removed regardless of
-      ``inherit_credentials``.  No child Hermes spawns legitimately needs them.
+      ``inherit_credentials``.  No child Kova spawns legitimately needs them.
     * **Tier 2 (conditional):** the rest of ``_HERMES_PROVIDER_ENV_BLOCKLIST``
       (LLM provider API keys, tool secrets) is removed unless the caller passes
       ``inherit_credentials=True``.
@@ -590,7 +590,7 @@ def hermes_subprocess_env(*, inherit_credentials: bool = False) -> dict[str, str
     # Tier 1 — always strip.
     for key in _ALWAYS_STRIP_KEYS:
         env.pop(key, None)
-    # Internal routing hints and Hermes-internal dynamic secrets
+    # Internal routing hints and Kova-internal dynamic secrets
     # (``AUXILIARY_<TASK>_API_KEY`` / ``_BASE_URL`` side-LLM credentials,
     # ``GATEWAY_RELAY_*`` relay-auth material) must never reach a child,
     # regardless of ``inherit_credentials`` — a model-driving CLI has no
@@ -808,7 +808,7 @@ def _git_bash_aslr_help(bash: str, details: str = "") -> str:
         'Get-Item "$gitRoot\\bin\\bash.exe", "$gitRoot\\usr\\bin\\*.exe" '
         "-ErrorAction SilentlyContinue | ForEach-Object { "
         "Set-ProcessMitigation -Name $_.FullName -Disable ForceRelocateImages }\n"
-        "Then restart Hermes. If the override is blocked or later re-applied, "
+        "Then restart Kova. If the override is blocked or later re-applied, "
         "ask your Windows administrator to allow this per-program exception."
     )
 
@@ -992,7 +992,7 @@ def _resolve_hermes_bin_dir() -> str | None:
     agent process's PATH plus a static set of system dirs (``_SANE_PATH``).
     When the gateway is launched by something that does NOT source the user's
     shell rc — systemd, a service manager, a desktop launcher, cron — the
-    hermes install dir (``~/.local/bin``, the venv ``bin``/``Scripts``, pipx,
+    kova install dir (``~/.local/bin``, the venv ``bin``/``Scripts``, pipx,
     nix) is absent from that PATH, so plugins shelling out to bare ``hermes``
     via the terminal tool hit ``command not found`` (exit 127) even though
     ``hermes`` works fine in the user's own interactive terminal.
@@ -1002,7 +1002,7 @@ def _resolve_hermes_bin_dir() -> str | None:
     regardless of how the gateway was started.
 
     Resolution order (cheap, no heavy imports):
-      1. ``shutil.which("kova")`` — normal PATH-installed shim (falls back to hermes).
+      1. ``shutil.which("kova")`` — normal PATH-installed shim (falls back to kova).
       2. The directory of ``sys.argv[0]`` when it's an absolute path to a
          real ``hermes`` executable (covers nix-store / venv wrappers).
       3. The directory of ``sys.executable`` — the running interpreter's
@@ -1023,7 +1023,7 @@ def _resolve_hermes_bin_dir() -> str | None:
         base = os.path.basename(argv0).lower()
         if (
             os.path.isabs(argv0)
-            and (base == "hermes" or base.startswith("hermes.") or base == "kova" or base.startswith("kova."))
+            and (base == "hermes" or base.startswith("kova.") or base == "kova" or base.startswith("kova."))
             and os.path.isfile(argv0)
         ):
             candidate = os.path.dirname(argv0)
@@ -1047,7 +1047,7 @@ def _resolve_hermes_bin_dir() -> str | None:
 
 
 def _prepend_hermes_bin_dir(existing_path: str) -> str:
-    """Prepend the hermes install dir to ``existing_path`` if it's missing.
+    """Prepend the kova install dir to ``existing_path`` if it's missing.
 
     Cross-platform (uses ``os.pathsep``). First-occurrence wins, so a PATH
     that already contains the dir is returned unchanged. Returns the input
@@ -1116,7 +1116,7 @@ def _apply_windows_msys_bash_env_defaults(env: dict) -> None:
 
     Git Bash rewrites arguments that look like Unix paths (``/FO``, ``/TN``,
     ``/Create``) into ``C:/.../git/FO``-style paths, which breaks native
-    Windows commands such as ``tasklist``, ``schtasks``, and ``wmic``.  Hermes
+    Windows commands such as ``tasklist``, ``schtasks``, and ``wmic``.  Kova
     runs terminal commands through bash on Windows, so set the standard MSYS
     opt-out by default.  Users who need conversion can override in their env.
     Refs #56700.
@@ -1181,7 +1181,7 @@ def _make_run_env(env: dict) -> dict:
         # error / exit 127).  No-op off Windows and when a login snapshot is
         # healthy (the snapshot re-exports the full PATH inside the shell).
         new_path = _prepend_git_bash_dirs(new_path)
-        # Ensure the hermes install dir is reachable so plugins can shell out
+        # Ensure the kova install dir is reachable so plugins can shell out
         # to bare ``hermes`` via the terminal tool even when the gateway was
         # launched without it on PATH (systemd, service managers, cron, etc.).
         run_env[path_key] = _prepend_hermes_bin_dir(new_path)
@@ -1232,7 +1232,7 @@ def _resolve_shell_init_files() -> list[str]:
     Expands ``~`` and ``${VAR}`` references and drops anything that doesn't
     exist on disk, so a missing ``~/.bashrc`` never breaks the snapshot.
     The ``auto_source_bashrc`` path runs only when the user hasn't supplied
-    an explicit list — once they have, Hermes trusts them.
+    an explicit list — once they have, Kova trusts them.
     """
     explicit, auto_bashrc = _read_terminal_shell_init_config()
 

@@ -76,9 +76,9 @@ class TestGenerateDeepLink:
         link = generate_deep_link(
             manager_bot="Bot",
             suggested_username="test_bot",
-            suggested_name="Hermes & Friends",
+            suggested_name="Kova & Friends",
         )
-        assert "Hermes+%26+Friends" in link
+        assert "Kova+%26+Friends" in link
 
 
 class TestPairingNonce:
@@ -120,8 +120,8 @@ class TestCreatePairing:
             "pairing_id": "abcdefghijklmnop",
             "poll_token": "secret-token",
             "suggested_username": "hermes_abcdefghijklmnop_bot",
-            "deep_link": "https://t.me/newbot/HermesSetupBot/hermes_abcdefghijklmnop_bot?name=Hermes+Agent",
-            "qr_payload": "https://t.me/newbot/HermesSetupBot/hermes_abcdefghijklmnop_bot?name=Hermes+Agent",
+            "deep_link": "https://t.me/newbot/HermesSetupBot/hermes_abcdefghijklmnop_bot?name=Kova+Agent",
+            "qr_payload": "https://t.me/newbot/HermesSetupBot/hermes_abcdefghijklmnop_bot?name=Kova+Agent",
             "expires_at": "2026-05-18T00:00:00.000Z",
         }
 
@@ -134,8 +134,8 @@ class TestCreatePairing:
             pairing_id="abcdefghijklmnop",
             poll_token="secret-token",
             suggested_username="hermes_abcdefghijklmnop_bot",
-            deep_link="https://t.me/newbot/HermesSetupBot/hermes_abcdefghijklmnop_bot?name=Hermes+Agent",
-            qr_payload="https://t.me/newbot/HermesSetupBot/hermes_abcdefghijklmnop_bot?name=Hermes+Agent",
+            deep_link="https://t.me/newbot/HermesSetupBot/hermes_abcdefghijklmnop_bot?name=Kova+Agent",
+            qr_payload="https://t.me/newbot/HermesSetupBot/hermes_abcdefghijklmnop_bot?name=Kova+Agent",
             expires_at="2026-05-18T00:00:00.000Z",
         )
         post.assert_called_once_with(

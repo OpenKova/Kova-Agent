@@ -196,12 +196,12 @@ def test_gateway_cmd_script_uses_console_python_without_replace_or_start_churn(m
     monkeypatch.setattr(
         gateway_windows,
         "_resolve_detached_python",
-        lambda exe: (exe, r"C:\\Hermes\\kova-agent\\venv", []),
+        lambda exe: (exe, r"C:\\Kova\\kova-agent\\venv", []),
     )
 
     content = gateway_windows._build_gateway_cmd_script(
-        r"C:\\Hermes\\kova-agent\\venv\\Scripts\\python.exe",
-        r"C:\\Hermes\\kova-agent",
+        r"C:\\Kova\\kova-agent\\venv\\Scripts\\python.exe",
+        r"C:\\Kova\\kova-agent",
         r"C:\\HermesHome\\profiles\\alice",
         "--profile alice",
     )

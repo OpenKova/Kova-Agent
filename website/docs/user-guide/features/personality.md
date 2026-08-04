@@ -11,17 +11,17 @@ Kova Agent's personality is fully customizable. `SOUL.md` is the **primary ident
 - `SOUL.md` — a durable persona file that lives in `HERMES_HOME` and serves as the agent's identity (slot #1 in the system prompt)
 - built-in or custom `/personality` presets — session-level system-prompt overlays
 
-If you want to change who Hermes is — or replace it with an entirely different agent persona — edit `SOUL.md`.
+If you want to change who Kova is — or replace it with an entirely different agent persona — edit `SOUL.md`.
 
 ## How SOUL.md works now
 
-Hermes now seeds a default `SOUL.md` automatically in:
+Kova now seeds a default `SOUL.md` automatically in:
 
 ```text
 ~/.hermes/SOUL.md
 ```
 
-More precisely, it uses the current instance's `HERMES_HOME`, so if you run Hermes with a custom home directory, it will use:
+More precisely, it uses the current instance's `HERMES_HOME`, so if you run Kova with a custom home directory, it will use:
 
 ```text
 $HERMES_HOME/SOUL.md
@@ -30,11 +30,11 @@ $HERMES_HOME/SOUL.md
 ### Important behavior
 
 - **SOUL.md is the agent's primary identity.** It occupies slot #1 in the system prompt, replacing the hardcoded default identity.
-- Hermes creates a starter `SOUL.md` automatically if one does not exist yet
+- Kova creates a starter `SOUL.md` automatically if one does not exist yet
 - Existing user `SOUL.md` files are never overwritten
-- Hermes loads `SOUL.md` only from `HERMES_HOME`
-- Hermes does not look in the current working directory for `SOUL.md`
-- If `SOUL.md` exists but is empty, or cannot be loaded, Hermes falls back to a built-in default identity
+- Kova loads `SOUL.md` only from `HERMES_HOME`
+- Kova does not look in the current working directory for `SOUL.md`
+- If `SOUL.md` exists but is empty, or cannot be loaded, Kova falls back to a built-in default identity
 - If `SOUL.md` has content, that content is injected verbatim after security scanning and truncation
 - SOUL.md is **not** duplicated in the context files section — it appears only once, as the identity
 
@@ -44,10 +44,10 @@ That makes `SOUL.md` a true per-user or per-instance identity, not just an addit
 
 This keeps personality predictable.
 
-If Hermes loaded `SOUL.md` from whatever directory you happened to launch it in, your personality could change unexpectedly between projects. By loading only from `HERMES_HOME`, the personality belongs to the Hermes instance itself.
+If Kova loaded `SOUL.md` from whatever directory you happened to launch it in, your personality could change unexpectedly between projects. By loading only from `HERMES_HOME`, the personality belongs to the Kova instance itself.
 
 That also makes it easier to teach users:
-- "Edit `~/.hermes/SOUL.md` to change Hermes' default personality."
+- "Edit `~/.hermes/SOUL.md` to change Kova' default personality."
 
 ## Where to edit it
 
@@ -71,7 +71,7 @@ Use it for durable voice and personality guidance, such as:
 - level of directness
 - default interaction style
 - what to avoid stylistically
-- how Hermes should handle uncertainty, disagreement, or ambiguity
+- how Kova should handle uncertainty, disagreement, or ambiguity
 
 Use it less for:
 - one-off project instructions
@@ -116,7 +116,7 @@ You optimize for truth, clarity, and usefulness over politeness theater.
 - Treat edge cases as part of the design, not cleanup
 ```
 
-## What Hermes injects into the prompt
+## What Kova injects into the prompt
 
 `SOUL.md` content goes directly into slot #1 of the system prompt — the agent identity position. No wrapper language is added around it.
 
@@ -124,7 +124,7 @@ The content goes through:
 - prompt-injection scanning
 - truncation if it is too large
 
-If the file is empty, whitespace-only, or cannot be read, Hermes falls back to a built-in default identity ("You are Kova Agent, an intelligent AI assistant created by Nous Research..."). This fallback also applies when `skip_context_files` is set (e.g., in subagent/delegation contexts).
+If the file is empty, whitespace-only, or cannot be read, Kova falls back to a built-in default identity ("You are Kova Agent, an intelligent AI assistant created by Nous Research..."). This fallback also applies when `skip_context_files` is set (e.g., in subagent/delegation contexts).
 
 ## Security scanning
 
@@ -172,7 +172,7 @@ Examples:
 
 ## Built-in personalities
 
-Hermes ships with built-in personalities you can switch to with `/personality`.
+Kova ships with built-in personalities you can switch to with `/personality`.
 
 | Name | Description |
 |------|-------------|
@@ -183,7 +183,7 @@ Hermes ships with built-in personalities you can switch to with `/personality`.
 | **teacher** | Patient educator with clear examples |
 | **kawaii** | Cute expressions, sparkles, and enthusiasm ★ |
 | **catgirl** | Neko-chan with cat-like expressions, nya~ |
-| **pirate** | Captain Hermes, tech-savvy buccaneer |
+| **pirate** | Captain Kova, tech-savvy buccaneer |
 | **shakespeare** | Bardic prose with dramatic flair |
 | **surfer** | Totally chill bro vibes |
 | **noir** | Hard-boiled detective narration |
@@ -207,7 +207,7 @@ Hermes ships with built-in personalities you can switch to with `/personality`.
 /personality teacher
 ```
 
-These are convenient overlays, but your global `SOUL.md` still gives Hermes its persistent default personality unless the overlay meaningfully changes it.
+These are convenient overlays, but your global `SOUL.md` still gives Kova its persistent default personality unless the overlay meaningfully changes it.
 
 ## Custom personalities in config
 
@@ -265,7 +265,7 @@ At a high level, the prompt stack includes:
 
 Conversational personality and CLI appearance are separate:
 
-- `SOUL.md`, `agent.system_prompt`, and `/personality` affect how Hermes speaks
-- `display.skin` and `/skin` affect how Hermes looks in the terminal
+- `SOUL.md`, `agent.system_prompt`, and `/personality` affect how Kova speaks
+- `display.skin` and `/skin` affect how Kova looks in the terminal
 
 For terminal appearance, see [Skins & Themes](./skins.md).

@@ -1,13 +1,13 @@
 """Bitwarden Secrets Manager (`bws` CLI) integration.
 
-Hermes pulls API keys from Bitwarden Secrets Manager at process startup
+Kova pulls API keys from Bitwarden Secrets Manager at process startup
 so they don't have to live in plaintext in ``~/.hermes/.env``.
 
 Design summary
 --------------
 
 * The ``bws`` binary is auto-installed into ``<hermes_home>/bin/bws`` on
-  first use.  Hermes pins one version (``_BWS_VERSION``) and downloads
+  first use.  Kova pins one version (``_BWS_VERSION``) and downloads
   the matching asset from the official GitHub Releases page, verifying
   the SHA-256 against the release's published checksum file.
 * The access token is stored in ``~/.hermes/.env`` as
@@ -18,7 +18,7 @@ Design summary
   --output json`` call.  We cache the result in-process for
   ``cache_ttl_seconds`` so back-to-back ``hermes`` invocations don't
   hammer the API.
-* Failures NEVER block Hermes startup.  Missing binary, no network,
+* Failures NEVER block Kova startup.  Missing binary, no network,
   expired token, etc. all emit a one-line warning and continue with
   whatever credentials ``.env`` already had.
 
@@ -85,7 +85,7 @@ _BWS_RUN_TIMEOUT = 30
 _CacheKey = Tuple[str, str, str]  # (access_token_fingerprint, project_id, server_url)
 _CACHE: Dict[_CacheKey, _CachedFetch] = {}
 
-# Disk-persisted cache so back-to-back CLI invocations (e.g. `hermes chat -q ...`
+# Disk-persisted cache so back-to-back CLI invocations (e.g. `kova chat -q ...`
 # called from scripts, cron, the gateway forking new agents) don't each pay the
 # ~380ms `bws secret list` tax. The in-process _CACHE above only saves repeated
 # fetches WITHIN one process; this saves repeated fetches ACROSS processes.
@@ -135,7 +135,7 @@ def _encrypted_disk_cache_path(home_path: Optional[Path] = None) -> Path:
 
 
 def _hermes_bin_dir() -> Path:
-    """Where Hermes stores its managed binaries.  Profile-aware."""
+    """Where Kova stores its managed binaries.  Profile-aware."""
     from hermes_constants import get_hermes_home
 
     return get_hermes_home() / "bin"
@@ -220,7 +220,7 @@ def install_bws(*, force: bool = False) -> Path:
 
     Returns the path to the installed executable.  Raises on any
     failure (network, checksum, extraction) — callers in the auto-install
-    path catch these; the user-facing ``hermes secrets bitwarden setup``
+    path catch these; the user-facing ``kova secrets bitwarden setup``
     surface lets them propagate so the wizard can show a clear error.
     """
     bin_dir = _hermes_bin_dir()
@@ -559,7 +559,7 @@ def fetch_bitwarden_secrets(
             "bws binary not available — auto-install failed and `bws` is "
             "not on PATH.  Install manually from "
             "https://github.com/bitwarden/sdk-sm/releases or re-run "
-            "`hermes secrets bitwarden setup`."
+            "`kova secrets bitwarden setup`."
         )
 
     try:
@@ -642,7 +642,7 @@ def _summarize_bws_stderr(raw: str) -> str:
            crates/bws/src/main.rs:108
         ...
 
-    Everything from ``Location:`` on is diagnostic noise for a Hermes
+    Everything from ``Location:`` on is diagnostic noise for a Kova
     user.  Keep the numbered cause lines (joined), drop the rest, and
     fall back to the stripped raw text when the shape is unrecognized.
     """
@@ -981,7 +981,7 @@ class BitwardenSource(SecretSource):
                 "Run `kova secrets bitwarden token` to paste a fresh access "
                 "token (create one in the Bitwarden web app: Secrets Manager → "
                 "Machine accounts → Access tokens).  Wrong region?  Re-run "
-                "`hermes secrets bitwarden setup` and pick EU/self-hosted."
+                "`kova secrets bitwarden setup` and pick EU/self-hosted."
             )
         return super().remediation(kind, cfg)
 
@@ -1016,7 +1016,7 @@ def _classify_bws_error(message: str) -> ErrorKind:
 def clear_caches(home_path: Optional[Path] = None) -> None:
     """Drop in-process AND disk caches (plaintext and encrypted).
 
-    Used after a token rotation (`hermes secrets bitwarden token`) so the
+    Used after a token rotation (`kova secrets bitwarden token`) so the
     next startup fetches fresh with the new credential instead of serving
     a pull cached under the old token's fingerprint.  The encrypted cache
     is keyed off the old token too, so it must go as well.

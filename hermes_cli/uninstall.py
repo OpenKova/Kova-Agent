@@ -51,7 +51,7 @@ def find_shell_configs() -> list:
 
 
 def remove_path_from_shell_configs():
-    """Remove Hermes PATH entries from shell configuration files."""
+    """Remove Kova PATH entries from shell configuration files."""
     configs = find_shell_configs()
     removed_from = []
     
@@ -135,7 +135,7 @@ def remove_node_symlinks(hermes_home: Path) -> list:
     """Remove the node/npm/npx symlinks the installer placed on PATH.
 
     The POSIX installer (``scripts/install.sh`` / ``scripts/lib/node-bootstrap.sh``)
-    symlinks node/npm/npx into the same directory as the ``hermes`` command:
+    symlinks node/npm/npx into the same directory as the ``kova`` command:
 
     - ``/usr/local/bin/`` on root FHS installs (Linux, uid 0)
     - ``$PREFIX/bin/`` on Termux
@@ -144,7 +144,7 @@ def remove_node_symlinks(hermes_home: Path) -> list:
     We check all candidate directories so that uninstall works regardless of
     how the install was done (e.g. a root FHS install that placed links in
     ``/usr/local/bin``, or an older install that used ``~/.local/bin`` before
-    the FHS fix).  Only symlinks that resolve into this Hermes home's ``node``
+    the FHS fix).  Only symlinks that resolve into this Kova home's ``node``
     directory are removed — links the user has repointed elsewhere (nvm, fnm,
     etc.) are left untouched.
     """
@@ -306,7 +306,7 @@ def uninstall_gateway_service():
 #   3. Downloads PortableGit to ``%LOCALAPPDATA%\hermes\git\`` and Node to
 #      ``%LOCALAPPDATA%\hermes\node\`` as user-scoped, isolated copies.
 #      These are ~200MB combined and serve no purpose after uninstall.
-#   4. On the ``hermes dashboard`` + gateway paths, drops files into
+#   4. On the ``kova dashboard`` + gateway paths, drops files into
 #      ``%LOCALAPPDATA%\hermes\gateway-service\`` and sometimes
 #      ``%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\`` — the
 #      latter is handled by ``gateway_windows.uninstall()`` already.
@@ -320,7 +320,7 @@ def uninstall_gateway_service():
 
 
 def _hermes_path_markers(hermes_home: Path) -> list[str]:
-    """Path-entry substrings that identify Hermes-owned User-PATH entries."""
+    """Path-entry substrings that identify Kova-owned User-PATH entries."""
     root = str(hermes_home).rstrip("\\/")
     # Match on prefix so sub-entries (git\cmd, git\bin, git\usr\bin, node, etc.)
     # all get swept.  Also match the bare hermes-agent install dir.
@@ -333,7 +333,7 @@ def _hermes_path_markers(hermes_home: Path) -> list[str]:
 
 
 def remove_path_from_windows_registry(hermes_home: Path) -> list[str]:
-    """Strip Hermes-owned entries from User-scope PATH in the registry.
+    """Strip Kova-owned entries from User-scope PATH in the registry.
 
     Returns the list of removed path entries.  Operates on HKCU\\Environment,
     same key the installer wrote to via ``[Environment]::SetEnvironmentVariable``.
@@ -495,7 +495,7 @@ def _uninstall_profile(profile) -> None:
 def run_gui_uninstall(args):
     """GUI-only uninstall: remove the Chat GUI, leave the agent + data intact.
 
-    Mirrors ``hermes uninstall --gui``. Removes the desktop app's built
+    Mirrors ``kova uninstall --gui``. Removes the desktop app's built
     artifacts, the packaged app bundle (best-effort), and the Electron
     userData dir — nothing under ``$HERMES_HOME`` config/sessions/.env, and
     never the Python agent or its venv.
@@ -748,7 +748,7 @@ def _perform_uninstall(
     paths so the destructive sequence lives in exactly one place.
 
     Steps: stop gateway → strip PATH (rc files + Windows registry) → remove the
-    ``hermes`` wrapper + node symlinks → remove the desktop Chat GUI artifacts →
+    ``kova`` wrapper + node symlinks → remove the desktop Chat GUI artifacts →
     delete the code checkout → (Windows) remove PortableGit/Node → optionally
     wipe ``$HERMES_HOME`` data and named profiles on full uninstall.
     """
@@ -782,7 +782,7 @@ def _perform_uninstall(
             for entry in removed_path_entries:
                 log_success(f"Removed from User PATH: {entry}")
         else:
-            log_info("No Hermes-owned PATH entries in User environment")
+            log_info("No Kova-owned PATH entries in User environment")
 
         log_info("Removing HERMES_HOME / HERMES_GIT_BASH_PATH User env vars...")
         removed_env = remove_hermes_env_vars_windows()
@@ -790,7 +790,7 @@ def _perform_uninstall(
             for name in removed_env:
                 log_success(f"Removed User env var: {name}")
         else:
-            log_info("No Hermes-set User env vars to remove")
+            log_info("No Kova-set User env vars to remove")
     
     # 3. Remove wrapper script
     log_info("Removing hermes command...")
@@ -802,15 +802,15 @@ def _perform_uninstall(
         log_info("No wrapper script found")
 
     # 3b. Remove node/npm/npx symlinks the installer left in ~/.local/bin
-    #     (only when they still point into this Hermes home's node dir, so we
+    #     (only when they still point into this Kova home's node dir, so we
     #     never clobber an existing nvm / user-managed Node).
-    log_info("Removing Hermes-managed node/npm/npx symlinks...")
+    log_info("Removing Kova-managed node/npm/npx symlinks...")
     removed_node_links = remove_node_symlinks(hermes_home)
     if removed_node_links:
         for link in removed_node_links:
             log_success(f"Removed {link}")
     else:
-        log_info("No Hermes-managed node/npm/npx symlinks found")
+        log_info("No Kova-managed node/npm/npx symlinks found")
 
     # 3c. Remove the desktop Chat GUI's artifacts too (built renderer/release,
     #     node_modules, the packaged app bundle, and the Electron userData

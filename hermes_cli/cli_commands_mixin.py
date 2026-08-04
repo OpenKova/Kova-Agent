@@ -143,7 +143,7 @@ class CLICommandsMixin:
             print(f"  ❌ {result['error']}")
 
     def _handle_snapshot_command(self, command: str):
-        """Handle /snapshot — lightweight state snapshots for Hermes config/state.
+        """Handle /snapshot — lightweight state snapshots for Kova config/state.
 
         Syntax:
             /snapshot                  — list recent snapshots
@@ -300,7 +300,7 @@ class CLICommandsMixin:
         _cprint(f"  Agent: {'running' if agent_running else 'idle'}")
 
     def _handle_journey_command(self, cmd_original: str) -> None:
-        """Handle /journey — the learning timeline (see `hermes journey`).
+        """Handle /journey — the learning timeline (see `kova journey`).
 
         The read-only views (default + ``list``) render Rich color, which
         patch_stdout would swallow as raw escapes; capture with forced ANSI and
@@ -846,7 +846,7 @@ class CLICommandsMixin:
 
         # Retarget the process + tool cwd to where the session was started, so a
         # mid-chat /resume (and /sessions <id>, which delegates here) lands in the
-        # same directory as a startup `hermes -c`/`--resume`. The startup resume
+        # same directory as a startup `kova -c`/`--resume`. The startup resume
         # paths already call this; without it, the terminal/code-exec tools and
         # relative-path resolution keep operating in the wrong repo. Idempotent
         # and a no-op when the session recorded no cwd. See #38562.
@@ -1786,7 +1786,7 @@ class CLICommandsMixin:
     def _handle_bundles_command(self, cmd: str) -> None:
         """In-session ``/bundles`` — show installed skill bundles.
 
-        Mirrors ``hermes bundles list`` but renders inside the running
+        Mirrors ``kova bundles list`` but renders inside the running
         CLI so users can discover what's available without dropping out
         of their session. Bundles are loaded via ``/<bundle-name>``.
         """
@@ -1801,7 +1801,7 @@ class CLICommandsMixin:
         if not bundles:
             _cprint("  No skill bundles installed.")
             _cprint(
-                f"  {_DIM}Create one with: hermes bundles create "
+                f"  {_DIM}Create one with: kova bundles create "
                 f"<name> --skill <s1> --skill <s2>{_RST}"
             )
             _cprint(f"  {_DIM}Directory: {_bundles_dir()}{_RST}")
@@ -1819,7 +1819,7 @@ class CLICommandsMixin:
                 ChatConsole().print(f"        [dim]· {_escape(s)}[/]")
         _cprint(
             f"\n  {_DIM}Invoke a bundle with /<slug>. "
-            f"Manage with `hermes bundles`.{_RST}"
+            f"Manage with `kova bundles`.{_RST}"
         )
 
     def _handle_browser_command(self, cmd: str):
@@ -1963,7 +1963,7 @@ class CLICommandsMixin:
                     "Your browser_navigate, browser_snapshot, browser_click, and other browser tools now "
                     "control that CDP browser. The command itself is a signal that using browser tools for "
                     "their current browser-related request is expected; do not wait for separate permission "
-                    "just because CDP is connected. This is typically a Hermes-managed isolated debug "
+                    "just because CDP is connected. This is typically a Kova-managed isolated debug "
                     "profile, not the user's main everyday browser. It is still user-visible and may contain "
                     "pages, logged-in sessions, or cookies in that debug profile, so avoid destructive actions, "
                     "closing tabs, or navigating away unless the user's task calls for it.]"
@@ -2622,7 +2622,7 @@ class CLICommandsMixin:
             _cprint(f"  {_ACCENT}✓ Reasoning effort set to '{arg}' (this session — use --global to persist){_RST}")
 
     def _handle_busy_command(self, cmd: str):
-        """Handle /busy — control what Enter does while Hermes is working.
+        """Handle /busy — control what Enter does while Kova is working.
 
         Usage:
             /busy               Show current busy input mode
@@ -2654,11 +2654,11 @@ class CLICommandsMixin:
         self.busy_input_mode = arg
         if save_config_value("display.busy_input_mode", arg):
             if arg == "queue":
-                behavior = "Enter will queue follow-up input while Hermes is busy."
+                behavior = "Enter will queue follow-up input while Kova is busy."
             elif arg == "steer":
                 behavior = "Enter will steer your message into the current run (after the next tool call)."
             else:
-                behavior = "Enter will redirect the current run while Hermes is busy; /stop still cancels it."
+                behavior = "Enter will redirect the current run while Kova is busy; /stop still cancels it."
             _cprint(f"  {_ACCENT}✓ Busy input mode set to '{arg}' (saved to config){_RST}")
             _cprint(f"  {_DIM}{behavior}{_RST}")
         else:

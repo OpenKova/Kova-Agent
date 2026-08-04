@@ -1,6 +1,6 @@
-"""Anthropic Messages API adapter for Hermes Agent.
+"""Anthropic Messages API adapter for Kova Agent.
 
-Translates between Hermes's internal OpenAI-style message format and
+Translates between Kova's internal OpenAI-style message format and
 Anthropic's Messages API. Follows the same pattern as the codex_responses
 adapter — all provider-specific logic is isolated here.
 
@@ -56,7 +56,7 @@ def _get_anthropic_sdk():
 logger = logging.getLogger(__name__)
 
 THINKING_BUDGET = {"xhigh": 32000, "high": 16000, "medium": 8000, "low": 4000}
-# Hermes effort → Anthropic adaptive-thinking effort (output_config.effort).
+# Kova effort → Anthropic adaptive-thinking effort (output_config.effort).
 # Anthropic exposes 5 levels on 4.7+: low, medium, high, xhigh, max.
 # Opus/Sonnet 4.6 only expose 4 levels: low, medium, high, max — no xhigh.
 # We preserve xhigh as xhigh on 4.7+ (the recommended default for coding/
@@ -1103,7 +1103,7 @@ def _refresh_oauth_token(creds: Dict[str, Any]) -> Optional[str]:
     Claude Code's OAuth refresh tokens are single-use: a successful refresh
     rotates the pair and invalidates the old refresh token. Claude Code itself
     also refreshes on its own schedule (IDE/CLI activity), so by the time
-    Hermes notices an expired token, Claude Code may have already rotated it.
+    Kova notices an expired token, Claude Code may have already rotated it.
     POSTing our now-stale refresh token in that window races Claude Code and
     fails with ``invalid_grant``.
 
@@ -1236,7 +1236,7 @@ def _resolve_claude_code_token_from_credentials(creds: Optional[Dict[str, Any]] 
 def _prefer_refreshable_claude_code_token(env_token: str, creds: Optional[Dict[str, Any]]) -> Optional[str]:
     """Prefer Claude Code creds when a persisted env OAuth token would shadow refresh.
 
-    Hermes historically persisted setup tokens into ANTHROPIC_TOKEN. That makes
+    Kova historically persisted setup tokens into ANTHROPIC_TOKEN. That makes
     later refresh impossible because the static env token wins before we ever
     inspect Claude Code's refreshable credential file. If we have a refreshable
     Claude Code credential record, prefer it over the static env OAuth token.
@@ -1260,7 +1260,7 @@ def _resolve_anthropic_pool_token() -> Optional[str]:
 
     Read-only: enumerates with ``clear_expired=False, refresh=False`` so a bare
     token *resolve* (which runs from diagnostic/read-only call sites such as
-    ``account_usage`` and ``hermes models``) never mutates ``~/.hermes/auth.json``
+    ``account_usage`` and ``kova models``) never mutates ``~/.hermes/auth.json``
     or makes a network refresh call. Refresh-on-expiry is owned by the API call
     path's pool recovery, not the resolver.
     """
@@ -1299,7 +1299,7 @@ def resolve_anthropic_token() -> Optional[str]:
     """Resolve an Anthropic token from all available sources.
 
     Priority:
-      1. ANTHROPIC_TOKEN env var (OAuth/setup token saved by Hermes)
+      1. ANTHROPIC_TOKEN env var (OAuth/setup token saved by Kova)
       2. CLAUDE_CODE_OAUTH_TOKEN env var
       3. Claude Code credentials (~/.claude.json or ~/.claude/.credentials.json)
          — with automatic refresh if expired and a refresh token is available
@@ -1310,7 +1310,7 @@ def resolve_anthropic_token() -> Optional[str]:
     """
     creds = read_claude_code_credentials()
 
-    # 1. Hermes-managed OAuth/setup token env var
+    # 1. Kova-managed OAuth/setup token env var
     token = os.getenv("ANTHROPIC_TOKEN", "").strip()
     if token:
         preferred = _prefer_refreshable_claude_code_token(token, creds)
@@ -1331,13 +1331,13 @@ def resolve_anthropic_token() -> Optional[str]:
     if resolved_claude_token:
         return resolved_claude_token
 
-    # 4. Hermes credential_pool OAuth entry.
+    # 4. Kova credential_pool OAuth entry.
     resolved_pool_token = _resolve_anthropic_pool_token()
     if resolved_pool_token:
         return resolved_pool_token
 
     # 5. Regular API key, or a legacy OAuth token saved in ANTHROPIC_API_KEY.
-    # This remains as a compatibility fallback for pre-migration Hermes configs.
+    # This remains as a compatibility fallback for pre-migration Kova configs.
     api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
     if api_key:
         return api_key
@@ -1388,7 +1388,7 @@ def run_oauth_setup_token() -> Optional[str]:
     return None
 
 
-# ── Hermes-native PKCE OAuth flow ────────────────────────────────────────
+# ── Kova-native PKCE OAuth flow ────────────────────────────────────────
 # Mirrors the flow used by Claude Code, pi-ai, and OpenCode.
 # Stores credentials in ~/.hermes/.anthropic_oauth.json (our own file).
 
@@ -1432,7 +1432,7 @@ def _generate_pkce() -> tuple:
 
 
 def run_hermes_oauth_login_pure() -> Optional[Dict[str, Any]]:
-    """Run Hermes-native OAuth PKCE flow and return credential state."""
+    """Run Kova-native OAuth PKCE flow and return credential state."""
     import secrets
     import time
     import webbrowser
@@ -1455,7 +1455,7 @@ def run_hermes_oauth_login_pure() -> Optional[Dict[str, Any]]:
     auth_url = f"https://claude.ai/oauth/authorize?{urlencode(params)}"
 
     print()
-    print("Authorize Hermes with your Claude Pro/Max subscription.")
+    print("Authorize Kova with your Claude Pro/Max subscription.")
     print()
     print("╭─ Claude Pro/Max Authorization ────────────────────╮")
     print("│                                                   │")
@@ -1562,7 +1562,7 @@ def run_hermes_oauth_login_pure() -> Optional[Dict[str, Any]]:
 
 
 def read_hermes_oauth_credentials() -> Optional[Dict[str, Any]]:
-    """Read Hermes-managed OAuth credentials from ~/.hermes/.anthropic_oauth.json."""
+    """Read Kova-managed OAuth credentials from ~/.hermes/.anthropic_oauth.json."""
     oauth_file = _get_hermes_oauth_file()
     if oauth_file.exists():
         try:
@@ -1570,7 +1570,7 @@ def read_hermes_oauth_credentials() -> Optional[Dict[str, Any]]:
             if data.get("accessToken"):
                 return data
         except (json.JSONDecodeError, OSError, IOError) as e:
-            logger.debug("Failed to read Hermes OAuth credentials: %s", e)
+            logger.debug("Failed to read Kova OAuth credentials: %s", e)
     return None
 
 
@@ -2619,8 +2619,9 @@ def build_anthropic_kwargs(
         for block in system:
             if isinstance(block, dict) and block.get("type") == "text":
                 text = block.get("text", "")
-                text = text.replace("Hermes Agent", "Claude Code")
-                text = text.replace("Hermes agent", "Claude Code")
+                text = text.replace("Kova Agent", "Claude Code")
+                text = text.replace("Kova Agent", "Claude Code")
+                text = text.replace("Kova agent", "Claude Code")
                 text = text.replace("hermes-agent", "claude-code")
                 text = text.replace("Nous Research", "Anthropic")
                 block["text"] = text
@@ -2634,7 +2635,7 @@ def build_anthropic_kwargs(
         #    from plan-billing to the extra-usage lane; ``mcp__foo`` is accepted).
         #
         #    Two cases, both must land on the double-underscore ``mcp__`` form:
-        #      a) bare Hermes-native tools (``read_file``)  -> ``mcp__read_file``
+        #      a) bare Kova-native tools (``read_file``)  -> ``mcp__read_file``
         #      b) native MCP server tools registered under their full
         #         single-underscore ``mcp_<server>_<tool>`` name
         #         (``mcp_linear_get_issue``) -> ``mcp__linear_get_issue``
@@ -2706,7 +2707,7 @@ def build_anthropic_kwargs(
     # in the ChatCompletionsTransport — see #13503.)
     #
     # On 4.7+ the `thinking.display` field defaults to "omitted", which
-    # silently hides reasoning text that Hermes surfaces in its CLI. We
+    # silently hides reasoning text that Kova surfaces in its CLI. We
     # request "summarized" so the reasoning blocks stay populated — matching
     # 4.6 behavior and preserving the activity-feed UX during long tool runs.
     if reasoning_config and isinstance(reasoning_config, dict):

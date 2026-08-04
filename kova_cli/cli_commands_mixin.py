@@ -2,13 +2,13 @@
 
 This module hosts the ``_handle_*_command`` slash-command handlers lifted out of
 ``cli.py``'s ``HermesCLI`` class. ``HermesCLI`` inherits ``CLICommandsMixin`` so
-every ``self.<handler>`` call resolves unchanged via the MRO ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â behavior-neutral.
+every ``self.<handler>`` call resolves unchanged via the MRO — behavior-neutral.
 
 Import discipline (mirrors gateway/slash_commands.py, PR #41886):
   * Neutral, non-cyclic deps are imported at module top-level below.
-  * cli.py-internal symbols (the ``_cprint``/``_ACCENT``/``save_config_value``ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦
+  * cli.py-internal symbols (the ``_cprint``/``_ACCENT``/``save_config_value``…
     module-level helpers and constants) are imported LAZILY inside each handler
-    via ``from cli import ...`` ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â that resolves at call time when ``cli`` is fully
+    via ``from cli import ...`` — that resolves at call time when ``cli`` is fully
     loaded, so the mixin module never imports ``cli`` at top level (no cycle).
 """
 
@@ -49,13 +49,13 @@ class CLICommandsMixin:
     """
 
     def _handle_rollback_command(self, command: str):
-        """Handle /rollback ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â list, diff, or restore filesystem checkpoints.
+        """Handle /rollback — list, diff, or restore filesystem checkpoints.
 
         Syntax:
-            /rollback                 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â list checkpoints
-            /rollback <N>             ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â restore checkpoint N (also undoes last chat turn)
-            /rollback diff <N>        ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â preview changes since checkpoint N
-            /rollback <N> <file>      ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â restore a single file from checkpoint N
+            /rollback                 — list checkpoints
+            /rollback <N>             — restore checkpoint N (also undoes last chat turn)
+            /rollback diff <N>        — preview changes since checkpoint N
+            /rollback <N> <file>      — restore a single file from checkpoint N
         """
         from tools.checkpoint_manager import format_checkpoint_list
 
@@ -110,7 +110,7 @@ class CLICommandsMixin:
                         else:
                             print(f"\n{diff}")
             else:
-                print(f"  ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒâ€¦Ã¢â‚¬â„¢ {result['error']}")
+                print(f"  ❌ {result['error']}")
             return
 
         # Resolve checkpoint reference (number or hash)
@@ -129,9 +129,9 @@ class CLICommandsMixin:
         result = mgr.restore(cwd, target_hash, file_path=file_path)
         if result["success"]:
             if file_path:
-                print(f"  ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Restored {file_path} from checkpoint {result['restored_to']}: {result['reason']}")
+                print(f"  ✅ Restored {file_path} from checkpoint {result['restored_to']}: {result['reason']}")
             else:
-                print(f"  ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Restored to checkpoint {result['restored_to']}: {result['reason']}")
+                print(f"  ✅ Restored to checkpoint {result['restored_to']}: {result['reason']}")
             print("  A pre-rollback snapshot was saved automatically.")
 
             # Also undo the last conversation turn so the agent's context
@@ -140,16 +140,16 @@ class CLICommandsMixin:
                 self.undo_last(prefill=False)
                 print("  Chat turn undone to match restored file state.")
         else:
-            print(f"  ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒâ€¦Ã¢â‚¬â„¢ {result['error']}")
+            print(f"  ❌ {result['error']}")
 
     def _handle_snapshot_command(self, command: str):
-        """Handle /snapshot ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â lightweight state snapshots for Hermes config/state.
+        """Handle /snapshot — lightweight state snapshots for Kova config/state.
 
         Syntax:
-            /snapshot                  ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â list recent snapshots
-            /snapshot create [label]   ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â create a snapshot
-            /snapshot restore <id>     ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â restore state from snapshot
-            /snapshot prune [N]        ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â prune to N snapshots (default 20)
+            /snapshot                  — list recent snapshots
+            /snapshot create [label]   — create a snapshot
+            /snapshot restore <id>     — restore state from snapshot
+            /snapshot prune [N]        — prune to N snapshots (default 20)
         """
         from kova_cli.backup import (
             create_quick_snapshot, list_quick_snapshots,
@@ -168,7 +168,7 @@ class CLICommandsMixin:
                 return
             print(f"  State snapshots ({display_hermes_home()}/state-snapshots/):\n")
             print(f"  {'#':>3}  {'ID':<35} {'Files':>5} {'Size':>10} {'Label'}")
-            print(f"  {'ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬'*3}  {'ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬'*35} {'ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬'*5} {'ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬'*10} {'ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬'*20}")
+            print(f"  {'─'*3}  {'─'*35} {'─'*5} {'─'*10} {'─'*20}")
             for i, s in enumerate(snaps, 1):
                 size = s.get("total_size", 0)
                 if size < 1024:
@@ -230,7 +230,7 @@ class CLICommandsMixin:
             print("  Usage: /snapshot [list|create [label]|restore <id>|prune [N]]")
 
     def _handle_stop_command(self):
-        """Handle /stop ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â kill all running background processes and
+        """Handle /stop — kill all running background processes and
         background (async) delegations.
 
         Inspired by OpenAI Codex's separation of interrupt (stop current turn)
@@ -257,13 +257,13 @@ class CLICommandsMixin:
         if running:
             print(f"  Stopping {len(running)} background process(es)...")
             killed = process_registry.kill_all()
-            print(f"  ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Stopped {killed} process(es).")
+            print(f"  ✅ Stopped {killed} process(es).")
         if n_async and interrupt_all is not None:
             stopped = interrupt_all(reason="/stop")
-            print(f"  ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Interrupted {stopped} background delegation(s).")
+            print(f"  ✅ Interrupted {stopped} background delegation(s).")
 
     def _handle_agents_command(self):
-        """Handle /agents ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â show background processes and agent status."""
+        """Handle /agents — show background processes and agent status."""
         from cli import _cprint
         from tools.process_registry import format_uptime_short, process_registry
 
@@ -275,12 +275,12 @@ class CLICommandsMixin:
         for p in running:
             cmd = p.get("command", "")[:80]
             up = format_uptime_short(p.get("uptime_seconds", 0))
-            _cprint(f"    {p.get('session_id', '?')} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚· {up} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚· {cmd}")
+            _cprint(f"    {p.get('session_id', '?')} · {up} · {cmd}")
 
         if finished:
             _cprint(f"  Recently finished: {len(finished)}")
 
-        # Background (async) delegations ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â delegate_task(background=true)
+        # Background (async) delegations — delegate_task(background=true)
         try:
             from tools.async_delegation import list_async_delegations
             delegations = list_async_delegations()
@@ -292,15 +292,15 @@ class CLICommandsMixin:
             for d in delegations:
                 goal = (d.get("goal") or "")[:60]
                 _cprint(
-                    f"    {d.get('delegation_id', '?')} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚· "
-                    f"{d.get('status', '?')} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚· {goal}"
+                    f"    {d.get('delegation_id', '?')} · "
+                    f"{d.get('status', '?')} · {goal}"
                 )
 
         agent_running = getattr(self, "_agent_running", False)
         _cprint(f"  Agent: {'running' if agent_running else 'idle'}")
 
     def _handle_journey_command(self, cmd_original: str) -> None:
-        """Handle /journey ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â the learning timeline (see `hermes journey`).
+        """Handle /journey — the learning timeline (see `kova journey`).
 
         The read-only views (default + ``list``) render Rich color, which
         patch_stdout would swallow as raw escapes; capture with forced ANSI and
@@ -337,7 +337,7 @@ class CLICommandsMixin:
             _cprint(f"  /journey failed: {exc}")
 
     def _handle_paste_command(self):
-        """Handle /paste ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â explicitly check clipboard for an image.
+        """Handle /paste — explicitly check clipboard for an image.
 
         This is the reliable fallback for terminals where BracketedPaste
         doesn't fire for image-only clipboard content (e.g., VSCode terminal,
@@ -346,7 +346,7 @@ class CLICommandsMixin:
         from cli import _DIM, _RST, _cprint, _termux_example_image_path
         if _is_termux_environment():
             _cprint(
-                f"  {_DIM}Clipboard image paste is not available on Termux ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â "
+                f"  {_DIM}Clipboard image paste is not available on Termux — "
                 f"use /image <path> or paste a local image path like "
                 f"{_termux_example_image_path()}{_RST}"
             )
@@ -356,14 +356,14 @@ class CLICommandsMixin:
         if has_clipboard_image():
             if self._try_attach_clipboard_image():
                 n = len(self._attached_images)
-                _cprint(f"  ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒâ€¦Ã‚Â½ Image #{n} attached from clipboard")
+                _cprint(f"  📎 Image #{n} attached from clipboard")
             else:
                 _cprint(f"  {_DIM}(>_<) Clipboard has an image but extraction failed{_RST}")
         else:
             _cprint(f"  {_DIM}(._.) No image found in clipboard{_RST}")
 
     def _handle_copy_command(self, cmd_original: str) -> None:
-        """Handle /copy [number] ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â copy assistant output to clipboard."""
+        """Handle /copy [number] — copy assistant output to clipboard."""
         from cli import _assistant_copy_text, _cprint
         parts = cmd_original.split(maxsplit=1)
         arg = parts[1].strip() if len(parts) > 1 else ""
@@ -402,7 +402,7 @@ class CLICommandsMixin:
             _cprint(f"  Clipboard copy failed: {e}")
 
     def _handle_image_command(self, cmd_original: str):
-        """Handle /image <path> ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â attach a local image file for the next prompt."""
+        """Handle /image <path> — attach a local image file for the next prompt."""
         from cli import _DIM, _IMAGE_EXTENSIONS, _RST, _cprint, _resolve_attachment_path, _split_path_input, _termux_example_image_path
         raw_args = (cmd_original.split(None, 1)[1].strip() if " " in cmd_original else "")
         if not raw_args:
@@ -420,7 +420,7 @@ class CLICommandsMixin:
             return
 
         self._attached_images.append(image_path)
-        _cprint(f"  ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒâ€¦Ã‚Â½ Attached image: {image_path.name}")
+        _cprint(f"  📎 Attached image: {image_path.name}")
         if _remainder:
             _cprint(f"  {_DIM}Now type your prompt (or use --image in single-query mode): {_remainder}{_RST}")
         elif _is_termux_environment():
@@ -490,7 +490,7 @@ class CLICommandsMixin:
             print(f"  MCP tool:          /tools {subcommand} github:create_issue")
             return
 
-        # Apply the change directly ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â the user typing the command is implicit
+        # Apply the change directly — the user typing the command is implicit
         # consent.  Do NOT use input() here; it hangs inside prompt_toolkit's
         # TUI event loop (known pitfall).
         verb = "Disabling" if subcommand == "disable" else "Enabling"
@@ -520,7 +520,7 @@ class CLICommandsMixin:
         print()
 
     def _handle_handoff_command(self, cmd_original: str) -> bool:
-        """Handle ``/handoff <platform>`` ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â transfer this CLI session to a gateway platform.
+        """Handle ``/handoff <platform>`` — transfer this CLI session to a gateway platform.
 
         Flow:
           1. Validate platform name + the gateway has a home channel for it.
@@ -528,16 +528,16 @@ class CLICommandsMixin:
              would race with the gateway's switch_session).
           3. Write ``handoff_state='pending'`` on this session row.
           4. Block-poll ``state.db`` for terminal state (timeout 60s).
-          5. On ``completed`` ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ print resume hint and signal CLI exit by
+          5. On ``completed`` → print resume hint and signal CLI exit by
              returning False (the caller honors that like ``/quit``).
-          6. On ``failed`` / timeout ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ print error and return True so the
+          6. On ``failed`` / timeout → print error and return True so the
              user keeps their CLI session.
 
         Returns:
             False to signal CLI exit, True to keep going.
         """
         from cli import _cprint
-        from kova_state import format_session_db_unavailable
+        from hermes_state import format_session_db_unavailable
 
         parts = cmd_original.split(maxsplit=1)
         if len(parts) < 2 or not parts[1].strip():
@@ -551,7 +551,7 @@ class CLICommandsMixin:
         # Validate platform name + home channel via the live gateway config.
         try:
             from gateway.config import load_gateway_config, Platform
-        except Exception as exc:  # pragma: no cover ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â gateway pkg always shipped
+        except Exception as exc:  # pragma: no cover — gateway pkg always shipped
             _cprint(f"  Could not load gateway config: {exc}")
             return True
 
@@ -587,7 +587,7 @@ class CLICommandsMixin:
         # Make sure we have a SessionDB handle.
         if not self._session_db:
             try:
-                from kova_state import SessionDB
+                from hermes_state import SessionDB
                 self._session_db = SessionDB()
             except Exception:
                 pass
@@ -623,13 +623,13 @@ class CLICommandsMixin:
         if not session_title:
             session_title = self.session_id[:8]
 
-        # Mark pending ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â gateway watcher will pick this up.
+        # Mark pending — gateway watcher will pick this up.
         ok = self._session_db.request_handoff(self.session_id, platform_name)
         if not ok:
             _cprint("  Session is already in flight for handoff. Wait for it to settle, then retry.")
             return True
 
-        _cprint(f"  Queued handoff of '{session_title}' ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ {platform_name} (home: {home.name}).")
+        _cprint(f"  Queued handoff of '{session_title}' → {platform_name} (home: {home.name}).")
         _cprint("  Waiting for the gateway to pick it up...")
 
         # Poll-block on terminal state. Tick every 0.5s; bail at ~60s.
@@ -648,10 +648,10 @@ class CLICommandsMixin:
                 last_state = current
             if current == "completed":
                 _cprint("")
-                _cprint(f"  ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Ãƒâ€šÃ‚Â» Handoff complete. The session is now active on {platform_name}.")
+                _cprint(f"  ↻ Handoff complete. The session is now active on {platform_name}.")
                 _cprint(f"  Resume it on this CLI later with: /resume {session_title}")
                 _cprint("")
-                # End the CLI cleanly ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â same exit semantics as /quit.
+                # End the CLI cleanly — same exit semantics as /quit.
                 self._should_exit = True
                 return False
             if current == "failed":
@@ -671,7 +671,7 @@ class CLICommandsMixin:
         return True
 
     def _handle_resume_command(self, cmd_original: str) -> None:
-        """Handle /resume <session_id_or_title> ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â switch to a previous session mid-conversation."""
+        """Handle /resume <session_id_or_title> — switch to a previous session mid-conversation."""
         from cli import _cprint, _sync_process_session_id
         parts = cmd_original.split(None, 1)
         target = parts[1].strip() if len(parts) > 1 else ""
@@ -695,7 +695,7 @@ class CLICommandsMixin:
                 # Arm a one-shot pending-resume selection so the user can type
                 # just the number (`3`) on the next line instead of having to
                 # retype `/resume 3`. The list here must match the one shown by
-                # _show_recent_sessions and used for index resolution below ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â
+                # _show_recent_sessions and used for index resolution below —
                 # all three go through _list_recent_sessions(limit=10). See
                 # #34584.
                 self._pending_resume_sessions = self._list_recent_sessions(limit=10)
@@ -708,7 +708,7 @@ class CLICommandsMixin:
         self._pending_resume_sessions = None
 
         if not self._session_db:
-            from kova_state import format_session_db_unavailable
+            from hermes_state import format_session_db_unavailable
             _cprint(f"  {format_session_db_unavailable()}")
             return
 
@@ -776,7 +776,7 @@ class CLICommandsMixin:
         _sync_process_session_id(target_id)
 
         # Load conversation history (strip transcript-only metadata entries).
-        # repair_alternation: this /resume feeds LIVE REPLAY ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ``restored``
+        # repair_alternation: this /resume feeds LIVE REPLAY — ``restored``
         # becomes ``self.conversation_history`` for subsequent turns. Heal a
         # durable ``user;user`` violation once here instead of re-firing the
         # pre-request repair on every request for the rest of the session.
@@ -817,7 +817,7 @@ class CLICommandsMixin:
                 self.agent._invalidate_system_prompt()
 
             # Notify memory providers that session_id rotated to a resumed
-            # session. reset=False ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â the provider's accumulated state is
+            # session. reset=False — the provider's accumulated state is
             # still valid; it just needs to target the new session_id for
             # subsequent writes. See #6672.
             try:
@@ -836,24 +836,24 @@ class CLICommandsMixin:
         msg_count = len([m for m in self._resume_display_history if m.get("role") == "user" and not m.get("display_kind")])
         if self.conversation_history:
             _cprint(
-                f"  ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Ãƒâ€šÃ‚Â» Resumed session {target_id}{title_part}"
+                f"  ↻ Resumed session {target_id}{title_part}"
                 f" ({msg_count} user message{'s' if msg_count != 1 else ''},"
                 f" {len(self.conversation_history)} total)"
             )
             self._display_resumed_history()
         else:
-            _cprint(f"  ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Ãƒâ€šÃ‚Â» Resumed session {target_id}{title_part} ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â no messages, starting fresh.")
+            _cprint(f"  ↻ Resumed session {target_id}{title_part} — no messages, starting fresh.")
 
         # Retarget the process + tool cwd to where the session was started, so a
         # mid-chat /resume (and /sessions <id>, which delegates here) lands in the
-        # same directory as a startup `hermes -c`/`--resume`. The startup resume
+        # same directory as a startup `kova -c`/`--resume`. The startup resume
         # paths already call this; without it, the terminal/code-exec tools and
         # relative-path resolution keep operating in the wrong repo. Idempotent
         # and a no-op when the session recorded no cwd. See #38562.
         self._restore_session_cwd(session_meta)
 
     def _handle_sessions_command(self, cmd_original: str) -> None:
-        """Handle /sessions [list|<id_or_title>] ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â browse or resume previous sessions.
+        """Handle /sessions [list|<id_or_title>] — browse or resume previous sessions.
 
         Without arguments, prints the same recent-sessions table that /resume
         shows when called without a target, and tells the user how to resume.
@@ -872,10 +872,10 @@ class CLICommandsMixin:
         arg = parts[1].strip() if len(parts) > 1 else ""
         sub = arg.lower()
 
-        # Bare /sessions or /sessions list ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â show recent sessions inline.
+        # Bare /sessions or /sessions list — show recent sessions inline.
         if not arg or sub in {"list", "ls", "browse"}:
             if not self._session_db:
-                from kova_state import format_session_db_unavailable
+                from hermes_state import format_session_db_unavailable
                 _cprint(f"  {format_session_db_unavailable()}")
                 return
             if not self._show_recent_sessions(reason="sessions"):
@@ -886,7 +886,7 @@ class CLICommandsMixin:
         self._handle_resume_command(f"/resume {arg}")
 
     def _handle_branch_command(self, cmd_original: str) -> None:
-        """Handle /branch [name] ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â fork the current session into a new independent copy.
+        """Handle /branch [name] — fork the current session into a new independent copy.
 
         Copies the full conversation history to a new session so the user can
         explore a different approach without losing the original session state.
@@ -894,11 +894,11 @@ class CLICommandsMixin:
         """
         from cli import _cprint, _sync_process_session_id
         if not self.conversation_history:
-            _cprint("  No conversation to branch ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â send a message first.")
+            _cprint("  No conversation to branch — send a message first.")
             return
 
         if not self._session_db:
-            from kova_state import format_session_db_unavailable
+            from hermes_state import format_session_db_unavailable
             _cprint(f"  {format_session_db_unavailable()}")
             return
 
@@ -1013,7 +1013,7 @@ class CLICommandsMixin:
                 self.agent._invalidate_system_prompt()
 
             # Notify memory providers that session_id forked to a new branch.
-            # reset=False ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â the branched session carries the transcript
+            # reset=False — the branched session carries the transcript
             # forward, so provider state tracks the lineage. parent_session_id
             # links the branch back to the original. See #6672.
             try:
@@ -1030,7 +1030,7 @@ class CLICommandsMixin:
 
         msg_count = len([m for m in self.conversation_history if m.get("role") == "user"])
         _cprint(
-            f"  ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‹Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ Branched session \"{branch_title}\""
+            f"  ⑂ Branched session \"{branch_title}\""
             f" ({msg_count} user message{'s' if msg_count != 1 else ''})"
         )
         _cprint(f"  Original session: {parent_session_id}")
@@ -1052,7 +1052,7 @@ class CLICommandsMixin:
                     print("(^_^)b Personality cleared (saved to config)")
                 else:
                     print("(^_^) Personality cleared (session only)")
-                print("  No personality overlay ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â using base agent behavior.")
+                print("  No personality overlay — using base agent behavior.")
             elif personality_name in self.personalities:
                 self.system_prompt = self._resolve_personality_prompt(self.personalities[personality_name])
                 self.agent = None  # Force re-init
@@ -1085,11 +1085,11 @@ class CLICommandsMixin:
     def _handle_pet_command(self, cmd: str):
         """Toggle, browse, or adopt a petdex mascot.
 
-        ``/pet`` / ``/pet toggle`` ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ flip ``display.pet.enabled`` on/off
-        ``/pet list``            ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ browse the petdex gallery
-        ``/pet scale <n>``       ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ resize the pet everywhere (e.g. 0.5)
-        ``/pet <slug>``          ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ adopt (install if needed) + make active
-        ``/pet off``             ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ disable (alias for toggle-off)
+        ``/pet`` / ``/pet toggle`` → flip ``display.pet.enabled`` on/off
+        ``/pet list``            → browse the petdex gallery
+        ``/pet scale <n>``       → resize the pet everywhere (e.g. 0.5)
+        ``/pet <slug>``          → adopt (install if needed) + make active
+        ``/pet off``             → disable (alias for toggle-off)
 
         Writes ``display.pet.*`` to config; the CLI/TUI/desktop pet surfaces
         pick the change up on their next poll, so the pet appears shortly.
@@ -1108,7 +1108,7 @@ class CLICommandsMixin:
                 print(f"(x_x) {err}")
                 return
             if enabled:
-                print(f"(^_^)b {name} is out ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â it'll pop in shortly.")
+                print(f"(^_^)b {name} is out — it'll pop in shortly.")
             else:
                 print(f"(-_-)zzZ {name} put away." if name else "(-_-)zzZ Pet put away.")
             return
@@ -1123,7 +1123,7 @@ class CLICommandsMixin:
                 print("(o_o) Usage: /pet scale <factor>  (e.g. /pet scale 0.5)")
                 return
             scale, err = set_pet_scale(value)
-            print(f"(x_x) {err}" if err else f"(^_^) Pet scale ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ {scale:g}.")
+            print(f"(x_x) {err}" if err else f"(^_^) Pet scale → {scale:g}.")
             return
 
         if low == "off":
@@ -1131,14 +1131,14 @@ class CLICommandsMixin:
             print("(-_-)zzZ Pet put away.")
             return
 
-        print(f"(o_o) Fetching '{arg}' from petdexÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦")
+        print(f"(o_o) Fetching '{arg}' from petdex…")
         try:
             pet = store.install_pet(arg)
         except (store.PetStoreError, ManifestError) as exc:
             print(f"(x_x) Couldn't adopt '{arg}': {exc}")
             return
         _set_active(arg)
-        print(f"(^_^)b {pet.display_name} is out ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â it'll pop in shortly.")
+        print(f"(^_^)b {pet.display_name} is out — it'll pop in shortly.")
 
     def _handle_hatch_command(self, cmd: str):
         """Generate ("hatch") a brand-new petdex pet from a description.
@@ -1172,7 +1172,7 @@ class CLICommandsMixin:
         display_name = " ".join(w.capitalize() for w in concept.split()[:3])[:28].strip() or "Pet"
         slug = store.slugify(display_name) or store.slugify(concept) or "pet"
 
-        print(f"(o_o) Designing '{concept}'ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦ (a minute of image-model calls)")
+        print(f"(o_o) Designing '{concept}'… (a minute of image-model calls)")
         try:
             drafts = orchestrate.generate_base_drafts(concept, n=1)
         except GenerationError as exc:
@@ -1180,18 +1180,18 @@ class CLICommandsMixin:
             return
 
         if not drafts:
-            print("(x_x) No base draft came back ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â try again.")
+            print("(x_x) No base draft came back — try again.")
             return
 
         def _progress(event: str, detail: str) -> None:
             if event == "row":
                 # detail is "<state>:<done>:<total>"; show the state name.
                 state = detail.split(":", 1)[0]
-                print(f"  ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€¦Ã‚Â  drawing {state}ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦")
+                print(f"  ┊ drawing {state}…")
             elif event == "compose":
-                print("  ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€¦Ã‚Â  composing spritesheetÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦")
+                print("  ┊ composing spritesheet…")
             elif event == "save":
-                print("  ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒâ€¦Ã‚Â  savingÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦")
+                print("  ┊ saving…")
 
         try:
             result = orchestrate.hatch_pet(
@@ -1206,7 +1206,7 @@ class CLICommandsMixin:
             return
 
         _set_active(result.slug)
-        print(f"(^_^)b {result.display_name} hatched and adopted ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â it'll pop in shortly!")
+        print(f"(^_^)b {result.display_name} hatched and adopted — it'll pop in shortly!")
 
     def _handle_cron_command(self, cmd: str):
         """Handle the /cron command to manage scheduled tasks."""
@@ -1455,7 +1455,7 @@ class CLICommandsMixin:
         print("  Available: list, add, edit, pause, resume, run, remove")
 
     def _handle_suggestions_command(self, cmd: str):
-        """Handle /suggestions ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â review/accept/dismiss suggested automations.
+        """Handle /suggestions — review/accept/dismiss suggested automations.
 
         Delegates to the shared handler so CLI and gateway never drift. CLI
         origin is the local platform so an accepted job's "origin" delivery
@@ -1476,12 +1476,12 @@ class CLICommandsMixin:
         self._console_print(output)
 
     def _handle_blueprint_command(self, cmd: str):
-        """Handle /blueprint ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â set up an automation from a blueprint template.
+        """Handle /blueprint — set up an automation from a blueprint template.
 
         Delegates to the shared handler. A bare ``/blueprint`` lists the
         catalog; ``/blueprint <name>`` name-matches a blueprint and seeds the
         agent to ask the user for each value conversationally (the result's
-        ``agent_seed``); ``/blueprint <name> slot=val ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦`` creates the job
+        ``agent_seed``); ``/blueprint <name> slot=val …`` creates the job
         directly. When a seed is returned it is stashed as a one-shot pending
         message the interactive loop runs as the next agent turn.
         """
@@ -1528,7 +1528,7 @@ class CLICommandsMixin:
             print(f"(._.) curator: {exc}")
 
     def _handle_kanban_command(self, cmd: str):
-        """Handle the /kanban command ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â delegate to the shared kanban CLI.
+        """Handle the /kanban command — delegate to the shared kanban CLI.
 
         The string form passed here is the user's full ``/kanban ...``
         including the leading slash; we strip it and hand the remainder
@@ -1549,7 +1549,7 @@ class CLICommandsMixin:
             print(output)
 
     def _handle_skills_command(self, cmd: str):
-        """Handle /skills slash command ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â delegates to kova_cli.skills_hub."""
+        """Handle /skills slash command — delegates to kova_cli.skills_hub."""
         from cli import ChatConsole
         # Intercept write-approval review subcommands first (pending/approve/
         # reject/diff/mode); everything else goes to the skills hub.
@@ -1570,9 +1570,9 @@ class CLICommandsMixin:
         handle_skills_slash(cmd, ChatConsole())
 
     def _handle_learn_command(self, cmd: str):
-        """Handle /learn ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â distill a reusable skill from anything the user describes.
+        """Handle /learn — distill a reusable skill from anything the user describes.
 
-        Open-ended: the argument is free text describing the source(s) ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â a
+        Open-ended: the argument is free text describing the source(s) — a
         directory, a URL, "what we just did", pasted notes. We build a
         standards-guided prompt and inject it onto the agent's input queue; the
         live agent gathers the material with the tools it already has and
@@ -1587,16 +1587,16 @@ class CLICommandsMixin:
 
         msg = build_learn_prompt(user_request)
         if user_request:
-            print("\nÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡Ãƒâ€šÃ‚Â¡ Learning a skill from what you described...")
+            print("\n⚡ Learning a skill from what you described...")
         else:
-            print("\nÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡Ãƒâ€šÃ‚Â¡ Learning a skill from this conversation...")
+            print("\n⚡ Learning a skill from this conversation...")
         if hasattr(self, "_pending_input"):
             self._pending_input.put(msg)
         else:  # pragma: no cover - defensive (no live input loop)
             print("  /learn needs an active chat session to run.")
 
     def _handle_memory_command(self, cmd: str):
-        """Handle /memory slash command ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â pending review + approval-gate toggle."""
+        """Handle /memory slash command — pending review + approval-gate toggle."""
         from kova_cli.write_approval_commands import handle_pending_subcommand
         from tools import write_approval as wa
         parts = cmd.strip().split()
@@ -1629,7 +1629,7 @@ class CLICommandsMixin:
         save_config_value(f"{subsystem}.write_approval", bool(enabled))
 
     def _handle_background_command(self, cmd: str):
-        """Handle /background <prompt> ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â run a prompt in a separate background session.
+        """Handle /background <prompt> — run a prompt in a separate background session.
 
         Spawns a new AIAgent in a background thread with its own session.
         When it completes, prints the result to the CLI without modifying
@@ -1653,9 +1653,9 @@ class CLICommandsMixin:
             _cprint("  (>_<) Cannot start background task: no valid credentials.")
             return
 
-        _cprint(f"  ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾ Background task #{task_num} started: \"{prompt[:60]}{'...' if len(prompt) > 60 else ''}\"")
+        _cprint(f"  🔄 Background task #{task_num} started: \"{prompt[:60]}{'...' if len(prompt) > 60 else ''}\"")
         _cprint(f"  Task ID: {task_id}")
-        _cprint("  You can continue chatting ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â results will appear when done.\n")
+        _cprint("  You can continue chatting — results will appear when done.\n")
 
         turn_route = self._resolve_turn_agent_config(prompt)
 
@@ -1723,19 +1723,19 @@ class CLICommandsMixin:
                     self._app.invalidate()
                     time.sleep(0.05)  # brief pause for refresh
                 print()
-                ChatConsole().print(f"[{_accent_hex()}]{'ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬' * 40}[/]")
-                _cprint(f"  ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Background task #{task_num} complete")
+                ChatConsole().print(f"[{_accent_hex()}]{'─' * 40}[/]")
+                _cprint(f"  ✅ Background task #{task_num} complete")
                 _cprint(f"  Prompt: \"{prompt[:60]}{'...' if len(prompt) > 60 else ''}\"")
-                ChatConsole().print(f"[{_accent_hex()}]{'ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬' * 40}[/]")
+                ChatConsole().print(f"[{_accent_hex()}]{'─' * 40}[/]")
                 if response:
                     try:
                         from kova_cli.skin_engine import get_active_skin
                         _skin = get_active_skin()
-                        label = _skin.get_branding("response_label", "ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ Kova")
+                        label = _skin.get_branding("response_label", "⚕ Kova")
                         _resp_color = _maybe_remap_for_light_mode(_skin.get_color("response_border", "#CD7F32"))
                         _resp_text = _maybe_remap_for_light_mode(_skin.get_color("banner_text", "#FFF8DC"))
                     except Exception:
-                        label = "ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ Kova"
+                        label = "⚕ Kova"
                         _resp_color = "#CD7F32"
                         _resp_text = "#FFF8DC"
 
@@ -1764,7 +1764,7 @@ class CLICommandsMixin:
                     self._app.invalidate()
                     time.sleep(0.05)
                 print()
-                _cprint(f"  ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒâ€¦Ã¢â‚¬â„¢ Background task #{task_num} failed: {e}")
+                _cprint(f"  ❌ Background task #{task_num} failed: {e}")
             finally:
                 try:
                     set_sudo_password_callback(None)
@@ -1784,9 +1784,9 @@ class CLICommandsMixin:
         thread.start()
 
     def _handle_bundles_command(self, cmd: str) -> None:
-        """In-session ``/bundles`` ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â show installed skill bundles.
+        """In-session ``/bundles`` — show installed skill bundles.
 
-        Mirrors ``hermes bundles list`` but renders inside the running
+        Mirrors ``kova bundles list`` but renders inside the running
         CLI so users can discover what's available without dropping out
         of their session. Bundles are loaded via ``/<bundle-name>``.
         """
@@ -1801,13 +1801,13 @@ class CLICommandsMixin:
         if not bundles:
             _cprint("  No skill bundles installed.")
             _cprint(
-                f"  {_DIM}Create one with: hermes bundles create "
+                f"  {_DIM}Create one with: kova bundles create "
                 f"<name> --skill <s1> --skill <s2>{_RST}"
             )
             _cprint(f"  {_DIM}Directory: {_bundles_dir()}{_RST}")
             return
 
-        _cprint(f"\n  ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“Ãƒâ€šÃ‚Â£ {_BOLD}Skill Bundles{_RST} ({len(bundles)} installed):")
+        _cprint(f"\n  ▣ {_BOLD}Skill Bundles{_RST} ({len(bundles)} installed):")
         for info in bundles:
             skill_count = len(info.get("skills", []))
             desc = info.get("description") or f"Load {skill_count} skills"
@@ -1816,14 +1816,14 @@ class CLICommandsMixin:
                 f"[dim]-[/] {_escape(desc)} [dim]({skill_count} skills)[/]"
             )
             for s in info.get("skills", []):
-                ChatConsole().print(f"        [dim]ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚· {_escape(s)}[/]")
+                ChatConsole().print(f"        [dim]· {_escape(s)}[/]")
         _cprint(
             f"\n  {_DIM}Invoke a bundle with /<slug>. "
-            f"Manage with `hermes bundles`.{_RST}"
+            f"Manage with `kova bundles`.{_RST}"
         )
 
     def _handle_browser_command(self, cmd: str):
-        """Handle /browser connect|disconnect|status ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â manage live Chromium-family CDP connection."""
+        """Handle /browser connect|disconnect|status — manage live Chromium-family CDP connection."""
         import platform as _plat
 
         parts = cmd.strip().split(None, 1)
@@ -1840,7 +1840,7 @@ class CLICommandsMixin:
             if parsed_cdp.scheme not in {"http", "https", "ws", "wss"}:
                 print()
                 print(
-                    f"   ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡Ãƒâ€šÃ‚Â  Unsupported browser url scheme: {parsed_cdp.scheme or '(missing)'} "
+                    f"   ⚠ Unsupported browser url scheme: {parsed_cdp.scheme or '(missing)'} "
                     "(expected one of: http, https, ws, wss)"
                 )
                 print()
@@ -1849,12 +1849,12 @@ class CLICommandsMixin:
                 _port = parsed_cdp.port or (443 if parsed_cdp.scheme in {"https", "wss"} else 80)
             except ValueError:
                 print()
-                print(f"   ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡Ãƒâ€šÃ‚Â  Invalid port in browser url: {cdp_url}")
+                print(f"   ⚠ Invalid port in browser url: {cdp_url}")
                 print()
                 return
             if not parsed_cdp.hostname:
                 print()
-                print(f"   ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡Ãƒâ€šÃ‚Â  Missing host in browser url: {cdp_url}")
+                print(f"   ⚠ Missing host in browser url: {cdp_url}")
                 print()
                 return
             _host = parsed_cdp.hostname
@@ -1891,20 +1891,20 @@ class CLICommandsMixin:
                 _already_open = is_browser_debug_ready(cdp_url, timeout=1.0)
 
             if _already_open:
-                print(f"   ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ Chromium-family browser is already listening at {cdp_url}")
+                print(f"   ✓ Chromium-family browser is already listening at {cdp_url}")
             elif _is_default:
                 _launch_port = _port
                 if local_port_in_use(_port):
                     _launch_port = find_free_debug_port(_port)
                     print(
-                        f"   ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡Ãƒâ€šÃ‚Â  Port {_port} is occupied by another application that isn't a CDP browser"
+                        f"   ⚠ Port {_port} is occupied by another application that isn't a CDP browser"
                     )
                     print(
-                        f"     (an IDE debugger or dev server may be using it) ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â launching on port {_launch_port} instead..."
+                        f"     (an IDE debugger or dev server may be using it) — launching on port {_launch_port} instead..."
                     )
                 else:
                     # Try to auto-launch a Chromium-family browser with remote debugging
-                    print("   Chromium-family browser isn't running with remote debugging ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â attempting to launch...")
+                    print("   Chromium-family browser isn't running with remote debugging — attempting to launch...")
                 _launch = launch_chrome_debug(_launch_port, _plat.system())
                 if _launch.launched:
                     # Wait for the DevTools discovery endpoint to come up
@@ -1916,12 +1916,12 @@ class CLICommandsMixin:
                             break
                         time.sleep(0.5)
                     if _already_open:
-                        print(f"   ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ Chromium-family browser launched and listening on port {_launch_port}")
+                        print(f"   ✓ Chromium-family browser launched and listening on port {_launch_port}")
                     else:
-                        print(f"   ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡Ãƒâ€šÃ‚Â  Browser launched but port {_launch_port} isn't responding yet")
-                        print("     Try again in a few seconds ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â the debug instance may still be starting")
+                        print(f"   ⚠ Browser launched but port {_launch_port} isn't responding yet")
+                        print("     Try again in a few seconds — the debug instance may still be starting")
                 else:
-                    print("   ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡Ãƒâ€šÃ‚Â  Could not auto-launch a Chromium-family browser")
+                    print("   ⚠ Could not auto-launch a Chromium-family browser")
                     _hint = _launch.hint
                     if _hint:
                         print(f"     {_hint}")
@@ -1933,11 +1933,11 @@ class CLICommandsMixin:
                     else:
                         print("     No supported Chromium-family browser executable found in this environment")
             else:
-                print(f"   ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡Ãƒâ€šÃ‚Â  Port {_port} is not reachable at {cdp_url}")
+                print(f"   ⚠ Port {_port} is not reachable at {cdp_url}")
 
             if not _already_open:
                 print()
-                print("Browser not connected ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â start a Chromium-family browser with remote debugging and retry /browser connect")
+                print("Browser not connected — start a Chromium-family browser with remote debugging and retry /browser connect")
                 print()
                 return
 
@@ -1950,7 +1950,7 @@ class CLICommandsMixin:
             except Exception:
                 pass
             print()
-            print("ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€¦Ã¢â‚¬â„¢Ãƒâ€šÃ‚Â Browser connected to live Chromium-family browser via CDP")
+            print("🌐 Browser connected to live Chromium-family browser via CDP")
             print(f"   Endpoint: {cdp_url}")
             print()
 
@@ -1979,7 +1979,7 @@ class CLICommandsMixin:
                 except Exception:
                     pass
                 print()
-                print("ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€¦Ã¢â‚¬â„¢Ãƒâ€šÃ‚Â Browser disconnected from live Chromium-family browser")
+                print("🌐 Browser disconnected from live Chromium-family browser")
                 print("   Browser tools reverted to default mode (local headless or cloud provider)")
                 print()
 
@@ -1996,7 +1996,7 @@ class CLICommandsMixin:
         elif sub == "status":
             print()
             if current:
-                print("ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€¦Ã¢â‚¬â„¢Ãƒâ€šÃ‚Â Browser: connected to live Chromium-family browser via CDP")
+                print("🌐 Browser: connected to live Chromium-family browser via CDP")
                 print(f"   Endpoint: {current}")
 
                 _port = 9222
@@ -2010,9 +2010,9 @@ class CLICommandsMixin:
                     s.settimeout(1)
                     s.connect(("127.0.0.1", _port))
                     s.close()
-                    print("   Status: ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ reachable")
+                    print("   Status: ✓ reachable")
                 except (OSError, Exception):
-                    print("   Status: ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡Ãƒâ€šÃ‚Â  not reachable (browser may not be running)")
+                    print("   Status: ⚠ not reachable (browser may not be running)")
             else:
                 try:
                     from tools.browser_tool import _get_cloud_provider
@@ -2021,7 +2021,7 @@ class CLICommandsMixin:
                     provider = None
 
                 if provider is not None:
-                    print(f"ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€¦Ã¢â‚¬â„¢Ãƒâ€šÃ‚Â Browser: {provider.provider_name()} (cloud)")
+                    print(f"🌐 Browser: {provider.provider_name()} (cloud)")
                 else:
                     # Show engine info for local mode
                     try:
@@ -2030,16 +2030,16 @@ class CLICommandsMixin:
                     except Exception:
                         engine = "auto"
                     if engine == "lightpanda":
-                        print("ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€¦Ã¢â‚¬â„¢Ãƒâ€šÃ‚Â Browser: local Lightpanda (agent-browser --engine lightpanda)")
-                        print("   ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡Ãƒâ€šÃ‚Â¡ Lightpanda: faster navigation, no screenshot support")
+                        print("🌐 Browser: local Lightpanda (agent-browser --engine lightpanda)")
+                        print("   ⚡ Lightpanda: faster navigation, no screenshot support")
                         print("   Automatic Chromium fallback for screenshots and failed commands")
                     elif engine == "chrome":
-                        print("ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€¦Ã¢â‚¬â„¢Ãƒâ€šÃ‚Â Browser: local headless Chromium (agent-browser --engine chrome)")
+                        print("🌐 Browser: local headless Chromium (agent-browser --engine chrome)")
                     else:
-                        print("ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€¦Ã¢â‚¬â„¢Ãƒâ€šÃ‚Â Browser: local headless Chromium (agent-browser)")
+                        print("🌐 Browser: local headless Chromium (agent-browser)")
             print()
-            print("   /browser connect      ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â connect to your live Chromium-family browser")
-            print("   /browser disconnect   ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â revert to default")
+            print("   /browser connect      — connect to your live Chromium-family browser")
+            print("   /browser disconnect   — revert to default")
             print()
 
         else:
@@ -2064,18 +2064,18 @@ class CLICommandsMixin:
 
         lower = arg.lower()
 
-        # Bare /goal or /goal status ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ show current state
+        # Bare /goal or /goal status → show current state
         if not arg or lower == "status":
             _cprint(f"  {mgr.status_line()}")
             return
 
-        # /goal show ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ print the active goal's completion contract
+        # /goal show → print the active goal's completion contract
         if lower == "show":
             _cprint(f"  {mgr.status_line()}")
             _cprint(f"  {mgr.render_contract()}")
             return
 
-        # /goal draft <objective> ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ expand plain text into a structured
+        # /goal draft <objective> → expand plain text into a structured
         # completion contract (outcome / verification / constraints /
         # boundaries / stop_when) and set it as the active goal. Adapted
         # from Codex's "let the agent draft the goal" guidance: the contract
@@ -2093,7 +2093,7 @@ class CLICommandsMixin:
             if state is None:
                 _cprint(f"  {_DIM}No goal set.{_RST}")
             else:
-                _cprint(f"  ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒâ€šÃ‚Â¸ Goal paused: {state.goal}")
+                _cprint(f"  ⏸ Goal paused: {state.goal}")
             return
 
         if lower == "resume":
@@ -2101,7 +2101,7 @@ class CLICommandsMixin:
             if state is None:
                 _cprint(f"  {_DIM}No goal to resume.{_RST}")
             else:
-                _cprint(f"  ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“Ãƒâ€šÃ‚Â¶ Goal resumed: {state.goal}")
+                _cprint(f"  ▶ Goal resumed: {state.goal}")
                 _cprint(
                     f"  {_DIM}Send any message (or press Enter on an empty prompt "
                     f"is a no-op; type 'continue' to kick it off).{_RST}"
@@ -2112,12 +2112,12 @@ class CLICommandsMixin:
             had = mgr.has_goal()
             mgr.clear()
             if had:
-                _cprint("  ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ Goal cleared.")
+                _cprint("  ✓ Goal cleared.")
             else:
                 _cprint(f"  {_DIM}No active goal.{_RST}")
             return
 
-        # /goal wait <pid> [reason] ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â park the loop on a background process so
+        # /goal wait <pid> [reason] — park the loop on a background process so
         # it stops re-poking the agent every turn while it waits on CI / a
         # build / a long job. The barrier auto-clears when the PID exits.
         if lower == "wait" or lower.startswith("wait "):
@@ -2138,13 +2138,13 @@ class CLICommandsMixin:
                 _cprint(f"  /goal wait: {exc}")
                 return
             rtxt = f" ({reason})" if reason else ""
-            _cprint(f"  ÃƒÆ’Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒâ€šÃ‚Â³ Goal parked on pid {pid}{rtxt}. Loop pauses until it exits.")
+            _cprint(f"  ⏳ Goal parked on pid {pid}{rtxt}. Loop pauses until it exits.")
             return
 
-        # /goal unwait ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â drop the wait barrier and resume normal looping.
+        # /goal unwait — drop the wait barrier and resume normal looping.
         if lower == "unwait":
             if mgr.stop_waiting():
-                _cprint("  ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“Ãƒâ€šÃ‚Â¶ Wait barrier cleared ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â goal loop resumes.")
+                _cprint("  ▶ Wait barrier cleared — goal loop resumes.")
             else:
                 _cprint(f"  {_DIM}No wait barrier set.{_RST}")
             return
@@ -2163,7 +2163,7 @@ class CLICommandsMixin:
             _cprint(f"  Invalid goal: {exc}")
             return
 
-        _cprint(f"  ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ Goal set ({state.max_turns}-turn budget): {state.goal}")
+        _cprint(f"  ⊙ Goal set ({state.max_turns}-turn budget): {state.goal}")
         if state.has_contract():
             _cprint(f"  {_DIM}Completion contract:{_RST}")
             for line in state.contract.render_block().splitlines():
@@ -2193,7 +2193,7 @@ class CLICommandsMixin:
             _cprint(f"  {_DIM}Goals unavailable (no active session).{_RST}")
             return
 
-        _cprint(f"  {_DIM}Drafting completion contractÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¦{_RST}")
+        _cprint(f"  {_DIM}Drafting completion contract…{_RST}")
         try:
             contract = draft_contract(objective)
         except Exception as exc:
@@ -2207,7 +2207,7 @@ class CLICommandsMixin:
             _cprint(f"  Invalid goal: {exc}")
             return
 
-        _cprint(f"  ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ Goal set ({state.max_turns}-turn budget): {state.goal}")
+        _cprint(f"  ⊙ Goal set ({state.max_turns}-turn budget): {state.goal}")
         if state.has_contract():
             _cprint(f"  {_DIM}Drafted completion contract:{_RST}")
             for line in state.contract.render_block().splitlines():
@@ -2219,7 +2219,7 @@ class CLICommandsMixin:
             )
         else:
             _cprint(
-                f"  {_DIM}Couldn't draft a contract (aux model unavailable) ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â "
+                f"  {_DIM}Couldn't draft a contract (aux model unavailable) — "
                 f"running as a free-form goal. The per-turn judge still applies.{_RST}"
             )
         try:
@@ -2239,7 +2239,7 @@ class CLICommandsMixin:
         Subgoals are extra criteria the user adds mid-loop. They get
         appended to both the judge prompt (verdict must consider them)
         and the continuation prompt (agent sees them) on the next turn
-        boundary. No special kick ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â the running turn finishes, the next
+        boundary. No special kick — the running turn finishes, the next
         judge call includes them.
         """
         from cli import _DIM, _RST, _cprint
@@ -2255,7 +2255,7 @@ class CLICommandsMixin:
             _cprint(f"  {_DIM}No active goal. Set one with /goal <text>.{_RST}")
             return
 
-        # No args ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ list current subgoals.
+        # No args → list current subgoals.
         if not arg:
             _cprint(f"  {mgr.status_line()}")
             _cprint(f"  {mgr.render_subgoals()}")
@@ -2279,7 +2279,7 @@ class CLICommandsMixin:
             except (IndexError, RuntimeError) as exc:
                 _cprint(f"  /subgoal remove: {exc}")
                 return
-            _cprint(f"  ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ Removed subgoal {idx}: {removed}")
+            _cprint(f"  ✓ Removed subgoal {idx}: {removed}")
             return
 
         if verb == "clear":
@@ -2289,22 +2289,22 @@ class CLICommandsMixin:
                 _cprint(f"  /subgoal clear: {exc}")
                 return
             if prev:
-                _cprint(f"  ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ Cleared {prev} subgoal{'s' if prev != 1 else ''}.")
+                _cprint(f"  ✓ Cleared {prev} subgoal{'s' if prev != 1 else ''}.")
             else:
                 _cprint(f"  {_DIM}No subgoals to clear.{_RST}")
             return
 
-        # Otherwise ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â append the whole arg as a new subgoal.
+        # Otherwise — append the whole arg as a new subgoal.
         try:
             text = mgr.add_subgoal(arg)
         except (ValueError, RuntimeError) as exc:
             _cprint(f"  /subgoal: {exc}")
             return
         idx = len(mgr.state.subgoals) if mgr.state else 0
-        _cprint(f"  ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ Added subgoal {idx}: {text}")
+        _cprint(f"  ✓ Added subgoal {idx}: {text}")
 
     def _handle_skin_command(self, cmd: str):
-        """Handle /skin [name] ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â show or change the display skin."""
+        """Handle /skin [name] — show or change the display skin."""
         from cli import _ACCENT, save_config_value
         try:
             from kova_cli.skin_engine import list_skins, set_active_skin, get_active_skin_name
@@ -2320,9 +2320,9 @@ class CLICommandsMixin:
             print(f"\n  Current skin: {current}")
             print("  Available skins:")
             for s in skins:
-                marker = " ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬ÂÃƒâ€šÃ‚Â" if s["name"] == current else "  "
+                marker = " ●" if s["name"] == current else "  "
                 source = f" ({s['source']})" if s["source"] == "user" else ""
-                print(f"   {marker} {s['name']}{source} ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â {s['description']}")
+                print(f"   {marker} {s['name']}{source} — {s['description']}")
             print("\n  Usage: /skin <name>")
             print(f"  Custom skins: drop a YAML file in {display_hermes_home()}/skins/\n")
             return
@@ -2391,7 +2391,7 @@ class CLICommandsMixin:
         return "\n".join(lines).strip()
 
     def _handle_prompt_compose_command(self, cmd_original: str) -> None:
-        """Handle /prompt ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â compose the next prompt in $EDITOR and send it.
+        """Handle /prompt — compose the next prompt in $EDITOR and send it.
 
         Opens the user's editor on a temporary markdown file (optionally
         seeded with text passed after the command), then queues the saved
@@ -2412,7 +2412,7 @@ class CLICommandsMixin:
             return
 
         if not composed:
-            _cprint(f"  {_DIM}(._.) Empty prompt ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â nothing sent.{_RST}")
+            _cprint(f"  {_DIM}(._.) Empty prompt — nothing sent.{_RST}")
             return
 
         # One-shot seed: the interactive loop runs this as the next agent turn
@@ -2423,9 +2423,9 @@ class CLICommandsMixin:
         """Toggle or inspect ``display.runtime_footer.enabled`` from the CLI.
 
         Usage:
-            /footer           ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ toggle
-            /footer on|off    ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ explicit
-            /footer status    ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ show current state
+            /footer           → toggle
+            /footer on|off    → explicit
+            /footer status    → show current state
         """
         from cli import _cprint, save_config_value
         from kova_cli.config import load_config
@@ -2480,9 +2480,9 @@ class CLICommandsMixin:
         that carry a stored timestamp).
 
         Usage:
-            /timestamps           ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ toggle
-            /timestamps on|off    ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ explicit
-            /timestamps status    ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ show current state
+            /timestamps           → toggle
+            /timestamps on|off    → explicit
+            /timestamps status    → show current state
         """
         from cli import _cprint, save_config_value
         from kova_cli.colors import Colors as _Colors
@@ -2523,7 +2523,7 @@ class CLICommandsMixin:
             _cprint("  Failed to save timestamps setting to config.yaml")
 
     def _handle_reasoning_command(self, cmd: str):
-        """Handle /reasoning ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â manage effort level and display toggle.
+        """Handle /reasoning — manage effort level and display toggle.
 
         Usage:
             /reasoning              Show current effort level and display state
@@ -2546,7 +2546,7 @@ class CLICommandsMixin:
                 level = "none (disabled)"
             else:
                 level = rc.get("effort", "medium")
-            display_state = "on ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ" if self.show_reasoning else "off"
+            display_state = "on ✓" if self.show_reasoning else "off"
             full_state = "full" if getattr(self, "reasoning_full", False) else "clamped to 10 lines"
             _cprint(f"  {_ACCENT}Reasoning effort:  {level}{_RST}")
             _cprint(f"  {_ACCENT}Reasoning display: {display_state} ({full_state}){_RST}")
@@ -2571,7 +2571,7 @@ class CLICommandsMixin:
             if self.agent:
                 self.agent.reasoning_callback = self._current_reasoning_callback()
             save_config_value("display.show_reasoning", True)
-            _cprint(f"  {_ACCENT}ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ Reasoning display: ON (saved){_RST}")
+            _cprint(f"  {_ACCENT}✓ Reasoning display: ON (saved){_RST}")
             _cprint(f"  {_DIM}  Model thinking will be shown during and after each response.{_RST}")
             return
         if arg in {"hide", "off"}:
@@ -2579,22 +2579,22 @@ class CLICommandsMixin:
             if self.agent:
                 self.agent.reasoning_callback = self._current_reasoning_callback()
             save_config_value("display.show_reasoning", False)
-            _cprint(f"  {_ACCENT}ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ Reasoning display: OFF (saved){_RST}")
+            _cprint(f"  {_ACCENT}✓ Reasoning display: OFF (saved){_RST}")
             return
 
         # Full / clamped recap toggle
         if arg in {"full", "all"}:
             self.reasoning_full = True
             save_config_value("display.reasoning_full", True)
-            _cprint(f"  {_ACCENT}ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ Reasoning display: FULL (saved){_RST}")
+            _cprint(f"  {_ACCENT}✓ Reasoning display: FULL (saved){_RST}")
             _cprint(f"  {_DIM}  The post-response recap box will print complete thinking.{_RST}")
             if not self.show_reasoning:
-                _cprint(f"  {_DIM}  Note: reasoning display is OFF ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â run /reasoning show to see it.{_RST}")
+                _cprint(f"  {_DIM}  Note: reasoning display is OFF — run /reasoning show to see it.{_RST}")
             return
         if arg in {"clamp", "collapse", "short"}:
             self.reasoning_full = False
             save_config_value("display.reasoning_full", False)
-            _cprint(f"  {_ACCENT}ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ Reasoning display: CLAMPED to 10 lines (saved){_RST}")
+            _cprint(f"  {_ACCENT}✓ Reasoning display: CLAMPED to 10 lines (saved){_RST}")
             return
 
         # Effort level change
@@ -2615,14 +2615,14 @@ class CLICommandsMixin:
                 agent_cfg = {}
                 CLI_CONFIG["agent"] = agent_cfg
             agent_cfg["reasoning_effort"] = arg
-            _cprint(f"  {_ACCENT}ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ Reasoning effort set to '{arg}' (saved to config){_RST}")
+            _cprint(f"  {_ACCENT}✓ Reasoning effort set to '{arg}' (saved to config){_RST}")
         elif explicit_global:
-            _cprint(f"  {_ACCENT}ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ Reasoning effort set to '{arg}' (session only; config save failed){_RST}")
+            _cprint(f"  {_ACCENT}✓ Reasoning effort set to '{arg}' (session only; config save failed){_RST}")
         else:
-            _cprint(f"  {_ACCENT}ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ Reasoning effort set to '{arg}' (this session ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â use --global to persist){_RST}")
+            _cprint(f"  {_ACCENT}✓ Reasoning effort set to '{arg}' (this session — use --global to persist){_RST}")
 
     def _handle_busy_command(self, cmd: str):
-        """Handle /busy ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â control what Enter does while Kova is working.
+        """Handle /busy — control what Enter does while Kova is working.
 
         Usage:
             /busy               Show current busy input mode
@@ -2659,13 +2659,13 @@ class CLICommandsMixin:
                 behavior = "Enter will steer your message into the current run (after the next tool call)."
             else:
                 behavior = "Enter will redirect the current run while Kova is busy; /stop still cancels it."
-            _cprint(f"  {_ACCENT}ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ Busy input mode set to '{arg}' (saved to config){_RST}")
+            _cprint(f"  {_ACCENT}✓ Busy input mode set to '{arg}' (saved to config){_RST}")
             _cprint(f"  {_DIM}{behavior}{_RST}")
         else:
-            _cprint(f"  {_ACCENT}ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ Busy input mode set to '{arg}' (session only){_RST}")
+            _cprint(f"  {_ACCENT}✓ Busy input mode set to '{arg}' (session only){_RST}")
 
     def _handle_fast_command(self, cmd: str):
-        """Handle /fast ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â toggle fast mode (OpenAI Priority Processing / Anthropic Fast Mode).
+        """Handle /fast — toggle fast mode (OpenAI Priority Processing / Anthropic Fast Mode).
 
         Session-scoped by default; ``--global`` persists agent.service_tier
         to config.yaml (parity with /model and /reasoning).
@@ -2713,20 +2713,20 @@ class CLICommandsMixin:
 
         self.agent = None  # Force agent re-init with new service-tier config
         if explicit_global and save_config_value("agent.service_tier", saved_value):
-            _cprint(f"  {_ACCENT}ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ {feature_name} set to {label} (saved to config){_RST}")
+            _cprint(f"  {_ACCENT}✓ {feature_name} set to {label} (saved to config){_RST}")
         elif explicit_global:
-            _cprint(f"  {_ACCENT}ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ {feature_name} set to {label} (session only; config save failed){_RST}")
+            _cprint(f"  {_ACCENT}✓ {feature_name} set to {label} (session only; config save failed){_RST}")
         else:
-            _cprint(f"  {_ACCENT}ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ {feature_name} set to {label} (this session ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â use --global to persist){_RST}")
+            _cprint(f"  {_ACCENT}✓ {feature_name} set to {label} (this session — use --global to persist){_RST}")
 
     def _handle_debug_command(self, cmd_original: str = ""):
-        """Handle /debug ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â upload debug report + logs and print share URLs.
+        """Handle /debug — upload debug report + logs and print share URLs.
 
         Accepts optional destination words after the command:
 
-        - ``/debug``        ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ upload to the public paste service (default)
-        - ``/debug nous``   ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ upload to Nous-internal storage (private, staff-only)
-        - ``/debug local``  ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ render the report to stdout, no upload
+        - ``/debug``        → upload to the public paste service (default)
+        - ``/debug nous``   → upload to Nous-internal storage (private, staff-only)
+        - ``/debug local``  → render the report to stdout, no upload
 
         ``nous`` and ``local`` are mutually exclusive; if both are given,
         ``local`` wins (it never touches the network).
@@ -2746,7 +2746,7 @@ class CLICommandsMixin:
         run_debug_share(args)
 
     def _handle_update_command(self) -> bool:
-        """Handle /update ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â update Kova Agent to the latest version.
+        """Handle /update — update Kova Agent to the latest version.
 
         In the classic CLI this exits the session and relaunches as
         ``kova update`` so the user sees update output directly and gets
@@ -2760,7 +2760,7 @@ class CLICommandsMixin:
         from kova_cli.config import is_managed, format_managed_message
 
         if is_managed():
-            print(f"  ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â {format_managed_message('update Kova Agent')}")
+            print(f"  ✗ {format_managed_message('update Kova Agent')}")
             return False
 
         # Use the prompt_toolkit-native modal so the confirmation panel
@@ -2772,20 +2772,20 @@ class CLICommandsMixin:
             ("cancel", "Cancel", "keep the current session"),
         ]
         raw = self._prompt_text_input_modal(
-            title="ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢  Update Kova Agent",
+            title="⚕  Update Kova Agent",
             detail="This will exit the current session and run `kova update`.",
             choices=choices,
         )
         if raw is None:
-            print("  ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€¦Ã‚Â¸Ãƒâ€šÃ‚Â¡ /update cancelled.")
+            print("  🟡 /update cancelled.")
             return False
         choice = self._normalize_slash_confirm_choice(raw, choices)
         if choice != "once":
-            print("  ÃƒÆ’Ã‚Â°Ãƒâ€¦Ã‚Â¸Ãƒâ€¦Ã‚Â¸Ãƒâ€šÃ‚Â¡ /update cancelled.")
+            print("  🟡 /update cancelled.")
             return False
 
         print()
-        print("  ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã‚Â¡ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢ Launching update...")
+        print("  ⚕ Launching update...")
         print()
 
         # Store the relaunch args so run() can exec them from the main thread

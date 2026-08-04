@@ -42,7 +42,7 @@ from typing import Optional, Sequence
 # On Windows, stdlib ``RotatingFileHandler`` calls ``os.rename()`` in
 # ``doRollover()`` and fails with ``PermissionError [WinError 32]`` whenever
 # another process holds an append-mode handle on ``agent.log`` Ã¢â‚¬â€ which is
-# essentially always in Hermes (TUI, gateway, ``hy_memory`` server, MCP
+# essentially always in Kova (TUI, gateway, ``hy_memory`` server, MCP
 # servers, and on-demand CLI commands all log from separate processes),
 # pinning ``agent.log`` at the 5 MiB threshold and spamming stderr with
 # a traceback on every emit. ``concurrent-log-handler`` wraps the rename in a
@@ -551,7 +551,7 @@ class _ManagedRotatingFileHandler(RotatingFileHandler):
 # Asynchronous file logging Ã¢â‚¬â€ keep the cross-process rotation lock off the loop
 #
 # The rotating file handlers serialize rollover with a cross-process lock (see
-# the module header): when several Hermes processes log to the same file, an
+# the module header): when several Kova processes log to the same file, an
 # ``emit`` can block while another process holds that lock.  When the emitting
 # thread is an asyncio event loop, that block stalls the loop and drops
 # WebSocket clients.  To keep file I/O off the hot path, every file handler is

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Skills Hub CLI — Unified interface for the Hermes Skills Hub.
+Skills Hub CLI — Unified interface for the Kova Skills Hub.
 
 Powers both:
-  - `hermes skills <subcommand>` (CLI argparse entry point)
+  - `kova skills <subcommand>` (CLI argparse entry point)
   - `/skills <subcommand>` (slash command in the interactive chat)
 
 All logic lives in shared do_* functions. The CLI entry point and slash command
@@ -1594,8 +1594,8 @@ def _github_publish(skill_path: Path, skill_name: str, target_repo: str,
             headers=headers, timeout=15,
             json={
                 "title": f"Add skill: {skill_name}",
-                "body": f"Submitting the `{skill_name}` skill via Hermes Skills Hub.\n\n"
-                        f"This skill was scanned by the Hermes Skills Guard before submission.",
+                "body": f"Submitting the `{skill_name}` skill via Kova Skills Hub.\n\n"
+                        f"This skill was scanned by the Kova Skills Guard before submission.",
                 "head": f"{fork_repo.split('/')[0]}:{branch_name}",
                 "base": default_branch,
             },
@@ -1701,7 +1701,7 @@ def do_snapshot_import(input_path: str, force: bool = False,
 # ---------------------------------------------------------------------------
 
 def skills_command(args) -> None:
-    """Router for `hermes skills <subcommand>` — called from kova_cli/main.py."""
+    """Router for `kova skills <subcommand>` — called from kova_cli/main.py."""
     action = getattr(args, "skills_action", None)
 
     if action == "browse":

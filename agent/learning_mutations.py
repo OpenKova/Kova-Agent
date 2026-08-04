@@ -9,9 +9,9 @@ The journey graph (``agent.learning_graph``) gives every node a stable id:
   ``USER.md``).
 
 This module maps a node id back to its on-disk home and performs the mutation,
-shared by the CLI (``hermes journey delete|edit``), the TUI ``/journey`` overlay
+shared by the CLI (``kova journey delete|edit``), the TUI ``/journey`` overlay
 (gateway RPCs), and the desktop GUI (REST). Deleting a skill *archives* it
-(recoverable via ``hermes curator restore``); deleting a memory rewrites its
+(recoverable via ``kova curator restore``); deleting a memory rewrites its
 file. Pure stdlib + existing skill/memory helpers.
 """
 
@@ -138,7 +138,7 @@ def _delete_skill(name: str) -> dict[str, Any]:
     if ok:
         _clear_skill_cache()
 
-    return {"ok": ok, "message": f"archived '{name}' — restore with: hermes curator restore {name}" if ok else message}
+    return {"ok": ok, "message": f"archived '{name}' — restore with: kova curator restore {name}" if ok else message}
 
 
 def _delete_memory(node_id: str) -> dict[str, Any]:

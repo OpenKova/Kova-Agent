@@ -7,7 +7,7 @@ https://kova-agent.nousresearch.com/docs/user-guide/features/fallback-providers
 
 Subcommands:
   hermes fallback [list]   Show the current fallback chain (default when no subcommand)
-  hermes fallback add      Pick provider + model via the same picker as `kova model`,
+  kova fallback add      Pick provider + model via the same picker as `kova model`,
                            then append the selection to the chain
   hermes fallback remove   Pick an entry to delete from the chain
   hermes fallback clear    Remove all fallback entries
@@ -338,7 +338,7 @@ def _numbered_pick(question: str, choices: List[str]) -> Optional[int]:
 # ---------------------------------------------------------------------------
 
 def cmd_fallback(args) -> None:
-    """Top-level dispatcher for ``hermes fallback [subcommand]``."""
+    """Top-level dispatcher for ``kova fallback [subcommand]``."""
     sub = getattr(args, "fallback_command", None)
     if sub in {None, "", "list", "ls"}:
         cmd_fallback_list(args)

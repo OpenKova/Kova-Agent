@@ -95,7 +95,7 @@ function resolveRemovableAppPath(execPath, platform, env: any = {}) {
     // NSIS per-user installs Hermes.exe directly in the install dir.
     const dir = p.dirname(exe)
 
-    if (/[\\/]Hermes$/i.test(dir) || /[\\/]hermes-desktop$/i.test(dir)) {
+    if (/[\\/]Kova$/i.test(dir) || /[\\/]hermes-desktop$/i.test(dir)) {
       return dir
     }
 
@@ -203,7 +203,7 @@ function buildWindowsCleanupScript({
   const pid = Number(desktopPid) || 0
   // cmd.exe has no string escaping inside quotes; strip embedded quotes (paths
   // under %LOCALAPPDATA% never contain them). `&`/`^` in a path would still be
-  // a problem, but Hermes install paths don't use them.
+  // a problem, but Kova install paths don't use them.
   const q = s => `"${String(s).replace(/"/g, '')}"`
 
   const lines = [

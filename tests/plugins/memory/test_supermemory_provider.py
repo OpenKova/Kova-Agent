@@ -119,12 +119,12 @@ def test_clean_text_for_capture_strips_injected_context():
 def test_format_prefetch_context_deduplicates_overlap():
     result = _format_prefetch_context(
         static_facts=["Jordan prefers short answers"],
-        dynamic_facts=["Jordan prefers short answers", "Uses Hermes"],
-        search_results=[{"memory": "Uses Hermes", "similarity": 0.9}],
+        dynamic_facts=["Jordan prefers short answers", "Uses Kova"],
+        search_results=[{"memory": "Uses Kova", "similarity": 0.9}],
         max_results=10,
     )
     assert result.count("Jordan prefers short answers") == 1
-    assert result.count("Uses Hermes") == 1
+    assert result.count("Uses Kova") == 1
     assert "<supermemory-context>" in result
 
 
@@ -132,7 +132,7 @@ def test_prefetch_includes_profile_on_first_turn(provider):
     provider._client.profile_response = {
         "static": ["Jordan prefers short answers"],
         "dynamic": ["Current project is Supermemory provider"],
-        "search_results": [{"memory": "Working on Hermes memory provider", "similarity": 0.88}],
+        "search_results": [{"memory": "Working on Kova memory provider", "similarity": 0.88}],
     }
     provider.on_turn_start(1, "start")
     result = provider.prefetch("what am I working on?")
@@ -145,7 +145,7 @@ def test_prefetch_skips_profile_between_frequency(provider):
     provider._client.profile_response = {
         "static": ["Jordan prefers short answers"],
         "dynamic": ["Current project is Supermemory provider"],
-        "search_results": [{"memory": "Working on Hermes memory provider", "similarity": 0.88}],
+        "search_results": [{"memory": "Working on Kova memory provider", "similarity": 0.88}],
     }
     provider.on_turn_start(2, "next")
     result = provider.prefetch("what am I working on?")
@@ -199,7 +199,7 @@ def test_on_session_end_ingests_clean_messages(provider):
 
 
 def test_merge_metadata_stamps_sm_source():
-    # sm_source routes Hermes writes into the "Hermes" Space in the Supermemory
+    # sm_source routes Kova writes into the "Kova" Space in the Supermemory
     # app (functional routing, not telemetry) — must always be present.
     from plugins.memory.supermemory import _SupermemoryClient
 
@@ -646,7 +646,7 @@ def test_probe_supermemory_connection_success(monkeypatch, tmp_path):
         def get_profile(self, query=None, *, container_tag=None):
             return {
                 "static": ["Prefers TypeScript"],
-                "dynamic": ["", "Working on Hermes"],
+                "dynamic": ["", "Working on Kova"],
                 "search_results": [],
             }
 

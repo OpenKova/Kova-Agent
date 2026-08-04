@@ -1,6 +1,6 @@
-"""Unified removal contract for every credential source Hermes reads from.
+"""Unified removal contract for every credential source Kova reads from.
 
-Hermes seeds its credential pool from many places:
+Kova seeds its credential pool from many places:
 
     env:<VAR>     — os.environ / ~/.hermes/.env
     claude_code   — ~/.claude/.credentials.json
@@ -10,13 +10,13 @@ Hermes seeds its credential pool from many places:
     gh_cli        — gh auth token
     config:<name> — custom_providers config entry
     model_config  — model.api_key when model.provider == "custom"
-    manual        — user ran `hermes auth add`
+    manual        — user ran `kova auth add`
 
 Each source has its own reader inside ``agent.credential_pool._seed_from_*``
 (which keep their existing shape — we haven't restructured them).  What we
 unify here is **removal**:
 
-    ``hermes auth remove <provider> <N>`` must make the pool entry stay gone.
+    ``kova auth remove <provider> <N>`` must make the pool entry stay gone.
 
 Before this module, every source had an ad-hoc removal branch in
 ``auth_remove_command``, and several sources had no branch at all — so
@@ -179,8 +179,8 @@ def _remove_env_source(provider: str, removed) -> RemovalResult:
             f"Note: {env_var} is still set in your shell environment "
             f"(not in ~/.hermes/.env).",
             "  Unset it there (shell profile, systemd EnvironmentFile, "
-            "launchd plist, etc.) or it will keep being visible to Hermes.",
-            f"  The pool entry is now suppressed — Hermes will ignore "
+            "launchd plist, etc.) or it will keep being visible to Kova.",
+            f"  The pool entry is now suppressed — Kova will ignore "
             f"{env_var} until you run `kova auth add {provider}`.",
         ])
     else:
@@ -195,7 +195,7 @@ def _remove_claude_code(provider: str, removed) -> RemovalResult:
     """~/.claude/.credentials.json is owned by Claude Code itself.
 
     We don't delete it — the user's Claude Code install still needs to
-    work.  We just suppress it so Hermes stops reading it.
+    work.  We just suppress it so Kova stops reading it.
     """
     return RemovalResult(hints=[
         "Suppressed claude_code credential — it will not be re-seeded.",
@@ -213,7 +213,7 @@ def _remove_hermes_pkce(provider: str, removed) -> RemovalResult:
     if oauth_file.exists():
         try:
             oauth_file.unlink()
-            result.cleaned.append("Cleared Hermes Anthropic OAuth credentials")
+            result.cleaned.append("Cleared Kova Anthropic OAuth credentials")
         except OSError as exc:
             result.hints.append(f"Could not delete {oauth_file}: {exc}")
     return result
@@ -241,9 +241,9 @@ def _remove_nous_device_code(provider: str, removed) -> RemovalResult:
     """Nous OAuth lives in auth.json providers.nous — clear it and suppress.
 
     We suppress in addition to clearing because nothing else stops a future
-    `hermes auth add nous` (or any other path that writes providers.nous)
+    `kova auth add nous` (or any other path that writes providers.nous)
     from re-seeding before the user has decided to.  Suppression forces
-    them to go through `hermes auth add nous` to re-engage, which is the
+    them to go through `kova auth add nous` to re-engage, which is the
     documented re-add path and clears the suppression atomically.
     """
     result = RemovalResult()
@@ -268,7 +268,7 @@ def _remove_minimax_oauth(provider: str, removed) -> RemovalResult:
 def _remove_xai_oauth_device_code(provider: str, removed) -> RemovalResult:
     """xAI OAuth tokens live in auth.json providers.xai-oauth — clear them.
 
-    Without this step, ``hermes auth remove xai-oauth <N>`` silently undoes
+    Without this step, ``kova auth remove xai-oauth <N>`` silently undoes
     itself: the central dispatcher only removes the in-memory pool entry,
     leaves ``providers.xai-oauth`` in auth.json intact, and on the next
     ``load_pool("xai-oauth")`` call ``_seed_from_singletons`` re-seeds the
@@ -289,7 +289,7 @@ def _remove_codex_device_code(provider: str, removed) -> RemovalResult:
     """Codex tokens live in TWO places: our auth store AND ~/.codex/auth.json.
 
     refresh_codex_oauth_pure() writes both every time, so clearing only
-    the Hermes auth store is not enough — _seed_from_singletons() would
+    the Kova auth store is not enough — _seed_from_singletons() would
     re-import from ~/.codex/auth.json on the next load_pool() call and
     the removal would be instantly undone.  We suppress instead of
     deleting Codex CLI's file, so the Codex CLI itself keeps working.
@@ -297,7 +297,7 @@ def _remove_codex_device_code(provider: str, removed) -> RemovalResult:
     The canonical source name in ``_seed_from_singletons`` is
     ``"device_code"`` (no prefix).  Entries may show up in the pool as
     either ``"device_code"`` (seeded) or ``"manual:device_code"`` (added
-    via ``hermes auth add openai-codex``), but in both cases the re-seed
+    via ``kova auth add openai-codex``), but in both cases the re-seed
     gate lives at the ``"device_code"`` suppression key.  We suppress
     that canonical key here; the central dispatcher also suppresses
     ``removed.source`` which is fine — belt-and-suspenders, idempotent.
@@ -343,7 +343,7 @@ def _remove_copilot_gh(provider: str, removed) -> RemovalResult:
     user clicked.
 
     We don't touch the user's gh CLI or shell state — just suppress so
-    Hermes stops picking the token up.
+    Kova stops picking the token up.
     """
     # Suppress ALL copilot source variants up-front so no path resurrects
     # the pool entry.  The central dispatcher in auth_remove_command will

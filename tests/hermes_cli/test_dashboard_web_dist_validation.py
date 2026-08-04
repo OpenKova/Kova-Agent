@@ -258,7 +258,7 @@ def test_skip_build_custom_env_dist_missing_does_not_attempt_recovery(
     [
         ("/Applications/Hermes.app/Contents/Resources/app.asar/dist", True),
         ("/Applications/Hermes.app/Contents/Resources/app.asar.unpacked/dist", True),
-        (r"C:\Users\u\AppData\Local\Programs\Hermes\resources\app.asar\dist", True),
+        (r"C:\Users\u\AppData\Local\Programs\Kova\resources\app.asar\dist", True),
         ("/home/u/custom-dashboard-dist", False),
         ("", False),
     ],

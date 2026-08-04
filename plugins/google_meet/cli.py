@@ -1,6 +1,6 @@
 """CLI commands for the google_meet plugin.
 
-Wires ``hermes meet <subcommand>``:
+Wires ``kova meet <subcommand>``:
   setup       — preflight playwright, chromium, auth file, print fixes
   auth        — open a browser to sign into Google, save storage state
   join <url>  — join a Meet URL synchronously (also callable from the agent)
@@ -32,7 +32,7 @@ def _auth_state_path() -> Path:
 # ---------------------------------------------------------------------------
 
 def register_cli(subparser: argparse.ArgumentParser) -> None:
-    """Build the ``hermes meet`` argparse tree.
+    """Build the ``kova meet`` argparse tree.
 
     Called by :func:`_register_cli_commands` at plugin load time.
     """

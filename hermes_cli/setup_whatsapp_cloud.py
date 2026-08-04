@@ -1,7 +1,7 @@
 """
 Interactive setup wizard for the WhatsApp Cloud API adapter.
 
-Entry point: ``hermes whatsapp-cloud`` (dispatched from
+Entry point: ``kova whatsapp-cloud`` (dispatched from
 ``cmd_whatsapp_cloud`` in ``hermes_cli/main.py``).
 
 Walks the user through the 6 credentials Meta requires + recipient
@@ -25,7 +25,7 @@ in Meta's App Dashboard, with a one-line description and the field's
 expected shape ("starts with EAA", "15-17 digits", "32 hex chars", etc.).
 
 The wizard intentionally does NOT smoke-test the webhook itself — the
-Hermes gateway and the cloudflared tunnel both run in separate
+Kova gateway and the cloudflared tunnel both run in separate
 processes the user starts AFTER this wizard exits, so any in-wizard
 probe would fail by design. Instead the final SETUP COMPLETE block
 prints the exact curl command the user can run from a third terminal

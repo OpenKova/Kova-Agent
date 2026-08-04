@@ -828,7 +828,7 @@
           ''}
 
           # Seed .env from Nix-declared environment + environmentFiles.
-          # Hermes reads $HERMES_HOME/.env at startup via load_hermes_dotenv(),
+          # Kova reads $HERMES_HOME/.env at startup via load_hermes_dotenv(),
           # so this is the single source of truth for both native and container mode.
           ${lib.optionalString (cfg.environment != {} || cfg.environmentFiles != []) ''
             ENV_FILE="${cfg.stateDir}/.hermes/.env"

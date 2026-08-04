@@ -18,7 +18,7 @@ try:
     import hermes_bootstrap  # noqa: F401
 except ModuleNotFoundError:
     # Graceful fallback when hermes_bootstrap isn't registered in the venv
-    # yet — happens during partial ``hermes update`` where git-reset landed
+    # yet — happens during partial ``kova update`` where git-reset landed
     # new code but ``uv pip install -e .`` didn't finish.  Missing bootstrap
     # means UTF-8 stdio setup is skipped on Windows; POSIX is unaffected.
     pass
@@ -130,7 +130,7 @@ def _reverse_alias_for_display(model_name: str) -> str:
     """Return the shortest configured alias for ``model_name``, or ``model_name``.
 
     Looks up both ``model_aliases:`` (dict-based, full DirectAlias entries)
-    and ``model.aliases:`` (string-based, set via ``hermes config set``)
+    and ``model.aliases:`` (string-based, set via ``kova config set``)
     from config.yaml. Multiple aliases pointing at the same model — the
     shortest wins, so ``opus47`` beats ``palantir-claude47``.
     """
@@ -416,7 +416,7 @@ def load_cli_config() -> Dict[str, Any]:
     Environment variables take precedence over config file values.
     Returns default values if no config file exists.
 
-    If HERMES_IGNORE_USER_CONFIG=1 is set (via ``hermes chat --ignore-user-config``),
+    If HERMES_IGNORE_USER_CONFIG=1 is set (via ``kova chat --ignore-user-config``),
     the user config at ``~/.hermes/config.yaml`` is skipped entirely and only the
     built-in defaults plus the project-level ``cli-config.yaml`` (if any) are used.
     Credentials in ``.env`` are still loaded — this flag only suppresses
@@ -485,10 +485,10 @@ def load_cli_config() -> Dict[str, Any]:
                 "teacher": "You are a patient teacher. Explain concepts clearly with examples.",
                 "kawaii": "You are a kawaii assistant! Use cute expressions like (◕‿◕), ★, ♪, and ~! Add sparkles and be super enthusiastic about everything! Every response should feel warm and adorable desu~! ヽ(>∀<☆)ノ",
                 "catgirl": "You are Neko-chan, an anime catgirl AI assistant, nya~! Add 'nya' and cat-like expressions to your speech. Use kaomoji like (=^･ω･^=) and ฅ^•ﻌ•^ฅ. Be playful and curious like a cat, nya~!",
-                "pirate": "Arrr! Ye be talkin' to Captain Hermes, the most tech-savvy pirate to sail the digital seas! Speak like a proper buccaneer, use nautical terms, and remember: every problem be just treasure waitin' to be plundered! Yo ho ho!",
+                "pirate": "Arrr! Ye be talkin' to Captain Kova, the most tech-savvy pirate to sail the digital seas! Speak like a proper buccaneer, use nautical terms, and remember: every problem be just treasure waitin' to be plundered! Yo ho ho!",
                 "shakespeare": "Hark! Thou speakest with an assistant most versed in the bardic arts. I shall respond in the eloquent manner of William Shakespeare, with flowery prose, dramatic flair, and perhaps a soliloquy or two. What light through yonder terminal breaks?",
                 "surfer": "Duuude! You're chatting with the chillest AI on the web, bro! Everything's gonna be totally rad. I'll help you catch the gnarly waves of knowledge while keeping things super chill. Cowabunga!",
-                "noir": "The rain hammered against the terminal like regrets on a guilty conscience. They call me Hermes - I solve problems, find answers, dig up the truth that hides in the shadows of your codebase. In this city of silicon and secrets, everyone's got something to hide. What's your story, pal?",
+                "noir": "The rain hammered against the terminal like regrets on a guilty conscience. They call me Kova - I solve problems, find answers, dig up the truth that hides in the shadows of your codebase. In this city of silicon and secrets, everyone's got something to hide. What's your story, pal?",
                 "uwu": "hewwo! i'm your fwiendwy assistant uwu~ i wiww twy my best to hewp you! *nuzzles your code* OwO what's this? wet me take a wook! i pwomise to be vewy hewpful >w<",
                 "philosopher": "Greetings, seeker of wisdom. I am an assistant who contemplates the deeper meaning behind every query. Let us examine not just the 'how' but the 'why' of your questions. Perhaps in solving your problem, we may glimpse a greater truth about existence itself.",
                 "hype": "YOOO LET'S GOOOO!!! I am SO PUMPED to help you today! Every question is AMAZING and we're gonna CRUSH IT together! This is gonna be LEGENDARY! ARE YOU READY?! LET'S DO THIS!",
@@ -625,7 +625,7 @@ def load_cli_config() -> Dict[str, Any]:
     # hermes_cli.config._load_config_impl (which has its own managed merge), so
     # without this the entire interactive CLI/TUI surface — skin, display prefs,
     # etc. read from CLI_CONFIG — would silently ignore managed scope while
-    # `hermes config`/`doctor`/guards (which use load_config) honor it. The
+    # `kova config`/`doctor`/guards (which use load_config) honor it. The
     # shared helper mirrors _load_config_impl (env-only expansion, root-model
     # normalization, leaf-merge) and is fail-open.
     from hermes_cli import managed_scope
@@ -643,7 +643,7 @@ def load_cli_config() -> Dict[str, Any]:
     
     # CWD resolution for CLI/TUI. The gateway has its own config bridge in
     # gateway/run.py but may lazily import cli.py (triggering this code).
-    # Local backend: always os.getcwd(). Use `cd /dir && hermes` to control it.
+    # Local backend: always os.getcwd(). Use `cd /dir && kova` to control it.
     # Non-local with placeholder: pop so terminal_tool uses its per-backend default.
     # Non-local with explicit path: keep as-is.
     _CWD_PLACEHOLDERS = (".", "auto", "cwd")
@@ -849,7 +849,7 @@ try:
         """Defer ``AsyncHttpxClientWrapper.__del__`` neutering until import.
 
         Saves ~166ms on cold CLI start where openai is never used (e.g.
-        ``hermes --help`` paths inside the chat command flow).  See
+        ``kova --help`` paths inside the chat command flow).  See
         ``agent.auxiliary_client.neuter_async_httpx_del`` for full rationale
         on why ``__del__`` must be a no-op.
         """
@@ -1128,7 +1128,7 @@ def _arm_exit_watchdog_on_shutdown_signal() -> None:
     parked in a syscall that never observes the unwind, a prompt_toolkit
     teardown that never returns, or an agent worker blocking the ``finally``.
     When that happens the process has NO backstop and a "dead" CLI lingers
-    (observed: ``hermes --tui`` alive ~47 min at 4% CPU after terminal close —
+    (observed: ``kova --tui`` alive ~47 min at 4% CPU after terminal close —
     the #65998 class).
 
     Arming at signal time closes that window. The leash is 2× the normal
@@ -1454,7 +1454,7 @@ def _resolve_worktree_base(repo_root: str) -> tuple:
     """Resolve the freshest base ref to branch a new worktree from.
 
     The standalone clone's ``HEAD`` can lag the remote by hundreds of commits
-    (the ``~/.hermes/hermes-agent`` clone is updated only by ``hermes update``,
+    (the ``~/.hermes/hermes-agent`` clone is updated only by ``kova update``,
     not on every session). Branching a worktree from that stale ``HEAD`` roots
     every new branch on an old base — so the PR diff GitHub computes against
     current ``main`` balloons with unrelated changes, and the agent has to
@@ -1541,7 +1541,7 @@ def _setup_worktree(repo_root: str = None, sync_base: bool = True) -> Optional[D
     repo_root = repo_root or _git_repo_root()
     if not repo_root:
         print("\033[31m✗ --worktree requires being inside a git repository.\033[0m")
-        print("  cd into your project repo first, then run hermes -w")
+        print("  cd into your project repo first, then run kova -w")
         return None
 
     short_id = uuid.uuid4().hex[:8]
@@ -1808,8 +1808,8 @@ def _worktree_commits_all_merged_upstream(
 def _worktree_lock_is_live(repo_root: str, worktree_path: str, timeout: int = 10):
     """Classify a worktree's git lock as live, dead, or absent.
 
-    ``hermes -w`` locks each worktree with reason ``hermes pid=<pid>`` so a
-    concurrent hermes process' startup prune leaves an in-use worktree alone.
+    ``kova -w`` locks each worktree with reason ``kova pid=<pid>`` so a
+    concurrent kova process' startup prune leaves an in-use worktree alone.
     But a *crashed* session leaves the lock behind forever, and
     ``git worktree remove --force`` (single ``-f``) refuses to remove a locked
     worktree — so dead-locked worktrees accumulate indefinitely. This lets the
@@ -1852,7 +1852,7 @@ def _worktree_lock_is_live(repo_root: str, worktree_path: str, timeout: int = 10
             if not m:
                 # Locked by something we don't recognize as a hermes session
                 # (or lock reason unavailable). Treat as dead — a foreign lock
-                # on a hermes -w worktree is almost certainly a leftover, and
+                # on a kova -w worktree is almost certainly a leftover, and
                 # the age/dirty/unpushed gates already ran before we got here.
                 return "dead"
             pid = int(m.group(1))
@@ -2013,7 +2013,7 @@ def _prune_stale_worktrees(repo_root: str, max_age_hours: int = 24) -> None:
 
     Covers EVERY directory under ``.worktrees/`` except kanban task trees
     (``t_<hex>`` — owned by the kanban dispatcher's own gc). Scratch trees
-    created by ``hermes -w`` (``hermes-*``) age out fast; named trees created
+    created by ``kova -w`` (``hermes-*``) age out fast; named trees created
     manually for salvage/review lanes age out on a slower schedule:
 
     - ``hermes-*``: skip under 24h; reap 24h+ when clean and merged/pushed;
@@ -2027,8 +2027,8 @@ def _prune_stale_worktrees(repo_root: str, max_age_hours: int = 24) -> None:
       squash-merged-PR case, which is the dominant ``.worktrees/`` leak since
       those commits stay unreachable from ``refs/remotes/*`` forever.
 
-    Lock handling (orthogonal to age): ``hermes -w`` locks each worktree with
-    reason ``hermes pid=<pid>`` so a concurrent hermes process leaves an in-use
+    Lock handling (orthogonal to age): ``kova -w`` locks each worktree with
+    reason ``kova pid=<pid>`` so a concurrent kova process leaves an in-use
     worktree alone. A *live*-locked worktree is skipped at any age; a
     *dead*-locked one (owning pid gone — a crashed session) is unlocked first
     so ``git worktree remove --force`` can actually reap it, otherwise those
@@ -2058,7 +2058,7 @@ def _prune_stale_worktrees(repo_root: str, max_age_hours: int = 24) -> None:
     stale_work_cutoff = now - (7 * 24 * 3600)
     preserved_stale: list = []
     # Kanban task worktrees (<repo>/.worktrees/t_<hex>) have their own
-    # dispatcher-driven lifecycle (hermes kanban gc) — never touch them here.
+    # dispatcher-driven lifecycle (kova kanban gc) — never touch them here.
     kanban_re = re.compile(r"^t_[0-9a-f]+$")
 
     for entry in worktrees_dir.iterdir():
@@ -2100,7 +2100,7 @@ def _prune_stale_worktrees(repo_root: str, max_age_hours: int = 24) -> None:
                 continue
 
         # Respect git-native session locks. A lock owned by a still-running
-        # hermes process means the worktree is actively in use — never touch
+        # kova process means the worktree is actively in use — never touch
         # it. A lock whose owning pid is gone is a crashed session's leftover:
         # unlock it so `git worktree remove --force` (single -f) can reap it,
         # otherwise dead-locked worktrees pile up indefinitely.
@@ -2159,7 +2159,7 @@ def _prune_stale_worktrees(repo_root: str, max_age_hours: int = 24) -> None:
 def _prune_orphaned_branches(repo_root: str) -> None:
     """Delete local ``hermes/hermes-*`` and ``pr-*`` branches with no worktree.
 
-    These are auto-generated by ``hermes -w`` sessions and PR review
+    These are auto-generated by ``kova -w`` sessions and PR review
     workflows respectively.  Once their worktree is gone they serve no
     purpose and just accumulate.
     """
@@ -2274,7 +2274,7 @@ def _hex_to_ansi(hex_color: str, *, bold: bool = False) -> str:
 #   3. HERMES_TUI_BACKGROUND=#RRGGBB — explicit bg hint
 #   4. COLORFGBG env (set by xterm/Konsole/urxvt) — bg slot 7/15 = light
 #   5. OSC 11 query (\x1b]11;?\x1b\\) — ask the terminal directly
-#   6. Default: assume dark (matches the legacy Hermes assumption)
+#   6. Default: assume dark (matches the legacy Kova assumption)
 #
 # Cached after first call so we don't query the terminal repeatedly.
 _LIGHT_MODE_CACHE: bool | None = None
@@ -2601,7 +2601,7 @@ def _strip_markdown_syntax(text: str) -> str:
     plain = _rich_text_from_ansi(text or "").plain
     # Avoid stripping cron-style expressions like "* * * * *" as if they were
     # Markdown horizontal rules. CommonMark treats three or more "*" as an HR,
-    # but in Hermes output it's common to display cron schedules verbatim.
+    # but in Kova output it's common to display cron schedules verbatim.
     #
     # Keep the behavior for "-" / "_" HR markers, and only strip "*" HR lines
     # when there are exactly 3 asterisks (with optional whitespace).
@@ -3861,7 +3861,7 @@ def _normalize_moa_model(model: Optional[str]) -> tuple[Optional[str], Optional[
 
     Returns ``("moa", "<preset>")`` when *model* selects the MoA virtual
     provider, otherwise ``(None, model)`` unchanged. This gives non-interactive
-    ``hermes chat -Q -m moa:<preset>`` the same routing the interactive
+    ``kova chat -Q -m moa:<preset>`` the same routing the interactive
     ``/moa`` command and the model picker already use: ``resolve_runtime_provider``
     handles ``requested_provider == "moa"`` and ``agent_init`` builds the
     MoAClient off ``provider == "moa"``. Without this the raw ``moa:<preset>``
@@ -3901,7 +3901,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
         ignore_rules: bool = False,
     ):
         """
-        Initialize the Hermes CLI.
+        Initialize the Kova CLI.
 
         Args:
             model: Model to use (default: from env or claude-sonnet)
@@ -4109,7 +4109,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
         self.checkpoint_max_file_size_mb = cp_cfg.get("max_file_size_mb", 10)
         self.pass_session_id = pass_session_id
         # --ignore-rules: honor either the constructor flag or the env var set
-        # by `hermes chat --ignore-rules` in hermes_cli/main.py. When true we
+        # by `kova chat --ignore-rules` in hermes_cli/main.py. When true we
         # pass skip_context_files=True and skip_memory=True to AIAgent so
         # AGENTS.md/SOUL.md/.cursorrules and persistent memory are not loaded.
         self.ignore_rules = ignore_rules or os.environ.get("HERMES_IGNORE_RULES") == "1"
@@ -4207,7 +4207,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
                     "this conversation will [bold]NOT be saved[/bold] to disk and "
                     "cannot be resumed later. Searching past sessions is also disabled.\n"
                     f"  Reason: {e}\n"
-                    "  Fix the state.db store (e.g. `hermes update` to rebuild the venv) to restore persistence."
+                    "  Fix the state.db store (e.g. `kova update` to rebuild the venv) to restore persistence."
                 )
             except Exception:
                 # Never let the warning path itself break startup.
@@ -4218,7 +4218,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
 
         # Opportunistic state.db maintenance — runs at most once per
         # min_interval_hours, tracked via state_meta in state.db itself so
-        # it's shared across all Hermes processes for this HERMES_HOME.
+        # it's shared across all Kova processes for this HERMES_HOME.
         # Never blocks startup on failure.
         _run_state_db_auto_maintenance(self._session_db)
 
@@ -5116,7 +5116,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
     def _pet_resolve_config(self) -> None:
         """(Re)resolve the active pet from config — picks up live enable/disable/
 
-        switch made via ``/pet`` or ``hermes pets`` without a restart, mirroring
+        switch made via ``/pet`` or ``kova pets`` without a restart, mirroring
         the TUI's steady poll. Cheap and fail-open: any problem disables the pet.
         """
         try:
@@ -5445,7 +5445,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
                 parts.append("⚠ YOLO")
             return self._trim_status_bar_text(" │ ".join(parts), width)
         except Exception:
-            return f"⚕ {self.model if getattr(self, 'model', None) else 'Hermes'}"
+            return f"⚕ {self.model if getattr(self, 'model', None) else 'Kova'}"
 
     def _get_status_bar_fragments(self):
         if not self._status_bar_visible or getattr(self, '_model_picker_state', None):
@@ -6497,9 +6497,9 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
         """Show a startup banner if any unacked security advisories match.
 
         Renders a single bold-red box on stderr (so piped stdout remains
-        clean) listing the worst hit and pointing at ``hermes doctor``.
+        clean) listing the worst hit and pointing at ``kova doctor``.
         Banner-cache rate-limits this to once per 24h per advisory; full
-        remediation lives behind ``hermes doctor`` so the banner stays
+        remediation lives behind ``kova doctor`` so the banner stays
         small.
         """
         try:
@@ -6567,7 +6567,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
                 f"this is likely too low for agent use with tools.[/]"
             )
             self._console_print(
-                f"[dim]   Hermes needs at least {MINIMUM_CONTEXT_LENGTH:,} tokens. Tool schemas + system prompt use a large fixed prefix.[/]"
+                f"[dim]   Kova needs at least {MINIMUM_CONTEXT_LENGTH:,} tokens. Tool schemas + system prompt use a large fixed prefix.[/]"
             )
             base_url = getattr(self, "base_url", "") or ""
             if "11434" in base_url or "ollama" in base_url.lower():
@@ -6583,14 +6583,14 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
                     "[dim]   Fix: Set model.context_length in config.yaml, or increase your server's context setting[/]"
                 )
 
-        # Warn if the configured model is a Nous Hermes LLM (not agentic)
+        # Warn if the configured model is a Nous Kova LLM (not agentic)
         from hermes_cli.model_switch import is_nous_hermes_non_agentic
 
         model_name = getattr(self, "model", "") or ""
         if is_nous_hermes_non_agentic(model_name):
             self._console_print()
             self._console_print(
-                "[bold yellow]⚠  Nous Research Hermes models are NOT agentic and are not "
+                "[bold yellow]⚠  Nous Research Kova models are NOT agentic and are not "
                 "designed for use with Kova Agent.[/]"
             )
             self._console_print(
@@ -6846,7 +6846,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
                     if len(item["tools"]) > 2:
                         tools_str += f", +{len(item['tools'])-2} more"
                     self._console_print(f"   [dim]• {item['name']}[/] [dim italic]({', '.join(item['missing_vars'])})[/]")
-                self._console_print("[dim]   Run 'hermes setup' to configure[/]")
+                self._console_print("[dim]   Run 'kova setup' to configure[/]")
         except Exception:
             pass  # Don't crash on import errors
     
@@ -7013,7 +7013,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
                     f"    [bold {_accent_hex()}]{('/' + name):<22}[/] [dim]-[/] {_escape(desc)}"
                 )
 
-        _cprint(f"\n  {_DIM}Tip: Just type your message to chat with Hermes!{_RST}")
+        _cprint(f"\n  {_DIM}Tip: Just type your message to chat with Kova!{_RST}")
         _cprint(f"  {_DIM}Multi-line: Alt+Enter for a new line{_RST}")
         _cprint(f"  {_DIM}Draft editor: Ctrl+G (Alt+G in VSCode/Cursor){_RST}")
         if _is_termux_environment():
@@ -7268,7 +7268,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
                 )
                 continue
 
-            _cli_visible_print(f"\n  [Hermes #{visible_index}]{_ts_suffix(msg)}")
+            _cli_visible_print(f"\n  [Kova #{visible_index}]{_ts_suffix(msg)}")
             tool_calls = msg.get("tool_calls") or []
             if content_text:
                 preview = content_text[:preview_limit]
@@ -7308,7 +7308,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
 
         Starting the CLI and immediately quitting (or rotating with /new,
         /clear) used to leave an empty untitled row behind that clutters
-        ``/resume`` and ``hermes sessions list``. Delegates the
+        ``/resume`` and ``kova sessions list``. Delegates the
         check-and-delete to ``SessionDB.delete_session_if_empty``, which
         only removes rows with no messages, no title, and no child
         sessions. Ported from google-gemini/gemini-cli#27770.
@@ -7414,7 +7414,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
             except Exception:
                 pass
             # Don't let immediately-rotated empty sessions pile up in
-            # /resume and `hermes sessions list` (gemini-cli#27770 port).
+            # /resume and `kova sessions list` (gemini-cli#27770 port).
             self._discard_session_if_empty(old_session_id)
 
         self.session_start = datetime.now()
@@ -7628,7 +7628,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
 
         The snapshot is a convenience export for sharing or off-line inspection;
         every message is already persisted incrementally to the SQLite session
-        DB, so the live session remains resumable via ``hermes --resume <id>``
+        DB, so the live session remains resumable via ``kova --resume <id>``
         regardless of whether the user ever runs ``/save``.
         """
         if not self.conversation_history:
@@ -8205,7 +8205,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
             return True
 
         choices = [
-            ("once", "Switch anyway", "Use this model for the current Hermes session."),
+            ("once", "Switch anyway", "Use this model for the current Kova session."),
             ("cancel", "Cancel", "Keep the current model."),
         ]
         raw = self._prompt_text_input_modal(
@@ -8502,7 +8502,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
                 return
             provider_data = providers[selected]
             # Use the curated model list from list_authenticated_providers()
-            # (same lists as `hermes model` and gateway pickers).
+            # (same lists as `kova model` and gateway pickers).
             # Only fall back to the live provider catalog when the curated
             # list is empty (e.g. user-defined endpoints with no curated list).
             model_list = provider_data.get("models", [])
@@ -8846,7 +8846,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
 
         Usage:
             /codex-runtime                       — show current state
-            /codex-runtime auto                  — Hermes default (chat_completions)
+            /codex-runtime auto                  — Kova default (chat_completions)
             /codex-runtime codex_app_server      — hand turns to codex subprocess
             /codex-runtime on / off              — synonyms for the above
         """
@@ -9335,7 +9335,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
             self._handle_browser_command(cmd_original)
         elif canonical == "plugins":
             try:
-                # Discover from disk (bundled + user), matching `hermes plugins
+                # Discover from disk (bundled + user), matching `kova plugins
                 # list` — so installed-but-not-enabled plugins are visible here
                 # too. The plugin manager only knows about *loaded* plugins, so
                 # using it alone made freshly-installed, not-yet-enabled plugins
@@ -9354,16 +9354,16 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
                 # `/plugins` is a quick glance — default to user-installed
                 # plugins (what the user actually added). Bundled provider/
                 # platform plugins are summarized on one line; the full
-                # catalog lives behind `hermes plugins list`.
+                # catalog lives behind `kova plugins list`.
                 user_entries = [e for e in entries if e[3] != "bundled"]
                 bundled_count = len(entries) - len(user_entries)
 
                 if not user_entries:
                     print("No user plugins installed.")
-                    print("  Install one: hermes plugins install owner/repo")
+                    print("  Install one: kova plugins install owner/repo")
                     print(f"  Or drop a plugin directory into {display_hermes_home()}/plugins/")
                     if bundled_count:
-                        print(f"  ({bundled_count} bundled plugins available — see: hermes plugins list)")
+                        print(f"  ({bundled_count} bundled plugins available — see: kova plugins list)")
                 else:
                     # Loaded-plugin details (tools/hooks/commands counts, errors)
                     # keyed by name, when available.
@@ -9393,8 +9393,8 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
                         error = f" — {info['error']}" if info.get("error") else ""
                         print(f"  {glyph} {name}{ver}{label}{detail}{error}")
                     if bundled_count:
-                        print(f"  (+{bundled_count} bundled — see: hermes plugins list)")
-                    print("  Enable/disable: hermes plugins enable/disable <name>")
+                        print(f"  (+{bundled_count} bundled — see: kova plugins list)")
+                    print("  Enable/disable: kova plugins enable/disable <name>")
             except Exception as e:
                 print(f"Plugin system error: {e}")
         elif canonical == "rollback":
@@ -9751,7 +9751,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
         """Queue background notifications owned by this visible CLI session.
 
         ``process_registry`` restores durable delegation completions into every
-        process using the same Hermes profile.  Always pass this CLI's stable
+        process using the same Kova profile.  Always pass this CLI's stable
         session identity when draining so another window cannot claim and mark
         delivered a completion that belongs to this one.
         """
@@ -10320,7 +10320,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
         normalized = str(provider or "").strip().lower()
         if normalized != "openai-codex":
             print("  Banked usage resets are only available on the openai-codex provider.")
-            print("  Switch with `/model` or `hermes auth` first.")
+            print("  Switch with `/model` or `kova auth` first.")
             return
         base_url = (getattr(self.agent, "base_url", None) if self.agent else None) or getattr(self, "base_url", None)
         api_key = (getattr(self.agent, "api_key", None) if self.agent else None) or getattr(self, "api_key", None)
@@ -10504,7 +10504,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
           re-sends the full input prefix, expensive on long-context /
           high-reasoning models).  This stops silent cache-breaking reloads
           when config.yaml is rewritten frequently by external tooling or
-          other Hermes instances.
+          other Kova instances.
         """
 
         import yaml as _yaml
@@ -12423,7 +12423,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
                     if not _streaming_box_opened:
                         _streaming_box_opened = True
                         w = self._scrollback_box_width(getattr(self.console, "width", 80))
-                        label = " ⚕ Hermes "
+                        label = " ⚕ Kova "
                         if self.show_timestamps:
                             label = f"{label}{datetime.now().strftime(getattr(self, 'timestamp_format', '%H:%M'))} "
                         fill = w - 2 - HermesCLI._status_bar_display_width(label)
@@ -13505,7 +13505,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
         except Exception:
             pass
         # First-time OpenClaw-residue banner — fires once if ~/.openclaw/ exists
-        # after an OpenClaw→Hermes migration (especially migrations done by
+        # after an OpenClaw→Kova migration (especially migrations done by
         # OpenClaw's own tool, which doesn't archive the source directory).
         try:
             from agent.onboarding import (
@@ -13903,7 +13903,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
                 without requiring terminal settings changes. Ctrl+J (the raw
                 LF keystroke) also triggers this by virtue of being the same
                 key code — a harmless side effect since Ctrl+J has no
-                conflicting Hermes binding. See issue #22379.
+                conflicting Kova binding. See issue #22379.
                 """
                 event.current_buffer.insert_text('\n')
 
@@ -14548,7 +14548,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
                 # No image found — show a hint
                 pass  # silent when no image (avoid noise on accidental press)
 
-        # Dynamic prompt: shows Hermes symbol when agent is working,
+        # Dynamic prompt: shows Kova symbol when agent is working,
         # or answer prompt when clarify freetext mode is active.
         cli_ref = self
 
@@ -15768,7 +15768,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
             # Windows: install a SIGINT handler that absorbs the signal
             # instead of letting Python's default handler raise
             # KeyboardInterrupt in MainThread. Windows Terminal / Win32
-            # delivers spurious CTRL_C_EVENT to the hermes process when
+            # delivers spurious CTRL_C_EVENT to the kova process when
             # child processes are spawned from background threads (agent
             # subprocess Popen path). The default Python SIGINT handler
             # would then unwind prompt_toolkit's app.run(), trigger
@@ -15824,7 +15824,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
             print(
                 "Error: stdin (fd 0) is not available.\n"
                 "This can happen with certain Python installations (e.g. uv-managed cPython on macOS).\n"
-                "Try reinstalling Python via pyenv or Homebrew, then re-run: hermes setup"
+                "Try reinstalling Python via pyenv or Homebrew, then re-run: kova setup"
             )
             _run_cleanup()
             self._print_exit_summary()
@@ -15893,7 +15893,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
                     f"\nError: stdin is not usable ({_stdin_err}).\n"
                     "This can happen with certain Python installations (e.g. uv-managed cPython on macOS)\n"
                     "where kqueue cannot register fd 0.\n"
-                    "Try reinstalling Python via pyenv or Homebrew, then re-run: hermes setup"
+                    "Try reinstalling Python via pyenv or Homebrew, then re-run: kova setup"
                 )
             else:
                 raise
@@ -15948,7 +15948,7 @@ class HermesCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
                 except (Exception, KeyboardInterrupt) as e:
                     logger.debug("Could not close session in DB: %s", e)
                 # Started-and-immediately-quit sessions never gained content;
-                # drop the empty row so /resume and `hermes sessions list`
+                # drop the empty row so /resume and `kova sessions list`
                 # stay clean (gemini-cli#27770 port). No-op for resumed or
                 # titled sessions and anything with messages or children.
                 if not getattr(self, '_delete_session_on_exit', False):
@@ -16172,7 +16172,7 @@ def main(
     if gateway:
         import asyncio
         from gateway.run import start_gateway
-        print("Starting Hermes Gateway (messaging platforms)...")
+        print("Starting Kova Gateway (messaging platforms)...")
         asyncio.run(start_gateway())
         return
 
@@ -16222,7 +16222,7 @@ def main(
                 else:
                     toolsets_list.append(str(t))
     else:
-        # Coding posture (base Hermes): with no explicit --toolsets, collapse
+        # Coding posture (base Kova): with no explicit --toolsets, collapse
         # to the coding toolset (+ enabled MCP servers) when sitting in a code
         # workspace. See agent/coding_context.py.
         _coding = None
@@ -16272,7 +16272,7 @@ def main(
                 logger.warning(
                     "Unknown skill(s) requested, skipping: %s. "
                     "Continuing with: %s. "
-                    "List available skills with `hermes skills list`.",
+                    "List available skills with `kova skills list`.",
                     missing_display,
                     ", ".join(loaded_skills),
                 )
@@ -16391,7 +16391,7 @@ def main(
             sys.exit(1)
         try:
             query, single_query_images = _collect_query_images(query, image)
-            # Kanban workers spawn with ``hermes chat -q "work kanban task <id>"``;
+            # Kanban workers spawn with ``kova chat -q "work kanban task <id>"``;
             # the actual task description lives in the task body. Mirror the
             # gateway/CLI behaviour for inbound images by scanning the body for
             # local image paths and http(s) image URLs and attaching them to the
@@ -16585,7 +16585,7 @@ def main(
                 # Exit with error code if credentials or agent init fails
                 sys.exit(1)
             else:
-                # Single-query mode (`hermes chat -q "…"`): skip the welcome
+                # Single-query mode (`kova chat -q "…"`): skip the welcome
                 # banner. Building the banner takes ~420 ms on cold start —
                 # ~200 ms of that is the version-update check, the rest is
                 # toolset / skill enumeration and Rich panel rendering. None

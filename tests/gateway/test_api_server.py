@@ -780,7 +780,7 @@ class TestHealthEndpoint:
     def test_health_version_prefers_runtime_source_over_stale_metadata(self):
         """Editable installs can leave importlib.metadata at an older release.
 
-        The health endpoint must report the running Hermes source version, not
+        The health endpoint must report the running Kova source version, not
         stale ``hermes_agent-*.dist-info`` metadata from before a source update.
         """
         from hermes_cli import __version__

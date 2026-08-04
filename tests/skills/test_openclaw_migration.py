@@ -863,7 +863,7 @@ def test_rebrand_text_replaces_openclaw_variants():
     assert mod.rebrand_text("Open-Claw config is great") == "Kova config is great"
     assert mod.rebrand_text("OPENCLAW uses tools well") == "Kova uses tools well"
     # All-lowercase matches → lowercase ``kova``; dot-prefixed filesystem
-    # paths keep ``~/.hermes`` (Hermes home) when rebranding memory entries
+    # paths keep ``~/.hermes`` (Kova home) when rebranding memory entries
     # that reference ``~/.openclaw``.
     assert mod.rebrand_text("openclaw should always respond concisely") == "kova should always respond concisely"
 
@@ -891,12 +891,12 @@ def test_rebrand_text_handles_multiple_replacements():
 
 def test_rebrand_text_preserves_filesystem_path_casing():
     """Lowercase matches — especially ``.openclaw`` filesystem paths — must
-    rewrite to lowercase ``.hermes`` (the real Hermes home), not the broken
-    ``.Hermes``.
+    rewrite to lowercase ``.hermes`` (the real Kova home), not the broken
+    ``.Kova``.
 
     Regression test for @versun's OpenClaw-residue feedback: after migration,
     memory entries that referenced ``~/.openclaw/config.yaml`` were being
-    rewritten to ``~/.Hermes/config.yaml`` — a path that doesn't exist —
+    rewritten to ``~/.Kova/config.yaml`` — a path that doesn't exist —
     and the agent kept trying to read it.
     """
     mod = load_module()

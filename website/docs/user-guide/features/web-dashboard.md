@@ -9,13 +9,13 @@ description: "Browser-based administration panel for managing configuration, API
 The web dashboard is a browser-based UI for managing your Kova Agent installation. Instead of editing YAML files or running CLI commands, you can configure settings, manage API keys, and monitor sessions from a clean web interface.
 
 :::tip
-Hosted-mode auth uses Nous Portal OAuth; if you also want the dashboard to talk to a real backend, `hermes setup --portal` wires up the model and tool gateway too. See [Nous Portal](/integrations/nous-portal).
+Hosted-mode auth uses Nous Portal OAuth; if you also want the dashboard to talk to a real backend, `kova setup --portal` wires up the model and tool gateway too. See [Nous Portal](/integrations/nous-portal).
 :::
 
 ## Quick Start
 
 ```bash
-hermes dashboard
+kova dashboard
 ```
 
 This starts a local web server and opens `http://127.0.0.1:9119` in your browser. The dashboard runs entirely on your machine — no data leaves localhost.
@@ -32,13 +32,13 @@ This starts a local web server and opens `http://127.0.0.1:9119` in your browser
 
 ```bash
 # Custom port
-hermes dashboard --port 8080
+kova dashboard --port 8080
 
 # Bind to all interfaces (use with caution on shared networks)
-hermes dashboard --host 0.0.0.0
+kova dashboard --host 0.0.0.0
 
 # Start without opening browser
-hermes dashboard --no-open
+kova dashboard --no-open
 ```
 
 ## Managing multiple profiles
@@ -74,7 +74,7 @@ with that profile's model, skills, memory, and session history. Switching
 profiles starts a fresh terminal session.
 
 What stays per-profile and is *not* absorbed by the switcher: gateway
-processes (manage them via `hermes -p <name> gateway …`), each profile's
+processes (manage them via `kova -p <name> gateway …`), each profile's
 session database, and cron schedulers (the Cron page already aggregates
 across profiles with its own filter).
 
@@ -88,9 +88,9 @@ cd ~/.hermes/hermes-agent && uv pip install -e ".[web,pty]"
 
 The `web` extra pulls in FastAPI/Uvicorn; `pty` pulls in `ptyprocess` (POSIX) or `pywinpty` (native Windows — note that the embedded TUI itself still requires WSL). `cd ~/.hermes/hermes-agent && uv pip install -e ".[all]"` includes both extras and is the easiest path if you also want messaging/voice/etc.
 
-When you run `hermes dashboard` without the dependencies, it will tell you what to install. If the frontend hasn't been built yet and `npm` is available, it builds automatically on first launch.
+When you run `kova dashboard` without the dependencies, it will tell you what to install. If the frontend hasn't been built yet and `npm` is available, it builds automatically on first launch.
 
-The Chat tab is part of every `hermes dashboard` launch — the embedded browser chat pane (running the TUI over PTY/WebSocket) is always available, with no extra flag required.
+The Chat tab is part of every `kova dashboard` launch — the embedded browser chat pane (running the TUI over PTY/WebSocket) is always available, with no extra flag required.
 
 ## Pages
 
@@ -107,12 +107,12 @@ The status page auto-refreshes every 5 seconds.
 
 ### Chat
 
-The **Chat** tab embeds the full Hermes TUI (the same interface you get from `hermes --tui`) directly in the browser. Everything you can do in the terminal TUI — slash commands, model picker, tool-call cards, markdown streaming, clarify/sudo/approval prompts, skin theming — works identically here, because the dashboard is running the real TUI binary and rendering its ANSI output through [xterm.js](https://xtermjs.org/) with its WebGL renderer for pixel-perfect cell layout.
+The **Chat** tab embeds the full Kova TUI (the same interface you get from `kova --tui`) directly in the browser. Everything you can do in the terminal TUI — slash commands, model picker, tool-call cards, markdown streaming, clarify/sudo/approval prompts, skin theming — works identically here, because the dashboard is running the real TUI binary and rendering its ANSI output through [xterm.js](https://xtermjs.org/) with its WebGL renderer for pixel-perfect cell layout.
 
 **How it works:**
 
 - `/api/pty` opens a WebSocket authenticated with the dashboard's session token
-- The server spawns `hermes --tui` behind a POSIX pseudo-terminal
+- The server spawns `kova --tui` behind a POSIX pseudo-terminal
 - Keystrokes travel to the PTY; ANSI output streams back to the browser
 - xterm.js's WebGL renderer paints each cell to an integer-pixel grid; mouse tracking (SGR 1006), wide characters (Unicode 11), and box-drawing glyphs all render natively
 - Resizing the browser window resizes the TUI via the `@xterm/addon-fit` addon
@@ -123,20 +123,20 @@ The **Chat** tab embeds the full Hermes TUI (the same interface you get from `he
 
 **Prerequisites:**
 
-- Node.js (same requirement as `hermes --tui`; the TUI bundle is built on first launch)
+- Node.js (same requirement as `kova --tui`; the TUI bundle is built on first launch)
 - `ptyprocess` — installed by the `pty` extra (`cd ~/.hermes/hermes-agent && uv pip install -e ".[web,pty]"`, or `[all]` covers both)
 - POSIX kernel (Linux, macOS, or WSL2).  The `/chat` terminal pane specifically needs a POSIX PTY — native Windows Python has no equivalent, so on a native Windows install the rest of the dashboard (sessions, jobs, metrics, config editor) works but the `/chat` tab will show a banner telling you to use WSL2 for that feature.
 
 Close the browser tab and the PTY is reaped cleanly on the server. Re-opening spawns a fresh session.
 
-To point [Hermes Desktop](#connecting-hermes-desktop-to-a-remote-backend) at a dashboard running on another machine instead of its own bundled backend, see the remote-backend section below.
+To point [Kova Desktop](#connecting-hermes-desktop-to-a-remote-backend) at a dashboard running on another machine instead of its own bundled backend, see the remote-backend section below.
 
-### Connecting Hermes Desktop to a remote backend
+### Connecting Kova Desktop to a remote backend
 
-Hermes Desktop normally launches its own local backend, but it can also attach to a dashboard running on a remote machine (a VM, a homelab box, etc.) via **Settings → Gateway → Remote gateway**. This is the most common source of "Desktop says the backend is ready but chat never works" reports, because Desktop's readiness check verifies less than the live chat connection actually needs.
+Kova Desktop normally launches its own local backend, but it can also attach to a dashboard running on a remote machine (a VM, a homelab box, etc.) via **Settings → Gateway → Remote gateway**. This is the most common source of "Desktop says the backend is ready but chat never works" reports, because Desktop's readiness check verifies less than the live chat connection actually needs.
 
-:::info Prerequisite: a `hermes dashboard` must be running on the remote host
-The "remote backend" Desktop connects to **is** a `hermes dashboard` process running on the remote machine — the same server this page documents. It has to be up and reachable before any of the steps below matter; Desktop attaches to it, it doesn't start it for you. Keep it running under `systemd`/`tmux`/etc. so it survives logout and reboots. The **gateway** (Telegram/Discord/Slack/etc.) is a *separate* long-running process — start it independently if you rely on messaging channels; it is not the thing the desktop app connects to.
+:::info Prerequisite: a `kova dashboard` must be running on the remote host
+The "remote backend" Desktop connects to **is** a `kova dashboard` process running on the remote machine — the same server this page documents. It has to be up and reachable before any of the steps below matter; Desktop attaches to it, it doesn't start it for you. Keep it running under `systemd`/`tmux`/etc. so it survives logout and reboots. The **gateway** (Telegram/Discord/Slack/etc.) is a *separate* long-running process — start it independently if you rely on messaging channels; it is not the thing the desktop app connects to.
 :::
 
 Desktop's "remote backend is ready" probe only hits `GET /api/status`, which is a public endpoint — it answers as soon as *any* dashboard is running on the host. The live chat connection is a **separate** WebSocket to `/api/ws` (and `/api/pty`), and that socket is gated by two more checks the status probe never touches:
@@ -207,7 +207,7 @@ Fields with known valid values (terminal backend, skin, approval mode, etc.) ren
 - **Import** — uploads a JSON config file to replace the current values
 
 :::tip
-Config changes take effect on the next agent session or gateway restart. The web dashboard edits the same `config.yaml` file that `hermes config set` and the gateway read from.
+Config changes take effect on the next agent session or gateway restart. The web dashboard edits the same `config.yaml` file that `kova config set` and the gateway read from.
 :::
 
 ### API Keys
@@ -276,12 +276,12 @@ Create and manage scheduled cron jobs that run agent prompts on a recurring sche
 
 ### Profiles
 
-Create and manage [profiles](../profiles.md) — isolated Hermes instances with their own config, skills, and sessions.
+Create and manage [profiles](../profiles.md) — isolated Kova instances with their own config, skills, and sessions.
 
 - **Profile cards** — each shows its model/provider, skill count, gateway state, description, and badges (active, default, alias)
 - **Create** — name + optional clone-from-default / clone-everything / no-bundled-skills, description, and model; the dedicated Profile Builder page (`/profiles/new`) offers the full flow (model, MCPs, skills)
 - **Manage skills & tools** — jumps to the Skills page scoped to that profile (sets the sidebar profile switcher)
-- **Set as active** — flips the sticky default that **future CLI/gateway runs** pick up (same as `hermes profile use`). This does *not* change what the dashboard manages — that's the profile switcher's job
+- **Set as active** — flips the sticky default that **future CLI/gateway runs** pick up (same as `kova profile use`). This does *not* change what the dashboard manages — that's the profile switcher's job
 - **Edit model / description / SOUL** — inline editors writing into that profile
 - **Rename / Delete** — named profiles only
 
@@ -293,14 +293,14 @@ Browse, search, and toggle installed skills and toolsets, and install new ones f
 - **Category filter** — click category pills to narrow the list (e.g. MLOps, MCP, Red Teaming, AI)
 - **Toggle** — enable or disable individual skills with a switch. Changes take effect on the next session.
 - **Toolsets** — a separate view shows built-in toolsets (file operations, web browsing, etc.) with their active/inactive status, setup requirements, and list of included tools
-- **Browse hub** — a third view searches the skill hub across all sources (the same as `hermes skills search`), installs any result by identifier with a live install log, and offers an "Update all" button to refresh installed skills.
+- **Browse hub** — a third view searches the skill hub across all sources (the same as `kova skills search`), installs any result by identifier with a live install log, and offers an "Update all" button to refresh installed skills.
 
 ![Skills admin page — the Browse hub view: search, install, and update](/img/dashboard/admin-skills-hub.png)
 
 ### MCP
 
 Manage [MCP](/integrations/mcp) servers without the CLI. The same `mcp_servers`
-block in `config.yaml` that `hermes mcp` reads from.
+block in `config.yaml` that `kova mcp` reads from.
 
 **Your MCP servers:**
 
@@ -313,7 +313,7 @@ block in `config.yaml` that `hermes mcp` reads from.
 **Catalog:** browse the Nous-approved MCP servers (the bundled `optional-mcps/`
 catalog) and install any of them with one click. Entries that need API keys
 prompt for them inline; the values go to `.env`. This is the same catalog
-`hermes mcp catalog` / `hermes mcp install` use.
+`kova mcp catalog` / `kova mcp install` use.
 
 ![MCP admin page — your servers with enable/disable toggles, plus the install catalog](/img/dashboard/admin-mcp.png)
 
@@ -334,7 +334,7 @@ hint when it isn't.
 
 Approve and revoke messaging users without the CLI — how a remote admin
 onboards Telegram/Discord/etc. users to a paired gateway. Full parity with
-`hermes pairing`.
+`kova pairing`.
 
 - **Pending requests** — each shows platform, code, user, and age, with an Approve button
 - **Approved users** — each shows platform and user, with a Revoke button
@@ -344,8 +344,8 @@ onboards Telegram/Discord/etc. users to a paired gateway. Full parity with
 
 ### Channels
 
-Connect Hermes to any messaging platform from the browser — full parity with
-`hermes setup gateway`. The page lists every supported channel (Telegram,
+Connect Kova to any messaging platform from the browser — full parity with
+`kova setup gateway`. The page lists every supported channel (Telegram,
 Discord, Slack, Matrix, Mattermost, WhatsApp, Signal, BlueBubbles/iMessage,
 Email, SMS/Twilio, DingTalk, Feishu/Lark, WeCom, WeChat, QQ Bot, Yuanbao, plus
 the API server and webhook endpoints) with its live connection status.
@@ -361,9 +361,9 @@ the API server and webhook endpoints) with its live connection status.
 
 A consolidated administration panel for installation-wide operations:
 
-- **Host** — live system stats: OS / kernel, architecture, hostname, Python and Hermes versions, CPU core count + utilization, memory, disk usage of the Hermes home, uptime, and load average. (CPU/memory/disk come from `psutil` when installed; identity fields are always shown.) The Hermes version shows an **update-status badge** (up to date / N commits behind) and a **Check for updates** button. When an update is available on a git install, an **Update now** button opens a confirmation dialog — showing how many commits you'll pull — before running `hermes update` in the background. On Docker/Nix installs the dashboard can't apply the update in place, so it shows the correct out-of-band command instead.
-- **Nous Portal** — login status, the active inference provider, and the Tool Gateway routing table (which tools run via the Portal vs. locally), with a link to manage your subscription. Read-only mirror of `hermes portal`.
-- **Skill curator** — the background skill-maintenance status (active / paused, interval, last run) with pause/resume and a run-now button. Mirrors `hermes curator`.
+- **Host** — live system stats: OS / kernel, architecture, hostname, Python and Kova versions, CPU core count + utilization, memory, disk usage of the Kova home, uptime, and load average. (CPU/memory/disk come from `psutil` when installed; identity fields are always shown.) The Kova version shows an **update-status badge** (up to date / N commits behind) and a **Check for updates** button. When an update is available on a git install, an **Update now** button opens a confirmation dialog — showing how many commits you'll pull — before running `kova update` in the background. On Docker/Nix installs the dashboard can't apply the update in place, so it shows the correct out-of-band command instead.
+- **Nous Portal** — login status, the active inference provider, and the Tool Gateway routing table (which tools run via the Portal vs. locally), with a link to manage your subscription. Read-only mirror of `kova portal`.
+- **Skill curator** — the background skill-maintenance status (active / paused, interval, last run) with pause/resume and a run-now button. Mirrors `kova curator`.
 - **Gateway** — start, stop, and restart the messaging gateway, with live status (running/stopped, PID, state)
 - **Memory** — pick the external memory provider (or built-in only), and reset the built-in `MEMORY.md` / `USER.md` stores
 - **Credential pool** — add and remove the rotating API keys the agent round-robins through (per provider). Keys are redacted in the list; the raw value only ever reaches the agent.
@@ -560,7 +560,7 @@ same auth gate as the rest of `/api/`.
 When the dashboard is bound to a public or non-loopback address — anything other than `127.0.0.1` / `localhost` — Kova Agent engages an auth gate. Every request must carry a verified session cookie or it's bounced to the login page. Three providers ship in the box:
 
 - **[Username/password](#usernamepassword-provider-no-oauth-idp)** — the simplest way to put auth on a self-hosted / on-prem / homelab dashboard. No external identity provider. **Use it only on a trusted network or behind a VPN — not for public-internet exposure.**
-- **[OAuth (Nous Portal)](#default-provider-nous-research)** — for hosted deployments and any dashboard reachable over the public internet, and the recommended path for a [remote Hermes Desktop connection](#connecting-hermes-desktop-to-a-remote-backend). Every login is verified against your Nous account, so this is the provider suitable for internet-facing use.
+- **[OAuth (Nous Portal)](#default-provider-nous-research)** — for hosted deployments and any dashboard reachable over the public internet, and the recommended path for a [remote Kova Desktop connection](#connecting-hermes-desktop-to-a-remote-backend). Every login is verified against your Nous account, so this is the provider suitable for internet-facing use.
 - **[Self-hosted OIDC](#self-hosted-oidc-provider)** — for bringing your own identity provider via standard OpenID Connect (Keycloak, Auth0, Okta, Google, GitHub via an OIDC bridge, etc.). No Nous Portal involved; suitable for public-internet exposure when fronted by a conformant OIDC server.
 
 Operator-owned dashboards bound to loopback are unaffected — no auth, no login page.
@@ -569,8 +569,8 @@ Operator-owned dashboards bound to loopback are unaffected — no auth, no login
 
 | Flags | Auth gate | Use case |
 |-------|-----------|----------|
-| `hermes dashboard` (default — binds to `127.0.0.1`) | OFF | Local development |
-| `hermes dashboard --host 0.0.0.0` | **ON** | Remote / production — protect with the username/password provider or OAuth |
+| `kova dashboard` (default — binds to `127.0.0.1`) | OFF | Local development |
+| `kova dashboard --host 0.0.0.0` | **ON** | Remote / production — protect with the username/password provider or OAuth |
 
 The gate is on if and only if:
 
@@ -583,9 +583,9 @@ The gate is on if and only if:
 
 ### Fail-closed semantics
 
-If the gate would engage but **no** `DashboardAuthProvider` is registered (no Nous plugin, no custom plugin), `hermes dashboard` refuses to bind with an explicit error message. There is no "default-deny but accept everything" fallback — a misconfigured gated dashboard never starts.
+If the gate would engage but **no** `DashboardAuthProvider` is registered (no Nous plugin, no custom plugin), `kova dashboard` refuses to bind with an explicit error message. There is no "default-deny but accept everything" fallback — a misconfigured gated dashboard never starts.
 
-When you run `hermes dashboard --host 0.0.0.0` **interactively** (a real terminal) and no provider is configured yet, Hermes doesn't just fail — it offers to set one up on the spot: pick **username & password** (writes `dashboard.basic_auth` to `config.yaml` and you're running in seconds) or **OAuth** (points you at `hermes dashboard register`). Non-interactive callers — Docker/s6, CI, piped runs — skip the prompt and hit the fail-closed error above, so an unattended deploy still never starts without auth.
+When you run `kova dashboard --host 0.0.0.0` **interactively** (a real terminal) and no provider is configured yet, Kova doesn't just fail — it offers to set one up on the spot: pick **username & password** (writes `dashboard.basic_auth` to `config.yaml` and you're running in seconds) or **OAuth** (points you at `kova dashboard register`). Non-interactive callers — Docker/s6, CI, piped runs — skip the prompt and hit the fail-closed error above, so an unattended deploy still never starts without auth.
 
 ### Default provider: Nous Research
 
@@ -600,7 +600,7 @@ To use the Nous provider you need an OAuth client ID (shape `agent:{id}`). There
 - **CLI — `hermes dashboard register`.** Run it on the host where the dashboard lives. It resolves your existing Nous login (run `hermes setup` first if you're not logged in), registers a self-hosted OAuth client with the Portal, and writes `HERMES_DASHBOARD_OAUTH_CLIENT_ID` into `~/.hermes/.env` for you. Optional flags: `--name` (a human-readable label, otherwise auto-generated) and `--redirect-uri` (a public HTTPS callback URL for an internet-facing host).
 
   ```bash
-  hermes dashboard register
+  kova dashboard register
   # ✓ Registered dashboard "swift_falcon"
   # …writes HERMES_DASHBOARD_OAUTH_CLIENT_ID to ~/.hermes/.env
   ```
@@ -623,7 +623,7 @@ dashboard:
 
 | Env var | Overrides | Format | Provisioned by |
 |---------|-----------|--------|----------------|
-| `HERMES_DASHBOARD_OAUTH_CLIENT_ID` | `dashboard.oauth.client_id` | `agent:{instance_id}` | `hermes dashboard register` |
+| `HERMES_DASHBOARD_OAUTH_CLIENT_ID` | `dashboard.oauth.client_id` | `agent:{instance_id}` | `kova dashboard register` |
 
 Per the Kova Agent convention (`~/.hermes/.env` is for API keys / secrets only), **`config.yaml` is the recommended place to set these values** for local dev, on-prem, and any deployment you control directly. The environment-variable path exists so a hosting platform's secret injection can push per-deploy `client_id`s without anyone having to edit `config.yaml` inside the image — that's its primary purpose.
 
@@ -649,13 +649,13 @@ networks).
 
 #### Worked example: Nous Research
 
-From a logged-in Hermes install to a Nous-gated dashboard in three steps.
+From a logged-in Kova install to a Nous-gated dashboard in three steps.
 
 **1. Log in and register the dashboard.** `hermes dashboard register` uses your existing Nous login to provision an OAuth client and writes `HERMES_DASHBOARD_OAUTH_CLIENT_ID` into `~/.hermes/.env` for you:
 
 ```bash
-hermes setup            # if you're not already logged into Nous Portal
-hermes dashboard register
+kova setup            # if you're not already logged into Nous Portal
+kova dashboard register
 # ✓ Registered dashboard "swift_falcon"
 # …writes HERMES_DASHBOARD_OAUTH_CLIENT_ID to ~/.hermes/.env
 ```
@@ -663,7 +663,7 @@ hermes dashboard register
 **2. Run the dashboard on a reachable address.** A non-loopback bind without `--insecure` engages the OAuth gate, and the `client_id` just written activates the `nous` provider:
 
 ```bash
-hermes dashboard --host 0.0.0.0 --port 9119 --no-open
+kova dashboard --host 0.0.0.0 --port 9119 --no-open
 ```
 
 **3. Log in.** Open `http://<host>:9119/`, you'll be bounced to `/login`. Click **Sign in with Nous Research** → authenticate at the Portal → land back on the authenticated dashboard. Verify the gate from any machine:
@@ -742,7 +742,7 @@ chmod 600 ~/.hermes/.env
 **2. Run the dashboard on a reachable address.** A non-loopback bind without `--insecure` engages the gate, and the username + hash activate the `basic` provider:
 
 ```bash
-hermes dashboard --host 0.0.0.0 --port 9119 --no-open
+kova dashboard --host 0.0.0.0 --port 9119 --no-open
 ```
 
 **3. Log in.** Open `http://<host>:9119/`, you'll be bounced to `/login` — a **credential form** (not a "Sign in with X" button). Enter `admin` / your password → land on the authenticated dashboard. Verify the gate from any machine:
@@ -812,7 +812,7 @@ The ID token is what establishes identity — the access token is treated as opa
 
 [Keycloak](https://www.keycloak.org/) is one of the easiest self-hosted OIDC servers to stand up for a local test — it runs as a single container in dev mode (in-memory DB) and exposes textbook OIDC discovery. This walkthrough gets you from nothing to a working dashboard login in a few minutes.
 
-**1. Run Keycloak with a pre-configured realm.** Save this realm export as `realm-hermes.json` — it defines a `hermes` realm, a **public PKCE client** (`hermes-dashboard`), and a test user, all imported on boot so there's nothing to click in the admin UI:
+**1. Run Keycloak with a pre-configured realm.** Save this realm export as `realm-hermes.json` — it defines a `kova` realm, a **public PKCE client** (`hermes-dashboard`), and a test user, all imported on boot so there's nothing to click in the admin UI:
 
 ```json
 {
@@ -869,7 +869,7 @@ Once it's up, the realm advertises standard OIDC discovery at
 export HERMES_DASHBOARD_OIDC_ISSUER="http://localhost:8080/realms/hermes"
 export HERMES_DASHBOARD_OIDC_CLIENT_ID="hermes-dashboard"
 export HERMES_DASHBOARD_PUBLIC_URL="http://localhost:9119"
-hermes dashboard --host 0.0.0.0 --port 9119 --no-open
+kova dashboard --host 0.0.0.0 --port 9119 --no-open
 ```
 
 `HERMES_DASHBOARD_PUBLIC_URL` tells the dashboard its OAuth callback is
@@ -978,7 +978,7 @@ Custom providers can implement `supports_token`/`verify_token` the same way to e
 ```bash
 # Quick env-var path.
 HERMES_DASHBOARD_OAUTH_CLIENT_ID=agent:test \
-  hermes dashboard --host 0.0.0.0
+  kova dashboard --host 0.0.0.0
 
 # Or the equivalent via config.yaml (recommended for local dev / on-prem):
 #
@@ -987,7 +987,7 @@ HERMES_DASHBOARD_OAUTH_CLIENT_ID=agent:test \
 #       client_id: agent:test
 #
 # then just:
-hermes dashboard --host 0.0.0.0
+kova dashboard --host 0.0.0.0
 
 # Hit /api/status to see the gate state:
 curl -s http://127.0.0.1:9119/api/status | jq '.auth_required, .auth_providers'
@@ -997,11 +997,11 @@ curl -s http://127.0.0.1:9119/api/status | jq '.auth_required, .auth_providers'
 
 The dashboard's React StatusPage shows the same fields under "Web server". A sidebar AuthWidget surfaces the current identity once you've signed in.
 
-## Connecting Hermes Desktop to a remote backend
+## Connecting Kova Desktop to a remote backend
 
-Hermes Desktop can drive a Hermes backend running on another machine (a VPS, a home server, a Mini behind Tailscale). In the app this lives under **Settings → Gateway → Remote gateway**, which asks for a **Remote URL** and a way to **Sign in**. (For the desktop app itself — install, settings, chat — see the [Hermes Desktop](/user-guide/desktop) page.)
+Kova Desktop can drive a Kova backend running on another machine (a VPS, a home server, a Mini behind Tailscale). In the app this lives under **Settings → Gateway → Remote gateway**, which asks for a **Remote URL** and a way to **Sign in**. (For the desktop app itself — install, settings, chat — see the [Kova Desktop](/user-guide/desktop) page.)
 
-You protect the remote dashboard with one of the bundled auth providers, and the desktop app signs in against whichever one the backend advertises. For a backend reachable beyond your own machine — a VPS, a public host, anything internet-facing — the recommended provider is **OAuth (Nous Portal)** (register it with [`hermes dashboard register`](#registering-a-dashboard) and sign in with *Sign in with Nous Research*). The bundled [username/password provider](#usernamepassword-provider-no-oauth-idp) is the quickest option when the backend is on a trusted LAN or reachable only over a VPN, but is **not suitable for direct public-internet exposure**. Binding the dashboard to a non-loopback address engages its auth gate; once signed in, Desktop reuses the session for the chat WebSocket automatically — there is no token to copy or paste.
+You protect the remote dashboard with one of the bundled auth providers, and the desktop app signs in against whichever one the backend advertises. For a backend reachable beyond your own machine — a VPS, a public host, anything internet-facing — the recommended provider is **OAuth (Nous Portal)** (register it with [`kova dashboard register`](#registering-a-dashboard) and sign in with *Sign in with Nous Research*). The bundled [username/password provider](#usernamepassword-provider-no-oauth-idp) is the quickest option when the backend is on a trusted LAN or reachable only over a VPN, but is **not suitable for direct public-internet exposure**. Binding the dashboard to a non-loopback address engages its auth gate; once signed in, Desktop reuses the session for the chat WebSocket automatically — there is no token to copy or paste.
 
 The recipe below uses the username/password path because it's the quickest to stand up on a trusted network; for the OAuth path see [Default provider: Nous Research](#default-provider-nous-research).
 
@@ -1019,7 +1019,7 @@ chmod 600 ~/.hermes/.env
 
 # 2. Run the dashboard bound to a reachable address. The non-loopback bind
 #    engages the auth gate; the username/password provider handles login.
-hermes dashboard --no-open --host 0.0.0.0 --port 9119
+kova dashboard --no-open --host 0.0.0.0 --port 9119
 ```
 
 Prefer no plaintext at rest? Use `HERMES_DASHBOARD_BASIC_AUTH_PASSWORD_HASH` with a scrypt hash instead — see [Username/password provider](#usernamepassword-provider-no-oauth-idp) for the full surface.
@@ -1030,7 +1030,7 @@ If you run the dashboard as a systemd service, `~/.hermes/.env` is picked up aut
 The dashboard reads and writes your `.env` (API keys, secrets) and can run agent commands. The **username/password** setup shown here is for a trusted network — never expose a password-protected dashboard directly to the open internet. Put it behind a VPN. [Tailscale](https://tailscale.com/) is the clean option: bind to the machine's tailscale IP (`--host <tailscale-ip>`) and use `http://<tailscale-ip>:9119` as the Remote URL. Only devices on your tailnet can reach it. To reach a backend over the public internet, use the **OAuth (Nous Portal)** provider instead.
 :::
 
-### In Hermes Desktop
+### In Kova Desktop
 
 **Settings → Gateway → Remote gateway:**
 
@@ -1072,7 +1072,7 @@ If you're contributing to the web dashboard frontend:
 
 ```bash
 # Terminal 1: start the backend API
-hermes dashboard --no-open
+kova dashboard --no-open
 
 # Terminal 2: start the Vite dev server with HMR
 cd web/
@@ -1086,7 +1086,7 @@ The frontend is built with React 19, TypeScript, Tailwind CSS v4, and shadcn/ui-
 
 ## Automatic Build on Update
 
-When you run `hermes update`, the web frontend is automatically rebuilt if `npm` is available. This keeps the dashboard in sync with code updates. If `npm` isn't installed, the update skips the frontend build and `hermes dashboard` will build it on first launch.
+When you run `kova update`, the web frontend is automatically rebuilt if `npm` is available. This keeps the dashboard in sync with code updates. If `npm` isn't installed, the update skips the frontend build and `kova dashboard` will build it on first launch.
 
 ## Themes & plugins
 
@@ -1100,8 +1100,8 @@ Built-in themes:
 
 | Theme | Character |
 |-------|-----------|
-| **Hermes Teal** (`default`) | Dark teal + cream, system fonts, comfortable spacing |
-| **Hermes Teal (Large)** (`default-large`) | Same as default with 18px text and roomier spacing |
+| **Kova Teal** (`default`) | Dark teal + cream, system fonts, comfortable spacing |
+| **Kova Teal (Large)** (`default-large`) | Same as default with 18px text and roomier spacing |
 | **Nous Blue** (`nous-blue`) | Nous-branded blue accents with airy spacing |
 | **Midnight** (`midnight`) | Deep blue-violet, Inter + JetBrains Mono |
 | **Ember** (`ember`) | Warm crimson + bronze, Spectral serif + IBM Plex Mono |

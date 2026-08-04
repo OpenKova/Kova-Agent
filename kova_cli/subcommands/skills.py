@@ -1,4 +1,4 @@
-"""``hermes skills`` subcommand parser.
+"""``kova skills`` subcommand parser.
 
 Extracted from ``kova_cli/main.py:main()`` (god-file Phase 2 follow-up).
 Handler injected to avoid importing ``main``.
@@ -187,7 +187,7 @@ def build_skills_parser(subparsers, *, cmd_skills: Callable) -> None:
         description=(
             "Show the bundled skills whose local copy differs from the version last "
             "synced, i.e. the ones `kova update` reports as user-modified and skips. "
-            "Use `hermes skills diff <name>` to see changes and `hermes skills reset "
+            "Use `kova skills diff <name>` to see changes and `kova skills reset "
             "<name>` to resume updates."
         ),
     )
@@ -203,7 +203,7 @@ def build_skills_parser(subparsers, *, cmd_skills: Callable) -> None:
         description=(
             "Print a unified diff between your local copy of a bundled skill and the "
             "current bundled (stock) version, so you can confirm what changed before "
-            "running `hermes skills reset`."
+            "running `kova skills reset`."
         ),
     )
     skills_diff.add_argument(

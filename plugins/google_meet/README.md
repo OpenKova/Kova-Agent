@@ -14,7 +14,7 @@ in it, and do the followup work afterwards.
 ## Architecture
 
 ```
-┌─ gateway (Linux box, where hermes runs) ────────────────────────────┐
+┌─ gateway (Linux box, where kova runs) ────────────────────────────┐
 │                                                                      │
 │   agent → meet_join(url, mode='realtime', node='my-mac')             │
 │         │                                                            │
@@ -25,7 +25,7 @@ in it, and do the followup work afterwards.
                                    ▼
 ┌─ node host (user's Mac, signed-in Chrome lives here) ───────────────┐
 │                                                                      │
-│   NodeServer (from `hermes meet node run`)                           │
+│   NodeServer (from `kova meet node run`)                           │
 │     │                                                                │
 │     ├─ start_bot → process_manager.start() → spawns meet_bot         │
 │     │                                                                │
@@ -49,47 +49,47 @@ Without v2: the "realtime" path is skipped; transcribe runs alone.
 | Path | Purpose |
 |---|---|
 | `plugin.yaml` | manifest |
-| `__init__.py` | `register(ctx)` — registers 5 tools + `on_session_end` hook + `hermes meet` CLI |
+| `__init__.py` | `register(ctx)` — registers 5 tools + `on_session_end` hook + `kova meet` CLI |
 | `meet_bot.py` | Playwright bot subprocess (standalone, `python -m plugins.google_meet.meet_bot`) |
 | `process_manager.py` | local bot lifecycle + `enqueue_say` |
 | `tools.py` | agent-facing tools + node-routing helper |
-| `cli.py` | `hermes meet setup / auth / join / status / transcript / say / stop / node ...` |
+| `cli.py` | `kova meet setup / auth / join / status / transcript / say / stop / node ...` |
 | `audio_bridge.py` | v2: PulseAudio null-sink (Linux) + BlackHole probe (macOS) |
 | `realtime/openai_client.py` | v2: `RealtimeSession` + `RealtimeSpeaker` (file-queue → OpenAI Realtime WS → PCM) |
 | `node/protocol.py` | v3: message envelope + validation |
 | `node/registry.py` | v3: `$HERMES_HOME/workspace/meetings/nodes.json` |
 | `node/server.py` | v3: `NodeServer` (runs on host machine) |
 | `node/client.py` | v3: `NodeClient` (used by tool handlers + CLI on gateway) |
-| `node/cli.py` | v3: `hermes meet node {run,list,approve,remove,status,ping}` |
+| `node/cli.py` | v3: `kova meet node {run,list,approve,remove,status,ping}` |
 | `SKILL.md` | agent usage guide |
 
 ## Local quick start
 
 ```bash
-hermes plugins enable google_meet
-hermes meet install                                      # pip + Chromium
-hermes meet setup                                        # preflight
-hermes meet auth                                         # optional
-hermes meet join https://meet.google.com/abc-defg-hij    # transcribe
+kova plugins enable google_meet
+kova meet install                                      # pip + Chromium
+kova meet setup                                        # preflight
+kova meet auth                                         # optional
+kova meet join https://meet.google.com/abc-defg-hij    # transcribe
 ```
 
 ## Realtime mode
 
 Linux (preferred, most automated):
 ```bash
-hermes meet install --realtime                     # installs pulseaudio-utils
+kova meet install --realtime                     # installs pulseaudio-utils
 echo 'OPENAI_API_KEY=sk-...' >> ~/.hermes/.env
-hermes meet join https://meet.google.com/abc-defg-hij --mode realtime
+kova meet join https://meet.google.com/abc-defg-hij --mode realtime
 # then from the agent or CLI:
-hermes meet say "Good morning everyone, I'm the note-taker bot."
+kova meet say "Good morning everyone, I'm the note-taker bot."
 ```
 
 macOS:
 ```bash
-hermes meet install --realtime     # runs: brew install blackhole-2ch ffmpeg
+kova meet install --realtime     # runs: brew install blackhole-2ch ffmpeg
 # then — manually! — open System Settings → Sound → Input → BlackHole 2ch
 echo 'OPENAI_API_KEY=sk-...' >> ~/.hermes/.env
-hermes meet join https://meet.google.com/abc-defg-hij --mode realtime
+kova meet join https://meet.google.com/abc-defg-hij --mode realtime
 ```
 
 On macOS, hermes will **not** switch your system audio input automatically — the
@@ -102,15 +102,15 @@ On the node machine (e.g. user's Mac with a signed-in Chrome):
 ```bash
 pip install playwright websockets
 python -m playwright install chromium
-hermes plugins enable google_meet
-hermes meet node run --display-name my-mac --host 0.0.0.0 --port 18789
+kova plugins enable google_meet
+kova meet node run --display-name my-mac --host 0.0.0.0 --port 18789
 # prints the bearer token on first run; copy it
 ```
 
 On the gateway:
 ```bash
-hermes meet node approve my-mac ws://<mac-ip>:18789 <token>
-hermes meet node ping my-mac
+kova meet node approve my-mac ws://<mac-ip>:18789 <token>
+kova meet node ping my-mac
 # now any meet_* tool call accepts node='my-mac' (or 'auto')
 ```
 

@@ -111,7 +111,7 @@ def _guard_agent_created_enabled() -> bool:
     Off by default because the agent can already execute the same code
     paths via terminal() with no gate, so the scan adds friction without
     meaningful security.  Users who want belt-and-suspenders can turn it
-    on via `hermes config set skills.guard_agent_created true`.
+    on via `kova config set skills.guard_agent_created true`.
     """
     try:
         from hermes_cli.config import load_config
@@ -629,7 +629,7 @@ def _find_skill(name: str) -> Optional[Dict[str, Any]]:
 
 
 def _find_skill_in_other_profiles(name: str) -> List[Tuple[str, Path]]:
-    """Look for ``name`` under SKILL.md across OTHER Hermes profiles.
+    """Look for ``name`` under SKILL.md across OTHER Kova profiles.
 
     Returns a list of ``(profile_name, skill_dir)`` pairs. Used to make
     the "Skill X not found" error explain when the user is editing the

@@ -7,9 +7,9 @@ description: "Plugins shipped with Kova Agent that run automatically via lifecyc
 
 # Built-in Plugins
 
-Hermes ships a small set of plugins bundled with the repository. They live under `<repo>/plugins/<name>/` and load automatically alongside user-installed plugins in `~/.hermes/plugins/`. They use the same plugin surface as third-party plugins — hooks, tools, slash commands — just maintained in-tree.
+Kova ships a small set of plugins bundled with the repository. They live under `<repo>/plugins/<name>/` and load automatically alongside user-installed plugins in `~/.hermes/plugins/`. They use the same plugin surface as third-party plugins — hooks, tools, slash commands — just maintained in-tree.
 
-See the [Plugins](/user-guide/features/plugins) page for the general plugin system, and [Build a Hermes Plugin](/developer-guide/plugins) to write your own.
+See the [Plugins](/user-guide/features/plugins) page for the general plugin system, and [Build a Kova Plugin](/developer-guide/plugins) to write your own.
 
 ## How discovery works
 
@@ -22,14 +22,14 @@ The `PluginManager` scans four sources, in order:
 
 On name collision, later sources win — a user plugin named `disk-cleanup` would replace the bundled one.
 
-`plugins/memory/` and `plugins/context_engine/` are deliberately excluded from bundled scanning. Those directories use their own discovery paths because memory providers and context engines are single-select providers configured through `hermes memory setup` / `context.engine` in config.
+`plugins/memory/` and `plugins/context_engine/` are deliberately excluded from bundled scanning. Those directories use their own discovery paths because memory providers and context engines are single-select providers configured through `kova memory setup` / `context.engine` in config.
 
 ## Bundled plugins are opt-in
 
-Bundled plugins ship disabled. Discovery finds them (they appear in `hermes plugins list` and the interactive `hermes plugins` UI), but none load until you explicitly enable them:
+Bundled plugins ship disabled. Discovery finds them (they appear in `kova plugins list` and the interactive `kova plugins` UI), but none load until you explicitly enable them:
 
 ```bash
-hermes plugins enable disk-cleanup
+kova plugins enable disk-cleanup
 ```
 
 Or via `~/.hermes/config.yaml`:
@@ -40,18 +40,18 @@ plugins:
     - disk-cleanup
 ```
 
-This is the same mechanism user-installed plugins use. Bundled plugins are never auto-enabled — not on fresh install, not for existing users upgrading to a newer Hermes. You always opt in explicitly.
+This is the same mechanism user-installed plugins use. Bundled plugins are never auto-enabled — not on fresh install, not for existing users upgrading to a newer Kova. You always opt in explicitly.
 
 To turn a bundled plugin off again:
 
 ```bash
-hermes plugins disable disk-cleanup
+kova plugins disable disk-cleanup
 # or: remove it from plugins.enabled in config.yaml
 ```
 
 ## Currently shipped
 
-The repo ships these bundled plugins under `plugins/`. All are opt-in — enable them via `hermes plugins enable <name>`.
+The repo ships these bundled plugins under `plugins/`. All are opt-in — enable them via `kova plugins enable <name>`.
 
 | Plugin | Kind | Purpose |
 |---|---|---|
@@ -65,10 +65,10 @@ The repo ships these bundled plugins under `plugins/`. All are opt-in — enable
 | `image_gen/openai` | image backend | OpenAI `gpt-image-2` image generation backend (alternative to FAL) |
 | `image_gen/openai-codex` | image backend | OpenAI image generation via Codex OAuth |
 | `image_gen/xai` | image backend | xAI `grok-2-image` backend |
-| `hermes-achievements` | dashboard tab | Steam-style collectible badges generated from your real Hermes session history |
+| `hermes-achievements` | dashboard tab | Steam-style collectible badges generated from your real Kova session history |
 | `kanban/dashboard` | dashboard tab | Kanban board UI for the multi-agent dispatcher — tasks, comments, fan-out, board switching. See [Kanban Multi-Agent](./kanban.md). |
 
-Memory providers (`plugins/memory/*`) and context engines (`plugins/context_engine/*`) are listed separately on [Memory Providers](./memory-providers.md) — they're managed through `hermes memory` and `hermes plugins` respectively. The full per-plugin detail for the two long-running hooks-based plugins follows.
+Memory providers (`plugins/memory/*`) and context engines (`plugins/context_engine/*`) are listed separately on [Memory Providers](./memory-providers.md) — they're managed through `kova memory` and `kova plugins` respectively. The full per-plugin detail for the two long-running hooks-based plugins follows.
 
 ### disk-cleanup
 
@@ -114,9 +114,9 @@ Auto-tracks and removes ephemeral files created during sessions — test scripts
 
 **Safety** — cleanup only ever touches paths under `HERMES_HOME` or `/tmp/hermes-*`. Windows mounts (`/mnt/c/...`) are rejected. Well-known top-level state dirs (`logs/`, `memories/`, `sessions/`, `cron/`, `cache/`, `skills/`, `plugins/`, `disk-cleanup/` itself) are never removed even when empty — a fresh install does not get gutted on first session end.
 
-**Enabling:** `hermes plugins enable disk-cleanup` (or check the box in `hermes plugins`).
+**Enabling:** `kova plugins enable disk-cleanup` (or check the box in `kova plugins`).
 
-**Disabling again:** `hermes plugins disable disk-cleanup`.
+**Disabling again:** `kova plugins disable disk-cleanup`.
 
 ### security-guidance
 
@@ -134,31 +134,31 @@ The file is still written. The model reads the warning in the next turn's tool m
 | `SECURITY_GUIDANCE_BLOCK=1` | **block mode** — write refused, warning returned as the block reason |
 | `SECURITY_GUIDANCE_DISABLE=1` | kill switch — plugin loads but does nothing |
 
-**Enabling:** `hermes plugins enable security-guidance` (or check the box in `hermes plugins`).
+**Enabling:** `kova plugins enable security-guidance` (or check the box in `kova plugins`).
 
-**Disabling again:** `hermes plugins disable security-guidance`.
+**Disabling again:** `kova plugins disable security-guidance`.
 
 **What it does not do (yet):** the upstream Anthropic plugin has two more layers — an LLM diff review on each agent turn that touched files, and an agentic commit-time review that traces data flow across files. Neither is ported. The agent can already run those reviews on demand via `delegate_task`.
 
 ### observability/langfuse
 
-Traces Hermes turns, LLM calls, and tool invocations to [Langfuse](https://langfuse.com) — an open-source LLM observability platform. One span per turn, one generation per API call, one tool observation per tool call. Usage totals, per-type token counts, and cost estimates come out of Hermes' canonical `agent.usage_pricing` numbers, so the Langfuse dashboard sees the same breakdown (input / output / `cache_read_input_tokens` / `cache_creation_input_tokens` / `reasoning_tokens`) that appears in `hermes logs`.
+Traces Kova turns, LLM calls, and tool invocations to [Langfuse](https://langfuse.com) — an open-source LLM observability platform. One span per turn, one generation per API call, one tool observation per tool call. Usage totals, per-type token counts, and cost estimates come out of Kova' canonical `agent.usage_pricing` numbers, so the Langfuse dashboard sees the same breakdown (input / output / `cache_read_input_tokens` / `cache_creation_input_tokens` / `reasoning_tokens`) that appears in `kova logs`.
 
 The plugin is fail-open: no SDK installed, no credentials, or a transient Langfuse error — all turn into a silent no-op in the hook. The agent loop is never impacted.
 
 **Setup (interactive — recommended):**
 
 ```bash
-hermes tools          # → Langfuse Observability → Cloud or Self-Hosted
+kova tools          # → Langfuse Observability → Cloud or Self-Hosted
 ```
 
-The wizard collects your keys, `pip install`s the `langfuse` SDK, and adds `observability/langfuse` to `plugins.enabled` for you. Restart Hermes and the next turn ships a trace.
+The wizard collects your keys, `pip install`s the `langfuse` SDK, and adds `observability/langfuse` to `plugins.enabled` for you. Restart Kova and the next turn ships a trace.
 
 **Setup (manual):**
 
 ```bash
 pip install langfuse
-hermes plugins enable observability/langfuse
+kova plugins enable observability/langfuse
 ```
 
 Then put the credentials in `~/.hermes/.env`:
@@ -173,18 +173,18 @@ HERMES_LANGFUSE_BASE_URL=https://cloud.langfuse.com   # or your self-hosted URL
 
 | Hook | Behaviour |
 |---|---|
-| `pre_api_request` / `pre_llm_call` | Open (or reuse) a per-turn root span "Hermes turn". Start a `generation` child observation for this API call with serialized recent messages as input. |
+| `pre_api_request` / `pre_llm_call` | Open (or reuse) a per-turn root span "Kova turn". Start a `generation` child observation for this API call with serialized recent messages as input. |
 | `post_api_request` / `post_llm_call` | Close the generation, attach `usage_details`, `cost_details`, `finish_reason`, assistant output + tool calls. If no tool calls and non-empty content, close the turn. |
 | `pre_tool_call` | Start a `tool` child observation with sanitized `args`. |
 | `post_tool_call` | Close the tool observation with sanitized `result`. `read_file` payloads get summarized (head + tail + omitted-line count) so a huge file read stays under `HERMES_LANGFUSE_MAX_CHARS`. |
 
-Session grouping keys off the Hermes session ID (or task ID for sub-agents) via `langfuse.propagate_attributes`, so everything in a single `hermes chat` session lives under one Langfuse session.
+Session grouping keys off the Kova session ID (or task ID for sub-agents) via `langfuse.propagate_attributes`, so everything in a single `kova chat` session lives under one Langfuse session.
 
 **Verify:**
 
 ```bash
-hermes plugins list                 # observability/langfuse should show "enabled"
-hermes chat -q "hello"              # check the Langfuse UI for a "Hermes turn" trace
+kova plugins list                 # observability/langfuse should show "enabled"
+kova chat -q "hello"              # check the Langfuse UI for a "Kova turn" trace
 ```
 
 **Optional tuning** (in `.env`):
@@ -197,11 +197,11 @@ hermes chat -q "hello"              # check the Langfuse UI for a "Hermes turn" 
 | `HERMES_LANGFUSE_MAX_CHARS` | `12000` | Per-field truncation for message content / tool args / tool results |
 | `HERMES_LANGFUSE_DEBUG` | `false` | Verbose plugin logging to `agent.log` |
 
-Hermes-prefixed and standard SDK env vars (`LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_BASE_URL`) are both accepted — Hermes-prefixed wins when both are set.
+Kova-prefixed and standard SDK env vars (`LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_BASE_URL`) are both accepted — Kova-prefixed wins when both are set.
 
 **Performance:** the Langfuse client is cached after the first hook call. If credentials or SDK are missing, that decision is also cached — subsequent hooks fast-return without re-checking env vars or reloading config.
 
-**Disabling:** `hermes plugins disable observability/langfuse`. The plugin module is still discovered, but no module code runs until you re-enable.
+**Disabling:** `kova plugins disable observability/langfuse`. The plugin module is still discovered, but no module code runs until you re-enable.
 
 ### google_meet
 
@@ -217,7 +217,7 @@ Lets the agent **join, transcribe, and participate in Google Meet calls** — ta
 **Setup:**
 
 ```bash
-hermes plugins enable google_meet
+kova plugins enable google_meet
 # Prompts you to sign in via the plugin's OAuth flow on first use —
 # needs a Google account with Meet access. Host approval may be required
 # if the meeting enforces "only invited participants can join".
@@ -235,7 +235,7 @@ The agent kicks off the meeting join, streams the transcription back into its co
 
 ### hermes-achievements
 
-Adds a **Steam-style achievements tab to the dashboard** — 60+ collectible, tiered badges generated from your real Hermes session history. Tool-chain feats, debugging patterns, vibe-coding streaks, skill/memory usage, model/provider variety, lifestyle quirks (weekend and night sessions). Originally authored by [@PCinkusz](https://github.com/PCinkusz) as an external plugin; brought in-tree so it stays in lockstep with Hermes feature changes.
+Adds a **Steam-style achievements tab to the dashboard** — 60+ collectible, tiered badges generated from your real Kova session history. Tool-chain feats, debugging patterns, vibe-coding streaks, skill/memory usage, model/provider variety, lifestyle quirks (weekend and night sessions). Originally authored by [@PCinkusz](https://github.com/PCinkusz) as an external plugin; brought in-tree so it stays in lockstep with Kova feature changes.
 
 **How it works:**
 
@@ -252,7 +252,7 @@ Adds a **Steam-style achievements tab to the dashboard** — 60+ collectible, ti
 |---|---|
 | Unlocked | At least one tier achieved |
 | Discovered | Known achievement, progress visible, not yet earned |
-| Secret | Hidden until Hermes detects the first related signal in your history |
+| Secret | Hidden until Kova detects the first related signal in your history |
 
 **API** — routes mount under `/api/plugins/hermes-achievements/`:
 
@@ -269,7 +269,7 @@ Adds a **Steam-style achievements tab to the dashboard** — 60+ collectible, ti
 
 | File | Contents |
 |---|---|
-| `state.json` | Unlock history: which badges you've earned and when. Stable across Hermes updates. |
+| `state.json` | Unlock history: which badges you've earned and when. Stable across Kova updates. |
 | `scan_snapshot.json` | Last completed scan payload (served immediately on dashboard load) |
 | `scan_checkpoint.json` | Per-session stats cache keyed by fingerprint (makes warm rescans fast) |
 
@@ -280,16 +280,16 @@ Adds a **Steam-style achievements tab to the dashboard** — 60+ collectible, ti
 - Warm rescan reuses per-session stats for every session whose `started_at` + `last_active` fingerprint matches the checkpoint — completes in seconds even on large histories.
 - The in-memory snapshot TTL is 120s; stale requests serve the old snapshot immediately and kick a background refresh. You never wait on a spinner just because TTL expired.
 
-**Enabling:** Nothing to enable — `hermes-achievements` is a dashboard-only plugin (no lifecycle hooks, no model-visible tools). It auto-registers as a tab in `hermes dashboard` on first launch. The `plugins.enabled` config only gates lifecycle/tool plugins; dashboard plugins are discovered purely via their `dashboard/manifest.json`.
+**Enabling:** Nothing to enable — `hermes-achievements` is a dashboard-only plugin (no lifecycle hooks, no model-visible tools). It auto-registers as a tab in `kova dashboard` on first launch. The `plugins.enabled` config only gates lifecycle/tool plugins; dashboard plugins are discovered purely via their `dashboard/manifest.json`.
 
 **Opting out:** Delete or rename `plugins/hermes-achievements/dashboard/manifest.json`, or override it with a user plugin of the same name in `~/.hermes/plugins/hermes-achievements/` that ships no dashboard. The plugin's state files under `$HERMES_HOME/plugins/hermes-achievements/` survive — reinstalling preserves your unlock history.
 
 ## Adding a bundled plugin
 
-Bundled plugins are written exactly like any other Hermes plugin — see [Build a Hermes Plugin](/developer-guide/plugins). The only differences are:
+Bundled plugins are written exactly like any other Kova plugin — see [Build a Kova Plugin](/developer-guide/plugins). The only differences are:
 
 - Directory lives at `<repo>/plugins/<name>/` instead of `~/.hermes/plugins/<name>/`
-- Manifest source is reported as `bundled` in `hermes plugins list`
+- Manifest source is reported as `bundled` in `kova plugins list`
 - User plugins with the same name override the bundled version
 
 A plugin is a good candidate for bundling when:

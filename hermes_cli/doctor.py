@@ -610,10 +610,10 @@ def run_doctor(args):
     ack_target = getattr(args, 'ack', None)
 
     # Doctor runs from the interactive CLI, so CLI-gated tool availability
-    # checks (like cronjob management) should see the same context as `hermes`.
+    # checks (like cronjob management) should see the same context as `kova`.
     os.environ.setdefault("HERMES_INTERACTIVE", "1")
 
-    # Handle `hermes doctor --ack <id>` as a fast path. Persist the ack and
+    # Handle `kova doctor --ack <id>` as a fast path. Persist the ack and
     # return without running the rest of the diagnostics — the user has
     # already seen the advisory and just wants to silence it.
     if ack_target:
@@ -682,7 +682,7 @@ def run_doctor(args):
                     f"Resolve security advisory {hit.advisory.id}: "
                     f"uninstall {hit.package}=={hit.installed_version} and "
                     f"rotate credentials, then run "
-                    f"`hermes doctor --ack {hit.advisory.id}`."
+                    f"`kova doctor --ack {hit.advisory.id}`."
                 )
             # Acked-but-still-installed: show as informational so the user
             # knows the package is still on disk after the ack.
@@ -753,7 +753,7 @@ def run_doctor(args):
             (_sqlite_src[:48] + "…") if len(_sqlite_src) > 48 else _sqlite_src
         )
         if is_sqlite_wal_reset_vulnerable():
-            # Warn-only: Hermes already refuses to enable WAL on fresh DBs.
+            # Warn-only: Kova already refuses to enable WAL on fresh DBs.
             # Do not append to ``issues`` — users often cannot change the
             # SQLite embedded in python-build-standalone via `kova update`.
             check_warn(
@@ -1282,7 +1282,7 @@ def run_doctor(args):
             check_warn("OpenAI Codex auth", "(not logged in)")
             if codex_status.get("error"):
                 check_info(codex_status["error"])
-            # Native OAuth uses Hermes' own device-code flow — the Codex CLI is
+            # Native OAuth uses Kova' own device-code flow — the Codex CLI is
             # only needed to import existing tokens from ~/.codex/auth.json.
             # Attach the hint to the Codex auth row so it doesn't read as
             # remediation for whichever provider happens to print next (#27975).
@@ -1351,13 +1351,13 @@ def run_doctor(args):
         else:
             check_info(f"{_DHH}/SOUL.md exists but is empty — edit it to customize personality")
     else:
-        check_warn(f"{_DHH}/SOUL.md not found", "(create it to give Hermes a custom personality)")
+        check_warn(f"{_DHH}/SOUL.md not found", "(create it to give Kova a custom personality)")
         if should_fix:
             soul_path.parent.mkdir(parents=True, exist_ok=True)
             soul_path.write_text(
                 "# Kova Agent Persona\n\n"
-                "<!-- Edit this file to customize how Hermes communicates. -->\n\n"
-                "You are Hermes, a helpful AI assistant.\n",
+                "<!-- Edit this file to customize how Kova communicates. -->\n\n"
+                "You are Kova, a helpful AI assistant.\n",
                 encoding="utf-8",
             )
             check_ok(f"Created {_DHH}/SOUL.md with basic template")
@@ -1880,7 +1880,7 @@ def run_doctor(args):
                         # tooling (esbuild/vite, etc.), not runtime code that ships
                         # to users. Manual npm remediation may error with a known
                         # arborist crash (edgesOut / isDescendantOf) on this monorepo
-                        # tree — in that case it is an npm bug, not a Hermes one.
+                        # tree — in that case it is an npm bug, not a Kova one.
                         check_info(
                             "  ^ build-time tooling (not runtime); if manual npm remediation "
                             "errors with an arborist crash it's a known npm bug — clears "

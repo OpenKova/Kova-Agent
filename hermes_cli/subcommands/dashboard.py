@@ -1,4 +1,4 @@
-"""``hermes dashboard`` / ``hermes serve`` subcommand parsers.
+"""``kova dashboard`` / ``kova serve`` subcommand parsers.
 
 ``dashboard`` is the browser web UI; ``serve`` is the same gateway, headless —
 what the desktop app and remote backends run. ``serve`` also skips the web UI
@@ -70,17 +70,17 @@ def _add_server_runtime_args(parser) -> None:
     # start-a-server flags above (if both are passed, --stop / --status win
     # because they exit before the server is started).  The server has no
     # service manager and no PID file, so these scan the process table for
-    # `hermes dashboard` / `hermes serve` cmdlines and SIGTERM them directly —
+    # `kova dashboard` / `kova serve` cmdlines and SIGTERM them directly —
     # the same path `kova update` uses to clean up stale servers.
     parser.add_argument(
         "--stop",
         action="store_true",
-        help="Stop all running Hermes web server processes and exit",
+        help="Stop all running Kova web server processes and exit",
     )
     parser.add_argument(
         "--status",
         action="store_true",
-        help="List running Hermes web server processes and exit",
+        help="List running Kova web server processes and exit",
     )
 
 
@@ -107,13 +107,13 @@ def build_dashboard_parser(
     dashboard_parser.add_argument(
         "--no-open", action="store_true", help="Don't open browser automatically"
     )
-    # Backward-compat shim: older Hermes desktop app shells (<= 0.15.x) spawn the
-    # backend as `hermes dashboard --no-open --tui --host ... --port ...`. The
+    # Backward-compat shim: older Kova desktop app shells (<= 0.15.x) spawn the
+    # backend as `kova dashboard --no-open --tui --host ... --port ...`. The
     # `--tui` flag was removed from this subcommand in cae6b5486 (embedded chat is
     # always on now). When a user's CLI updates past that commit but their desktop
     # app binary has not, argparse used to hard-error with "unrecognized arguments:
     # --tui" and exit(2) — the backend died before becoming ready and the GUI just
-    # showed "Hermes couldn't start" with no actionable cause. Accept and silently
+    # showed "Kova couldn't start" with no actionable cause. Accept and silently
     # ignore the flag so an old app + new CLI degrades gracefully instead of
     # bricking. Hidden from --help; safe to delete once the floor app version is
     # well past 0.16.0.
@@ -128,16 +128,16 @@ def build_dashboard_parser(
     # serve command — the headless backend server
     #
     # `serve` boots the exact same gateway as `dashboard` but never opens a
-    # browser. It exists so the Hermes Desktop app (and headless remote
+    # browser. It exists so the Kova Desktop app (and headless remote
     # backends) can launch a backend WITHOUT invoking `dashboard`: the desktop
     # app and the web dashboard are independent surfaces that merely share this
     # server, and neither should appear to launch the other.
     # =========================================================================
     serve_parser = subparsers.add_parser(
         "serve",
-        help="Start the Hermes backend server (headless; powers the desktop app and remote backends)",
+        help="Start the Kova backend server (headless; powers the desktop app and remote backends)",
         description=(
-            "Run the Hermes backend server — the JSON-RPC/WebSocket gateway the "
+            "Run the Kova backend server — the JSON-RPC/WebSocket gateway the "
             "desktop app and remote clients connect to. Headless: it never opens "
             "a browser UI."
         ),
@@ -169,9 +169,9 @@ def build_dashboard_parser(
     # unset and serves the browser UI as before.
     serve_parser.set_defaults(func=cmd_dashboard, no_open=True, headless_backend=True)
 
-    # `hermes dashboard register` — register a self-hosted dashboard OAuth
+    # `kova dashboard register` — register a self-hosted dashboard OAuth
     # client with Nous Portal and write the client_id into ~/.hermes/.env.
-    # Nested subparser so bare `hermes dashboard` keeps launching the server
+    # Nested subparser so bare `kova dashboard` keeps launching the server
     # (set_defaults(func=cmd_dashboard) above remains the default).
     dashboard_subparsers = dashboard_parser.add_subparsers(
         dest="dashboard_subcommand"

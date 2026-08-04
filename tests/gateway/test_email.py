@@ -276,7 +276,7 @@ class TestDispatchMessage(unittest.TestCase):
         msg_data = {
             "uid": b"1",
             "sender_addr": "hermes@test.com",
-            "sender_name": "Hermes",
+            "sender_name": "Kova",
             "subject": "Test",
             "message_id": "<msg1@test.com>",
             "in_reply_to": "",
@@ -882,7 +882,7 @@ class TestSendMethods(unittest.TestCase):
             mock_smtp.return_value = mock_server
 
             result = asyncio.run(
-                adapter.send("user@test.com", "Hello from Hermes!")
+                adapter.send("user@test.com", "Hello from Kova!")
             )
 
             self.assertTrue(result.success)

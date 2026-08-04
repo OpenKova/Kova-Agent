@@ -390,7 +390,7 @@ Todo skill nuevo o modernizado — incluido, opcional o contribuido — debe cum
 
 1. **`description` ≤ 60 caracteres, una oración, termina con punto.** Las descripciones largas saturan la UI de listado de habilidades. Indica la capacidad, no la implementación. Sin palabras de marketing ("potente", "completo", "fluido", "avanzado").
 
-2. **Las herramientas referenciadas en el cuerpo de SKILL.md deben ser herramientas nativas de Hermes o servidores MCP que la habilidad espere explícitamente.** Usa los nombres de herramientas en comillas invertidas: `` `terminal` ``, `` `web_extract` ``, `` `web_search` ``, `` `read_file` ``, `` `write_file` ``, etc.
+2. **Las herramientas referenciadas en el cuerpo de SKILL.md deben ser herramientas nativas de Kova o servidores MCP que la habilidad espere explícitamente.** Usa los nombres de herramientas en comillas invertidas: `` `terminal` ``, `` `web_extract` ``, `` `web_search` ``, `` `read_file` ``, `` `write_file` ``, etc.
 
 3. **El campo `platforms:` auditado contra las importaciones reales del script.** Las habilidades que usen primitivos solo de POSIX deben declarar sus plataformas soportadas.
 

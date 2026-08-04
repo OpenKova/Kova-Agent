@@ -1,4 +1,4 @@
-"""Slash command definitions and autocomplete for the Hermes CLI.
+"""Slash command definitions and autocomplete for the Kova CLI.
 
 Central registry for all slash commands. Every consumer -- CLI help, gateway
 dispatch, Telegram BotCommands, Slack subcommand mapping, autocomplete --
@@ -92,7 +92,7 @@ COMMAND_REGISTRY: list[CommandDef] = [
                aliases=("compact",), args_hint="[here [N] | focus topic | --preview|--dry-run]"),
     CommandDef("rollback", "List or restore filesystem checkpoints", "Session",
                args_hint="[number]"),
-    CommandDef("snapshot", "Create or restore state snapshots of Hermes config/state", "Session",
+    CommandDef("snapshot", "Create or restore state snapshots of Kova config/state", "Session",
                cli_only=True, aliases=("snap",), args_hint="[create|restore <id>|prune]"),
     CommandDef("stop", "Kill all running background processes", "Session"),
     CommandDef("approve", "Approve a pending dangerous command", "Session",
@@ -111,7 +111,7 @@ COMMAND_REGISTRY: list[CommandDef] = [
                aliases=("q",), args_hint="<prompt>"),
     CommandDef("steer", "Inject a message after the next tool call without interrupting", "Session",
                args_hint="<prompt>"),
-    CommandDef("goal", "Set a standing goal Hermes works on across turns until achieved", "Session",
+    CommandDef("goal", "Set a standing goal Kova works on across turns until achieved", "Session",
                args_hint="[text | draft <text> | show | pause | resume | clear | status | wait <pid> | unwait]"),
     CommandDef("moa", "Run one prompt through the default Mixture of Agents preset, then restore your model", "Session",
                args_hint="<prompt>"),
@@ -168,7 +168,7 @@ COMMAND_REGISTRY: list[CommandDef] = [
                subcommands=("kaomoji", "emoji", "unicode", "ascii")),
     CommandDef("voice", "Toggle voice mode", "Configuration",
                args_hint="[on|off|tts|status]", subcommands=("on", "off", "tts", "status")),
-    CommandDef("busy", "Control what Enter does while Hermes is working", "Configuration",
+    CommandDef("busy", "Control what Enter does while Kova is working", "Configuration",
                cli_only=True, args_hint="[queue|steer|interrupt|status]",
                subcommands=("queue", "steer", "interrupt", "status")),
 
@@ -547,7 +547,7 @@ def telegram_bot_commands() -> list[tuple[str, str]]:
     return result
 
 
-# Telegram allows up to 100 BotCommands. Hermes ships ~50 built-in commands;
+# Telegram allows up to 100 BotCommands. Kova ships ~50 built-in commands;
 # a 60-slot default keeps every built-in plus common skill commands visible in
 # the `/` menu while staying comfortably under Telegram's ~4KB payload limit.
 # Users can tune this via platforms.telegram.extra.command_menu.max_commands.
@@ -586,7 +586,7 @@ _TELEGRAM_MENU_PRIORITY = (
 )
 """Built-in commands that should stay visible in Telegram's capped menu.
 
-Telegram only displays a small BotCommand menu in practice.  The full Hermes
+Telegram only displays a small BotCommand menu in practice.  The full Kova
 registry is still dispatchable when typed manually, but operational commands
 need to survive the visible menu cap ahead of lower-priority built-ins.
 """
@@ -848,7 +848,7 @@ def _collect_gateway_skill_entries(
         # user-configured ``skills.external_dirs``. Ensure each prefix ends
         # with ``/`` so ``/my-skills`` does not also match ``/my-skills-extra``.
         # Without this widening, external skills are visible in
-        # ``hermes skills list`` and the agent's ``/skill-name`` dispatch but
+        # ``kova skills list`` and the agent's ``/skill-name`` dispatch but
         # silently excluded from gateway slash menus (#8110).
         _allowed_prefixes = [_skills_dir.rstrip("/") + "/"]
         _allowed_prefixes.extend(
@@ -905,7 +905,7 @@ def telegram_menu_commands(max_commands: int = 100) -> tuple[list[tuple[str, str
 
     Skills are the only tier that gets trimmed when the cap is hit.
     User-installed hub skills are excluded — accessible via /skills.
-    Skills disabled for the ``"telegram"`` platform (via ``hermes skills
+    Skills disabled for the ``"telegram"`` platform (via ``kova skills
     config``) are excluded from the menu entirely.
 
     Returns:
@@ -974,7 +974,7 @@ def discord_skill_commands_by_category(
     Scan roots include the local ``SKILLS_DIR`` **and** any configured
     ``skills.external_dirs`` — matching the widened filter applied to the
     flat ``discord_skill_commands()`` collector in #18741. Without this
-    parity, external-dir skills are visible via ``hermes skills list`` and
+    parity, external-dir skills are visible via ``kova skills list`` and
     the agent's ``/skill-name`` dispatch but silently absent from Discord's
     ``/skill`` autocomplete.
 
@@ -1215,7 +1215,7 @@ def slack_native_slashes() -> list[tuple[str, str, str]]:
     # manifests) alongside the new /kova form.
     entries.append(("kova", "Talk to Kova or run a subcommand", "[subcommand] [args]"))
     seen.add("kova")
-    entries.append(("hermes", "Talk to Hermes or run a subcommand", "[subcommand] [args]"))
+    entries.append(("hermes", "Talk to Kova or run a subcommand", "[subcommand] [args]"))
     seen.add("hermes")
 
     def _add(name: str, desc: str, hint: str) -> None:

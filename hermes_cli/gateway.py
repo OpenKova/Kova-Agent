@@ -308,7 +308,7 @@ def _get_ancestor_pids() -> set[int]:
 
     Walks from the current PID up to PID 1 (init) so that process-table scans
     never match the calling CLI process or any of its parents.  This prevents
-    ``kova gateway status`` from falsely counting the ``hermes`` CLI that
+    ``kova gateway status`` from falsely counting the ``kova`` CLI that
     invoked it as a running gateway instance (see #13242).
     """
     ancestors: set[int] = set()
@@ -2062,7 +2062,7 @@ def has_conflicting_systemd_units() -> bool:
     return len(get_installed_systemd_scopes()) > 1
 
 
-# Legacy service names from older Hermes installs that predate the
+# Legacy service names from older Kova installs that predate the
 # hermes-gateway rename. Kept as an explicit allowlist (NOT a glob) so
 # profile units (hermes-gateway-*.service) and unrelated third-party
 # "hermes" units are never matched.
@@ -2092,9 +2092,9 @@ def _legacy_unit_search_paths() -> list[tuple[bool, Path]]:
 
 
 def _find_legacy_hermes_units() -> list[tuple[str, Path, bool]]:
-    """Return ``[(unit_name, unit_path, is_system)]`` for legacy Hermes gateway units.
+    """Return ``[(unit_name, unit_path, is_system)]`` for legacy Kova gateway units.
 
-    Detects unit files installed by older Hermes versions that used a
+    Detects unit files installed by older Kova versions that used a
     different service name (e.g. ``hermes.service`` before the rename to
     ``hermes-gateway.service``). When both a legacy unit and the current
     ``hermes-gateway.service`` are active, they fight over the same bot
@@ -2130,12 +2130,12 @@ def _find_legacy_hermes_units() -> list[tuple[str, Path, bool]]:
 
 
 def has_legacy_hermes_units() -> bool:
-    """Return True when any legacy Hermes gateway unit files exist."""
+    """Return True when any legacy Kova gateway unit files exist."""
     return bool(_find_legacy_hermes_units())
 
 
 def print_legacy_unit_warning() -> None:
-    """Warn about legacy Hermes gateway unit files if any are installed.
+    """Warn about legacy Kova gateway unit files if any are installed.
 
     Idempotent: prints nothing when no legacy units are detected. Safe to
     call from any status/install/setup path.
@@ -2157,7 +2157,7 @@ def remove_legacy_hermes_units(
     interactive: bool = True,
     dry_run: bool = False,
 ) -> tuple[int, list[Path]]:
-    """Stop, disable, and remove legacy Hermes gateway unit files.
+    """Stop, disable, and remove legacy Kova gateway unit files.
 
     Iterates over whatever ``_find_legacy_hermes_units()`` returns — which is
     an explicit allowlist of legacy names (not a glob). Profile units and
@@ -5780,7 +5780,7 @@ def _setup_weixin():
         save_env_value("WEIXIN_ALLOWED_USERS", "")
         print_success("  DM pairing enabled.")
         print_info(
-            "  Unknown DM users can request access and you approve them with `hermes pairing approve`."
+            "  Unknown DM users can request access and you approve them with `kova pairing approve`."
         )
     elif access_idx == 1:
         save_env_value("WEIXIN_DM_POLICY", "open")
@@ -5955,7 +5955,7 @@ def _setup_qqbot():
             save_env_value("QQ_ALLOWED_USERS", "")
         print_success("  DM pairing enabled.")
         print_info(
-            "  Unknown users can request access; approve with `hermes pairing approve`."
+            "  Unknown users can request access; approve with `kova pairing approve`."
         )
     elif access_idx == 1:
         save_env_value("QQ_ALLOW_ALL_USERS", "true")
@@ -7297,7 +7297,7 @@ def _gateway_command_inner(args):
         _gateway_list()
 
     elif subcmd == "migrate-legacy":
-        # Stop, disable, and remove legacy Hermes gateway unit files from
+        # Stop, disable, and remove legacy Kova gateway unit files from
         # pre-rename installs (e.g. hermes.service). Profile units and
         # unrelated third-party services are never touched.
         dry_run = getattr(args, "dry_run", False)

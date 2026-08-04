@@ -1,7 +1,7 @@
 """Telegram Managed Bot onboarding client.
 
 Uses Telegram's Managed Bots feature to create a user-owned child bot without
-manual BotFather token copy-paste. Hermes talks only to the Nous onboarding
+manual BotFather token copy-paste. Kova talks only to the Nous onboarding
 service; the raw Telegram token is saved locally after one-time retrieval.
 """
 

@@ -221,7 +221,7 @@ def _load_hermes_env() -> None:
     2. Bridge top-level simple values from ``~/.hermes/config.yaml`` into
        ``os.environ`` (without overriding existing env vars). This is where
        ``TELEGRAM_HOME_CHANNEL`` and friends live when the user saved them
-       via ``hermes config set``.
+       via ``kova config set``.
 
     See ``gateway/run.py`` for the canonical version of this bridge — we
     intentionally reimplement the minimum needed here so ``kova send``
@@ -376,7 +376,7 @@ def register_send_subparser(subparsers) -> argparse.ArgumentParser:
         "send",
         help="Send a message to a configured platform (scripts, cron jobs, CI).",
         description=(
-            "Pipe text from any shell script to any messaging platform Hermes "
+            "Pipe text from any shell script to any messaging platform Kova "
             "is already configured for. Reuses the gateway's platform "
             "credentials (~/.hermes/.env + ~/.hermes/config.yaml) — no LLM, "
             "no agent loop, no running gateway required for bot-token "

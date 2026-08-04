@@ -76,7 +76,7 @@ hermes-agent/
 │   └── trajectory.py         # Trajectory saving helpers
 │
 ├── hermes_cli/               # CLI subcommands and setup
-│   ├── main.py               # Entry point — all `hermes` subcommands (large file)
+│   ├── main.py               # Entry point — all `kova` subcommands (large file)
 │   ├── config.py             # DEFAULT_CONFIG, OPTIONAL_ENV_VARS, migration
 │   ├── commands.py           # COMMAND_REGISTRY — central slash command definitions
 │   ├── auth.py               # PROVIDER_REGISTRY, credential resolution
@@ -85,12 +85,12 @@ hermes-agent/
 │   ├── model_switch.py       # /model command logic (CLI + gateway shared)
 │   ├── setup.py              # Interactive setup wizard (large file)
 │   ├── skin_engine.py        # CLI theming engine
-│   ├── skills_config.py      # hermes skills — enable/disable per platform
+│   ├── skills_config.py      # kova skills — enable/disable per platform
 │   ├── skills_hub.py         # /skills slash command
-│   ├── tools_config.py       # hermes tools — enable/disable per platform
+│   ├── tools_config.py       # kova tools — enable/disable per platform
 │   ├── plugins.py            # PluginManager — discovery, loading, hooks
 │   ├── callbacks.py          # Terminal callbacks (clarify, sudo, approval)
-│   └── gateway.py            # hermes gateway start/stop
+│   └── gateway.py            # kova gateway start/stop
 │
 ├── tools/                    # Tool implementations (one file per tool)
 │   ├── registry.py           # Central tool registry
@@ -241,7 +241,7 @@ First-class agent tasks (not shell tasks). Jobs store in JSON, support multiple 
 
 ### ACP Integration
 
-Exposes Hermes as an editor-native agent over stdio/JSON-RPC for VS Code, Zed, and JetBrains.
+Exposes Kova as an editor-native agent over stdio/JSON-RPC for VS Code, Zed, and JetBrains.
 
 → [ACP Internals](./acp-internals.md)
 
@@ -260,7 +260,7 @@ Generates ShareGPT-format trajectories from agent sessions for training data gen
 | **Interruptible** | API calls and tool execution can be cancelled mid-flight by user input or signals. |
 | **Platform-agnostic core** | One AIAgent class serves CLI, gateway, ACP, batch, and API server. Platform differences live in the entry point, not the agent. |
 | **Loose coupling** | Optional subsystems (MCP, plugins, memory providers, RL environments) use registry patterns and check_fn gating, not hard dependencies. |
-| **Profile isolation** | Each profile (`hermes -p <name>`) gets its own HERMES_HOME, config, memory, sessions, and gateway PID. Multiple profiles run concurrently. |
+| **Profile isolation** | Each profile (`kova -p <name>`) gets its own HERMES_HOME, config, memory, sessions, and gateway PID. Multiple profiles run concurrently. |
 
 ## File Dependency Chain
 

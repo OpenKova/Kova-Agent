@@ -163,7 +163,7 @@ class TestReloadEnv:
         os.environ.pop("TEST_RELOAD_VAR", None)
 
     def test_removes_deleted_known_vars(self, tmp_path):
-        """reload_env() removes known Hermes vars not present in .env."""
+        """reload_env() removes known Kova vars not present in .env."""
         env_file = tmp_path / ".env"
         env_file.write_text("")  # empty .env
         # Pick a known key from OPTIONAL_ENV_VARS
@@ -175,7 +175,7 @@ class TestReloadEnv:
             assert count >= 1
 
     def test_does_not_remove_unknown_vars(self, tmp_path):
-        """reload_env() preserves non-Hermes env vars even when absent from .env."""
+        """reload_env() preserves non-Kova env vars even when absent from .env."""
         env_file = tmp_path / ".env"
         env_file.write_text("")
         with patch.dict(reload_env.__globals__, {"get_env_path": lambda: env_file}):
@@ -2992,7 +2992,7 @@ class TestWebServerEndpoints:
 
     def test_model_set_maps_unknown_vendor_to_aggregator(self, monkeypatch):
         """A bare vendor name from analytics rows (no billing_provider) is not
-        a Hermes provider — keep the user's aggregator instead of writing a
+        a Kova provider — keep the user's aggregator instead of writing a
         provider that can never resolve credentials."""
         monkeypatch.setattr(
             "hermes_cli.model_cost_guard.expensive_model_warning",
@@ -3614,7 +3614,7 @@ class TestWebServerEndpoints:
 
         resp = self.client.post(
             "/api/messaging/telegram/onboarding/start",
-            json={"bot_name": "Hosted Hermes"},
+            json={"bot_name": "Hosted Kova"},
         )
 
         assert resp.status_code == 200
@@ -3625,7 +3625,7 @@ class TestWebServerEndpoints:
             (
                 "POST",
                 "/v1/telegram/pairings",
-                {"bot_name": "Hosted Hermes"},
+                {"bot_name": "Hosted Kova"},
                 None,
             )
         ]

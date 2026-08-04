@@ -18,35 +18,35 @@ flowchart LR
     B -->|SSE streaming response| A
 ```
 
-Open WebUI connects to Kova Agent's API server just like it would connect to OpenAI. Hermes handles the requests with its full toolset — terminal, file operations, web search, memory, skills — and returns the final response.
+Open WebUI connects to Kova Agent's API server just like it would connect to OpenAI. Kova handles the requests with its full toolset — terminal, file operations, web search, memory, skills — and returns the final response.
 
 :::important Runtime location
-The API server is a **Kova Agent runtime**, not a pure LLM proxy. For each request, Hermes creates a server-side `AIAgent` on the API-server host. Tool calls run where that API server is running.
+The API server is a **Kova Agent runtime**, not a pure LLM proxy. For each request, Kova creates a server-side `AIAgent` on the API-server host. Tool calls run where that API server is running.
 
-For example, if a laptop points Open WebUI or another OpenAI-compatible client at a Hermes API server on a remote machine, `pwd`, file tools, browser tools, local MCP tools, and other workspace tools run on the remote API-server host, not on the laptop.
+For example, if a laptop points Open WebUI or another OpenAI-compatible client at a Kova API server on a remote machine, `pwd`, file tools, browser tools, local MCP tools, and other workspace tools run on the remote API-server host, not on the laptop.
 :::
 
-Open WebUI talks to Hermes server-to-server, so you do not need `API_SERVER_CORS_ORIGINS` for this integration.
+Open WebUI talks to Kova server-to-server, so you do not need `API_SERVER_CORS_ORIGINS` for this integration.
 
 ## Quick Setup
 
 ### 1. Enable the API server
 
 ```bash
-hermes config set API_SERVER_ENABLED true
-hermes config set API_SERVER_KEY your-secret-key
+kova config set API_SERVER_ENABLED true
+kova config set API_SERVER_KEY your-secret-key
 ```
 
 `hermes config set` auto-routes the flag to `config.yaml` and the secret to `~/.hermes/.env`. If the gateway is already running, restart it so the change takes effect:
 
 ```bash
-hermes gateway stop && hermes gateway
+kova gateway stop && kova gateway
 ```
 
 ### 2. Start Kova Agent gateway
 
 ```bash
-hermes gateway
+kova gateway
 ```
 
 You should see:
@@ -130,7 +130,7 @@ If you prefer to configure the connection through the UI instead of environment 
 5. Click **+ Add New Connection**
 6. Enter:
    - **URL**: `http://host.docker.internal:8642/v1`
-   - **API Key**: the exact same value as `API_SERVER_KEY` in Hermes
+   - **API Key**: the exact same value as `API_SERVER_KEY` in Kova
 7. Click the **checkmark** to verify the connection
 8. **Save**
 
@@ -162,7 +162,7 @@ To use the Responses API mode:
 3. Change **API Type** from "Chat Completions" to **"Responses (Experimental)"**
 4. Save
 
-With the Responses API, Open WebUI sends requests in the Responses format (`input` array + `instructions`), and Kova Agent can preserve full tool call history across turns via `previous_response_id`. When `stream: true`, Hermes also streams spec-native `function_call` and `function_call_output` items, which enables custom structured tool-call UI in clients that render Responses events.
+With the Responses API, Open WebUI sends requests in the Responses format (`input` array + `instructions`), and Kova Agent can preserve full tool call history across turns via `previous_response_id`. When `stream: true`, Kova also streams spec-native `function_call` and `function_call_output` items, which enables custom structured tool-call UI in clients that render Responses events.
 
 :::note
 Open WebUI currently manages conversation history client-side even in Responses mode — it sends the full message history in each request rather than using `previous_response_id`. The main advantage of Responses mode today is the structured event stream: text deltas, `function_call`, and `function_call_output` items arrive as OpenAI Responses SSE events instead of Chat Completions chunks.
@@ -179,9 +179,9 @@ When you send a message in Open WebUI:
 5. The agent's final text response streams back to Open WebUI
 6. Open WebUI displays the response in its chat interface
 
-Your agent has access to the same tools and capabilities as that API-server Hermes instance. If the API server is remote, those tools are remote too.
+Your agent has access to the same tools and capabilities as that API-server Kova instance. If the API server is remote, those tools are remote too.
 
-If you need tools to run against your **local** workspace today, run Hermes locally and point it at a pure LLM provider or pure OpenAI-compatible model proxy (for example vLLM, LiteLLM, Ollama, llama.cpp, OpenAI, OpenRouter, etc.). A future split-runtime mode for "remote brain, local hands" is being tracked in [#18715](https://github.com/NousResearch/hermes-agent/issues/18715); it is not the behavior of the current API server.
+If you need tools to run against your **local** workspace today, run Kova locally and point it at a pure LLM provider or pure OpenAI-compatible model proxy (for example vLLM, LiteLLM, Ollama, llama.cpp, OpenAI, OpenRouter, etc.). A future split-runtime mode for "remote brain, local hands" is being tracked in [#18715](https://github.com/NousResearch/hermes-agent/issues/18715); it is not the behavior of the current API server.
 
 :::tip Tool Progress
 With streaming enabled (the default), you'll see brief inline indicators as tools run — the tool emoji and its key argument. These appear in the response stream before the agent's final answer, giving you visibility into what's happening behind the scenes.
@@ -213,7 +213,7 @@ With streaming enabled (the default), you'll see brief inline indicators as tool
 - **Verify the gateway is running**: `curl http://localhost:8642/health` should return `{"status": "ok"}`
 - **Check model listing**: `curl -H "Authorization: Bearer your-secret-key" http://localhost:8642/v1/models` should return a list with `hermes-agent`
 - **Docker networking**: From inside Docker, `localhost` means the container, not your host. Use `host.docker.internal` or `--network=host`.
-- **Empty Ollama backend shadowing the picker**: If you omitted `ENABLE_OLLAMA_API=false`, Open WebUI shows an empty Ollama section above your Hermes models. Restart the container with `-e ENABLE_OLLAMA_API=false` or disable Ollama in **Admin Settings → Connections**.
+- **Empty Ollama backend shadowing the picker**: If you omitted `ENABLE_OLLAMA_API=false`, Open WebUI shows an empty Ollama section above your Kova models. Restart the container with `-e ENABLE_OLLAMA_API=false` or disable Ollama in **Admin Settings → Connections**.
 
 ### Connection test passes but no models load
 
@@ -233,21 +233,21 @@ Open WebUI persists OpenAI-compatible connection settings in its own database af
 
 ## Multi-User Setup with Profiles
 
-To run separate Hermes instances per user — each with their own config, memory, and skills — use [profiles](/user-guide/profiles). Each profile runs its own API server on a different port and automatically advertises the profile name as the model in Open WebUI.
+To run separate Kova instances per user — each with their own config, memory, and skills — use [profiles](/user-guide/profiles). Each profile runs its own API server on a different port and automatically advertises the profile name as the model in Open WebUI.
 
 ### 1. Create profiles and configure API servers
 
 `API_SERVER_*` are env vars, not YAML config keys, so write them to each profile's `.env`. Pick ports outside the default-platform range (`8644` is the webhook adapter, `8645` is wecom-callback, `8646` is msgraph-webhook), e.g. `8650+`:
 
 ```bash
-hermes profile create alice
+kova profile create alice
 cat >> ~/.hermes/profiles/alice/.env <<EOF
 API_SERVER_ENABLED=true
 API_SERVER_PORT=8650
 API_SERVER_KEY=alice-secret
 EOF
 
-hermes profile create bob
+kova profile create bob
 cat >> ~/.hermes/profiles/bob/.env <<EOF
 API_SERVER_ENABLED=true
 API_SERVER_PORT=8651
@@ -258,8 +258,8 @@ EOF
 ### 2. Start each gateway
 
 ```bash
-hermes -p alice gateway &
-hermes -p bob gateway &
+kova -p alice gateway &
+kova -p bob gateway &
 ```
 
 ### 3. Add connections in Open WebUI
@@ -276,7 +276,7 @@ The model dropdown will show `alice` and `bob` as distinct models. You can assig
 :::tip Custom Model Names
 The model name defaults to the profile name. To override it, set `API_SERVER_MODEL_NAME` in the profile's `.env`:
 ```bash
-hermes -p alice config set API_SERVER_MODEL_NAME "Alice's Agent"
+kova -p alice config set API_SERVER_MODEL_NAME "Alice's Agent"
 ```
 :::
 

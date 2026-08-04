@@ -202,13 +202,13 @@ def _openai_http_client_kwargs(
 
 def _create_openai_client(*, api_key: str, base_url: str, **kwargs: Any) -> Any:
     kwargs = {**_openai_http_client_kwargs(base_url), **kwargs}
-    # Hermes owns auxiliary retry + provider/model fallback policy (the
+    # Kova owns auxiliary retry + provider/model fallback policy (the
     # same-provider transient retry in call_llm plus the except-chain
     # fallback). The OpenAI SDK's own default (max_retries=2 → up to 3
     # attempts) silently multiplies the effective wall time of every aux call
     # by 3× on a slow/hung endpoint, so a 120s timeout can stall ~360s before
-    # Hermes sees a single failure (issue #54465). Disable SDK-internal retries
-    # by default and let Hermes control the budget; explicit callers can still
+    # Kova sees a single failure (issue #54465). Disable SDK-internal retries
+    # by default and let Kova control the budget; explicit callers can still
     # override via kwargs.
     kwargs.setdefault("max_retries", 0)
     return OpenAI(api_key=api_key, base_url=base_url, **kwargs)
@@ -441,7 +441,7 @@ def _compression_threshold_for_model(
     """Return a context-compression threshold override for specific models.
 
     The threshold is the fraction of the model's context window that must be
-    consumed before Hermes triggers summarization.  Higher values delay
+    consumed before Kova triggers summarization.  Higher values delay
     compression and preserve more raw context.
 
     Per-model/route overrides:
@@ -1376,7 +1376,7 @@ class _AnthropicCompletionsAdapter:
         #     the native ``thinking`` field above (build_anthropic_kwargs);
         #     forwarding the raw field alongside would double-specify
         #     reasoning and 400 on strict gateways.
-        #   - ``_``-prefixed keys: private Hermes plumbing (_reasoning_config
+        #   - ``_``-prefixed keys: private Kova plumbing (_reasoning_config
         #     et al.), never wire fields.
         caller_extra_body = kwargs.get("extra_body")
         if caller_extra_body and isinstance(caller_extra_body, dict):
@@ -1828,7 +1828,7 @@ def _resolve_xai_oauth_for_aux() -> Optional[Tuple[str, str]]:
     Prefer the credential pool, matching the main runtime/provider status
     path.  Some xAI OAuth logins live only as pool entries; falling straight
     to the singleton auth-store resolver would make auxiliary tasks such as
-    compression report "no provider configured" even though ``hermes auth
+    compression report "no provider configured" even though ``kova auth
     status`` shows xAI OAuth as logged in.
 
     Falls back to ``hermes_cli.auth``'s singleton runtime resolver for older
@@ -1878,7 +1878,7 @@ def _resolve_xai_oauth_for_aux() -> Optional[Tuple[str, str]]:
 
 
 def _read_codex_access_token() -> Optional[str]:
-    """Read a valid, non-expired Codex OAuth access token from Hermes auth store.
+    """Read a valid, non-expired Codex OAuth access token from Kova auth store.
 
     If a credential pool exists but currently has no selectable runtime entry
     (for example all pool slots are marked exhausted), fall back to the
@@ -2095,7 +2095,7 @@ def _try_nous(vision: bool = False) -> Tuple[Optional[OpenAI], Optional[str]]:
     if runtime is None and not nous:
         logger.warning(
             "Auxiliary Nous client unavailable: no Nous authentication found "
-            "(run: hermes auth)."
+            "(run: kova auth)."
         )
         _mark_provider_unhealthy("nous", ttl=60)
         return None, None
@@ -2143,7 +2143,7 @@ def _try_nous(vision: bool = False) -> Tuple[Optional[OpenAI], Optional[str]]:
         if not api_key:
             logger.warning(
                 "Auxiliary Nous client unavailable: no usable inference JWT found "
-                "(run: hermes auth add nous)."
+                "(run: kova auth add nous)."
             )
             _mark_provider_unhealthy("nous", ttl=60)
             return None, None
@@ -2998,7 +2998,7 @@ def _get_provider_chain() -> List[tuple]:
 # happened). Entries auto-expire so a topped-up account recovers without
 # manual intervention.
 #
-# Failure isolation: the cache is in-process only. A second hermes
+# Failure isolation: the cache is in-process only. A second kova
 # process won't inherit the unhealthy mark — that's intentional, since
 # the user might be running two profiles with different OpenRouter keys.
 
@@ -3084,7 +3084,7 @@ def _log_skip_unhealthy(label: str, task: Optional[str] = None) -> None:
 
 def _reset_aux_unhealthy_cache() -> None:
     """Clear the unhealthy cache. Used by tests and by a future explicit
-    user trigger (e.g. ``hermes config aux reset``)."""
+    user trigger (e.g. ``kova config aux reset``)."""
     _aux_unhealthy_until.clear()
     _aux_unhealthy_logged_at.clear()
 
@@ -4380,7 +4380,7 @@ def _try_main_fallback_chain(
     """Try the top-level main-agent fallback chain for an auxiliary call.
 
     ``provider: auto`` auxiliary tasks should respect the user's declared
-    main fallback policy before dropping into Hermes' built-in discovery
+    main fallback policy before dropping into Kova' built-in discovery
     chain. The top-level chain is read through ``get_fallback_chain`` so
     both modern ``fallback_providers`` and legacy ``fallback_model`` entries
     participate in the same order as the main agent.
@@ -4503,7 +4503,7 @@ def _resolve_auto(
 
     # ── Warn once if OPENAI_BASE_URL is set but config.yaml uses a named
     #    provider (not 'custom').  This catches the common "env poisoning"
-    #    scenario where a user switches providers via `hermes model` but the
+    #    scenario where a user switches providers via `kova model` but the
     #    old OPENAI_BASE_URL lingers in ~/.hermes/.env. ──
     if not _stale_base_url_warned:
         _env_base = os.getenv("OPENAI_BASE_URL", "").strip()
@@ -4734,7 +4734,7 @@ def _to_async_client(sync_client, model: str, is_vision: bool = False):
         **_openai_http_client_kwargs(sync_base_url, async_mode=True),
         **async_kwargs,
     }
-    # See _create_openai_client: disable SDK-internal retries so Hermes owns
+    # See _create_openai_client: disable SDK-internal retries so Kova owns
     # the auxiliary retry/timeout budget (issue #54465).
     async_kwargs.setdefault("max_retries", 0)
     return AsyncOpenAI(**async_kwargs), model
@@ -4958,7 +4958,7 @@ def resolve_provider_client(
         client, default = _try_nous(vision=_is_vision)
         if client is None:
             logger.warning("resolve_provider_client: nous requested "
-                           "but Nous Portal not configured (run: hermes auth)")
+                           "but Nous Portal not configured (run: kova auth)")
             return None, None
         final_model = _normalize_resolved_model(model or default, provider)
         return (_to_async_client(client, final_model, is_vision=is_vision) if async_mode
@@ -4979,7 +4979,7 @@ def resolve_provider_client(
             codex_token = _read_codex_access_token()
             if not codex_token:
                 logger.warning("resolve_provider_client: openai-codex requested "
-                               "but no Codex OAuth token found (run: hermes model)")
+                               "but no Codex OAuth token found (run: kova model)")
                 return None, None
             final_model = _normalize_resolved_model(model, provider)
             raw_client = _create_openai_client(
@@ -4992,7 +4992,7 @@ def resolve_provider_client(
         client, default = _build_codex_client(model)
         if client is None:
             logger.warning("resolve_provider_client: openai-codex requested "
-                           "but no Codex OAuth token found (run: hermes model)")
+                           "but no Codex OAuth token found (run: kova model)")
             return None, None
         final_model = _normalize_resolved_model(model or default, provider)
         return (_to_async_client(client, final_model, is_vision=is_vision) if async_mode
@@ -5011,7 +5011,7 @@ def resolve_provider_client(
         if client is None:
             logger.warning(
                 "resolve_provider_client: xai-oauth requested but no xAI "
-                "OAuth token found (run: hermes model -> xAI Grok OAuth — SuperGrok / Premium+)"
+                "OAuth token found (run: kova model -> xAI Grok OAuth — SuperGrok / Premium+)"
             )
             return None, None
         final_model = _normalize_resolved_model(model or default, provider)
@@ -6980,7 +6980,7 @@ def _build_call_kwargs(
         kwargs["extra_body"] = merged_extra
 
     # Native Anthropic Messages adapters do not consume ``extra_body``. Carry
-    # the normalized Hermes reasoning config through a private kwarg so the
+    # the normalized Kova reasoning config through a private kwarg so the
     # adapter can pass it into build_anthropic_kwargs(), where provider-aware
     # thinking/output_config projection lives. Do not expose this private kwarg
     # to ordinary OpenAI-compatible SDK clients, which would reject it.
@@ -7143,7 +7143,7 @@ def call_llm(
         tools: Tool definitions (for function calling).
         timeout: Request timeout in seconds (None = read from auxiliary.{task}.timeout config).
         extra_body: Additional request body fields.
-        reasoning_config: Optional Hermes reasoning config for direct model calls
+        reasoning_config: Optional Kova reasoning config for direct model calls
               such as MoA reference/aggregator slots.
         extra_headers: Additional per-request HTTP headers. These override
             client-level defaults for providers that gate capabilities on
@@ -7227,7 +7227,7 @@ def call_llm(
                     raise RuntimeError(
                         f"Provider '{_explicit}' is set in config.yaml but no API key "
                         f"was found. Set the {_explicit.upper()}_API_KEY environment "
-                        f"variable, or switch to a different provider with `hermes model`."
+                        f"variable, or switch to a different provider with `kova model`."
                     )
             # For auto/custom with no credentials, try the full auto chain
             # rather than hardcoding OpenRouter (which may be depleted).
@@ -7858,7 +7858,7 @@ async def async_call_llm(
                     raise RuntimeError(
                         f"Provider '{_explicit}' is set in config.yaml but no API key "
                         f"was found. Set the {_explicit.upper()}_API_KEY environment "
-                        f"variable, or switch to a different provider with `hermes model`."
+                        f"variable, or switch to a different provider with `kova model`."
                     )
             if client is None and not resolved_base_url:
                 logger.info("Auxiliary %s: provider %s unavailable, trying auto-detection chain",
