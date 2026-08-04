@@ -1,4 +1,4 @@
-"""Safe Hermes Console command engine.
+"""Safe Kova Console command engine.
 
 This module backs ``hermes console`` and is intentionally narrower than the
 full Kova CLI. It exposes a curated set of native adapters that can later be
@@ -479,7 +479,7 @@ def _register_command_family(
 
 
 class HermesConsoleEngine:
-    """Curated line-command executor for Hermes Console."""
+    """Curated line-command executor for Kova Console."""
 
     def __init__(self, *, output_limit: int = 20000):
         self.output_limit = output_limit
@@ -534,7 +534,7 @@ class HermesConsoleEngine:
             return f"{command.usage}\n{command.summary}"
 
         lines = [
-            "Hermes Console",
+            "Kova Console",
             "",
             "Supported commands:",
         ]
@@ -595,7 +595,7 @@ class HermesConsoleEngine:
         self._register_broad_cli_surface()
 
     def _register_broad_cli_surface(self) -> None:
-        """Register non-admin CLI commands that are safe for Hermes Console."""
+        """Register non-admin CLI commands that are safe for Kova Console."""
 
         extracted = {
             "version": (
@@ -1283,7 +1283,7 @@ def _doctor(_engine: HermesConsoleEngine, args: list[str]) -> str:
 
 def _logs(_engine: HermesConsoleEngine, args: list[str]) -> str:
     if "-f" in args or "--follow" in args:
-        raise ConsoleCommandError("`logs -f` is not available in Hermes Console.")
+        raise ConsoleCommandError("`logs -f` is not available in Kova Console.")
     parser = _ArgumentParser(prog="logs", add_help=False)
     parser.add_argument("log_name", nargs="?", default="agent")
     parser.add_argument("-n", "--lines", type=int, default=50)

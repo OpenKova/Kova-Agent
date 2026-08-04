@@ -599,7 +599,7 @@ def find_gateway_pids(
             profiles (the pre-7923 global behaviour).  ``kova update``
             needs this because a code update affects every profile.
             When ``False`` (default), only PIDs belonging to the current
-            Hermes profile are returned.
+            Kova profile are returned.
     """
     _exclude = set(exclude_pids or set())
     pids: list[int] = []
@@ -628,7 +628,7 @@ def find_gateway_pids(
 def find_profile_gateway_processes(
     exclude_pids: set | None = None,
 ) -> list[ProfileGatewayProcess]:
-    """Return running gateway PIDs mapped to Hermes profiles via PID files."""
+    """Return running gateway PIDs mapped to Kova profiles via PID files."""
     _exclude = set(exclude_pids or set())
     processes: list[ProfileGatewayProcess] = []
     try:
@@ -703,7 +703,7 @@ def _prepare_profile_gateway_update_restart(profile: str, pid: int) -> str | Non
     """Choose who relaunches a profile gateway after ``kova update``.
 
     A gateway started with ``--external-supervisor`` must exit back to that
-    manager. Starting Hermes's detached watcher as well would escape the
+    manager. Starting Kova's detached watcher as well would escape the
     manager and race its replacement process. Ordinary foreground gateways
     retain the existing detached-watcher behavior.
     """
@@ -1659,7 +1659,7 @@ def _systemd_operational(system: bool = False) -> bool:
 def _container_systemd_operational() -> bool:
     """Return True when a container exposes working user or system systemd.
 
-    This is NOT our Hermes Docker image — that one runs s6-overlay as
+    This is NOT our Kova Docker image — that one runs s6-overlay as
     PID 1 (since Phase 2 of the s6-overlay supervision plan) and is
     detected via ``service_manager.detect_service_manager() == "s6"``.
     This function handles the "container managed by something else"
@@ -1762,7 +1762,7 @@ def _profile_arg(hermes_home: str | None = None, default_root: str | Path | None
         hermes_home: Optional explicit HERMES_HOME path. Defaults to the current
             ``get_hermes_home()`` value. Should be passed when generating a
             service definition for a different user (e.g. system service).
-        default_root: Optional Hermes root to compare against. Used when
+        default_root: Optional Kova root to compare against. Used when
             generating a system service for another user from a sudo/root
             process, where ``Path.home()`` and ``get_default_hermes_root()``
             refer to root but the target profile lives under the service user.
@@ -2470,7 +2470,7 @@ def print_systemd_linger_guidance() -> None:
 def _launchd_user_home() -> Path:
     """Return the real macOS user home for launchd artifacts.
 
-    Profile-mode Hermes often sets ``HOME`` to a profile-scoped directory, but
+    Profile-mode Kova often sets ``HOME`` to a profile-scoped directory, but
     launchd user agents still live under the actual account home.
     """
     import pwd
@@ -3069,7 +3069,7 @@ def refresh_systemd_unit_if_needed(system: bool = False) -> bool:
     unit_path.write_text(new_unit, encoding="utf-8")
     _run_systemctl(["daemon-reload"], system=system, check=True, timeout=30)
     print(
-        f"↻ Updated gateway {_service_scope_label(system)} service definition to match the current Hermes install"
+        f"↻ Updated gateway {_service_scope_label(system)} service definition to match the current Kova install"
     )
     return True
 
@@ -4195,7 +4195,7 @@ def refresh_launchd_plist_if_needed() -> bool:
             _launchd_reload_log_path(),
         )
     print(
-        "↻ Updated gateway launchd service definition to match the current Hermes install"
+        "↻ Updated gateway launchd service definition to match the current Kova install"
     )
     return True
 
@@ -4494,14 +4494,14 @@ def launchd_status(deep: bool = False):
     # unmanageable domain).  A PID in the output confirms a live process.
     launchd_pid = _parse_launchd_pid_from_list_output(list_output) if service_listed else None
 
-    # Hermes PID tracking — may be a detached fallback process spawned when
+    # Kova PID tracking — may be a detached fallback process spawned when
     # launchd cannot manage the domain on this host.
     from gateway.status import get_running_pid
     fallback_pid = get_running_pid(cleanup_stale=False)
 
     # Avoid double-counting: when launchd IS supervising, fallback_pid and
     # launchd_pid point at the same process (the gateway writes both the
-    # launchd PID and the Hermes PID file).
+    # launchd PID and the Kova PID file).
     if launchd_pid is not None and fallback_pid == launchd_pid:
         fallback_pid = None
 
@@ -4763,12 +4763,12 @@ def _guard_official_docker_root_gateway() -> None:
         return
 
     print_error(
-        "Refusing to run the Hermes gateway as root inside the official Docker image."
+        "Refusing to run the Kova gateway as root inside the official Docker image."
     )
     print(
         "  The image entrypoint normally drops privileges to the 'hermes' user. "
         "If you override entrypoint in Docker Compose, include "
-        "/opt/hermes/docker/entrypoint.sh before the Hermes command."
+        "/opt/hermes/docker/entrypoint.sh before the Kova command."
     )
     print(
         "  Running the gateway as root can leave root-owned files in "
@@ -5088,7 +5088,7 @@ _PLATFORMS = [
                 "name": "MATTERMOST_HOME_CHANNEL",
                 "prompt": "Home channel ID (for cron/notification delivery, or empty to set later with /set-home)",
                 "password": False,
-                "help": "Channel ID where Hermes delivers cron results and notifications.",
+                "help": "Channel ID where Kova delivers cron results and notifications.",
             },
             {
                 "name": "MATTERMOST_REPLY_MODE",
@@ -5127,7 +5127,7 @@ _PLATFORMS = [
             "2. Complete the BlueBubbles setup wizard — sign in with your Apple ID",
             "3. In BlueBubbles Settings → API, note the Server URL and password",
             "4. The server URL is typically http://<your-mac-ip>:1234",
-            "5. Hermes connects via the BlueBubbles REST API and receives",
+            "5. Kova connects via the BlueBubbles REST API and receives",
             "   incoming messages via a local webhook",
             "6. To authorize users, use DM pairing: hermes pairing generate bluebubbles",
             "   Share the code — the user sends it via iMessage to get approved",
@@ -5208,7 +5208,7 @@ _PLATFORMS = [
             "1. Download the Yuanbao app from https://yuanbao.tencent.com/",
             "2. In the app, go to PAI → My Bot and create a new bot",
             "3. After the bot is created, copy the App ID and App Secret",
-            "4. Enter them below and Hermes will connect automatically over WebSocket",
+            "4. Enter them below and Kova will connect automatically over WebSocket",
         ],
         "vars": [
             {
@@ -5703,7 +5703,7 @@ def _setup_weixin():
     print_info("  1. Kova will open Tencent iLink QR login in this terminal.")
     print_info("  2. Use WeChat to scan and confirm the QR code.")
     print_info(
-        "  3. Hermes will store the returned account_id/token in ~/.hermes/.env."
+        "  3. Kova will store the returned account_id/token in ~/.hermes/.env."
     )
     print_info(
         "  4. This adapter supports native text, image, video, and document delivery."
