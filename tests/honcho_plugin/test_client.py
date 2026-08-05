@@ -27,7 +27,7 @@ class TestHonchoClientConfigDefaults:
     def test_default_values(self):
         config = HonchoClientConfig()
         assert config.host == "kova"
-        assert config.workspace_id == "kova"
+        assert config.workspace_id == "kova"  # IDENTITY_HOST — server-side memory identity, HARD NO rename
         assert config.api_key is None
         assert config.environment == "production"
         assert config.timeout is None
@@ -119,8 +119,8 @@ class TestFromGlobalConfig:
                 }
             }
         }))
-        # Isolate from real ~/.hermes/honcho.json
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path / "isolated"))
+        # Isolate from real ~/.kova/honcho.json
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path / "isolated"))
 
         config = HonchoClientConfig.from_global_config(config_path=config_file)
         assert config.api_key == "***"
@@ -349,13 +349,13 @@ class TestResolveConfigPath:
         local_cfg = kova_home / "honcho.json"
         local_cfg.write_text('{"apiKey": "local"}')
 
-        with patch.dict(os.environ, {"HERMES_HOME": str(kova_home)}):
+        with patch.dict(os.environ, {"KOVA_HOME": str(kova_home)}):
             result = resolve_config_path()
         assert result == local_cfg
 
     def test_falls_back_to_default_profile_when_no_local(self, tmp_path, monkeypatch):
-        # Profile mode: HERMES_HOME points at ~/.hermes/profiles/<name>, so
-        # _get_default_kova_home() must resolve back to ~/.hermes — that's
+        # Profile mode: KOVA_HOME points at ~/.kova/profiles/<name>, so
+        # _get_default_kova_home() must resolve back to ~/.kova — that's
         # the bug the HOME-anchored helper fixes (vs. blindly using Path.home()).
         fake_home = tmp_path / "fakehome"
         fake_home.mkdir()
@@ -366,7 +366,7 @@ class TestResolveConfigPath:
         default_cfg.write_text('{"apiKey": "default-key"}')
 
         monkeypatch.setattr(Path, "home", lambda: fake_home)
-        monkeypatch.setenv("HERMES_HOME", str(profile_home))
+        monkeypatch.setenv("KOVA_HOME", str(profile_home))
 
         result = resolve_config_path()
 
@@ -379,7 +379,7 @@ class TestResolveConfigPath:
 
         with patch.dict(os.environ, {}, clear=False), \
              patch.object(Path, "home", return_value=fake_home):
-            os.environ.pop("HERMES_HOME", None)
+            os.environ.pop("KOVA_HOME", None)
             result = resolve_config_path()
         assert result == fake_home / ".honcho" / "config.json"
 
@@ -389,7 +389,7 @@ class TestResolveConfigPath:
         kova_home = tmp_path / "kova"
         kova_home.mkdir()
 
-        with patch.dict(os.environ, {"HERMES_HOME": str(kova_home)}), \
+        with patch.dict(os.environ, {"KOVA_HOME": str(kova_home)}), \
              patch.object(Path, "home", return_value=fake_home):
             assert resolve_global_config_path() == fake_home / ".honcho" / "config.json"
             assert resolve_config_path() == fake_home / ".honcho" / "config.json"
@@ -409,7 +409,7 @@ class TestResolveConfigPath:
         }))
 
         monkeypatch.setattr(Path, "home", lambda: fake_home)
-        monkeypatch.setenv("HERMES_HOME", str(profile_home))
+        monkeypatch.setenv("KOVA_HOME", str(profile_home))
 
         config = HonchoClientConfig.from_global_config()
 
@@ -425,7 +425,7 @@ class TestResolveConfigPath:
             "workspace": "local-ws",
         }))
 
-        with patch.dict(os.environ, {"HERMES_HOME": str(kova_home)}), \
+        with patch.dict(os.environ, {"KOVA_HOME": str(kova_home)}), \
              patch.object(Path, "home", return_value=tmp_path):
             config = HonchoClientConfig.from_global_config()
         assert config.api_key == "***"
@@ -440,7 +440,7 @@ class TestResolveActiveHost:
     def test_default_returns_kova(self):
         with patch.dict(os.environ, {}, clear=True):
             os.environ.pop("KOVA_HONCHO_HOST", None)
-            os.environ.pop("HERMES_HOME", None)
+            os.environ.pop("KOVA_HOME", None)
             with patch(
                 "plugins.memory.honcho.client.resolve_config_path",
                 return_value=Path("/nonexistent/honcho.json"),
@@ -529,14 +529,14 @@ class TestProfileScopedConfig:
         with patch.dict(os.environ, {"HONCHO_API_KEY": "key"}):
             config = HonchoClientConfig.from_env(host="kova_coder")
         assert config.host == "kova_coder"
-        assert config.workspace_id == "kova"  # shared workspace
-        assert config.ai_peer == "kova_coder"
+        assert config.workspace_id == "kova"  # shared workspace — server-side identity
+        assert config.ai_peer == "kova_coder"  # identity_for_host — HARD NO rename
 
     def test_from_env_default_workspace_preserved_for_default_host(self):
         with patch.dict(os.environ, {"HONCHO_API_KEY": "key"}):
             config = HonchoClientConfig.from_env(host="kova")
         assert config.host == "kova"
-        assert config.workspace_id == "kova"
+        assert config.workspace_id == "kova"  # server-side identity preserved
 
     def test_from_global_config_reads_profile_host_block(self, tmp_path):
         config_file = tmp_path / "config.json"
@@ -573,6 +573,8 @@ class TestProfileScopedConfig:
         assert config.peer_name == "dreamer-user"
 
     def test_from_global_config_reads_legacy_dot_profile_host_block(self, tmp_path):
+        # Legacy (pre-rename) config block key; new host key kova_dreamer must
+        # dual-read it via LEGACY_HOST (kova.dreamer).
         config_file = tmp_path / "config.json"
         config_file.write_text(json.dumps({
             "apiKey": "key",
@@ -586,7 +588,7 @@ class TestProfileScopedConfig:
         )
         assert config.host == "kova_dreamer"
         assert config.peer_name == "dreamer-user"
-        assert config.workspace_id == "kova_dreamer"
+        assert config.workspace_id == "kova_dreamer"  # server-side identity — HARD NO rename
 
 
 class TestObservationModeMigration:

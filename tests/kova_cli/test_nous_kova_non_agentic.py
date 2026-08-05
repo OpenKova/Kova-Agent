@@ -1,12 +1,12 @@
 """Tests for the Nous-Hermes-3/4 non-agentic warning detector.
 
 Prior to this check, the warning fired on any model whose name contained
-``"kova"`` anywhere (case-insensitive). That false-positived on unrelated
+``"hermes"`` anywhere (case-insensitive). That false-positived on unrelated
 local Modelfiles such as ``kova-brain:qwen3-14b-ctx16k`` — a tool-capable
 Qwen3 wrapper that happens to live under the "kova" tag namespace.
 
 ``is_nous_kova_non_agentic`` should only match the actual Nous Research
-Hermes-3 / Hermes-4 chat family.
+Hermes-3 / Hermes-4 chat family (product name: Kova).
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ from kova_cli.model_switch import (
         "Hermes-3",
         "hermes-4",
         "hermes-4-405b",
-        "kova_4_70b",
+        "hermes_4_70b",
         "openrouter/hermes3:70b",
         "openrouter/nousresearch/hermes-4-405b",
         "NousResearch/Hermes3",

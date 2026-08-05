@@ -191,11 +191,11 @@ _KOVA_MODEL_WARNING = (
 # happen to carry "kova" in their tag but are fully tool-capable.
 #
 # Positive examples the regex must match:
-#   NousResearch/Hermes-3-Llama-3.1-70B, hermes-4-405b, openrouter/hermes3:70b
+#   NousResearch/Kova-3-Llama-3.1-70B, kova-4-405b, openrouter/kova3:70b
 # Negative examples it must NOT match:
 #   kova-brain:qwen3-14b-ctx16k, qwen3:14b, claude-opus-4-6
 _NOUS_KOVA_NON_AGENTIC_RE = re.compile(
-    r"(?:^|[/:])kova[-_ ]?[34](?:[-_.:]|$)",
+    r"(?:^|[/:])hermes[-_ ]?[34](?:[-_.:]|$)",
     re.IGNORECASE,
 )
 

@@ -27,7 +27,7 @@ def test_media_delivery_denies_encrypted_bitwarden_cache(tmp_path, monkeypatch):
 
     kova_home = tmp_path / ".kova"
     kova_home.mkdir()
-    monkeypatch.setattr(base, "_HERMES_HOME", kova_home)
+    monkeypatch.setattr(base, "_KOVA_HOME", kova_home)
     monkeypatch.setattr(base, "_KOVA_ROOT", kova_home)
     path = kova_home / "cache" / "bws_cache.enc.json"
     path.parent.mkdir()
@@ -92,7 +92,7 @@ class TestSecretCaptureGuidance:
     def test_gateway_secret_capture_message_points_to_local_setup(self):
         message = GATEWAY_SECRET_CAPTURE_UNSUPPORTED_MESSAGE
         assert "local cli" in message.lower()
-        assert "~/.hermes/.env" in message
+        assert "~/.kova/.env" in message
 
 
 class TestSafeUrlForLog:
@@ -560,7 +560,7 @@ class TestMediaInsideSerializedJson:
     def test_media_in_embedded_serialized_reply_not_extracted(self):
         """A serialized tool result that embeds a prior reply's MEDIA: tag."""
         content = (
-            '{"content":"previous reply MEDIA:/Users/ex/.hermes/media/'
+            '{"content":"previous reply MEDIA:/Users/ex/.kova/media/'
             'generated/stale.png and more text"}'
         )
         media, _ = BasePlatformAdapter.extract_media(content)
@@ -1001,7 +1001,7 @@ class TestMediaDeliveryPathValidation:
         """The motivating case: agent produces a PDF in a project directory.
 
         Reproduces the Discord-PDF-not-delivered bug. Before recency trust,
-        files outside ~/.hermes/cache/* were silently dropped, leaving the
+        files outside ~/.kova/cache/* were silently dropped, leaving the
         user with a raw filepath in chat instead of an attachment.
         """
         self._patch_roots(monkeypatch)
@@ -1111,7 +1111,7 @@ class TestMediaDeliveryDefaultMode:
         assert BasePlatformAdapter.validate_media_delivery_path(str(secret)) is None
 
     def test_denylist_blocks_kova_credentials(self, tmp_path, monkeypatch):
-        """~/.hermes/.env and ~/.hermes/auth.json stay blocked even in
+        """~/.kova/.env and ~/.kova/auth.json stay blocked even in
         default mode. They live under $HOME (not the system prefix list)
         so this exercises the home-relative denied paths.
         """
@@ -1124,7 +1124,7 @@ class TestMediaDeliveryDefaultMode:
         env_file.write_text("OPENAI_API_KEY=sk-...")
         monkeypatch.setenv("HOME", str(fake_home))
         monkeypatch.setattr(
-            "gateway.platforms.base._HERMES_HOME",
+            "gateway.platforms.base._KOVA_HOME",
             kova_dir,
         )
 
@@ -1139,7 +1139,7 @@ class TestMediaDeliveryDefaultMode:
         ],
     )
     def test_denylist_blocks_mcp_oauth_tokens(self, tmp_path, monkeypatch, rel):
-        """Live MCP OAuth tokens/client creds under ~/.hermes/mcp-tokens/ must
+        """Live MCP OAuth tokens/client creds under ~/.kova/mcp-tokens/ must
         never deliver as native media — same exfil class as auth.json/.env.
         Sibling to the pairing/ directory denylist entry.
         """
@@ -1152,7 +1152,7 @@ class TestMediaDeliveryDefaultMode:
         secret.write_text('{"access_token": "live-bearer-abc123"}')
         monkeypatch.setenv("HOME", str(fake_home))
         monkeypatch.setattr(
-            "gateway.platforms.base._HERMES_HOME",
+            "gateway.platforms.base._KOVA_HOME",
             kova_dir,
         )
         monkeypatch.setattr(
@@ -1173,7 +1173,7 @@ class TestMediaDeliveryDefaultMode:
         config_file.write_text("model:\n  provider: openai\n")
         monkeypatch.setenv("HOME", str(fake_home))
         monkeypatch.setattr(
-            "gateway.platforms.base._HERMES_HOME",
+            "gateway.platforms.base._KOVA_HOME",
             kova_dir,
         )
 
@@ -1191,7 +1191,7 @@ class TestMediaDeliveryDefaultMode:
         config_file.write_text("profiles:\n  active: work\n")
         monkeypatch.setenv("HOME", str(fake_home))
         monkeypatch.setattr(
-            "gateway.platforms.base._HERMES_HOME",
+            "gateway.platforms.base._KOVA_HOME",
             profile_home,
         )
         monkeypatch.setattr(
@@ -1202,7 +1202,7 @@ class TestMediaDeliveryDefaultMode:
         assert BasePlatformAdapter.validate_media_delivery_path(str(config_file)) is None
 
     def test_denylist_blocks_google_token_default_mode(self, tmp_path, monkeypatch):
-        """Integration credentials at the HERMES_HOME root (google_token.json)
+        """Integration credentials at the KOVA_HOME root (google_token.json)
         must never be deliverable, even though they aren't the historically
         enumerated .env/auth.json/config.yaml files. Regression for a
         refreshed google_token.json being auto-attached to a Slack reply
@@ -1216,7 +1216,7 @@ class TestMediaDeliveryDefaultMode:
         token = kova_dir / "google_token.json"
         token.write_text('{"access_token": "***", "refresh_token": "***"}')
         monkeypatch.setenv("HOME", str(fake_home))
-        monkeypatch.setattr("gateway.platforms.base._HERMES_HOME", kova_dir)
+        monkeypatch.setattr("gateway.platforms.base._KOVA_HOME", kova_dir)
         monkeypatch.setattr("gateway.platforms.base._KOVA_ROOT", kova_dir)
 
         assert BasePlatformAdapter.validate_media_delivery_path(str(token)) is None
@@ -1238,13 +1238,13 @@ class TestMediaDeliveryDefaultMode:
         token = kova_dir / "google_token.json"
         token.write_text('{"access_token": "***"}')  # mtime = now → "recent"
         monkeypatch.setenv("HOME", str(fake_home))
-        monkeypatch.setattr("gateway.platforms.base._HERMES_HOME", kova_dir)
+        monkeypatch.setattr("gateway.platforms.base._KOVA_HOME", kova_dir)
         monkeypatch.setattr("gateway.platforms.base._KOVA_ROOT", kova_dir)
 
         assert BasePlatformAdapter.validate_media_delivery_path(str(token)) is None
 
     def test_denylist_blocks_pairing_directory_contents(self, tmp_path, monkeypatch):
-        """Files under ~/.hermes/pairing/ (platform pairing tokens) are
+        """Files under ~/.kova/pairing/ (platform pairing tokens) are
         credential material and must not be deliverable.
         """
         self._patch_roots(monkeypatch)
@@ -1256,7 +1256,7 @@ class TestMediaDeliveryDefaultMode:
         token = pairing / "telegram-approved.json"
         token.write_text('{"approved": ["123"]}')
         monkeypatch.setenv("HOME", str(fake_home))
-        monkeypatch.setattr("gateway.platforms.base._HERMES_HOME", kova_dir)
+        monkeypatch.setattr("gateway.platforms.base._KOVA_HOME", kova_dir)
         monkeypatch.setattr("gateway.platforms.base._KOVA_ROOT", kova_dir)
 
         assert BasePlatformAdapter.validate_media_delivery_path(str(token)) is None
@@ -1274,13 +1274,13 @@ class TestMediaDeliveryDefaultMode:
         artifact.write_bytes(b"%PDF-1.4")
         self._patch_roots(monkeypatch, cache_dir)
         monkeypatch.setenv("HOME", str(fake_home))
-        monkeypatch.setattr("gateway.platforms.base._HERMES_HOME", kova_dir)
+        monkeypatch.setattr("gateway.platforms.base._KOVA_HOME", kova_dir)
         monkeypatch.setattr("gateway.platforms.base._KOVA_ROOT", kova_dir)
 
         assert BasePlatformAdapter.validate_media_delivery_path(str(artifact)) == str(artifact.resolve())
 
     def test_denylist_blocks_non_cache_file_under_kova_home(self, tmp_path, monkeypatch):
-        """A non-credential file the agent wrote directly under ~/.hermes
+        """A non-credential file the agent wrote directly under ~/.kova
         (not in a cache subdir) is still deliverable via recency trust — we
         did NOT blanket-deny the tree (per #32090/#34425). This guards against
         accidentally re-introducing the rejected whole-tree deny.
@@ -1295,7 +1295,7 @@ class TestMediaDeliveryDefaultMode:
         artifact = kova_dir / "adhoc_report.pdf"
         artifact.write_bytes(b"%PDF-1.4")  # fresh mtime
         monkeypatch.setenv("HOME", str(fake_home))
-        monkeypatch.setattr("gateway.platforms.base._HERMES_HOME", kova_dir)
+        monkeypatch.setattr("gateway.platforms.base._KOVA_HOME", kova_dir)
         monkeypatch.setattr("gateway.platforms.base._KOVA_ROOT", kova_dir)
 
         assert BasePlatformAdapter.validate_media_delivery_path(str(artifact)) == str(artifact.resolve())
@@ -1389,7 +1389,7 @@ class TestMediaDeliveryDefaultMode:
         assert BasePlatformAdapter.validate_media_delivery_path(str(key)) is None
 
     def test_root_home_kova_env_still_blocked(self, tmp_path, monkeypatch):
-        """``~/.hermes/.env`` stays blocked under the $HOME exception — it is a
+        """``~/.kova/.env`` stays blocked under the $HOME exception — it is a
         more-specific denied path, not reachable just because home is allowed.
         """
         self._patch_roots(monkeypatch)
@@ -1404,12 +1404,12 @@ class TestMediaDeliveryDefaultMode:
             "gateway.platforms.base._MEDIA_DELIVERY_DENIED_PREFIXES",
             (str(fake_home),),
         )
-        monkeypatch.setattr("gateway.platforms.base._HERMES_HOME", kova_dir)
+        monkeypatch.setattr("gateway.platforms.base._KOVA_HOME", kova_dir)
 
         assert BasePlatformAdapter.validate_media_delivery_path(str(env_file)) is None
 
     def test_profile_scoped_cache_delivers_under_symlinked_root(self, tmp_path, monkeypatch):
-        """Reopened #31733: a profile gateway whose HERMES_HOME is symlinked
+        """Reopened #31733: a profile gateway whose KOVA_HOME is symlinked
         under a denied prefix (e.g. /opt/data -> /root/.kova) emits
         profile-scoped paths (``<root>/profiles/<name>/cache/images/x.png``)
         that resolve under ``/root``. ``$HOME`` is NOT that prefix, so the
@@ -2058,7 +2058,7 @@ class TestMediaFallbackDoesNotLeakHostPath:
     — a host filesystem path with no actionable information.
     """
 
-    SENSITIVE_PATH = "/home/jayne/.hermes/cache/media/sensitive_host_path_abc123.bin"
+    SENSITIVE_PATH = "/home/jayne/.kova/cache/media/sensitive_host_path_abc123.bin"
 
     @pytest.mark.asyncio
     async def test_send_voice_fallback_omits_audio_path(self):
