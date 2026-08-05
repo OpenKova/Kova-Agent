@@ -2,20 +2,20 @@
 
 Provides a single ``setup_logging()`` entry point that both the CLI and
 gateway call early in their startup path.  All log files live under
-``~/.hermes/logs/`` (profile-aware via ``get_hermes_home()``).
+``~/.hermes/logs/`` (profile-aware via ``get_kova_home()``).
 
 Log files produced:
-    agent.log   Ã¢â‚¬â€ INFO+, all agent/tool/session activity (the main log)
-    errors.log  Ã¢â‚¬â€ WARNING+, errors and warnings only (quick triage)
-    gateway.log Ã¢â‚¬â€ INFO+, gateway-only events (created when mode="gateway")
-    gui.log     Ã¢â‚¬â€ INFO+, dashboard/websocket/TUI-gateway events
+    agent.log   — INFO+, all agent/tool/session activity (the main log)
+    errors.log  — WARNING+, errors and warnings only (quick triage)
+    gateway.log — INFO+, gateway-only events (created when mode="gateway")
+    gui.log     — INFO+, dashboard/websocket/TUI-gateway events
                   (created when mode="gui")
 
 All files use ``RotatingFileHandler`` with ``RedactingFormatter`` so
 secrets are never written to disk.
 
 Component separation:
-    gateway.log only receives records from ``gateway.*`` loggers Ã¢â‚¬â€
+    gateway.log only receives records from ``gateway.*`` loggers —
     platform adapters, session management, slash commands, delivery.
     gui.log receives dashboard-side records from ``kova_cli.web_server``,
     ``kova_cli.pty_bridge``, ``tui_gateway.*``, and ``uvicorn.*``.
@@ -41,7 +41,7 @@ from typing import Optional, Sequence
 
 # On Windows, stdlib ``RotatingFileHandler`` calls ``os.rename()`` in
 # ``doRollover()`` and fails with ``PermissionError [WinError 32]`` whenever
-# another process holds an append-mode handle on ``agent.log`` Ã¢â‚¬â€ which is
+# another process holds an append-mode handle on ``agent.log`` — which is
 # essentially always in Kova (TUI, gateway, ``hy_memory`` server, MCP
 # servers, and on-demand CLI commands all log from separate processes),
 # pinning ``agent.log`` at the 5 MiB threshold and spamming stderr with
@@ -51,7 +51,7 @@ from typing import Optional, Sequence
 #
 # This swap is Windows-ONLY and deliberately so:
 #   * The bug (WinError 32 on rename-while-open) is specific to Windows file
-#     locking semantics Ã¢â‚¬â€ POSIX renames an open file fine, so stdlib already
+#     locking semantics — POSIX renames an open file fine, so stdlib already
 #     works correctly on Linux/macOS.
 #   * On POSIX, managed-mode (NixOS) relies on the exact ``_open()`` /
 #     ``doRollover()`` lifecycle of stdlib ``RotatingFileHandler`` (the
@@ -69,17 +69,17 @@ else:
     from logging.handlers import RotatingFileHandler  # noqa: E402
 
 
-from kova_constants import get_config_path, get_hermes_home
+from kova_constants import get_config_path, get_kova_home
 
 # Sentinel to track whether setup_logging() has already run.  The function
-# is idempotent Ã¢â‚¬â€ calling it twice is safe but the second call is a no-op
+# is idempotent — calling it twice is safe but the second call is a no-op
 # unless ``force=True``.
 _logging_initialized = False
 
 # Thread-local storage for per-conversation session context.
 _session_context = threading.local()
 
-# Default log format Ã¢â‚¬â€ includes timestamp, level, optional session tag,
+# Default log format — includes timestamp, level, optional session tag,
 # logger name, and message.  The ``%(session_tag)s`` field is guaranteed to
 # exist on every LogRecord via _install_session_record_factory() below.
 _LOG_FORMAT = "%(asctime)s %(levelname)s%(session_tag)s %(name)s: %(message)s"
@@ -90,15 +90,15 @@ def _safe_stderr():  # type: ignore[return]
     """Return a stderr stream that tolerates Unicode on all platforms.
 
     On Windows the console encoding is often a legacy MBCS codec
-    (cp949, cp1252, Ã¢â‚¬Â¦) that raises ``UnicodeEncodeError`` for characters
+    (cp949, cp1252, …) that raises ``UnicodeEncodeError`` for characters
     like the em-dash (U+2014).  We wrap ``sys.stderr`` in a
     ``TextIOWrapper`` with ``errors='replace'`` so log lines are never
-    lost Ã¢â‚¬â€ un-encodable characters are replaced with ``?`` instead of
+    lost — un-encodable characters are replaced with ``?`` instead of
     crashing the process.
     """
     stream = sys.stderr
     encoding = getattr(stream, "encoding", None) or "utf-8"
-    # Already UTF-8 or surrogate-aware Ã¢â‚¬â€ no wrapping needed.
+    # Already UTF-8 or surrogate-aware — no wrapping needed.
     if encoding.lower().replace("-", "") in ("utf8", "utf8surrogateescape"):
         return stream
     try:
@@ -177,24 +177,24 @@ def clear_session_context() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Record factory Ã¢â‚¬â€ injects session_tag into every LogRecord at creation
+# Record factory — injects session_tag into every LogRecord at creation
 # ---------------------------------------------------------------------------
 
 def _install_session_record_factory() -> None:
     """Replace the global LogRecord factory with one that adds ``session_tag``.
 
     Unlike a ``logging.Filter`` on a handler or logger, the record factory
-    runs for EVERY record in the process Ã¢â‚¬â€ including records that propagate
+    runs for EVERY record in the process — including records that propagate
     from child loggers and records handled by third-party handlers.  This
     guarantees ``%(session_tag)s`` is always available in format strings,
     eliminating the KeyError that would occur if a handler used our format
     without having a ``_SessionFilter`` attached.
 
-    Idempotent Ã¢â‚¬â€ checks for a marker attribute to avoid double-wrapping if
+    Idempotent — checks for a marker attribute to avoid double-wrapping if
     the module is reloaded.
     """
     current_factory = logging.getLogRecordFactory()
-    if getattr(current_factory, "_hermes_session_injector", False):
+    if getattr(current_factory, "_kova_session_injector", False):
         return  # already installed
 
     def _session_record_factory(*args, **kwargs):
@@ -203,11 +203,11 @@ def _install_session_record_factory() -> None:
         record.session_tag = f" [{sid}]" if sid else ""  # type: ignore[attr-defined]
         return record
 
-    _session_record_factory._hermes_session_injector = True  # type: ignore[attr-defined]
+    _session_record_factory._kova_session_injector = True  # type: ignore[attr-defined]
     logging.setLogRecordFactory(_session_record_factory)
 
 
-# Install immediately on import Ã¢â‚¬â€ session_tag is available on all records
+# Install immediately on import — session_tag is available on all records
 # from this point forward, even before setup_logging() is called.
 _install_session_record_factory()
 
@@ -235,10 +235,10 @@ class _ComponentFilter(logging.Filter):
 # Used by _ComponentFilter and exposed for ``kova logs --component``.
 COMPONENT_PREFIXES = {
     # ``plugins.platforms`` covers messaging-platform adapters that migrated
-    # out of ``gateway/platforms/`` into bundled plugins (#41112) Ã¢â‚¬â€ they are
+    # out of ``gateway/platforms/`` into bundled plugins (#41112) — they are
     # still gateway components and their logs belong in gateway.log / match
     # ``kova logs --component gateway``.
-    "gateway": ("gateway", "hermes_plugins", "plugins.platforms"),
+    "gateway": ("gateway", "kova_plugins", "plugins.platforms"),
     "agent": ("agent", "run_agent", "model_tools", "batch_runner"),
     "tools": ("tools",),
     "cli": ("kova_cli", "cli"),
@@ -258,7 +258,7 @@ COMPONENT_PREFIXES = {
 
 def setup_logging(
     *,
-    hermes_home: Optional[Path] = None,
+    kova_home: Optional[Path] = None,
     log_level: Optional[str] = None,
     max_size_mb: Optional[int] = None,
     backup_count: Optional[int] = None,
@@ -267,14 +267,14 @@ def setup_logging(
 ) -> Path:
     """Configure the Kova logging subsystem.
 
-    Safe to call multiple times Ã¢â‚¬â€ the second call is a no-op unless
+    Safe to call multiple times — the second call is a no-op unless
     *force* is ``True``.
 
     Parameters
     ----------
-    hermes_home
+    kova_home
         Override for the Kova home directory.  Falls back to
-        ``get_hermes_home()`` (profile-aware).
+        ``get_kova_home()`` (profile-aware).
     log_level
         Minimum level for the ``agent.log`` file handler.  Accepts any
         standard Python level name (``"DEBUG"``, ``"INFO"``, ``"WARNING"``).
@@ -300,11 +300,11 @@ def setup_logging(
         The ``logs/`` directory where files are written.
     """
     global _logging_initialized
-    home = hermes_home or get_hermes_home()
+    home = kova_home or get_kova_home()
     log_dir = home / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
 
-    # Read config defaults (best-effort Ã¢â‚¬â€ config may not be loaded yet).
+    # Read config defaults (best-effort — config may not be loaded yet).
     cfg_level, cfg_max_size, cfg_backup = _read_logging_config()
 
     level_name = (log_level or cfg_level or "INFO").upper()
@@ -317,7 +317,7 @@ def setup_logging(
 
     root = logging.getLogger()
 
-    # --- agent.log (INFO+) Ã¢â‚¬â€ the main activity log -------------------------
+    # --- agent.log (INFO+) — the main activity log -------------------------
     _add_rotating_handler(
         root,
         log_dir / "agent.log",
@@ -327,7 +327,7 @@ def setup_logging(
         formatter=RedactingFormatter(_LOG_FORMAT),
     )
 
-    # --- errors.log (WARNING+) Ã¢â‚¬â€ quick triage log --------------------------
+    # --- errors.log (WARNING+) — quick triage log --------------------------
     _add_rotating_handler(
         root,
         log_dir / "errors.log",
@@ -388,13 +388,13 @@ def setup_verbose_logging() -> None:
     # Avoid adding duplicate stream handlers.
     for h in root.handlers:
         if isinstance(h, logging.StreamHandler) and not isinstance(h, RotatingFileHandler):
-            if getattr(h, "_hermes_verbose", False):
+            if getattr(h, "_kova_verbose", False):
                 return
 
     handler = logging.StreamHandler(_safe_stderr())
     handler.setLevel(logging.DEBUG)
     handler.setFormatter(RedactingFormatter(_LOG_FORMAT_VERBOSE, datefmt="%H:%M:%S"))
-    handler._hermes_verbose = True  # type: ignore[attr-defined]
+    handler._kova_verbose = True  # type: ignore[attr-defined]
     root.addHandler(handler)
 
     # Lower root logger level so DEBUG records reach all handlers.
@@ -419,9 +419,9 @@ class _ManagedRotatingFileHandler(RotatingFileHandler):
     Two responsibilities:
 
     1.  In managed mode (NixOS), the stateDir uses setgid (2770) so new files
-        inherit the hermes group. However, both ``_open()`` (initial creation)
+        inherit the kova group. However, both ``_open()`` (initial creation)
         and ``doRollover()`` create files via ``open()``, which uses the
-        process umask Ã¢â‚¬â€ typically 0022, producing 0644. This subclass applies
+        process umask — typically 0022, producing 0644. This subclass applies
         ``chmod 0660`` after both operations so the gateway and interactive
         users can share log files.
 
@@ -429,7 +429,7 @@ class _ManagedRotatingFileHandler(RotatingFileHandler):
         rotates the file *externally* (``logrotate``, manual ``mv``,
         another process rotating under us, a transient unlink), our fd
         keeps pointing at the renamed/unlinked inode and every subsequent
-        write goes to ``gateway.log.1`` instead of ``gateway.log`` Ã¢â‚¬â€ silent
+        write goes to ``gateway.log.1`` instead of ``gateway.log`` — silent
         log loss for the file every operator expects to read.  Before each
         emit we ``stat`` ``baseFilename`` and compare it against the open
         stream's inode; on mismatch we reopen.  This is the same pattern
@@ -485,12 +485,12 @@ class _ManagedRotatingFileHandler(RotatingFileHandler):
                 self.stream = self._open()
                 self._record_stream_stat()
             except Exception:
-                # Couldn't reopen Ã¢â‚¬â€ leave stream=None; next emit will
+                # Couldn't reopen — leave stream=None; next emit will
                 # bail rather than write to a stale inode.
                 pass
             return
         except OSError:
-            return  # transient Ã¢â‚¬â€ try again on the next emit
+            return  # transient — try again on the next emit
 
         if self._stat_dev is None or self._stat_ino is None:
             self._stat_dev, self._stat_ino = st.st_dev, st.st_ino
@@ -525,7 +525,7 @@ class _ManagedRotatingFileHandler(RotatingFileHandler):
         CLH's own ``emit()`` wraps its body in ``try/except Exception:
         self.handleError(record)``, so the ``"Cannot acquire lock after N
         attempts"`` RuntimeError raised in ``_do_lock()`` is caught inside CLH
-        and routed here Ã¢â‚¬â€ it never propagates out of ``super().emit()``.  This
+        and routed here — it never propagates out of ``super().emit()``.  This
         override is the single point where that timeout can be silenced before
         the stdlib handler prints it to stderr (which, under the Desktop
         slash-worker, is captured and surfaced into chat output)."""
@@ -548,7 +548,7 @@ class _ManagedRotatingFileHandler(RotatingFileHandler):
 
 
 # ---------------------------------------------------------------------------
-# Asynchronous file logging Ã¢â‚¬â€ keep the cross-process rotation lock off the loop
+# Asynchronous file logging — keep the cross-process rotation lock off the loop
 #
 # The rotating file handlers serialize rollover with a cross-process lock (see
 # the module header): when several Kova processes log to the same file, an
@@ -577,7 +577,7 @@ class _NonFormattingQueueHandler(QueueHandler):
 
     Stdlib ``prepare()`` formats the record and drops ``args``/``exc_info`` so it
     can be pickled to another process.  Our queue is in-process, so we skip that
-    and hand the target file handlers an unformatted record Ã¢â‚¬â€ they apply their
+    and hand the target file handlers an unformatted record — they apply their
     own ``RedactingFormatter`` and component filters on the listener thread.
 
     We return a **shallow copy** rather than the original record: the same
@@ -622,7 +622,7 @@ def _register_queued_handler(handler: logging.Handler) -> None:
         if _log_queue is None:
             _log_queue = queue.SimpleQueue()
             qh = _NonFormattingQueueHandler(_log_queue)
-            qh._hermes_queue = True  # type: ignore[attr-defined]
+            qh._kova_queue = True  # type: ignore[attr-defined]
             # Always funnel through the root logger so records from any logger
             # (production passes root here; callers may pass a child) reach the
             # queue via propagation.
@@ -653,7 +653,7 @@ def flush_log_queue() -> None:
 
     NOTE: ``stop()`` joins the worker thread, so this blocks until the queue
     is empty. Do NOT call this on a hard-exit path where the listener may be
-    wedged on the rotation lock Ã¢â‚¬â€ use ``drain_log_queue()`` there instead,
+    wedged on the rotation lock — use ``drain_log_queue()`` there instead,
     which bounds the wait.
     """
     with _queue_state_lock:
@@ -668,8 +668,8 @@ def drain_log_queue(timeout: float = 1.0) -> None:
 
     Unlike ``flush_log_queue()``, this stops the listener WITHOUT restarting it
     (the process is about to exit) and bounds the drain: if the listener's
-    worker thread is wedged on the cross-process rotation lock Ã¢â‚¬â€ the very
-    failure this async-logging change exists to survive Ã¢â‚¬â€ an unbounded
+    worker thread is wedged on the cross-process rotation lock — the very
+    failure this async-logging change exists to survive — an unbounded
     ``stop()``/join would re-freeze the shutdown path. We run ``stop()`` on a
     throwaway thread and only wait ``timeout`` seconds for it; if it hasn't
     drained by then we abandon the last few records and let ``os._exit``
@@ -686,7 +686,7 @@ def drain_log_queue(timeout: float = 1.0) -> None:
         except Exception:
             pass
 
-    t = threading.Thread(target=_drain, name="hermes-log-drain", daemon=True)
+    t = threading.Thread(target=_drain, name="kova-log-drain", daemon=True)
     t.start()
     t.join(timeout)
 
@@ -707,7 +707,7 @@ def _reset_queued_handlers() -> None:
         _stop_queue_listener_locked()
         root = logging.getLogger()
         for h in list(root.handlers):
-            if getattr(h, "_hermes_queue", False):
+            if getattr(h, "_kova_queue", False):
                 root.removeHandler(h)
         for h in list(_queued_file_handlers):
             try:
@@ -762,7 +762,7 @@ def _add_rotating_handler(
 def _read_logging_config():
     """Best-effort read of ``logging.*`` from config.yaml.
 
-    Returns ``(level, max_size_mb, backup_count)`` Ã¢â‚¬â€ any may be ``None``.
+    Returns ``(level, max_size_mb, backup_count)`` — any may be ``None``.
     """
     try:
         from utils import fast_safe_load

@@ -32,7 +32,7 @@ Skills 是 agent 在需要时可以加载的按需知识文档。它们遵循**�
 /excalidraw
 ```
 
-捆绑的 `plan` skill 是一个很好的示例。运行 `/plan [request]` 会加载该 skill 的指令，告知 Kova 在需要时检查上下文、编写 markdown 实现计划而非直接执行任务，并将结果保存在相对于当前工作区/后端工作目录的 `.hermes/plans/` 下。
+捆绑的 `plan` skill 是一个很好的示例。运行 `/plan [request]` 会加载该 skill 的指令，告知 Kova 在需要时检查上下文、编写 markdown 实现计划而非直接执行任务，并将结果保存在相对于当前工作区/后端工作目录的 `.kova/plans/` 下。
 
 你也可以通过自然对话与 skills 交互：
 
@@ -62,7 +62,7 @@ description: Brief description of what this skill does
 version: 1.0.0
 platforms: [macos, linux]     # Optional — restrict to specific OS platforms
 metadata:
-  hermes:
+  kova:
     tags: [python, automation]
     category: devops
     fallback_for_toolsets: [web]    # Optional — conditional activation (see below)
@@ -142,7 +142,7 @@ Skills 可以根据当前会话中可用的工具自动显示或隐藏自身。�
 
 ```yaml
 metadata:
-  hermes:
+  kova:
     fallback_for_toolsets: [web]      # Show ONLY when these toolsets are unavailable
     requires_toolsets: [terminal]     # Show ONLY when these toolsets are available
     fallback_for_tools: [web_search]  # Show ONLY when these specific tools are unavailable
@@ -172,7 +172,7 @@ required_environment_variables:
     required_for: full functionality
 ```
 
-当遇到缺失的值时，Kova 仅在本地 CLI 中实际加载 skill 时才会安全地请求输入。你可以跳过设置并继续使用该 skill。消息平台不会在聊天中请求密钥——它们会告诉你改用本地的 `hermes setup` 或 `~/.hermes/.env`。
+当遇到缺失的值时，Kova 仅在本地 CLI 中实际加载 skill 时才会安全地请求输入。你可以跳过设置并继续使用该 skill。消息平台不会在聊天中请求密钥——它们会告诉你改用本地的 `kova setup` 或 `~/.hermes/.env`。
 
 一旦设置，声明的环境变量会**自动传递**到 `execute_code` 和 `terminal` 沙箱——skill 的脚本可以直接使用 `$TENOR_API_KEY`。对于非 skill 的环境变量，使用 `terminal.env_passthrough` 配置选项。详情参见[环境变量传递](/user-guide/security#environment-variable-passthrough)。
 
@@ -182,7 +182,7 @@ Skills 还可以声明存储在 `config.yaml` 中的非密钥配置设置（路�
 
 ```yaml
 metadata:
-  hermes:
+  kova:
     config:
       - key: myplugin.path
         description: Path to the plugin data directory
@@ -627,7 +627,7 @@ owner/repo
 规则：
 - 每个 skill 存放在 tap 根路径（默认 `skills/`）下的独立目录中。
 - 目录名成为 skill 的安装 slug。
-- 每个 skill 目录必须包含一个带有标准 [SKILL.md frontmatter](#skillmd-format) 的 `SKILL.md`（`name`、`description`，以及可选的 `metadata.hermes.tags`、`version`、`author`、`platforms`、`metadata.hermes.config`）。
+- 每个 skill 目录必须包含一个带有标准 [SKILL.md frontmatter](#skillmd-format) 的 `SKILL.md`（`name`、`description`，以及可选的 `metadata.kova.tags`、`version`、`author`、`platforms`、`metadata.kova.config`）。
 - `references/`、`templates/`、`scripts/`、`assets/` 等子目录在安装时与 `SKILL.md` 一起下载。
 - 目录名以 `.` 或 `_` 开头的 skills 会被忽略。
 
@@ -636,7 +636,7 @@ Kova 通过列出 tap 路径的每个子目录并探测每个目录中的 `SKILL
 #### 最小 tap 示例
 
 ```
-my-org/hermes-skills
+my-org/kova-skills
 └── skills/
     └── deploy-runbook/
         └── SKILL.md
@@ -651,7 +651,7 @@ description: Our deployment runbook — services, rollback, Slack channels
 version: 1.0.0
 author: My Org Platform Team
 metadata:
-  hermes:
+  kova:
     tags: [deployment, runbook, internal]
 ---
 
@@ -663,9 +663,9 @@ Step 1: ...
 将其推送到 GitHub 后，任何 Kova 用户都可以订阅并安装：
 
 ```bash
-hermes skills tap add my-org/hermes-skills
+kova skills tap add my-org/kova-skills
 kova skills search deploy
-hermes skills install my-org/hermes-skills/deploy-runbook
+kova skills install my-org/kova-skills/deploy-runbook
 ```
 
 #### 非默认路径
@@ -716,14 +716,14 @@ Tap 存储在 `~/.hermes/.hub/taps.json` 中（按需创建）。
 
 ## 捆绑 skill 更新（`kova skills reset`）
 
-Kova 在仓库的 `skills/` 中附带一组捆绑 skills。在安装时以及每次 `hermes update` 时，同步过程会将这些 skills 复制到 `~/.hermes/skills/` 中，并在 `~/.hermes/skills/.bundled_manifest` 记录一个清单，将每个 skill 名称映射到同步时的内容哈希（**origin hash**）。
+Kova 在仓库的 `skills/` 中附带一组捆绑 skills。在安装时以及每次 `kova update` 时，同步过程会将这些 skills 复制到 `~/.hermes/skills/` 中，并在 `~/.hermes/skills/.bundled_manifest` 记录一个清单，将每个 skill 名称映射到同步时的内容哈希（**origin hash**）。
 
 每次同步时，Kova 重新计算本地副本的哈希并与 origin hash 比较：
 
 - **未更改** → 可以安全拉取上游变更，复制新的捆绑版本，记录新的 origin hash。
 - **已更改** → 视为**用户修改**并永久跳过，因此你的编辑不会被覆盖。
 
-这种保护机制很好，但有一个棘手的边缘情况。如果你编辑了一个捆绑 skill，后来想通过从 `~/.hermes/hermes-agent/skills/` 复制粘贴来放弃更改并回到捆绑版本，清单仍然保存着上次成功同步时的*旧* origin hash。你新复制粘贴的内容（当前捆绑哈希）与那个过时的 origin hash 不匹配，因此同步继续将其标记为用户修改。
+这种保护机制很好，但有一个棘手的边缘情况。如果你编辑了一个捆绑 skill，后来想通过从 `~/.hermes/kova-agent/skills/` 复制粘贴来放弃更改并回到捆绑版本，清单仍然保存着上次成功同步时的*旧* origin hash。你新复制粘贴的内容（当前捆绑哈希）与那个过时的 origin hash 不匹配，因此同步继续将其标记为用户修改。
 
 `kova skills reset` 是解决此问题的方法：
 

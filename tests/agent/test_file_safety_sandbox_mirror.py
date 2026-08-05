@@ -32,7 +32,7 @@ class TestClassifySandboxMirrorTarget:
         target = (
             tmp_path
             / "profiles" / "group1"
-            / "sandboxes" / "docker" / "default" / "home" / ".hermes"
+            / "sandboxes" / "docker" / "default" / "home" / ".kova"
             / "profiles" / "group1" / "SOUL.md"
         )
         target.parent.mkdir(parents=True)
@@ -60,7 +60,7 @@ class TestClassifySandboxMirrorTarget:
 
         target = (
             tmp_path
-            / "sandboxes" / backend / "task-42" / "home" / ".hermes"
+            / "sandboxes" / backend / "task-42" / "home" / ".kova"
             / Path(inner)
         )
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -75,13 +75,13 @@ class TestClassifySandboxMirrorTarget:
         """A plain Kova path is not a mirror."""
         from agent.file_safety import classify_sandbox_mirror_target
 
-        target = tmp_path / ".hermes" / "profiles" / "group1" / "SOUL.md"
+        target = tmp_path / ".kova" / "profiles" / "group1" / "SOUL.md"
         target.parent.mkdir(parents=True)
         target.write_text("# real SOUL\n")
 
         assert classify_sandbox_mirror_target(str(target)) is None
 
-    def test_sandboxes_segment_without_home_hermes_returns_none(self, tmp_path):
+    def test_sandboxes_segment_without_home_kova_returns_none(self, tmp_path):
         """A ``sandboxes/`` directory unrelated to Kova-state mirroring (e.g.
         the sandbox workspace itself) is not flagged."""
         from agent.file_safety import classify_sandbox_mirror_target
@@ -95,8 +95,8 @@ class TestClassifySandboxMirrorTarget:
 
         assert classify_sandbox_mirror_target(str(target)) is None
 
-    def test_sandboxes_segment_with_home_but_no_hermes_returns_none(self, tmp_path):
-        """``sandboxes/<backend>/<task>/home/anything-not-hermes`` is not a mirror."""
+    def test_sandboxes_segment_with_home_but_no_kova_returns_none(self, tmp_path):
+        """``sandboxes/<backend>/<task>/home/anything-not-kova`` is not a mirror."""
         from agent.file_safety import classify_sandbox_mirror_target
 
         target = (
@@ -125,7 +125,7 @@ class TestClassifySandboxMirrorTarget:
         target = (
             tmp_path
             / "profiles" / "group1"
-            / "sandboxes" / "docker" / "default" / "home" / ".hermes"
+            / "sandboxes" / "docker" / "default" / "home" / ".kova"
             / "profiles" / "group1" / "SOUL.md"
         )
         # Parent directory exists so .resolve() doesn't strip the tail
@@ -147,7 +147,7 @@ class TestGetSandboxMirrorWarning:
     def test_non_mirror_returns_none(self, tmp_path):
         from agent.file_safety import get_sandbox_mirror_warning
 
-        target = tmp_path / ".hermes" / "profiles" / "group1" / "SOUL.md"
+        target = tmp_path / ".kova" / "profiles" / "group1" / "SOUL.md"
         target.parent.mkdir(parents=True)
         target.write_text("# real SOUL\n")
 
@@ -159,7 +159,7 @@ class TestGetSandboxMirrorWarning:
         target = (
             tmp_path
             / "profiles" / "group1"
-            / "sandboxes" / "docker" / "default" / "home" / ".hermes"
+            / "sandboxes" / "docker" / "default" / "home" / ".kova"
             / "profiles" / "group1" / "SOUL.md"
         )
         target.parent.mkdir(parents=True)
@@ -179,7 +179,7 @@ class TestGetSandboxMirrorWarning:
 
         target = (
             tmp_path
-            / "sandboxes" / "docker" / "t" / "home" / ".hermes"
+            / "sandboxes" / "docker" / "t" / "home" / ".kova"
             / "profiles" / "g" / "SOUL.md"
         )
         target.parent.mkdir(parents=True)
@@ -204,13 +204,13 @@ class TestSandboxMirrorIsOrthogonalToCrossProfile:
 
     def test_same_profile_mirror_still_flagged(self, tmp_path, monkeypatch):
         import agent.file_safety as fs
-        monkeypatch.setattr(fs, "_hermes_root_path", lambda: tmp_path)
-        monkeypatch.setattr(fs, "_hermes_home_path", lambda: tmp_path / "profiles" / "group1")
+        monkeypatch.setattr(fs, "_kova_root_path", lambda: tmp_path)
+        monkeypatch.setattr(fs, "_kova_home_path", lambda: tmp_path / "profiles" / "group1")
 
         target = (
             tmp_path
             / "profiles" / "group1"
-            / "sandboxes" / "docker" / "default" / "home" / ".hermes"
+            / "sandboxes" / "docker" / "default" / "home" / ".kova"
             / "profiles" / "group1" / "SOUL.md"
         )
         target.parent.mkdir(parents=True)

@@ -122,7 +122,7 @@ def test_pyproject_aiohttp_pins_match_lazy_slack_pin():
     }
     assert not mismatches, (
         "pyproject.toml aiohttp pins must match "
-        "LAZY_DEPS['platform.slack'] to avoid hermes update downgrading "
+        "LAZY_DEPS['platform.slack'] to avoid kova update downgrading "
         "aiohttp before Slack's lazy refresh upgrades it again. "
         f"lazy aiohttp=={lazy_aiohttp}; mismatched extras: {mismatches}"
     )
@@ -198,7 +198,7 @@ def test_messaging_extra_includes_qrcode_for_weixin_setup():
 
 
 def test_dingtalk_extra_includes_qrcode_for_qr_auth():
-    """DingTalk's QR-code device-flow auth (hermes_cli/dingtalk_auth.py)
+    """DingTalk's QR-code device-flow auth (kova_cli/dingtalk_auth.py)
     needs the qrcode package."""
     optional_dependencies = _load_optional_dependencies()
 

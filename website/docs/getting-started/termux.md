@@ -87,8 +87,8 @@ Why these packages?
 ### 2. Clone Kova
 
 ```bash
-git clone https://github.com/NousResearch/hermes-agent.git
-cd hermes-agent
+git clone https://github.com/OpenKova/Kova-Agent.git
+cd kova-agent
 ```
 
 ### 3. Create a virtual environment
@@ -117,7 +117,7 @@ python -m pip install -e '.' -c constraints-termux.txt
 ### 5. Put `kova` on your Termux PATH
 
 ```bash
-ln -sf "$PWD/venv/bin/hermes" "$PREFIX/bin/hermes"
+ln -sf "$PWD/venv/bin/kova" "$PREFIX/bin/kova"
 ```
 
 `$PREFIX/bin` is already on PATH in Termux, so this makes the `kova` command persist across new shells without re-activating the venv every time.

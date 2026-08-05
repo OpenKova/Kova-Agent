@@ -18,7 +18,7 @@ from kova_cli.provider_catalog import provider_catalog
 from kova_cli.web_server import _SESSION_TOKEN, app
 
 client = TestClient(app)
-HEADERS = {"X-Hermes-Session-Token": _SESSION_TOKEN}
+HEADERS = {"X-Kova-Session-Token": _SESSION_TOKEN}
 
 # `custom` is the bring-your-own-endpoint pseudo-provider configured inline via
 # the model picker's local-endpoint flow, not a fixed credential card. It is in
@@ -56,7 +56,7 @@ def _accounts_tab_providers() -> set[str]:
     return {p["id"] for p in data["providers"]}
 
 
-def test_every_hermes_model_provider_is_configurable_in_desktop():
+def test_every_kova_model_provider_is_configurable_in_desktop():
     """PARITY CONTRACT: GUI (keys ∪ accounts) ⊇ `kova model` universe."""
     gui = _keys_tab_providers() | _accounts_tab_providers()
     missing = [

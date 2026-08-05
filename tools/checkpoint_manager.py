@@ -16,7 +16,7 @@ Storage layout (single shared store, git objects deduplicated across projects)
     ~/.hermes/checkpoints/
         store/                          — single bare-ish git repo
             HEAD, config, objects/      — standard git internals (shared)
-            refs/hermes/<hash16>        — per-project branch tip
+            refs/kova/<hash16>        — per-project branch tip
             indexes/<hash16>            — per-project git index
             projects/<hash16>.json      — {workdir, created_at, last_touch}
             info/exclude                — default excludes (shared)
@@ -57,8 +57,8 @@ import shutil
 import subprocess
 import time
 from pathlib import Path
-from hermes_constants import get_hermes_home
-from hermes_cli._subprocess_compat import windows_hide_flags
+from kova_constants import get_kova_home
+from kova_cli._subprocess_compat import windows_hide_flags
 from typing import Dict, List, Optional, Set, Tuple
 
 from utils import env_int
@@ -69,11 +69,11 @@ logger = logging.getLogger(__name__)
 # Constants
 # ---------------------------------------------------------------------------
 
-CHECKPOINT_BASE = get_hermes_home() / "checkpoints"
+CHECKPOINT_BASE = get_kova_home() / "checkpoints"
 
 # Single shared store directory under CHECKPOINT_BASE.
 _STORE_DIRNAME = "store"
-_REFS_PREFIX = "refs/hermes"
+_REFS_PREFIX = "refs/kova"
 _INDEXES_DIRNAME = "indexes"
 _PROJECTS_DIRNAME = "projects"
 _LEGACY_PREFIX = "legacy-"
@@ -142,7 +142,7 @@ DEFAULT_EXCLUDES = [
 ]
 
 # Git subprocess timeout (seconds).
-_GIT_TIMEOUT: int = max(10, min(60, env_int("HERMES_CHECKPOINT_TIMEOUT", 30)))
+_GIT_TIMEOUT: int = max(10, min(60, env_int("KOVA_CHECKPOINT_TIMEOUT", 30)))
 
 # Max files to snapshot — skip huge directories to avoid slowdowns.
 _MAX_FILES = 50_000
@@ -467,7 +467,7 @@ def _init_store(store: Path, working_dir: str) -> Optional[str]:
     # Use the base dir as the working_dir for config commands — it always
     # exists since we just created the store inside it.
     cfg_wd = str(base)
-    _run_git(["config", "user.email", "hermes@local"], store, cfg_wd)
+    _run_git(["config", "user.email", "kova@local"], store, cfg_wd)
     _run_git(["config", "user.name", "Kova Checkpoint"], store, cfg_wd)
     _run_git(["config", "commit.gpgsign", "false"], store, cfg_wd)
     _run_git(["config", "tag.gpgSign", "false"], store, cfg_wd)
@@ -574,7 +574,7 @@ def _dir_size_bytes(path: Path) -> int:
 
 
 # Backwards-compatibility shim — some tests import ``_init_shadow_repo`` and
-# look for ``HEAD``/``info/exclude``/``HERMES_WORKDIR``.  In v2 we also write
+# look for ``HEAD``/``info/exclude``/``KOVA_WORKDIR``.  In v2 we also write
 # those markers, but inside the shared store + under ``projects/<hash>.json``.
 # The shim initialises the store and registers the project so the old
 # surface keeps roughly the same shape.
@@ -590,10 +590,10 @@ def _init_shadow_repo(shadow_repo: Path, working_dir: str) -> Optional[str]:
     if err:
         return err
     _register_project(shadow_repo, working_dir)
-    # Compat marker for tests that look at HERMES_WORKDIR
+    # Compat marker for tests that look at KOVA_WORKDIR
     # (write in addition to the JSON metadata).
     try:
-        (shadow_repo / "HERMES_WORKDIR").write_text(
+        (shadow_repo / "KOVA_WORKDIR").write_text(
             str(_normalize_path(working_dir)) + "\n", encoding="utf-8"
         )
     except OSError:
@@ -1333,7 +1333,7 @@ def prune_checkpoints(
         reason: Optional[str] = None
         if delete_orphans:
             workdir: Optional[str] = None
-            wd_marker = child / "HERMES_WORKDIR"
+            wd_marker = child / "KOVA_WORKDIR"
             if wd_marker.exists():
                 try:
                     workdir = wd_marker.read_text(encoding="utf-8").strip()

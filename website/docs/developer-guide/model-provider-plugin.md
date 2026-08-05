@@ -73,14 +73,14 @@ That's it. After dropping these two files, the following **auto-wire** with no o
 
 | Integration | Where | What it gets |
 |---|---|---|
-| Credential resolution | `hermes_cli/auth.py` | `PROVIDER_REGISTRY["acme-inference"]` populated from profile |
-| `--provider` CLI flag | `hermes_cli/main.py` | Accepts `acme-inference` |
-| `hermes model` picker | `hermes_cli/models.py` | Appears in `CANONICAL_PROVIDERS`, model list fetched from `{base_url}/models` |
-| `hermes doctor` | `hermes_cli/doctor.py` | Health check for `ACME_API_KEY` + `{base_url}/models` probe |
-| `hermes setup` | `hermes_cli/config.py` | `ACME_API_KEY` appears in `OPTIONAL_ENV_VARS` and the setup wizard |
+| Credential resolution | `kova_cli/auth.py` | `PROVIDER_REGISTRY["acme-inference"]` populated from profile |
+| `--provider` CLI flag | `kova_cli/main.py` | Accepts `acme-inference` |
+| `kova model` picker | `kova_cli/models.py` | Appears in `CANONICAL_PROVIDERS`, model list fetched from `{base_url}/models` |
+| `kova doctor` | `kova_cli/doctor.py` | Health check for `ACME_API_KEY` + `{base_url}/models` probe |
+| `kova setup` | `kova_cli/config.py` | `ACME_API_KEY` appears in `OPTIONAL_ENV_VARS` and the setup wizard |
 | URL reverse-mapping | `agent/model_metadata.py` | Hostname → provider name for auto-detection |
 | Auxiliary model | `agent/auxiliary_client.py` | Uses `default_aux_model` for compression / summarization |
-| Runtime resolution | `hermes_cli/runtime_provider.py` | Returns correct `base_url`, `api_key`, `api_mode` |
+| Runtime resolution | `kova_cli/runtime_provider.py` | Returns correct `base_url`, `api_key`, `api_mode` |
 | Transport | `agent/transports/chat_completions.py` | Profile path generates kwargs via `prepare_messages` / `build_extra_body` / `build_api_kwargs_extras` |
 
 ## ProviderProfile fields
@@ -225,7 +225,7 @@ for p in list_providers():
 Point `HERMES_HOME` at a temp directory so you don't pollute your real config:
 
 ```bash
-export HERMES_HOME=/tmp/hermes-plugin-test
+export HERMES_HOME=/tmp/kova-plugin-test
 mkdir -p $HERMES_HOME/plugins/model-providers/my-provider
 cat > $HERMES_HOME/plugins/model-providers/my-provider/__init__.py <<'EOF'
 from providers import register_provider
@@ -251,11 +251,11 @@ The general `PluginManager` (the thing `kova plugins` operates on) **sees** mode
 Like any Kova plugin, model providers can ship as a pip package. Add an entry point to your `pyproject.toml`:
 
 ```toml
-[project.entry-points."hermes_agent.plugins"]
-acme-inference = "acme_hermes_plugin:register"
+[project.entry-points."kova_agent.plugins"]
+acme-inference = "acme_kova_plugin:register"
 ```
 
-…where `acme_hermes_plugin:register` is a function that calls `register_provider(profile)`. The general PluginManager picks up entry-point plugins during `discover_and_load()`. For `kind: model-provider` pip plugins, you still need to declare the kind in your manifest (or rely on the source-text heuristic).
+…where `acme_kova_plugin:register` is a function that calls `register_provider(profile)`. The general PluginManager picks up entry-point plugins during `discover_and_load()`. For `kind: model-provider` pip plugins, you still need to declare the kind in your manifest (or rely on the source-text heuristic).
 
 See [Building a Kova Plugin](/developer-guide/plugins#distribute-via-pip) for the full entry-points setup.
 

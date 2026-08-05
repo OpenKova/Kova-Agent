@@ -15,10 +15,10 @@ services:
     container_name: kova
     restart: unless-stopped
     volumes:
-      - ${USERPROFILE}/.hermes:/opt/data
+      - ${USERPROFILE}/.kova:/opt/data
     environment:
-      - HERMES_UID=10000
-      - HERMES_GID=10000
+      - KOVA_UID=10000
+      - KOVA_GID=10000
     command: ["gateway", "run"]
 
   dashboard:
@@ -28,11 +28,11 @@ services:
     depends_on:
       - gateway
     volumes:
-      - ${USERPROFILE}/.hermes:/opt/data
+      - ${USERPROFILE}/.kova:/opt/data
     environment:
-      - HERMES_UID=10000
-      - HERMES_GID=10000
-      - HERMES_DASHBOARD_HOST=0.0.0.0
+      - KOVA_UID=10000
+      - KOVA_GID=10000
+      - KOVA_DASHBOARD_HOST=0.0.0.0
     ports:
       - "127.0.0.1:9119:9119"
     command: ["dashboard", "--host", "0.0.0.0", "--port", "9119", "--no-open", "--insecure"]

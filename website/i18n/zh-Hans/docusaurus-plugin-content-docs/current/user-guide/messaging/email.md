@@ -59,7 +59,7 @@ kova gateway setup
 
 ```bash
 # 必填
-EMAIL_ADDRESS=hermes@gmail.com
+EMAIL_ADDRESS=kova@gmail.com
 EMAIL_PASSWORD=abcd efgh ijkl mnop    # 应用专用密码（非常规密码）
 EMAIL_IMAP_HOST=imap.gmail.com
 EMAIL_SMTP_HOST=smtp.gmail.com

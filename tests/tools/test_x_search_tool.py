@@ -38,7 +38,7 @@ class _FakeResponse:
 
 def test_x_search_posts_responses_request(monkeypatch):
     from tools.x_search_tool import x_search_tool
-    from hermes_cli import __version__
+    from kova_cli import __version__
 
     captured = {}
 
@@ -254,7 +254,7 @@ def test_x_search_retries_5xx_then_succeeds(monkeypatch):
 
 def _no_xai_env(monkeypatch):
     """Strip any XAI_* env vars so the resolver doesn't see a leaked dev key."""
-    for var in ("XAI_API_KEY", "XAI_BASE_URL", "HERMES_XAI_BASE_URL"):
+    for var in ("XAI_API_KEY", "XAI_BASE_URL", "KOVA_XAI_BASE_URL"):
         monkeypatch.delenv(var, raising=False)
 
 

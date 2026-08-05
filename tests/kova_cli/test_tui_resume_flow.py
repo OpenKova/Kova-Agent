@@ -229,7 +229,7 @@ def test_main_top_level_tui_accepts_toolsets(monkeypatch, main_mod):
 
     import kova_cli.config as config_mod
 
-    monkeypatch.setattr(sys, "argv", ["hermes", "--tui", "--toolsets", "web,terminal"])
+    monkeypatch.setattr(sys, "argv", ["kova", "--tui", "--toolsets", "web,terminal"])
     monkeypatch.setitem(
         sys.modules,
         "kova_cli.plugins",
@@ -265,7 +265,7 @@ def test_termux_fast_tui_launch_uses_light_parser(monkeypatch, main_mod):
 
     monkeypatch.setenv("TERMUX_VERSION", "1")
     monkeypatch.setattr(
-        sys, "argv", ["hermes", "--tui", "--toolsets", "web,terminal"]
+        sys, "argv", ["kova", "--tui", "--toolsets", "web,terminal"]
     )
     monkeypatch.setattr(
         main_mod,
@@ -279,7 +279,7 @@ def test_termux_fast_tui_launch_uses_light_parser(monkeypatch, main_mod):
 
 def test_termux_fast_tui_launch_skips_help(monkeypatch, main_mod):
     monkeypatch.setenv("TERMUX_VERSION", "1")
-    monkeypatch.setattr(sys, "argv", ["hermes", "--tui", "--help"])
+    monkeypatch.setattr(sys, "argv", ["kova", "--tui", "--help"])
 
     assert main_mod._try_termux_fast_tui_launch() is False
 
@@ -287,7 +287,7 @@ def test_termux_fast_tui_launch_skips_help(monkeypatch, main_mod):
 def test_fast_tui_launch_is_termux_only(monkeypatch, main_mod):
     monkeypatch.delenv("TERMUX_VERSION", raising=False)
     monkeypatch.setenv("PREFIX", "/usr")
-    monkeypatch.setattr(sys, "argv", ["hermes", "--tui"])
+    monkeypatch.setattr(sys, "argv", ["kova", "--tui"])
 
     assert main_mod._try_termux_fast_tui_launch() is False
 
@@ -297,9 +297,9 @@ def test_termux_fast_cli_launch_chat_uses_light_parser(monkeypatch, main_mod):
     prepared = []
 
     monkeypatch.setenv("TERMUX_VERSION", "1")
-    monkeypatch.delenv("HERMES_TUI", raising=False)
+    monkeypatch.delenv("KOVA_TUI", raising=False)
     monkeypatch.setattr(
-        sys, "argv", ["hermes", "chat", "-q", "hello", "--toolsets", "web,terminal"]
+        sys, "argv", ["kova", "chat", "-q", "hello", "--toolsets", "web,terminal"]
     )
     monkeypatch.setattr(
         main_mod, "_prepare_agent_startup", lambda args: prepared.append(args.command)
@@ -326,10 +326,10 @@ def test_termux_fast_cli_launch_bare_defers_agent_startup(monkeypatch, main_mod)
     prepared = []
 
     monkeypatch.setenv("TERMUX_VERSION", "1")
-    monkeypatch.delenv("HERMES_TUI", raising=False)
-    monkeypatch.delenv("HERMES_DEFER_AGENT_STARTUP", raising=False)
-    monkeypatch.delenv("HERMES_FAST_STARTUP_BANNER", raising=False)
-    monkeypatch.setattr(sys, "argv", ["hermes"])
+    monkeypatch.delenv("KOVA_TUI", raising=False)
+    monkeypatch.delenv("KOVA_DEFER_AGENT_STARTUP", raising=False)
+    monkeypatch.delenv("KOVA_FAST_STARTUP_BANNER", raising=False)
+    monkeypatch.setattr(sys, "argv", ["kova"])
     monkeypatch.setattr(
         main_mod, "_prepare_agent_startup", lambda args: prepared.append(args.command)
     )
@@ -348,8 +348,8 @@ def test_termux_fast_cli_launch_bare_defers_agent_startup(monkeypatch, main_mod)
     assert main_mod._try_termux_fast_cli_launch() is True
     assert prepared == []
     assert captured == {"query": None, "command": None, "compact": True}
-    assert os.environ["HERMES_DEFER_AGENT_STARTUP"] == "1"
-    assert os.environ["HERMES_FAST_STARTUP_BANNER"] == "1"
+    assert os.environ["KOVA_DEFER_AGENT_STARTUP"] == "1"
+    assert os.environ["KOVA_FAST_STARTUP_BANNER"] == "1"
 
 
 def test_termux_fast_cli_launch_oneshot_uses_light_parser(monkeypatch, main_mod):
@@ -357,12 +357,12 @@ def test_termux_fast_cli_launch_oneshot_uses_light_parser(monkeypatch, main_mod)
     prepared = []
 
     monkeypatch.setenv("TERMUX_VERSION", "1")
-    monkeypatch.delenv("HERMES_TUI", raising=False)
+    monkeypatch.delenv("KOVA_TUI", raising=False)
     monkeypatch.setattr(
         sys,
         "argv",
         [
-            "hermes",
+            "kova",
             "-z",
             "hello",
             "--model",
@@ -410,8 +410,8 @@ def test_termux_fast_cli_launch_version_skips_update_check(monkeypatch, main_mod
     captured = []
 
     monkeypatch.setenv("TERMUX_VERSION", "1")
-    monkeypatch.delenv("HERMES_TUI", raising=False)
-    monkeypatch.setattr(sys, "argv", ["hermes", "version"])
+    monkeypatch.delenv("KOVA_TUI", raising=False)
+    monkeypatch.setattr(sys, "argv", ["kova", "version"])
     monkeypatch.setattr(
         main_mod, "_print_version_info", lambda *, check_updates: captured.append(check_updates)
     )
@@ -424,8 +424,8 @@ def test_termux_ultrafast_version_runs_before_heavy_startup(
     monkeypatch, capsys, main_mod
 ):
     monkeypatch.setenv("TERMUX_VERSION", "1")
-    monkeypatch.delenv("HERMES_TERMUX_DISABLE_FAST_CLI", raising=False)
-    monkeypatch.setattr(sys, "argv", ["hermes", "--version"])
+    monkeypatch.delenv("KOVA_TERMUX_DISABLE_FAST_CLI", raising=False)
+    monkeypatch.setattr(sys, "argv", ["kova", "--version"])
 
     assert main_mod._try_termux_ultrafast_version() is True
 
@@ -450,31 +450,31 @@ def test_read_openai_version_fast(monkeypatch, tmp_path, main_mod):
 
 def test_termux_fast_cli_launch_skips_help(monkeypatch, main_mod):
     monkeypatch.setenv("TERMUX_VERSION", "1")
-    monkeypatch.delenv("HERMES_TUI", raising=False)
-    monkeypatch.setattr(sys, "argv", ["hermes", "chat", "--help"])
+    monkeypatch.delenv("KOVA_TUI", raising=False)
+    monkeypatch.setattr(sys, "argv", ["kova", "chat", "--help"])
 
     assert main_mod._try_termux_fast_cli_launch() is False
 
 
 def test_termux_fast_cli_launch_can_be_disabled(monkeypatch, main_mod):
     monkeypatch.setenv("TERMUX_VERSION", "1")
-    monkeypatch.setenv("HERMES_TERMUX_DISABLE_FAST_CLI", "1")
-    monkeypatch.delenv("HERMES_TUI", raising=False)
-    monkeypatch.setattr(sys, "argv", ["hermes", "version"])
+    monkeypatch.setenv("KOVA_TERMUX_DISABLE_FAST_CLI", "1")
+    monkeypatch.delenv("KOVA_TUI", raising=False)
+    monkeypatch.setattr(sys, "argv", ["kova", "version"])
 
     assert main_mod._try_termux_fast_cli_launch() is False
 
 
 def test_termux_bundled_skills_stamp_controls_sync(monkeypatch, tmp_path, main_mod):
     monkeypatch.setenv("TERMUX_VERSION", "1")
-    monkeypatch.setattr(main_mod, "get_hermes_home", lambda: tmp_path)
+    monkeypatch.setattr(main_mod, "get_kova_home", lambda: tmp_path)
     monkeypatch.setattr(main_mod, "_termux_bundled_skills_fingerprint", lambda: "fp1")
 
     assert main_mod._termux_bundled_skills_sync_needed() is True
     main_mod._mark_termux_bundled_skills_synced()
     assert main_mod._termux_bundled_skills_sync_needed() is False
 
-    monkeypatch.setenv("HERMES_TERMUX_FORCE_SKILLS_SYNC", "1")
+    monkeypatch.setenv("KOVA_TERMUX_FORCE_SKILLS_SYNC", "1")
     assert main_mod._termux_bundled_skills_sync_needed() is True
 
 
@@ -482,7 +482,7 @@ def test_termux_skips_bundled_skill_sync_when_stamp_fresh(monkeypatch, tmp_path,
     calls = []
 
     monkeypatch.setenv("TERMUX_VERSION", "1")
-    monkeypatch.setattr(main_mod, "get_hermes_home", lambda: tmp_path)
+    monkeypatch.setattr(main_mod, "get_kova_home", lambda: tmp_path)
     monkeypatch.setattr(main_mod, "_termux_bundled_skills_fingerprint", lambda: "fp1")
     main_mod._mark_termux_bundled_skills_synced()
     monkeypatch.setitem(
@@ -499,8 +499,8 @@ def test_termux_forced_bundled_skill_sync_runs(monkeypatch, tmp_path, main_mod):
     calls = []
 
     monkeypatch.setenv("TERMUX_VERSION", "1")
-    monkeypatch.setenv("HERMES_TERMUX_FORCE_SKILLS_SYNC", "1")
-    monkeypatch.setattr(main_mod, "get_hermes_home", lambda: tmp_path)
+    monkeypatch.setenv("KOVA_TERMUX_FORCE_SKILLS_SYNC", "1")
+    monkeypatch.setattr(main_mod, "get_kova_home", lambda: tmp_path)
     monkeypatch.setattr(main_mod, "_termux_bundled_skills_fingerprint", lambda: "fp1")
     monkeypatch.setitem(
         sys.modules,
@@ -603,7 +603,7 @@ def test_main_top_level_oneshot_accepts_toolsets(monkeypatch, main_mod):
         sys,
         "argv",
         [
-            "hermes",
+            "kova",
             "-z",
             "hello",
             "--toolsets",
@@ -1139,7 +1139,7 @@ def test_main_oneshot_path_bypasses_late_atexit_abort():
 
         import kova_cli.main as main_mod
 
-        sys.argv = ["hermes", "-z", "hello"]
+        sys.argv = ["kova", "-z", "hello"]
         main_mod._prepare_agent_startup = lambda args: None
 
         def _fake_run_oneshot(prompt, **kwargs):
@@ -1568,7 +1568,7 @@ def test_oneshot_distinguishes_disabled_mcp_from_unknown(monkeypatch, capsys):
 
 
 def test_oneshot_wires_session_db_for_recall(monkeypatch):
-    """kova -z bypasses HermesCLI, but recall still needs SessionDB."""
+    """kova -z bypasses KovaCLI, but recall still needs SessionDB."""
     from kova_cli.oneshot import _run_agent
 
     captured = {}
@@ -1648,7 +1648,7 @@ def test_launch_tui_exports_model_provider_and_toolsets(monkeypatch, main_mod):
     def fake_call(argv, cwd=None, env=None):
         nonlocal active_path_during_call
         captured.update({"argv": argv, "cwd": cwd, "env": env})
-        active_path_during_call = Path(env["HERMES_TUI_ACTIVE_SESSION_FILE"])
+        active_path_during_call = Path(env["KOVA_TUI_ACTIVE_SESSION_FILE"])
         assert active_path_during_call.exists()
         return 1
 
@@ -1656,17 +1656,17 @@ def test_launch_tui_exports_model_provider_and_toolsets(monkeypatch, main_mod):
 
     with pytest.raises(SystemExit):
         main_mod._launch_tui(
-            model="nous/hermes-test", provider="nous", toolsets="web, terminal"
+            model="nous/kova-test", provider="nous", toolsets="web, terminal"
         )
 
     env = captured["env"]
-    assert env["HERMES_MODEL"] == "nous/hermes-test"
-    assert env["HERMES_INFERENCE_MODEL"] == "nous/hermes-test"
-    assert env["HERMES_TUI_PROVIDER"] == "nous"
-    assert env["HERMES_INFERENCE_PROVIDER"] == "nous"
-    assert env["HERMES_TUI_TOOLSETS"] == "web,terminal"
-    active_path = Path(env["HERMES_TUI_ACTIVE_SESSION_FILE"])
-    assert active_path.name.startswith("hermes-tui-active-session-")
+    assert env["KOVA_MODEL"] == "nous/kova-test"
+    assert env["KOVA_INFERENCE_MODEL"] == "nous/kova-test"
+    assert env["KOVA_TUI_PROVIDER"] == "nous"
+    assert env["KOVA_INFERENCE_PROVIDER"] == "nous"
+    assert env["KOVA_TUI_TOOLSETS"] == "web,terminal"
+    active_path = Path(env["KOVA_TUI_ACTIVE_SESSION_FILE"])
+    assert active_path.name.startswith("kova-tui-active-session-")
     assert active_path.suffix == ".json"
     assert active_path_during_call == active_path
     assert not active_path.exists()
@@ -1691,8 +1691,8 @@ def test_launch_tui_worktree_validates_relative_python_against_final_cwd(
     shutil.copy2(sys.executable, python_path)
     captured = {}
 
-    monkeypatch.setenv("HERMES_CWD", str(parent_cwd))
-    monkeypatch.setenv("HERMES_PYTHON", str(relative_python))
+    monkeypatch.setenv("KOVA_CWD", str(parent_cwd))
+    monkeypatch.setenv("KOVA_PYTHON", str(relative_python))
     monkeypatch.setattr(cli_mod, "_git_repo_root", lambda: None)
     monkeypatch.setattr(cli_mod, "_prune_stale_worktrees", lambda _repo: None)
     monkeypatch.setattr(cli_mod, "_setup_worktree", lambda: {"path": str(worktree)})
@@ -1711,12 +1711,12 @@ def test_launch_tui_worktree_validates_relative_python_against_final_cwd(
     with pytest.raises(SystemExit):
         main_mod._launch_tui(worktree=True)
 
-    assert captured["env"]["HERMES_CWD"] == str(worktree)
-    assert captured["env"]["HERMES_PYTHON"] == str(relative_python)
+    assert captured["env"]["KOVA_CWD"] == str(worktree)
+    assert captured["env"]["KOVA_PYTHON"] == str(relative_python)
 
 
 def test_launch_tui_applies_terminal_backend_config(
-    monkeypatch, main_mod, _isolate_hermes_home
+    monkeypatch, main_mod, _isolate_kova_home
 ):
     captured = {}
     config_path = Path(os.environ["HERMES_HOME"]) / "config.yaml"
@@ -1725,7 +1725,7 @@ def test_launch_tui_applies_terminal_backend_config(
             [
                 "terminal:",
                 "  backend: docker",
-                "  docker_image: example/hermes-tools:latest",
+                "  docker_image: example/kova-tools:latest",
                 "  docker_extra_args:",
                 "    - --network=host",
             ]
@@ -1751,7 +1751,7 @@ def test_launch_tui_applies_terminal_backend_config(
         main_mod._launch_tui()
 
     assert captured["env"]["TERMINAL_ENV"] == "docker"
-    assert captured["env"]["TERMINAL_DOCKER_IMAGE"] == "example/hermes-tools:latest"
+    assert captured["env"]["TERMINAL_DOCKER_IMAGE"] == "example/kova-tools:latest"
     assert captured["env"]["TERMINAL_DOCKER_EXTRA_ARGS"] == '["--network=host"]'
 
 
@@ -1776,7 +1776,7 @@ def test_launch_tui_exit_code_42_relaunches_update(monkeypatch, main_mod):
 def test_launch_tui_drops_stale_resume_env_without_resume_arg(monkeypatch, main_mod):
     captured = {}
 
-    monkeypatch.setenv("HERMES_TUI_RESUME", "stale-missing-session")
+    monkeypatch.setenv("KOVA_TUI_RESUME", "stale-missing-session")
     monkeypatch.setattr(
         main_mod,
         "_make_tui_argv",
@@ -1791,13 +1791,13 @@ def test_launch_tui_drops_stale_resume_env_without_resume_arg(monkeypatch, main_
     with pytest.raises(SystemExit):
         main_mod._launch_tui()
 
-    assert "HERMES_TUI_RESUME" not in captured["env"]
+    assert "KOVA_TUI_RESUME" not in captured["env"]
 
 
 def test_launch_tui_sets_resume_env_from_resume_arg(monkeypatch, main_mod):
     captured = {}
 
-    monkeypatch.setenv("HERMES_TUI_RESUME", "stale-missing-session")
+    monkeypatch.setenv("KOVA_TUI_RESUME", "stale-missing-session")
     monkeypatch.setattr(
         main_mod,
         "_make_tui_argv",
@@ -1812,20 +1812,20 @@ def test_launch_tui_sets_resume_env_from_resume_arg(monkeypatch, main_mod):
     with pytest.raises(SystemExit):
         main_mod._launch_tui(resume_session_id="20260518_000000_goodid")
 
-    assert captured["env"]["HERMES_TUI_RESUME"] == "20260518_000000_goodid"
+    assert captured["env"]["KOVA_TUI_RESUME"] == "20260518_000000_goodid"
 
 
-def test_make_tui_argv_dev_prebuilds_hermes_ink(monkeypatch, main_mod, tmp_path):
+def test_make_tui_argv_dev_prebuilds_kova_ink(monkeypatch, main_mod, tmp_path):
     tui_dir = tmp_path / "ui-tui"
     tsx = tui_dir / "node_modules" / ".bin" / "tsx"
-    ink_dir = tui_dir / "packages" / "hermes-ink"
+    ink_dir = tui_dir / "packages" / "kova-ink"
     tsx.parent.mkdir(parents=True)
     ink_dir.mkdir(parents=True)
     tsx.write_text("#!/usr/bin/env node\n", encoding="utf-8")
 
     monkeypatch.setattr(main_mod, "_ensure_tui_node", lambda: None)
     monkeypatch.setattr(main_mod, "_tui_need_npm_install", lambda _tui_dir: False)
-    monkeypatch.delenv("HERMES_TUI_DIR", raising=False)
+    monkeypatch.delenv("KOVA_TUI_DIR", raising=False)
     monkeypatch.setattr(main_mod.shutil, "which", lambda bin_name: f"/usr/bin/{bin_name}")
 
     calls = []

@@ -67,9 +67,9 @@ class TestMultiplexActiveFailClosed:
         assert ss.get_secret("HERMES_HOME") == "/opt/data"
 
     def test_kanban_prefix_is_global(self, monkeypatch):
-        monkeypatch.setenv("HERMES_KANBAN_DB", "/x/kanban.db")
+        monkeypatch.setenv("KOVA_KANBAN_DB", "/x/kanban.db")
         ss.set_multiplex_active(True)
-        assert ss.get_secret("HERMES_KANBAN_DB") == "/x/kanban.db"
+        assert ss.get_secret("KOVA_KANBAN_DB") == "/x/kanban.db"
 
 
 class TestScopedSingleProfile:
@@ -180,7 +180,7 @@ class TestEnvFileParsing:
         self, tmp_path, monkeypatch
     ):
         (tmp_path / ".env").write_text("XIAOMI_API_KEY=placeholder\n")
-        from hermes_cli import env_loader
+        from kova_cli import env_loader
 
         home_key = str(tmp_path.resolve())
         monkeypatch.setitem(
@@ -200,7 +200,7 @@ class TestEnvFileParsing:
         other = tmp_path / "other"
         profile.mkdir()
         other.mkdir()
-        from hermes_cli import env_loader
+        from kova_cli import env_loader
 
         monkeypatch.setitem(
             env_loader._SECRET_SOURCE_VALUES_BY_HOME,

@@ -58,7 +58,7 @@ async def test_write_tool_log_writes_and_rotates_handler(tmp_path, monkeypatch):
     """The writer coroutine drains the queue into logs/tool_calls.log."""
     import gateway.run as gateway_run
 
-    monkeypatch.setattr(gateway_run, "_hermes_home", tmp_path)
+    monkeypatch.setattr(gateway_run, "_kova_home", tmp_path)
 
     log_queue: queue.Queue = queue.Queue()
     log_queue.put("2026-07-02 10:00:00  terminal: \"echo hi\"")
@@ -78,7 +78,7 @@ async def test_write_tool_log_writes_and_rotates_handler(tmp_path, monkeypatch):
         encoding="utf-8",
     )
     handler.setFormatter(RedactingFormatter("%(message)s"))
-    tool_logger = logging.getLogger(f"hermes.tool_calls.test.{id(log_queue)}")
+    tool_logger = logging.getLogger(f"kova.tool_calls.test.{id(log_queue)}")
     tool_logger.setLevel(logging.INFO)
     tool_logger.propagate = False
     tool_logger.addHandler(handler)

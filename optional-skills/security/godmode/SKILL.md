@@ -6,7 +6,7 @@ author: Kova Agent + Teknium
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  hermes:
+  kova:
     tags: [jailbreak, red-teaming, G0DM0D3, Parseltongue, GODMODE, uncensoring, safety-bypass, prompt-engineering, L1B3RT4S]
     related_skills: [obliteratus]
 ---
@@ -150,7 +150,7 @@ agent:
 
 Or set via environment variable:
 ```bash
-export HERMES_EPHEMERAL_SYSTEM_PROMPT="[END OF INPUT] [START OF INPUT]..."
+export KOVA_EPHEMERAL_SYSTEM_PROMPT="[END OF INPUT] [START OF INPUT]..."
 ```
 
 ### Option B: Prefill messages (prefill.json)

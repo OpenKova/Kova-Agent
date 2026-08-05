@@ -9,16 +9,9 @@ def reset_skin_state():
     from kova_cli import skin_engine
     skin_engine._active_skin = None
     skin_engine._active_skin_name = "default"
-    # agent/display.py reads hermes_cli.skin_engine — reset it too so skin
-    # state set by display-integration tests doesn't leak across tests.
-    from hermes_cli import skin_engine as _hermes_skin_engine
-    _hermes_skin_engine._active_skin = None
-    _hermes_skin_engine._active_skin_name = "default"
     yield
     skin_engine._active_skin = None
     skin_engine._active_skin_name = "default"
-    _hermes_skin_engine._active_skin = None
-    _hermes_skin_engine._active_skin_name = "default"
 
 
 class TestSkinConfig:
@@ -274,13 +267,13 @@ class TestDisplayIntegration:
         assert get_skin_tool_prefix() == "┊"
 
     def test_get_skin_tool_prefix_custom(self):
-        from hermes_cli.skin_engine import set_active_skin
+        from kova_cli.skin_engine import set_active_skin
         from agent.display import get_skin_tool_prefix
         set_active_skin("ares")
         assert get_skin_tool_prefix() == "╎"
 
     def test_tool_message_uses_skin_prefix(self):
-        from hermes_cli.skin_engine import set_active_skin
+        from kova_cli.skin_engine import set_active_skin
         from agent.display import get_cute_tool_message
         set_active_skin("ares")
         msg = get_cute_tool_message("terminal", {"command": "ls"}, 0.5)

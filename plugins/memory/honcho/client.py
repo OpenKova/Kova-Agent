@@ -22,8 +22,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import urlparse
 
-from hermes_constants import get_hermes_home
-from hermes_cli.profiles import _get_default_hermes_home
+from kova_constants import get_kova_home
+from kova_cli.profiles import _get_default_kova_home
 from plugins.plugin_utils import SingletonSlot
 from typing import Any, TYPE_CHECKING
 
@@ -32,7 +32,13 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-HOST = "hermes"
+# Local Honcho host key (config-block key + CLI labels). Renameable.
+HOST = "kova"
+# Legacy host key honoured for dual-read (pre-rename configs).
+LEGACY_HOST = "hermes"
+# Server-side Honcho memory identity seed. HARD NO — renaming orphans all
+# existing workspaces/peers on Honcho's servers.
+IDENTITY_HOST = "hermes"
 
 
 def profile_host_key(profile: str | None) -> str:
@@ -44,30 +50,63 @@ def profile_host_key(profile: str | None) -> str:
 
 
 def _host_block(raw: dict, host: str) -> dict:
-    """Return host config, accepting legacy dot-form profile host keys."""
+    """Return host config, dual-reading legacy host keys.
+
+    Reads the current kova-based key first, then falls back to the legacy
+    kova-based key (block or dot-form profile key) so configs written
+    before the rename keep working.
+    """
     hosts = raw.get("hosts") or {}
     block = hosts.get(host, {})
-    if block or not host.startswith(f"{HOST}_"):
+    if block:
         return block
-    legacy = f"{HOST}.{host[len(HOST) + 1:]}"
-    return hosts.get(legacy, {})
+    if host == HOST:
+        return hosts.get(LEGACY_HOST, {})
+    if host.startswith(f"{HOST}_"):
+        suffix = host[len(HOST) + 1:]
+        return (
+            hosts.get(f"{LEGACY_HOST}_{suffix}")
+            or hosts.get(f"{LEGACY_HOST}.{suffix}", {})
+        )
+    if host.startswith(f"{LEGACY_HOST}_"):
+        # Legacy kova-prefixed key passed directly: dot-form sibling.
+        suffix = host[len(LEGACY_HOST) + 1:]
+        return hosts.get(f"{LEGACY_HOST}.{suffix}", {})
+    return block
+
+
+def identity_for_host(host: str) -> str:
+    """Map a local host key to its server-side Honcho identity.
+
+    Local host keys are renameable (kova); the server-side workspace/peer
+    identity stays kova-anchored so existing Honcho memory keeps
+    resolving (HARD NO rename). Legacy/custom hosts pass through.
+    """
+    if host == HOST:
+        return IDENTITY_HOST
+    if host.startswith(f"{HOST}_"):
+        return f"{IDENTITY_HOST}_{host[len(HOST) + 1:]}"
+    return host
 
 
 def resolve_active_host() -> str:
     """Derive the Honcho host key from the active Kova profile.
 
     Resolution order:
-      1. HERMES_HONCHO_HOST env var (explicit override)
-      2. Active profile name via profiles system -> ``hermes_<profile>``
+      1. KOVA_HONCHO_HOST env var (explicit override; legacy KOVA_HONCHO_HOST honoured)
+      2. Active profile name via profiles system -> ``kova_<profile>``
       3. defaultHost from the active config, but only for the default profile
-      4. Fallback: ``"hermes"`` (default profile)
+      4. Fallback: ``"kova"`` (default profile)
     """
-    explicit = os.environ.get("HERMES_HONCHO_HOST", "").strip()
+    explicit = (
+        os.environ.get("KOVA_HONCHO_HOST", "").strip()
+        or os.environ.get("KOVA_HONCHO_HOST", "").strip()
+    )
     if explicit:
         return explicit
 
     try:
-        from hermes_cli.profiles import get_active_profile_name
+        from kova_cli.profiles import get_active_profile_name
         profile = get_active_profile_name()
         profile_host = profile_host_key(profile)
     except Exception:
@@ -106,12 +145,12 @@ def resolve_config_path() -> Path:
 
     Returns the global path if none exist (for first-time setup writes).
     """
-    local_path = get_hermes_home() / "honcho.json"
+    local_path = get_kova_home() / "honcho.json"
     if local_path.exists():
         return local_path
 
     # Default profile's config — host blocks accumulate here via setup/clone
-    default_path = _get_default_hermes_home() / "honcho.json"
+    default_path = _get_default_kova_home() / "honcho.json"
     if default_path != local_path and default_path.exists():
         return default_path
 
@@ -361,7 +400,8 @@ class HonchoClientConfig:
     """Configuration for Honcho client, resolved for a specific host."""
 
     host: str = HOST
-    workspace_id: str = "hermes"
+    # Server-side memory identity seed — HARD NO rename.
+    workspace_id: str = IDENTITY_HOST
     api_key: str | None = None
     environment: str = "production"
     # Optional base URL for self-hosted Honcho (overrides environment mapping)
@@ -370,7 +410,8 @@ class HonchoClientConfig:
     timeout: float | None = None
     # Identity
     peer_name: str | None = None
-    ai_peer: str = "hermes"
+    # Server-side memory identity seed — HARD NO rename.
+    ai_peer: str = IDENTITY_HOST
     # When True, ``peer_name`` wins over any gateway-supplied runtime
     # identity (Telegram UID, Discord ID, …) when resolving the user peer.
     # This keeps memory unified across platforms for single-user deployments
@@ -456,15 +497,15 @@ class HonchoClientConfig:
     sessions: dict[str, str] = field(default_factory=dict)
     # Raw global config for anything else consumers need
     raw: dict[str, Any] = field(default_factory=dict)
-    # True when Honcho was explicitly configured for this host (hosts.hermes
-    # block exists or enabled was set explicitly), vs auto-enabled from a
-    # stray HONCHO_API_KEY env var.
+    # True when Honcho was explicitly configured for this host (hosts.kova,
+    # legacy hosts.kova honoured; block exists or enabled was set
+    # explicitly), vs auto-enabled from a stray HONCHO_API_KEY env var.
     explicitly_configured: bool = False
 
     @classmethod
     def from_env(
         cls,
-        workspace_id: str = "hermes",
+        workspace_id: str = IDENTITY_HOST,
         host: str | None = None,
     ) -> HonchoClientConfig:
         """Create config from environment variables (fallback)."""
@@ -479,7 +520,7 @@ class HonchoClientConfig:
             environment=os.environ.get("HONCHO_ENVIRONMENT", "production"),
             base_url=base_url,
             timeout=timeout,
-            ai_peer=resolved_host,
+            ai_peer=identity_for_host(resolved_host),
             enabled=bool(api_key or base_url),
         )
 
@@ -507,20 +548,20 @@ class HonchoClientConfig:
             return cls.from_env(host=resolved_host)
 
         host_block = _host_block(raw, resolved_host)
-        # A hosts.hermes block or explicit enabled flag means the user
-        # intentionally configured Honcho for this host.
+        # A hosts.kova block (legacy hosts.kova honoured) or explicit
+        # enabled flag means the user intentionally configured Honcho.
         _explicitly_configured = bool(host_block) or raw.get("enabled") is True
 
         # Explicit host block fields win, then flat/global, then defaults
         workspace = (
             host_block.get("workspace")
             or raw.get("workspace")
-            or resolved_host
+            or identity_for_host(resolved_host)
         )
         ai_peer = (
             host_block.get("aiPeer")
             or raw.get("aiPeer")
-            or resolved_host
+            or identity_for_host(resolved_host)
         )
         api_key = (
             host_block.get("apiKey")
@@ -868,7 +909,7 @@ _honcho_json_timeout_memo: tuple[int | None, float | None] = (None, None)
 def _config_yaml_timeout() -> float | None:
     """Read honcho.timeout / honcho.request_timeout via the cached config loader."""
     try:
-        from hermes_cli.config import load_config_readonly
+        from kova_cli.config import load_config_readonly
 
         honcho_cfg = load_config_readonly().get("honcho", {})
         if isinstance(honcho_cfg, dict):
@@ -999,7 +1040,7 @@ def get_honcho_client(config: HonchoClientConfig | None = None) -> Honcho:
         raise ValueError(
             "Honcho API key not found. "
             "Get your API key at https://app.honcho.dev, "
-            "then run 'hermes honcho setup' or set HONCHO_API_KEY. "
+            "then run 'kova honcho setup' or set HONCHO_API_KEY. "
             "For local instances, set HONCHO_BASE_URL instead."
         )
 
@@ -1033,9 +1074,9 @@ def get_honcho_client(config: HonchoClientConfig | None = None) -> Honcho:
         resolved_timeout = config.timeout
         if not resolved_base_url or resolved_timeout is None:
             try:
-                from hermes_cli.config import load_config
-                hermes_cfg = load_config()
-                honcho_cfg = hermes_cfg.get("honcho", {})
+                from kova_cli.config import load_config
+                global_cfg = load_config()
+                honcho_cfg = global_cfg.get("honcho", {})
                 if isinstance(honcho_cfg, dict):
                     if not resolved_base_url:
                         resolved_base_url = honcho_cfg.get("base_url", "").strip() or None

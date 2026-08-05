@@ -90,7 +90,7 @@ def test_profile_create_then_gateway_start(
 ) -> None:
     start_container(built_image, container_name, cmd="sleep 120")
 
-    r = _sh(container_name, f"hermes profile create {PROFILE}")
+    r = _sh(container_name, f"kova profile create {PROFILE}")
     assert r.returncode == 0, f"profile create failed: {r.stderr}"
 
     # Profile create's s6-register hook should have produced a service slot.
@@ -122,13 +122,13 @@ def test_profile_delete_stops_gateway(
     service slot."""
     start_container(built_image, container_name, cmd="sleep 120")
 
-    _sh(container_name, f"hermes profile create {PROFILE}")
+    _sh(container_name, f"kova profile create {PROFILE}")
     _sh(container_name, f"kova -p {PROFILE} gateway start", timeout=60)
     _wait_for_want_state(container_name, want_up=True)
 
     r = _sh(
         container_name,
-        f"hermes profile delete {PROFILE} --yes",
+        f"kova profile delete {PROFILE} --yes",
         timeout=30,
     )
     assert r.returncode == 0, f"profile delete failed: {r.stderr}"

@@ -129,7 +129,7 @@ def detect_service_manager() -> ServiceManagerKind:
 def _s6_running() -> bool:
     """True when s6-svscan is running as PID 1 in this container.
 
-    Detection has to work for **both** root and the unprivileged hermes
+    Detection has to work for **both** root and the unprivileged kova
     user (UID 10000). The obvious probe — ``Path('/proc/1/exe').resolve()``
     — only works as root: for any other UID, the symlink at
     ``/proc/1/exe`` is unreadable and ``resolve()`` silently returns the
@@ -322,7 +322,7 @@ def get_service_manager() -> ServiceManager:
 # S6ServiceManager (container-only)
 #
 # Per-profile gateways are registered dynamically when `kova profile create`
-# runs inside the container (Phase 4). Static services (main-hermes, dashboard)
+# runs inside the container (Phase 4). Static services (main-kova, dashboard)
 # live in /etc/s6-overlay/s6-rc.d/ and are NOT managed by this class — they're
 # part of the image, not runtime-created.
 # ---------------------------------------------------------------------------
@@ -348,11 +348,11 @@ def _profile_dir_for_gateway_service(name: str) -> Path:
 
     profile = name[len(S6_SERVICE_PREFIX):] if name.startswith(S6_SERVICE_PREFIX) else name
     validate_profile_name(profile)
-    hermes_home = Path(os.environ.get("HERMES_HOME", "/opt/data"))
-    if hermes_home.parent.name == "profiles":
-        root = hermes_home.parent.parent
+    kova_home = Path(os.environ.get("HERMES_HOME", "/opt/data"))
+    if kova_home.parent.name == "profiles":
+        root = kova_home.parent.parent
     else:
-        root = hermes_home
+        root = kova_home
     return root if profile == "default" else root / "profiles" / profile
 
 
@@ -409,13 +409,13 @@ _S6_BIN_DIR = "/command"
 # ``stage2-hook.sh`` enforces (the runtime invariant — see also
 # tests/docker/test_uid_remap.py). The container starts s6-supervise
 # under root and immediately drops to this UID via ``s6-setuidgid``.
-_HERMES_UID = 10000
-_HERMES_GID = 10000
+_KOVA_UID = 10000
+_KOVA_GID = 10000
 
 
 def _seed_supervise_skeleton(svc_dir: Path) -> None:
     """Pre-create the ``supervise/`` and top-level ``event/`` skeleton
-    inside a service directory, owned by the hermes user.
+    inside a service directory, owned by the kova user.
 
     Why this exists
     ---------------
@@ -431,7 +431,7 @@ def _seed_supervise_skeleton(svc_dir: Path) -> None:
     The PR #30136 review surfaced this as a real product gap: the
     entire S6ServiceManager lifecycle (``register/start/stop/unregister
     _profile_gateway``) was inert in production because every operation
-    is dispatched as the hermes user.
+    is dispatched as the kova user.
 
     Why this works
     --------------
@@ -446,16 +446,16 @@ def _seed_supervise_skeleton(svc_dir: Path) -> None:
 
     Layout produced
     ---------------
-    ``svc_dir/``                           hermes:hermes, 0755 (parent must already exist)
-    ``svc_dir/event/``                     hermes:hermes, 03730   (setgid + g+rwx + sticky)
-    ``svc_dir/supervise/``                 hermes:hermes, 0755
-    ``svc_dir/supervise/event/``           hermes:hermes, 03730
-    ``svc_dir/supervise/control``          hermes:hermes, 0660    (FIFO)
+    ``svc_dir/``                           kova:kova, 0755 (parent must already exist)
+    ``svc_dir/event/``                     kova:kova, 03730   (setgid + g+rwx + sticky)
+    ``svc_dir/supervise/``                 kova:kova, 0755
+    ``svc_dir/supervise/event/``           kova:kova, 03730
+    ``svc_dir/supervise/control``          kova:kova, 0660    (FIFO)
 
     The ``death_tally``, ``lock``, and ``status`` regular files end up
     written by s6-supervise itself (as root), but those land mode 0644 —
     world-readable — and ``s6-svstat`` only needs read access, so the
-    hermes user reads them fine.
+    kova user reads them fine.
 
     If ``svc_dir/log/`` is present (the canonical s6 logger pattern —
     one s6-supervise instance per service, plus a second for its
@@ -463,7 +463,7 @@ def _seed_supervise_skeleton(svc_dir: Path) -> None:
     ``log/event/``, ``log/supervise/``, ``log/supervise/event/``,
     ``log/supervise/control``. Without this, unregister teardown
     would EACCES on the logger's supervise dir even after the parent
-    slot's supervise/ was hermes-owned.
+    slot's supervise/ was kova-owned.
 
     Idempotency
     -----------
@@ -489,9 +489,9 @@ def _seed_supervise_skeleton(svc_dir: Path) -> None:
         path.mkdir(parents=False, exist_ok=False)
         path.chmod(mode)
         try:
-            os.chown(path, _HERMES_UID, _HERMES_GID)
+            os.chown(path, _KOVA_UID, _KOVA_GID)
         except PermissionError:
-            # Running as the hermes user already — directory is hermes-
+            # Running as the kova user already — directory is kova-
             # owned by default. The chown is a no-op in that case, so
             # swallowing this keeps both root and unprivileged callers
             # on one code path.
@@ -519,7 +519,7 @@ def _seed_supervise_skeleton(svc_dir: Path) -> None:
         os.mkfifo(control, 0o660)
         control.chmod(0o660)
         try:
-            os.chown(control, _HERMES_UID, _HERMES_GID)
+            os.chown(control, _KOVA_UID, _KOVA_GID)
         except PermissionError:
             pass
 
@@ -527,7 +527,7 @@ def _seed_supervise_skeleton(svc_dir: Path) -> None:
     # see servicedir(7)), it gets its own s6-supervise instance and
     # needs the same skeleton. Without this, unregister teardown
     # would EACCES on the logger's root-owned supervise/ dir even
-    # when the parent slot's supervise/ is hermes-owned.
+    # when the parent slot's supervise/ is kova-owned.
     log_dir = svc_dir / "log"
     if log_dir.is_dir():
         _mkdir_owned(log_dir / "event", 0o3730)
@@ -539,7 +539,7 @@ def _seed_supervise_skeleton(svc_dir: Path) -> None:
             os.mkfifo(log_control, 0o660)
             log_control.chmod(0o660)
             try:
-                os.chown(log_control, _HERMES_UID, _HERMES_GID)
+                os.chown(log_control, _KOVA_UID, _KOVA_GID)
             except PermissionError:
                 pass
 
@@ -602,7 +602,7 @@ class S6ServiceManager:
     """Per-profile gateway supervision via s6-overlay.
 
     Only handles runtime-registered services under
-    ``S6_DYNAMIC_SCANDIR``. Static services (main-hermes, dashboard)
+    ``S6_DYNAMIC_SCANDIR``. Static services (main-kova, dashboard)
     are managed by s6-rc at image-build time and are out of scope.
     """
 
@@ -629,13 +629,13 @@ class S6ServiceManager:
 
         The script:
           1. Sources HERMES_HOME (and any extra env) via with-contenv —
-             so e.g. ``-e HERMES_HOME=/data/hermes`` is honored at run
+             so e.g. ``-e HERMES_HOME=/data/kova`` is honored at run
              time, not Python-substituted at registration time (OQ8-C).
           2. Resets ``HOME`` to ``/opt/data`` before the privilege drop
              so with-contenv's root HOME does not leak into the
              unprivileged gateway process.
           3. Activates the bundled venv.
-          4. Drops to the hermes user and exec's
+          4. Drops to the kova user and exec's
              ``kova -p <profile> gateway run`` (or just ``kova
              gateway run`` for the default profile — see below).
 
@@ -672,7 +672,7 @@ class S6ServiceManager:
             "set -e",
             "export HOME=/opt/data",
             "cd /opt/data",
-            ". /opt/hermes/.venv/bin/activate",
+            ". /opt/kova/.venv/bin/activate",
         ]
         for k, v in sorted(extra_env.items()):
             lines.append(f"export {k}={shlex.quote(v)}")
@@ -683,7 +683,7 @@ class S6ServiceManager:
         # `gateway run --replace` which would re-dispatch `gateway
         # start`, etc. See `_gateway_command_inner` for the matching
         # guard.
-        lines.append("export HERMES_S6_SUPERVISED_CHILD=1")
+        lines.append("export KOVA_S6_SUPERVISED_CHILD=1")
         # ``--replace`` makes the supervised gateway authoritative for its
         # profile's HERMES_HOME. Without it, a gateway started OUTSIDE s6
         # (a stray ``kova gateway run`` from a shell, an agent action, or
@@ -694,7 +694,7 @@ class S6ServiceManager:
         # log and never binds (NS-505). ``--replace``
         # instead reaps the stale holder (hardened takeover path: marker +
         # SIGTERM→SIGKILL-with-confirmation + scoped-lock cleanup, see
-        # gateway/run.py) so s6 always wins. The HERMES_S6_SUPERVISED_CHILD
+        # gateway/run.py) so s6 always wins. The KOVA_S6_SUPERVISED_CHILD
         # sentinel above prevents the run→start→run redirect recursion.
         # Each profile is scoped to its own HERMES_HOME and s6 guarantees a
         # single supervised instance per slot, so there is no legitimate
@@ -706,7 +706,7 @@ class S6ServiceManager:
         # Skip the drop when already non-root (setgroups() lacks CAP_SETGID →
         # s6 boot-loop).
         lines.append(f'[ "$(id -u)" = 0 ] || exec {gateway_cmd}')
-        lines.append(f"exec s6-setuidgid hermes {gateway_cmd}")
+        lines.append(f"exec s6-setuidgid kova {gateway_cmd}")
         return "\n".join(lines) + "\n"
 
     @staticmethod
@@ -740,8 +740,8 @@ class S6ServiceManager:
         OQ8-C: persist to ``${HERMES_HOME}/logs/gateways/<profile>/``.
         CRITICAL: the HERMES_HOME path is sourced from the runtime env
         via with-contenv — NOT Python-substituted at registration time
-        — so a container started with ``-e HERMES_HOME=/data/hermes``
-        gets its logs under /data/hermes/logs/..., not the build-time
+        — so a container started with ``-e HERMES_HOME=/data/kova``
+        gets its logs under /data/kova/logs/..., not the build-time
         default.
 
         Output routing — the script is two action directives, applied
@@ -787,17 +787,17 @@ class S6ServiceManager:
             # The gateways/ parent must be chowned too (non-recursively):
             # `mkdir -p` creates it root-owned on a root-context boot, and a
             # leaf-only chown leaves it that way — every profile registered
-            # later then runs its log service as hermes and crash-loops on
+            # later then runs its log service as kova and crash-loops on
             # `mkdir: Permission denied`. The parent chown runs on every
             # root-context boot, so it also heals volumes already poisoned
             # by older images. Non-recursive on purpose: sibling profile
             # dirs are each managed by their own log/run. See #45258.
-            f'chown hermes:hermes "$HERMES_HOME/logs/gateways" 2>/dev/null || true\n'
-            f'chown -R hermes:hermes "$log_dir" 2>/dev/null || true\n'
+            f'chown kova:kova "$HERMES_HOME/logs/gateways" 2>/dev/null || true\n'
+            f'chown -R kova:kova "$log_dir" 2>/dev/null || true\n'
             f'rm -f "$log_dir/lock"\n'
             # Skip the drop when already non-root (CAP_SETGID).
             f'[ "$(id -u)" = 0 ] || exec s6-log 1 n10 s1000000 T "$log_dir"\n'
-            f'exec s6-setuidgid hermes s6-log 1 n10 s1000000 T "$log_dir"\n'
+            f'exec s6-setuidgid kova s6-log 1 n10 s1000000 T "$log_dir"\n'
         )
 
     # -- lifecycle ---------------------------------------------------------
@@ -1005,11 +1005,11 @@ class S6ServiceManager:
             log_run.write_text(self._render_log_run(profile))
             log_run.chmod(0o755)
 
-            # Pre-create the supervise/ skeleton with hermes ownership
+            # Pre-create the supervise/ skeleton with kova ownership
             # BEFORE we publish the slot. s6-supervise will EEXIST our
             # dirs/FIFOs and inherit the ownership, so the runtime
             # s6-svc / s6-svstat / s6-svwait calls (all dispatched as
-            # the hermes user) won't hit EACCES on root-owned 0700
+            # the kova user) won't hit EACCES on root-owned 0700
             # dirs. See ``_seed_supervise_skeleton`` for the full
             # rationale.
             _seed_supervise_skeleton(tmp_dir)
@@ -1098,7 +1098,7 @@ class S6ServiceManager:
         # live s6-supervise, so rmtree can remove them. Files inside
         # supervise/ are root-owned (death_tally, lock, status, written
         # by s6-supervise itself) — but the parent supervise/ directory
-        # is hermes-owned (see ``_seed_supervise_skeleton``), and on
+        # is kova-owned (see ``_seed_supervise_skeleton``), and on
         # POSIX you only need write+execute on the parent to remove
         # contained files regardless of file ownership.
         shutil.rmtree(svc_dir, ignore_errors=True)

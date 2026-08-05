@@ -343,7 +343,7 @@ google-chrome \
 
 具体配置请参阅 MCP 指南：
 
-- [在 Kova 中使用 MCP](../../guides/use-mcp-with-hermes.md#wsl2-bridge-hermes-in-wsl-to-windows-chrome)
+- [在 Kova 中使用 MCP](../../guides/use-mcp-with-kova.md#wsl2-bridge-kova-in-wsl-to-windows-chrome)
 
 ### 本地浏览器模式
 
@@ -385,7 +385,7 @@ npm install
 ```
 
 :::info
-`browser` 工具集必须包含在配置的 `toolsets` 列表中，或通过 `kova config set toolsets '["hermes-cli", "browser"]'` 启用。
+`browser` 工具集必须包含在配置的 `toolsets` 列表中，或通过 `kova config set toolsets '["kova-cli", "browser"]'` 启用。
 :::
 
 ## 可用工具

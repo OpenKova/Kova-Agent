@@ -195,7 +195,7 @@ Tool Gateway 是按工具单独选择启用的，而非全部或全不。完整�
 
 ## 配置参考
 
-运行 `hermes setup --portal` 后，`~/.hermes/config.yaml` 将如下所示：
+运行 `kova setup --portal` 后，`~/.hermes/config.yaml` 将如下所示：
 
 ```yaml
 model:
@@ -252,7 +252,7 @@ Portal 通过 OpenRouter 代理，因此 OpenRouter 支持的所有模型通常�
 /model anthropic/claude-opus-4.6
 ```
 
-如果某个模型确实缺失，请[提交 issue](https://github.com/NousResearch/hermes-agent/issues)——我们将 Portal 目录同步至 Kova，缺口通常意味着可以更新的路由配置。
+如果某个模型确实缺失，请[提交 issue](https://github.com/OpenKova/Kova-Agent/issues)——我们将 Portal 目录同步至 Kova，缺口通常意味着可以更新的路由配置。
 
 ### 账单未出现在我的 Portal 账号中
 

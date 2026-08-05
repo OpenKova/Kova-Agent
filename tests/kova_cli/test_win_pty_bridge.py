@@ -102,10 +102,10 @@ class TestWinPtyBridgeSpawn:
 @windows_only
 class TestWinPtyBridgeIO:
     def test_reads_child_stdout(self):
-        bridge = WinPtyBridge.spawn(["cmd.exe", "/c", "echo hermes-ok"])
+        bridge = WinPtyBridge.spawn(["cmd.exe", "/c", "echo kova-ok"])
         try:
-            output = _read_until(bridge, b"hermes-ok")
-            assert b"hermes-ok" in output
+            output = _read_until(bridge, b"kova-ok")
+            assert b"kova-ok" in output
         finally:
             bridge.close()
 
@@ -286,9 +286,9 @@ class TestWinPtyBridgeEnv:
             [
                 sys.executable,
                 "-c",
-                "import os; print('HERMES_PTY_TEST=' + os.environ.get('HERMES_PTY_TEST',''))",
+                "import os; print('KOVA_PTY_TEST=' + os.environ.get('KOVA_PTY_TEST',''))",
             ],
-            env={**os.environ, "HERMES_PTY_TEST": "pty-env-works"},
+            env={**os.environ, "KOVA_PTY_TEST": "pty-env-works"},
         )
         try:
             output = _read_until(bridge, b"pty-env-works")

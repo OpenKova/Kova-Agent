@@ -6,7 +6,7 @@ author: Kova Agent
 license: MIT
 platforms: [macos]
 metadata:
-  hermes:
+  kova:
     tags: [Reminders, tasks, todo, macOS, Apple]
 prerequisites:
   commands: [remindctl]

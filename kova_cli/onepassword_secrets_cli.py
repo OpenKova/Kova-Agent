@@ -187,10 +187,10 @@ def cmd_setup(args: argparse.Namespace) -> int:
     console.print()
     console.print("[green]✓ 1Password secret source is enabled.[/green]")
     console.print(
-        "  Map credentials:  [cyan]hermes secrets onepassword set OPENAI_API_KEY "
+        "  Map credentials:  [cyan]kova secrets onepassword set OPENAI_API_KEY "
         "\"op://Private/OpenAI/api key\"[/cyan]\n"
-        "  Preview:          [cyan]hermes secrets onepassword sync[/cyan]\n"
-        "  Status:           [cyan]hermes secrets onepassword status[/cyan]"
+        "  Preview:          [cyan]kova secrets onepassword sync[/cyan]\n"
+        "  Status:           [cyan]kova secrets onepassword status[/cyan]"
     )
     return 0
 
@@ -249,7 +249,7 @@ def cmd_status(args: argparse.Namespace) -> int:
     if not references:
         console.print(
             "\n  [yellow]No references mapped yet.[/yellow]  Add one: "
-            "[cyan]hermes secrets onepassword set ENV_VAR \"op://…\"[/cyan]"
+            "[cyan]kova secrets onepassword set ENV_VAR \"op://…\"[/cyan]"
         )
     return 0
 
@@ -280,7 +280,7 @@ def cmd_set(args: argparse.Namespace) -> int:
     if not op_cfg.get("enabled"):
         console.print(
             "  [yellow]Note: the integration is disabled — run "
-            "[cyan]hermes secrets onepassword setup[/cyan] to turn it on.[/yellow]"
+            "[cyan]kova secrets onepassword setup[/cyan] to turn it on.[/yellow]"
         )
     return 0
 
@@ -450,7 +450,7 @@ def cmd_sync(args: argparse.Namespace) -> int:
         console.print(f"[yellow]warning:[/yellow] {w}")
     console.print(
         "\n  This was a dry-run — references resolve automatically on the next "
-        "[cyan]hermes[/cyan] invocation.  Re-run with [cyan]--apply[/cyan] to export "
+        "[cyan]kova[/cyan] invocation.  Re-run with [cyan]--apply[/cyan] to export "
         "into the current shell instead."
     )
     return 0
@@ -466,7 +466,7 @@ def cmd_disable(args: argparse.Namespace) -> int:
         "[green]Disabled.[/green]  1Password references will NOT be resolved on the "
         "next Kova invocation.\n"
         "  Your reference mappings are left in config.yaml — remove them with "
-        "[cyan]hermes secrets onepassword remove ENV_VAR[/cyan] if you no longer "
+        "[cyan]kova secrets onepassword remove ENV_VAR[/cyan] if you no longer "
         "need them."
     )
     return 0

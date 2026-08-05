@@ -43,7 +43,7 @@ Teams 会议流水线使用**仅限应用**（daemon）身份验证从 Microsoft
 
 1. 在左侧导航栏中，打开 **Certificates & secrets**。
 2. 点击 **New client secret**。
-3. **Description：**`hermes-graph-secret`。**Expires：**根据你的轮换策略选择合适的值（通常为 6-24 个月）。
+3. **Description：**`kova-graph-secret`。**Expires：**根据你的轮换策略选择合适的值（通常为 6-24 个月）。
 4. 点击 **Add**。
 5. 立即复制 **Value** 列的值——该值仅显示一次。此值即为 `MSGRAPH_CLIENT_SECRET`。
 

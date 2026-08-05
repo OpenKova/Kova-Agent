@@ -1,7 +1,7 @@
 ---
 sidebar_position: 8
 title: "程序化集成"
-description: "从外部程序驱动 hermes-agent 的三种协议：ACP、TUI gateway JSON-RPC 以及兼容 OpenAI 的 HTTP API"
+description: "从外部程序驱动 kova-agent 的三种协议：ACP、TUI gateway JSON-RPC 以及兼容 OpenAI 的 HTTP API"
 ---
 
 # 程序化集成
@@ -58,7 +58,7 @@ terminal.resize         clipboard.paste         image.attach
 
 ### Pi 风格 RPC 映射
 
-Pi-mono RPC 规范（[issue #360](https://github.com/NousResearch/hermes-agent/issues/360)）中的每条命令均有对应的 TUI gateway 等价项：
+Pi-mono RPC 规范（[issue #360](https://github.com/OpenKova/Kova-Agent/issues/360)）中的每条命令均有对应的 TUI gateway 等价项：
 
 | Pi 命令 | Kova 等价项 |
 |------------|-------------------|
@@ -91,11 +91,11 @@ GET  /v1/runs/{id}/events        生命周期事件的 SSE 流
 POST /v1/runs/{id}/approval      解决待处理的审批
 POST /v1/runs/{id}/stop          中断运行
 GET  /v1/capabilities            机器可读的功能标志
-GET  /v1/models                  列出 hermes-agent
+GET  /v1/models                  列出 kova-agent
 GET  /health, /health/detailed
 ```
 
-配置、请求头（`X-Hermes-Session-Id`、`X-Hermes-Session-Key`）及前端接入：[API Server](../user-guide/features/api-server)。
+配置、请求头（`X-Kova-Session-Id`、`X-Kova-Session-Key`）及前端接入：[API Server](../user-guide/features/api-server)。
 
 ---
 
@@ -115,9 +115,9 @@ GET  /health, /health/detailed
 - **CLI / TUI：** `/model claude-sonnet-4` 或 `/model openrouter:anthropic/claude-sonnet-4.6`
 - **TUI gateway RPC：** 使用 `{"command": "/model claude-sonnet-4"}` 调用 `command.dispatch`
 - **ACP：** IDE 将 slash 命令作为 prompt 发送，agent 负责分发
-- **API server：** 在请求体中包含 `model` 字段，或设置 `X-Hermes-Model`
+- **API server：** 在请求体中包含 `model` 字段，或设置 `X-Kova-Model`
 
-内置 provider 感知解析（相同的模型名称会根据当前 provider 自动选择正确格式）。参见 `hermes_cli/model_switch.py`。
+内置 provider 感知解析（相同的模型名称会根据当前 provider 自动选择正确格式）。参见 `kova_cli/model_switch.py`。
 
 ---
 

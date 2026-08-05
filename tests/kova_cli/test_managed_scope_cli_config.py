@@ -18,7 +18,7 @@ def homes(tmp_path, monkeypatch):
     managed = tmp_path / "managed"
     managed.mkdir()
     monkeypatch.setenv("HERMES_HOME", str(home))
-    monkeypatch.setenv("HERMES_MANAGED_DIR", str(managed))
+    monkeypatch.setenv("KOVA_MANAGED_DIR", str(managed))
     import kova_cli.config as cfg
     from kova_cli import managed_scope
 
@@ -31,7 +31,7 @@ def homes(tmp_path, monkeypatch):
 def _load_cli_config(home):
     """Call cli.py's standalone loader fresh.
 
-    cli.py binds ``_hermes_home = get_hermes_home()`` at import time (module
+    cli.py binds ``_kova_home = get_kova_home()`` at import time (module
     singleton), so monkeypatching HERMES_HOME after import doesn't move it.
     Point the module's cached home at the test's home for the duration of the
     call. (In real use cli is imported once per process with the real home, so
@@ -39,7 +39,7 @@ def _load_cli_config(home):
     """
     import cli
 
-    cli._hermes_home = home
+    cli._kova_home = home
     return cli.load_cli_config()
 
 

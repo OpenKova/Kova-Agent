@@ -35,25 +35,25 @@ Kova Agent 提供了一个 Nix flake，支持三个层级的集成：
 
 ```bash
 # 直接运行（首次使用时构建，之后使用缓存）
-nix run github:NousResearch/hermes-agent -- setup
-nix run github:NousResearch/hermes-agent -- chat
+nix run github:NousResearch/kova-agent -- setup
+nix run github:NousResearch/kova-agent -- chat
 
 # 或持久化安装
-nix profile install github:NousResearch/hermes-agent
+nix profile install github:NousResearch/kova-agent
 kova setup
 kova chat
 ```
 
-执行 `nix profile install` 后，`hermes`、`hermes-agent` 和 `hermes-acp` 将出现在你的 PATH 中。之后的工作流与[标准安装](./installation.md)完全相同——`hermes setup` 引导你完成提供商选择，`hermes gateway install` 设置 launchd（macOS）或 systemd 用户服务，配置存放在 `~/.hermes/`。
+执行 `nix profile install` 后，`kova`、`kova-agent` 和 `kova-acp` 将出现在你的 PATH 中。之后的工作流与[标准安装](./installation.md)完全相同——`kova setup` 引导你完成提供商选择，`kova gateway install` 设置 launchd（macOS）或 systemd 用户服务，配置存放在 `~/.hermes/`。
 
 <details>
 <summary><strong>从本地克隆构建</strong></summary>
 
 ```bash
-git clone https://github.com/NousResearch/hermes-agent.git
-cd hermes-agent
+git clone https://github.com/OpenKova/Kova-Agent.git
+cd kova-agent
 nix build
-./result/bin/hermes setup
+./result/bin/kova setup
 ```
 
 </details>
@@ -75,14 +75,14 @@ nix build
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    hermes-agent.url = "github:NousResearch/hermes-agent";
+    kova-agent.url = "github:NousResearch/kova-agent";
   };
 
-  outputs = { nixpkgs, hermes-agent, ... }: {
+  outputs = { nixpkgs, kova-agent, ... }: {
     nixosConfigurations.your-host = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       modules = [
-        hermes-agent.nixosModules.default
+        kova-agent.nixosModules.default
         ./configuration.nix
       ];
     };
@@ -95,10 +95,10 @@ nix build
 ```nix
 # configuration.nix
 { config, ... }: {
-  services.hermes-agent = {
+  services.kova-agent = {
     enable = true;
     settings.model.default = "anthropic/claude-sonnet-4";
-    environmentFiles = [ config.sops.secrets."hermes-env".path ];
+    environmentFiles = [ config.sops.secrets."kova-env".path ];
     addToSystemPackages = true;
   };
 }
@@ -110,16 +110,16 @@ nix build
 上面的 `environmentFiles` 行假设你已配置 [sops-nix](https://github.com/Mic92/sops-nix) 或 [agenix](https://github.com/ryantm/agenix)。该文件至少应包含一个 LLM 提供商密钥（例如 `OPENROUTER_API_KEY=sk-or-...`）。完整设置请参阅[密钥管理](#secrets-management)。如果你还没有密钥管理器，可以先使用普通文件——只需确保它不是全局可读的：
 
 ```bash
-echo "OPENROUTER_API_KEY=sk-or-your-key" | sudo install -m 0600 -o hermes /dev/stdin /var/lib/hermes/env
+echo "OPENROUTER_API_KEY=sk-or-your-key" | sudo install -m 0600 -o kova /dev/stdin /var/lib/kova/env
 ```
 
 ```nix
-services.hermes-agent.environmentFiles = [ "/var/lib/hermes/env" ];
+services.kova-agent.environmentFiles = [ "/var/lib/kova/env" ];
 ```
 :::
 
 :::tip addToSystemPackages
-设置 `addToSystemPackages = true` 有两个作用：将 `hermes` CLI 添加到系统 PATH，**并**在系统范围内设置 `HERMES_HOME`，使交互式 CLI 与 gateway 服务共享状态（会话、技能、cron）。不设置此项时，在 shell 中运行 `hermes` 会创建独立的 `~/.hermes/` 目录。
+设置 `addToSystemPackages = true` 有两个作用：将 `kova` CLI 添加到系统 PATH，**并**在系统范围内设置 `HERMES_HOME`，使交互式 CLI 与 gateway 服务共享状态（会话、技能、cron）。不设置此项时，在 shell 中运行 `kova` 会创建独立的 `~/.hermes/` 目录。
 :::
 
 ### 容器感知 CLI
@@ -130,12 +130,12 @@ services.hermes-agent.environmentFiles = [ "/var/lib/hermes/env" ];
 - 路由是透明的：`kova chat`、`kova sessions list`、`kova version` 等命令都会在底层 exec 进容器
 - 所有 CLI 参数原样转发
 - 如果容器未运行，CLI 会短暂重试（交互式使用时显示 5 秒 spinner，脚本中静默等待 10 秒），然后以明确的错误退出——不会静默回退
-- 对于在 kova 代码库上工作的开发者，设置 `HERMES_DEV=1` 可绕过容器路由，直接运行本地检出版本
+- 对于在 kova 代码库上工作的开发者，设置 `KOVA_DEV=1` 可绕过容器路由，直接运行本地检出版本
 
 设置 `container.hostUsers` 可创建 `~/.hermes` 到服务状态目录的符号链接，使主机 CLI 和容器共享会话、配置和记忆：
 
 ```nix
-services.hermes-agent = {
+services.kova-agent = {
   container.enable = true;
   container.hostUsers = [ "your-username" ];
   addToSystemPackages = true;
@@ -165,10 +165,10 @@ CLI 会自动检测何时需要 sudo 并透明地使用它。没有此配置，�
 
 ```bash
 # 检查服务状态
-systemctl status hermes-agent
+systemctl status kova-agent
 
 # 查看日志（Ctrl+C 停止）
-journalctl -u hermes-agent -f
+journalctl -u kova-agent -f
 
 # 如果 addToSystemPackages 为 true，测试 CLI
 kova version
@@ -191,7 +191,7 @@ kova config       # 显示生成的配置
 
 ```nix
 {
-  services.hermes-agent = {
+  services.kova-agent = {
     enable = true;
     container.enable = true;
     # ... 其余配置相同
@@ -213,14 +213,14 @@ kova config       # 显示生成的配置
 
 ```nix
 # base.nix
-services.hermes-agent.settings = {
+services.kova-agent.settings = {
   model.default = "anthropic/claude-sonnet-4";
   toolsets = [ "all" ];
   terminal = { backend = "local"; timeout = 180; };
 };
 
 # personality.nix
-services.hermes-agent.settings = {
+services.kova-agent.settings = {
   display = { compact = false; personality = "kawaii"; };
   memory = { memory_enabled = true; user_profile_enabled = true; };
 };
@@ -241,7 +241,7 @@ services.hermes-agent.settings = {
 
 ```nix
 { config, ... }: {
-  services.hermes-agent = {
+  services.kova-agent = {
     enable = true;
     container.enable = true;
 
@@ -265,7 +265,7 @@ services.hermes-agent.settings = {
     };
 
     # ── 密钥 ────────────────────────────────────────────────────────
-    environmentFiles = [ config.sops.secrets."hermes-env".path ];
+    environmentFiles = [ config.sops.secrets."kova-env".path ];
 
     # ── 文档 ──────────────────────────────────────────────────────────
     documents = {
@@ -303,7 +303,7 @@ services.hermes-agent.settings = {
 如果你希望完全在 Nix 之外管理 `config.yaml`，请使用 `configFile`：
 
 ```nix
-services.hermes-agent.configFile = /etc/hermes/config.yaml;
+services.kova-agent.configFile = /etc/kova/config.yaml;
 ```
 
 这会完全绕过 `settings`——不合并，不生成。每次激活时，该文件会原样复制到 `$HERMES_HOME/config.yaml`。
@@ -316,8 +316,8 @@ Nix 用户最常见自定义需求的快速参考：
 |---|---|---|
 | 更改 LLM 模型 | `settings.model.default` | `"anthropic/claude-sonnet-4"` |
 | 使用不同的提供商端点 | `settings.model.base_url` | `"https://openrouter.ai/api/v1"` |
-| 添加 API 密钥 | `environmentFiles` | `[ config.sops.secrets."hermes-env".path ]` |
-| 给 Agent 设置个性 | `${services.hermes-agent.stateDir}/.hermes/SOUL.md` | 直接管理该文件 |
+| 添加 API 密钥 | `environmentFiles` | `[ config.sops.secrets."kova-env".path ]` |
+| 给 Agent 设置个性 | `${services.kova-agent.stateDir}/.hermes/SOUL.md` | 直接管理该文件 |
 | 添加 MCP 工具服务器 | `mcpServers.<name>` | 参见 [MCP 服务器](#mcp-servers) |
 | 将主机目录挂载到容器 | `container.extraVolumes` | `[ "/data:/data:rw" ]` |
 | 为容器传入 GPU 访问 | `container.extraOptions` | `[ "--gpus" "all" ]` |
@@ -325,8 +325,8 @@ Nix 用户最常见自定义需求的快速参考：
 | 在主机 CLI 和容器间共享状态 | `container.hostUsers` | `[ "sidbin" ]` |
 | 为 Agent 提供额外工具 | `extraPackages` | `[ pkgs.pandoc pkgs.imagemagick ]` |
 | 使用自定义基础镜像 | `container.image` | `"ubuntu:24.04"` |
-| 覆盖 hermes 包 | `package` | `inputs.hermes-agent.packages.${system}.default.override { ... }` |
-| 更改状态目录 | `stateDir` | `"/opt/hermes"` |
+| 覆盖 kova 包 | `package` | `inputs.kova-agent.packages.${system}.default.override { ... }` |
+| 更改状态目录 | `stateDir` | `"/opt/kova"` |
 | 设置 Agent 的工作目录 | `workingDirectory` | `"/home/user/projects"` |
 
 ---
@@ -337,20 +337,20 @@ Nix 用户最常见自定义需求的快速参考：
 Nix 表达式中的值会进入 `/nix/store`，该目录是全局可读的。请始终使用带有密钥管理器的 `environmentFiles`。
 :::
 
-`environment`（非密钥变量）和 `environmentFiles`（密钥文件）在激活时（`nixos-rebuild switch`）都会合并到 `$HERMES_HOME/.env` 中。Kova 在每次启动时读取此文件，因此更改在 `systemctl restart hermes-agent` 后生效——无需重建容器。
+`environment`（非密钥变量）和 `environmentFiles`（密钥文件）在激活时（`nixos-rebuild switch`）都会合并到 `$HERMES_HOME/.env` 中。Kova 在每次启动时读取此文件，因此更改在 `systemctl restart kova-agent` 后生效——无需重建容器。
 
 ### sops-nix
 
 ```nix
 {
   sops = {
-    defaultSopsFile = ./secrets/hermes.yaml;
+    defaultSopsFile = ./secrets/kova.yaml;
     age.keyFile = "/home/user/.config/sops/age/keys.txt";
-    secrets."hermes-env" = { format = "yaml"; };
+    secrets."kova-env" = { format = "yaml"; };
   };
 
-  services.hermes-agent.environmentFiles = [
-    config.sops.secrets."hermes-env".path
+  services.kova-agent.environmentFiles = [
+    config.sops.secrets."kova-env".path
   ];
 }
 ```
@@ -358,8 +358,8 @@ Nix 表达式中的值会进入 `/nix/store`，该目录是全局可读的。请
 密钥文件包含键值对：
 
 ```yaml
-# secrets/hermes.yaml（使用 sops 加密）
-hermes-env: |
+# secrets/kova.yaml（使用 sops 加密）
+kova-env: |
     OPENROUTER_API_KEY=sk-or-...
     TELEGRAM_BOT_TOKEN=123456:ABC...
     ANTHROPIC_API_KEY=sk-ant-...
@@ -369,10 +369,10 @@ hermes-env: |
 
 ```nix
 {
-  age.secrets.hermes-env.file = ./secrets/hermes-env.age;
+  age.secrets.kova-env.file = ./secrets/kova-env.age;
 
-  services.hermes-agent.environmentFiles = [
-    config.age.secrets.hermes-env.path
+  services.kova-agent.environmentFiles = [
+    config.age.secrets.kova-env.path
   ];
 }
 ```
@@ -383,8 +383,8 @@ hermes-env: |
 
 ```nix
 {
-  services.hermes-agent = {
-    authFile = config.sops.secrets."hermes/auth.json".path;
+  services.kova-agent = {
+    authFile = config.sops.secrets."kova/auth.json".path;
     # authFileForceOverwrite = true;  # 每次激活时强制覆盖
   };
 }
@@ -401,11 +401,11 @@ hermes-env: |
 - **`USER.md`** — 关于 Agent 正在交互的用户的上下文信息。
 - 你放置在此处的任何其他文件对 Agent 都可见，作为工作区文件。
 
-Agent 身份文件是独立的：Kova 从 `$HERMES_HOME/SOUL.md` 加载其主要 `SOUL.md`，在 NixOS 模块中对应 `${services.hermes-agent.stateDir}/.hermes/SOUL.md`。将 `SOUL.md` 放入 `documents` 只会创建一个工作区文件，不会替换主角色文件。
+Agent 身份文件是独立的：Kova 从 `$HERMES_HOME/SOUL.md` 加载其主要 `SOUL.md`，在 NixOS 模块中对应 `${services.kova-agent.stateDir}/.hermes/SOUL.md`。将 `SOUL.md` 放入 `documents` 只会创建一个工作区文件，不会替换主角色文件。
 
 ```nix
 {
-  services.hermes-agent.documents = {
+  services.kova-agent.documents = {
     "USER.md" = ./documents/USER.md;  # 路径引用，从 Nix store 复制
   };
 }
@@ -423,7 +423,7 @@ Agent 身份文件是独立的：Kova 从 `$HERMES_HOME/SOUL.md` 加载其主要
 
 ```nix
 {
-  services.hermes-agent.mcpServers = {
+  services.kova-agent.mcpServers = {
     filesystem = {
       command = "npx";
       args = [ "-y" "@modelcontextprotocol/server-filesystem" "/data/workspace" ];
@@ -445,7 +445,7 @@ Agent 身份文件是独立的：Kova 从 `$HERMES_HOME/SOUL.md` 加载其主要
 
 ```nix
 {
-  services.hermes-agent.mcpServers.remote-api = {
+  services.kova-agent.mcpServers.remote-api = {
     url = "https://mcp.example.com/v1/mcp";
     headers.Authorization = "Bearer \${MCP_REMOTE_API_KEY}";
     timeout = 180;
@@ -459,7 +459,7 @@ Agent 身份文件是独立的：Kova 从 `$HERMES_HOME/SOUL.md` 加载其主要
 
 ```nix
 {
-  services.hermes-agent.mcpServers.my-oauth-server = {
+  services.kova-agent.mcpServers.my-oauth-server = {
     url = "https://mcp.example.com/mcp";
     auth = "oauth";
   };
@@ -477,11 +477,11 @@ Token 存储在 `$HERMES_HOME/mcp-tokens/<server-name>.json` 中，在重启和�
 
 ```bash
 # 容器模式
-docker exec -it hermes-agent \
+docker exec -it kova-agent \
   kova mcp add my-oauth-server --url https://mcp.example.com/mcp --auth oauth
 
 # 原生模式
-sudo -u hermes HERMES_HOME=/var/lib/hermes/.hermes \
+sudo -u kova HERMES_HOME=/var/lib/kova/.hermes \
   kova mcp add my-oauth-server --url https://mcp.example.com/mcp --auth oauth
 ```
 
@@ -492,8 +492,8 @@ sudo -u hermes HERMES_HOME=/var/lib/hermes/.hermes \
 ```bash
 kova mcp add my-oauth-server --url https://mcp.example.com/mcp --auth oauth
 scp ~/.hermes/mcp-tokens/my-oauth-server{,.client}.json \
-    server:/var/lib/hermes/.hermes/mcp-tokens/
-# 确保：chown hermes:hermes，chmod 0600
+    server:/var/lib/kova/.hermes/mcp-tokens/
+# 确保：chown kova:kova，chmod 0600
 ```
 
 </details>
@@ -504,7 +504,7 @@ scp ~/.hermes/mcp-tokens/my-oauth-server{,.client}.json \
 
 ```nix
 {
-  services.hermes-agent.mcpServers.analysis = {
+  services.kova-agent.mcpServers.analysis = {
     command = "npx";
     args = [ "-y" "analysis-server" ];
     sampling = {
@@ -534,8 +534,8 @@ scp ~/.hermes/mcp-tokens/my-oauth-server{,.client}.json \
 
 这可以防止 Nix 声明的内容与磁盘上实际内容之间产生漂移。检测使用两个信号：
 
-1. **`HERMES_MANAGED=true`** 环境变量——由 systemd 服务设置，对 gateway 进程可见
-2. **`.managed` 标记文件**，位于 `HERMES_HOME` 中——由激活脚本设置，对交互式 shell 可见（例如 `docker exec -it hermes-agent hermes config set ...` 也会被屏蔽）
+1. **`KOVA_MANAGED=true`** 环境变量——由 systemd 服务设置，对 gateway 进程可见
+2. **`.managed` 标记文件**，位于 `HERMES_HOME` 中——由激活脚本设置，对交互式 shell 可见（例如 `docker exec -it kova-agent kova config set ...` 也会被屏蔽）
 
 要更改配置，请编辑你的 Nix 配置并运行 `sudo nixos-rebuild switch`。
 
@@ -547,25 +547,25 @@ scp ~/.hermes/mcp-tokens/my-oauth-server{,.client}.json \
 本节仅在使用 `container.enable = true` 时相关。原生模式部署可跳过。
 :::
 
-启用容器模式后，hermes 在持久化 Ubuntu 容器内运行，Nix 构建的二进制文件以只读方式从主机绑定挂载：
+启用容器模式后，kova 在持久化 Ubuntu 容器内运行，Nix 构建的二进制文件以只读方式从主机绑定挂载：
 
 ```
 主机                                    容器
 ────                                    ─────────
-/nix/store/...-hermes-agent-0.1.0  ──►  /nix/store/... (ro)
-~/.hermes -> /var/lib/hermes/.hermes       （符号链接桥接，按 hostUsers）
-/var/lib/hermes/                    ──►  /data/          (rw)
+/nix/store/...-kova-agent-0.1.0  ──►  /nix/store/... (ro)
+~/.hermes -> /var/lib/kova/.hermes       （符号链接桥接，按 hostUsers）
+/var/lib/kova/                    ──►  /data/          (rw)
   ├── current-package -> /nix/store/...    （符号链接，每次重建更新）
   ├── .gc-root -> /nix/store/...           （防止 nix-collect-garbage）
   ├── .container-identity                  （sha256 哈希，触发重建）
-  ├── .hermes/                             （HERMES_HOME）
+  ├── .kova/                             （HERMES_HOME）
   │   ├── .env                             （从 environment + environmentFiles 合并）
   │   ├── config.yaml                      （Nix 生成，激活时深度合并）
   │   ├── .managed                         （标记文件）
   │   ├── .container-mode                  （路由元数据：backend、exec_user 等）
   │   ├── state.db, sessions/, memories/   （运行时状态）
   │   └── mcp-tokens/                      （MCP 服务器的 OAuth token）
-  ├── home/                                ──►  /home/hermes    (rw)
+  ├── home/                                ──►  /home/kova    (rw)
   └── workspace/                           （MESSAGING_CWD）
       ├── SOUL.md                          （来自 documents 选项）
       └── （Agent 创建的文件）
@@ -573,13 +573,13 @@ scp ~/.hermes/mcp-tokens/my-oauth-server{,.client}.json \
 容器可写层（apt/pip/npm）：   /usr, /usr/local, /tmp
 ```
 
-Nix 构建的二进制文件能在 Ubuntu 容器内运行，是因为 `/nix/store` 被绑定挂载——它携带自己的解释器和所有依赖，不依赖容器的系统库。容器入口点通过 `current-package` 符号链接解析：`/data/current-package/bin/hermes gateway run --replace`。执行 `nixos-rebuild switch` 时，只更新符号链接——容器继续运行。
+Nix 构建的二进制文件能在 Ubuntu 容器内运行，是因为 `/nix/store` 被绑定挂载——它携带自己的解释器和所有依赖，不依赖容器的系统库。容器入口点通过 `current-package` 符号链接解析：`/data/current-package/bin/kova gateway run --replace`。执行 `nixos-rebuild switch` 时，只更新符号链接——容器继续运行。
 
 ### 各事件的持久性
 
-| 事件 | 容器重建？ | `/data`（状态） | `/home/hermes` | 可写层（`apt`/`pip`/`npm`） |
+| 事件 | 容器重建？ | `/data`（状态） | `/home/kova` | 可写层（`apt`/`pip`/`npm`） |
 |---|---|---|---|---|
-| `systemctl restart hermes-agent` | 否 | 保留 | 保留 | 保留 |
+| `systemctl restart kova-agent` | 否 | 保留 | 保留 | 保留 |
 | `nixos-rebuild switch`（代码变更） | 否（更新符号链接） | 保留 | 保留 | 保留 |
 | 主机重启 | 否 | 保留 | 保留 | 保留 |
 | `nix-collect-garbage` | 否（GC root） | 保留 | 保留 | 保留 |
@@ -590,9 +590,9 @@ Nix 构建的二进制文件能在 Ubuntu 容器内运行，是因为 `/nix/stor
 仅当容器的**身份哈希**发生变化时才会重建容器。哈希涵盖：schema 版本、镜像、`extraVolumes`、`extraOptions` 和入口点脚本。环境变量、settings、文档或 kova 包本身的变更**不会**触发重建。
 
 :::warning 可写层丢失
-当身份哈希发生变化（镜像升级、新卷、新容器选项）时，容器会被销毁并从 `container.image` 的全新拉取重建。可写层中通过 `apt install`、`pip install` 或 `npm install` 安装的包将丢失。`/data` 和 `/home/hermes` 中的状态会保留（这些是绑定挂载）。
+当身份哈希发生变化（镜像升级、新卷、新容器选项）时，容器会被销毁并从 `container.image` 的全新拉取重建。可写层中通过 `apt install`、`pip install` 或 `npm install` 安装的包将丢失。`/data` 和 `/home/kova` 中的状态会保留（这些是绑定挂载）。
 
-如果 Agent 依赖特定包，考虑将其烘焙到自定义镜像中（`container.image = "my-registry/hermes-base:latest"`），或在 Agent 的 SOUL.md 中编写安装脚本。
+如果 Agent 依赖特定包，考虑将其烘焙到自定义镜像中（`container.image = "my-registry/kova-base:latest"`），或在 Agent 的 SOUL.md 中编写安装脚本。
 :::
 
 ### GC Root 保护
@@ -607,13 +607,13 @@ NixOS 模块支持声明式插件安装——无需命令式的 `kova plugins in
 
 ### 目录插件（`extraPlugins`）
 
-对于只包含 `plugin.yaml` + `__init__.py` 的源码树插件（例如 [hermes-lcm](https://github.com/stephenschoettler/hermes-lcm)）：
+对于只包含 `plugin.yaml` + `__init__.py` 的源码树插件（例如 [kova-lcm](https://github.com/stephenschoettler/kova-lcm)）：
 
 ```nix
-services.hermes-agent.extraPlugins = [
+services.kova-agent.extraPlugins = [
   (pkgs.fetchFromGitHub {
     owner = "stephenschoettler";
-    repo = "hermes-lcm";
+    repo = "kova-lcm";
     rev = "v0.7.0";
     hash = "sha256-...";
   })
@@ -624,16 +624,16 @@ services.hermes-agent.extraPlugins = [
 
 ### 入口点插件（`extraPythonPackages`）
 
-对于通过 `[project.entry-points."hermes_agent.plugins"]` 注册的 pip 打包插件（例如 [rtk-hermes](https://github.com/ogallotti/rtk-hermes)）：
+对于通过 `[project.entry-points."kova_agent.plugins"]` 注册的 pip 打包插件（例如 [rtk-kova](https://github.com/ogallotti/rtk-kova)）：
 
 ```nix
-services.hermes-agent.extraPythonPackages = [
+services.kova-agent.extraPythonPackages = [
   (pkgs.python312Packages.buildPythonPackage {
-    pname = "rtk-hermes";
+    pname = "rtk-kova";
     version = "1.0.0";
     src = pkgs.fetchFromGitHub {
       owner = "ogallotti";
-      repo = "rtk-hermes";
+      repo = "rtk-kova";
       rev = "v1.0.0";
       hash = "sha256-...";
     };
@@ -647,10 +647,10 @@ services.hermes-agent.extraPythonPackages = [
 
 ### 可选依赖组（`extraDependencyGroups`）
 
-对于已在 hermes-agent 的 `pyproject.toml` 中声明的可选 extras（例如 `hindsight` 或 `honcho` 等记忆提供商），使用 `extraDependencyGroups` 在构建时将其包含到封闭的 venv 中：
+对于已在 kova-agent 的 `pyproject.toml` 中声明的可选 extras（例如 `hindsight` 或 `honcho` 等记忆提供商），使用 `extraDependencyGroups` 在构建时将其包含到封闭的 venv 中：
 
 ```nix
-services.hermes-agent = {
+services.kova-agent = {
   extraDependencyGroups = [ "hindsight" ];
   settings.memory.provider = "hindsight";
 };
@@ -672,7 +672,7 @@ services.hermes-agent = {
 带有第三方 Python 依赖的目录插件需要同时使用两个选项：
 
 ```nix
-services.hermes-agent = {
+services.kova-agent = {
   extraPlugins = [ my-plugin-src ];          # 插件源码
   extraPythonPackages = [ pkgs.python312Packages.redis ];  # 其 Python 依赖
   extraPackages = [ pkgs.redis ];            # 其需要的系统二进制文件
@@ -685,12 +685,12 @@ services.hermes-agent = {
 
 ```nix
 {
-  inputs.hermes-agent.url = "github:NousResearch/hermes-agent";
-  outputs = { hermes-agent, nixpkgs, ... }: {
-    nixpkgs.overlays = [ hermes-agent.overlays.default ];
+  inputs.kova-agent.url = "github:NousResearch/kova-agent";
+  outputs = { kova-agent, nixpkgs, ... }: {
+    nixpkgs.overlays = [ kova-agent.overlays.default ];
     # 然后：
-    #   pkgs.hermes-agent.override { extraPythonPackages = [...]; }
-    #   pkgs.hermes-agent.override { extraDependencyGroups = [ "hindsight" ]; }
+    #   pkgs.kova-agent.override { extraPythonPackages = [...]; }
+    #   pkgs.kova-agent.override { extraDependencyGroups = [ "hindsight" ]; }
   };
 }
 ```
@@ -700,8 +700,8 @@ services.hermes-agent = {
 插件仍需在 `config.yaml` 中启用。通过声明式 settings 添加：
 
 ```nix
-services.hermes-agent.settings.plugins.enabled = [
-  "hermes-lcm"
+services.kova-agent.settings.plugins.enabled = [
+  "kova-lcm"
   "rtk-rewrite"
 ];
 ```
@@ -719,7 +719,7 @@ services.hermes-agent.settings.plugins.enabled = [
 该 flake 提供了一个包含 Python 3.12、uv、Node.js 和所有运行时工具的开发 shell：
 
 ```bash
-cd hermes-agent
+cd kova-agent
 nix develop
 
 # Shell 提供：
@@ -736,7 +736,7 @@ kova chat
 包含的 `.envrc` 会自动激活开发 shell：
 
 ```bash
-cd hermes-agent
+cd kova-agent
 direnv allow    # 仅需一次
 # 后续进入几乎即时（戳记文件跳过依赖安装）
 ```
@@ -753,7 +753,7 @@ nix flake check
 nix build .#checks.x86_64-linux.package-contents   # 二进制文件存在 + 版本
 nix build .#checks.x86_64-linux.entry-points-sync  # pyproject.toml ↔ Nix 包同步
 nix build .#checks.x86_64-linux.cli-commands        # gateway/config 子命令
-nix build .#checks.x86_64-linux.managed-guard       # HERMES_MANAGED 屏蔽变更操作
+nix build .#checks.x86_64-linux.managed-guard       # KOVA_MANAGED 屏蔽变更操作
 nix build .#checks.x86_64-linux.bundled-skills      # 包中存在 skills
 nix build .#checks.x86_64-linux.config-roundtrip    # 合并脚本保留用户键
 ```
@@ -763,11 +763,11 @@ nix build .#checks.x86_64-linux.config-roundtrip    # 合并脚本保留用户�
 
 | 检查 | 测试内容 |
 |---|---|
-| `package-contents` | `hermes` 和 `hermes-agent` 二进制文件存在且 `hermes version` 可运行 |
+| `package-contents` | `kova` 和 `kova-agent` 二进制文件存在且 `kova version` 可运行 |
 | `entry-points-sync` | `pyproject.toml` 中 `[project.scripts]` 的每个条目在 Nix 包中都有对应的封装二进制文件 |
 | `cli-commands` | `kova --help` 暴露 `gateway` 和 `config` 子命令 |
-| `managed-guard` | `HERMES_MANAGED=true kova config set ...` 打印 NixOS 错误 |
-| `bundled-skills` | skills 目录存在，包含 SKILL.md 文件，wrapper 中设置了 `HERMES_BUNDLED_SKILLS` |
+| `managed-guard` | `KOVA_MANAGED=true kova config set ...` 打印 NixOS 错误 |
+| `bundled-skills` | skills 目录存在，包含 SKILL.md 文件，wrapper 中设置了 `KOVA_BUNDLED_SKILLS` |
 | `config-roundtrip` | 7 种合并场景：全新安装、Nix 覆盖、用户键保留、混合合并、MCP 累加合并、嵌套深度合并、幂等性 |
 
 </details>
@@ -780,12 +780,12 @@ nix build .#checks.x86_64-linux.config-roundtrip    # 合并脚本保留用户�
 
 | 选项 | 类型 | 默认值 | 描述 |
 |---|---|---|---|
-| `enable` | `bool` | `false` | 启用 hermes-agent 服务 |
-| `package` | `package` | `hermes-agent` | 使用的 hermes-agent 包 |
-| `user` | `str` | `"hermes"` | 系统用户 |
-| `group` | `str` | `"hermes"` | 系统组 |
+| `enable` | `bool` | `false` | 启用 kova-agent 服务 |
+| `package` | `package` | `kova-agent` | 使用的 kova-agent 包 |
+| `user` | `str` | `"kova"` | 系统用户 |
+| `group` | `str` | `"kova"` | 系统组 |
 | `createUser` | `bool` | `true` | 自动创建用户/组 |
-| `stateDir` | `str` | `"/var/lib/hermes"` | 状态目录（`HERMES_HOME` 的父目录） |
+| `stateDir` | `str` | `"/var/lib/kova"` | 状态目录（`HERMES_HOME` 的父目录） |
 | `workingDirectory` | `str` | `"${stateDir}/workspace"` | Agent 工作目录（`MESSAGING_CWD`） |
 | `addToSystemPackages` | `bool` | `false` | 将 `kova` CLI 添加到系统 PATH 并在系统范围内设置 `HERMES_HOME` |
 
@@ -849,7 +849,7 @@ nix build .#checks.x86_64-linux.config-roundtrip    # 合并脚本保留用户�
 | `container.image` | `str` | `"ubuntu:24.04"` | 基础镜像（运行时拉取） |
 | `container.extraVolumes` | `listOf str` | `[]` | 额外卷挂载（`host:container:mode`） |
 | `container.extraOptions` | `listOf str` | `[]` | 传递给 `docker create` 的额外参数 |
-| `container.hostUsers` | `listOf str` | `[]` | 获得 `~/.hermes` 符号链接（指向服务 stateDir）的交互式用户，自动加入 `hermes` 组 |
+| `container.hostUsers` | `listOf str` | `[]` | 获得 `~/.hermes` 符号链接（指向服务 stateDir）的交互式用户，自动加入 `kova` 组 |
 
 ---
 
@@ -858,8 +858,8 @@ nix build .#checks.x86_64-linux.config-roundtrip    # 合并脚本保留用户�
 ### 原生模式
 
 ```
-/var/lib/hermes/                     # stateDir（归 hermes:hermes 所有，权限 0750）
-├── .hermes/                         # HERMES_HOME
+/var/lib/kova/                     # stateDir（归 kova:kova 所有，权限 0750）
+├── .kova/                         # HERMES_HOME
 │   ├── config.yaml                  # Nix 生成（每次重建深度合并）
 │   ├── .managed                     # 标记：CLI 配置变更被屏蔽
 │   ├── .env                         # 从 environment + environmentFiles 合并
@@ -885,8 +885,8 @@ nix build .#checks.x86_64-linux.config-roundtrip    # 合并脚本保留用户�
 | 容器路径 | 主机路径 | 模式 | 说明 |
 |---|---|---|---|
 | `/nix/store` | `/nix/store` | `ro` | Kova 二进制文件 + 所有 Nix 依赖 |
-| `/data` | `/var/lib/hermes` | `rw` | 所有状态、配置、工作区 |
-| `/home/hermes` | `${stateDir}/home` | `rw` | 持久化 Agent home——`pip install --user`、工具缓存 |
+| `/data` | `/var/lib/kova` | `rw` | 所有状态、配置、工作区 |
+| `/home/kova` | `${stateDir}/home` | `rw` | 持久化 Agent home——`pip install --user`、工具缓存 |
 | `/usr`、`/usr/local`、`/tmp` | （可写层） | `rw` | `apt`/`pip`/`npm` 安装——重启后持久，重建后丢失 |
 
 ---
@@ -895,7 +895,7 @@ nix build .#checks.x86_64-linux.config-roundtrip    # 合并脚本保留用户�
 
 ```bash
 # 更新 flake 输入（在包含 flake.nix 的目录中运行）
-cd /etc/nixos && nix flake update hermes-agent
+cd /etc/nixos && nix flake update kova-agent
 
 # 重建
 sudo nixos-rebuild switch
@@ -915,21 +915,21 @@ sudo nixos-rebuild switch
 
 ```bash
 # 两种模式使用相同的 systemd 单元
-journalctl -u hermes-agent -f
+journalctl -u kova-agent -f
 
 # 容器模式：也可直接查看
-docker logs -f hermes-agent
+docker logs -f kova-agent
 ```
 
 ### 容器检查
 
 ```bash
-systemctl status hermes-agent
-docker ps -a --filter name=hermes-agent
-docker inspect hermes-agent --format='{{.State.Status}}'
-docker exec -it hermes-agent bash
-docker exec hermes-agent readlink /data/current-package
-docker exec hermes-agent cat /data/.container-identity
+systemctl status kova-agent
+docker ps -a --filter name=kova-agent
+docker inspect kova-agent --format='{{.State.Status}}'
+docker exec -it kova-agent bash
+docker exec kova-agent readlink /data/current-package
+docker exec kova-agent cat /data/.container-identity
 ```
 
 ### 强制重建容器
@@ -937,10 +937,10 @@ docker exec hermes-agent cat /data/.container-identity
 如果需要重置可写层（全新 Ubuntu）：
 
 ```bash
-sudo systemctl stop hermes-agent
-docker rm -f hermes-agent
-sudo rm /var/lib/hermes/.container-identity
-sudo systemctl start hermes-agent
+sudo systemctl stop kova-agent
+docker rm -f kova-agent
+sudo rm /var/lib/kova/.container-identity
+sudo systemctl start kova-agent
 ```
 
 ### 验证密钥已加载
@@ -949,16 +949,16 @@ sudo systemctl start hermes-agent
 
 ```bash
 # 原生模式
-sudo -u hermes cat /var/lib/hermes/.hermes/.env
+sudo -u kova cat /var/lib/kova/.hermes/.env
 
 # 容器模式
-docker exec hermes-agent cat /data/.hermes/.env
+docker exec kova-agent cat /data/.hermes/.env
 ```
 
 ### GC Root 验证
 
 ```bash
-nix-store --query --roots $(docker exec hermes-agent readlink /data/current-package)
+nix-store --query --roots $(docker exec kova-agent readlink /data/current-package)
 ```
 
 ### 常见问题
@@ -967,9 +967,9 @@ nix-store --query --roots $(docker exec hermes-agent readlink /data/current-pack
 |---|---|---|
 | `Cannot save configuration: managed by NixOS` | CLI 守卫已激活 | 编辑 `configuration.nix` 并执行 `nixos-rebuild switch` |
 | 容器意外重建 | `extraVolumes`、`extraOptions` 或 `image` 发生变更 | 预期行为——可写层重置。重新安装包或使用自定义镜像 |
-| `hermes version` 显示旧版本 | 容器未重启 | `systemctl restart hermes-agent` |
-| `/var/lib/hermes` 权限拒绝 | 状态目录为 `0750 hermes:hermes` | 使用 `docker exec` 或 `sudo -u hermes` |
+| `kova version` 显示旧版本 | 容器未重启 | `systemctl restart kova-agent` |
+| `/var/lib/kova` 权限拒绝 | 状态目录为 `0750 kova:kova` | 使用 `docker exec` 或 `sudo -u kova` |
 | `nix-collect-garbage` 删除了 kova | GC root 缺失 | 重启服务（preStart 会重新创建 GC root） |
-| `no container with name or ID "hermes-agent"`（Podman） | Podman rootful 容器对普通用户不可见 | 为 podman 添加免密 sudo（参见[容器模式](#container-mode)章节） |
+| `no container with name or ID "kova-agent"`（Podman） | Podman rootful 容器对普通用户不可见 | 为 podman 添加免密 sudo（参见[容器模式](#container-mode)章节） |
 | `unable to find user kova` | 容器仍在启动中（入口点尚未创建用户） | 等待几秒后重试——CLI 会自动重试 |
-| 通过 `extraPackages` 添加的工具在终端中找不到 | 需要 `nixos-rebuild switch` 更新每用户 profile | 重建并重启：`nixos-rebuild switch && systemctl restart hermes-agent` |
+| 通过 `extraPackages` 添加的工具在终端中找不到 | 需要 `nixos-rebuild switch` 更新每用户 profile | 重建并重启：`nixos-rebuild switch && systemctl restart kova-agent` |

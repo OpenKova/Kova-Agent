@@ -72,9 +72,9 @@ class TestNonInteractiveSetup:
         args = _make_setup_args(non_interactive=True)
 
         with (
-            patch("kova_cli.setup.ensure_hermes_home"),
+            patch("kova_cli.setup.ensure_kova_home"),
             patch("kova_cli.setup.load_config", return_value={}),
-            patch("kova_cli.setup.get_hermes_home", return_value="/tmp/.hermes"),
+            patch("kova_cli.setup.get_kova_home", return_value="/tmp/.hermes"),
             patch("kova_cli.auth.get_active_provider", side_effect=AssertionError("wizard continued")),
             patch("builtins.input", side_effect=AssertionError("input should not be called")),
         ):
@@ -90,9 +90,9 @@ class TestNonInteractiveSetup:
         args = _make_setup_args(non_interactive=False)
 
         with (
-            patch("kova_cli.setup.ensure_hermes_home"),
+            patch("kova_cli.setup.ensure_kova_home"),
             patch("kova_cli.setup.load_config", return_value={}),
-            patch("kova_cli.setup.get_hermes_home", return_value="/tmp/.hermes"),
+            patch("kova_cli.setup.get_kova_home", return_value="/tmp/.hermes"),
             patch("kova_cli.auth.get_active_provider", side_effect=AssertionError("wizard continued")),
             patch("sys.stdin") as mock_stdin,
             patch("builtins.input", side_effect=AssertionError("input should not be called")),
@@ -154,7 +154,7 @@ class TestNonInteractiveSetup:
             received["section"] = args.section
 
         monkeypatch.setattr(main_mod, "cmd_setup", fake_cmd_setup)
-        monkeypatch.setattr("sys.argv", ["hermes", "setup", "tts"])
+        monkeypatch.setattr("sys.argv", ["kova", "setup", "tts"])
 
         main_mod.main()
 

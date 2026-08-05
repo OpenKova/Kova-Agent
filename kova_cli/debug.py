@@ -1,7 +1,7 @@
 """``kova debug`` debug tools for Kova Agent.
 
 Currently supports:
-    hermes debug share    Upload debug report (system info + logs) to a
+    kova debug share    Upload debug report (system info + logs) to a
                           paste service and print a shareable URL.
                           By default, log content is run through
                           ``agent.redact.redact_sensitive_text`` with
@@ -30,7 +30,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from kova_constants import get_hermes_home
+from kova_constants import get_kova_home
 from utils import atomic_replace
 
 logger = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 # Visible in the public paste so reviewers know the content was sanitized.
 # Kept short; the trailing newline guarantees the banner sits on its own line.
 _REDACTION_BANNER = (
-    "[hermes debug share: log content redacted at upload time. "
+    "[kova debug share: log content redacted at upload time. "
     "run with --no-redact to disable]\n"
 )
 
@@ -83,7 +83,7 @@ def _pending_file() -> Path:
     runs an opportunistic sweep on entry as a fallback for CLI-only users
     who never start the gateway.
     """
-    return get_hermes_home() / "pastes" / "pending.json"
+    return get_kova_home() / "pastes" / "pending.json"
 
 
 def _load_pending() -> list[dict]:
@@ -295,7 +295,7 @@ def _upload_dpaste_com(content: str, expiry_days: int = 7) -> str:
 
     dpaste.com uses multipart form data.
     """
-    boundary = "----HermesDebugBoundary9f3c"
+    boundary = "----KovaDebugBoundary9f3c"
 
     def _field(name: str, value: str) -> str:
         return (
@@ -369,7 +369,7 @@ def _primary_log_path(log_name: str) -> Optional[Path]:
     from kova_cli.logs import LOG_FILES
 
     filename = LOG_FILES.get(log_name)
-    return (get_hermes_home() / "logs" / filename) if filename else None
+    return (get_kova_home() / "logs" / filename) if filename else None
 
 
 def _resolve_log_path(log_name: str) -> Optional[Path]:
@@ -606,7 +606,7 @@ def collect_debug_report(
 
 # Bundle format identifier embedded in the Nous-S3 JSON envelope. The
 # discord-support viewer keys off this string to parse the bundle.
-_NOUS_BUNDLE_FORMAT = "hermes-debug-share/1"
+_NOUS_BUNDLE_FORMAT = "kova-debug-share/1"
 
 
 def collect_share_bundle(
@@ -683,7 +683,7 @@ def build_nous_bundle(bundle: dict[str, str], redact: bool = True) -> bytes:
 
     The JSON shape is what the discord-support viewer (Repo 3) parses::
 
-        {"format": "hermes-debug-share/1",
+        {"format": "kova-debug-share/1",
          "redacted": <bool>,
          "created": <iso8601>,
          "files": {"report": ..., "agent.log": ..., ...}}

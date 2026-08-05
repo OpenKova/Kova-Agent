@@ -54,7 +54,7 @@ class TestPinPeerNameConfigParsing:
             "apiKey": "k",
             "peerName": "Igor",
             "hosts": {
-                "hermes": {"pinPeerName": True},
+                "kova": {"pinPeerName": True},
             },
         }))
         monkeypatch.setenv("HERMES_HOME", str(tmp_path / "isolated"))
@@ -70,7 +70,7 @@ class TestPinPeerNameConfigParsing:
             "peerName": "Igor",
             "pinPeerName": True,
             "hosts": {
-                "hermes": {"pinPeerName": False},
+                "kova": {"pinPeerName": False},
             },
         }))
         monkeypatch.setenv("HERMES_HOME", str(tmp_path / "isolated"))
@@ -124,7 +124,7 @@ class TestRuntimePeerMappingConfigParsing:
             "apiKey": "k",
             "userPeerAliases": {"root-user": "root-peer"},
             "hosts": {
-                "hermes": {
+                "kova": {
                     "userPeerAliases": {"host-user": "host-peer"},
                 },
             },
@@ -140,7 +140,7 @@ class TestRuntimePeerMappingConfigParsing:
             "apiKey": "k",
             "userPeerAliases": {"root-user": "root-peer"},
             "hosts": {
-                "hermes": {
+                "kova": {
                     "userPeerAliases": {},
                 },
             },
@@ -156,7 +156,7 @@ class TestRuntimePeerMappingConfigParsing:
             "apiKey": "k",
             "runtimePeerPrefix": "telegram_",
             "hosts": {
-                "hermes": {
+                "kova": {
                     "runtimePeerPrefix": "",
                 },
             },
@@ -635,7 +635,7 @@ class TestPinUserPeerAlias:
             "apiKey": "***",
             "peerName": "eri",
             "pinPeerName": False,
-            "hosts": {"hermes": {"pinUserPeer": True}},
+            "hosts": {"kova": {"pinUserPeer": True}},
         }))
         config = HonchoClientConfig.from_global_config(config_path=config_file)
         assert config.pin_peer_name is True
@@ -648,7 +648,7 @@ class TestPinUserPeerAlias:
             "apiKey": "***",
             "peerName": "eri",
             "pinPeerName": True,
-            "hosts": {"hermes": {"pinUserPeer": False}},
+            "hosts": {"kova": {"pinUserPeer": False}},
         }))
         config = HonchoClientConfig.from_global_config(config_path=config_file)
         assert config.pin_peer_name is False, (
@@ -663,7 +663,7 @@ class TestPinUserPeerAlias:
         config_file.write_text(json.dumps({
             "apiKey": "***",
             "peerName": "eri",
-            "hosts": {"hermes": {"pinPeerName": True}},
+            "hosts": {"kova": {"pinPeerName": True}},
         }))
         config = HonchoClientConfig.from_global_config(config_path=config_file)
         assert config.pin_peer_name is True
@@ -803,7 +803,7 @@ class TestPinTransition:
         cfg_path.write_text(json.dumps({
             "apiKey": "k",
             "peerName": "Igor",
-            "aiPeer": "hermes",
+            "aiPeer": "kova",
         }))
         sig_before = GatewayRunner._extract_cache_busting_config({"memory": {"provider": "honcho"}})
 
@@ -868,7 +868,7 @@ class TestProfilePeerUniqueness:
             "apiKey": "k",
             "peerName": "default-user",
             "hosts": {
-                "hermes.partner": {
+                "kova.partner": {
                     "peerName": "partner-user",
                     "pinPeerName": True,
                 },
@@ -877,7 +877,7 @@ class TestProfilePeerUniqueness:
         monkeypatch.setenv("HERMES_HOME", str(tmp_path / "isolated"))
 
         cfg = HonchoClientConfig.from_global_config(
-            host="hermes.partner", config_path=config_file,
+            host="kova.partner", config_path=config_file,
         )
         assert cfg.peer_name == "partner-user"
         assert cfg.pin_peer_name is True

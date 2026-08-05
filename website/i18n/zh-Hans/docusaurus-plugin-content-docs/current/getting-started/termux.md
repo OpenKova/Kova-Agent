@@ -80,8 +80,8 @@ pkg install -y git python clang rust make pkg-config libffi openssl nodejs ripgr
 ### 2. 克隆 Kova
 
 ```bash
-git clone https://github.com/NousResearch/hermes-agent.git
-cd hermes-agent
+git clone https://github.com/OpenKova/Kova-Agent.git
+cd kova-agent
 ```
 
 ### 3. 创建虚拟环境
@@ -110,7 +110,7 @@ python -m pip install -e '.' -c constraints-termux.txt
 ### 5. 将 `kova` 添加到 Termux PATH
 
 ```bash
-ln -sf "$PWD/venv/bin/hermes" "$PREFIX/bin/hermes"
+ln -sf "$PWD/venv/bin/kova" "$PREFIX/bin/kova"
 ```
 
 `$PREFIX/bin` 在 Termux 中已默认在 PATH 中，因此这样做可以让 `kova` 命令在新 shell 中持续可用，无需每次重新激活虚拟环境。

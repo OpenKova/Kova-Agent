@@ -19,7 +19,7 @@ ACP is a good fit when you want Kova to behave like an editor-native coding agen
 
 ## What Kova exposes in ACP mode
 
-Kova runs with a curated `hermes-acp` toolset designed for editor workflows. It includes:
+Kova runs with a curated `kova-acp` toolset designed for editor workflows. It includes:
 
 - file tools: `read_file`, `write_file`, `patch`, `search_files`
 - terminal tools: `terminal`, `process`
@@ -36,13 +36,13 @@ It intentionally excludes things that do not fit typical editor UX, such as mess
 Install Kova normally, then add the ACP extra from the install checkout:
 
 ```bash
-cd ~/.hermes/hermes-agent && uv pip install -e '.[acp]'
+cd ~/.hermes/kova-agent && uv pip install -e '.[acp]'
 ```
 
 This installs the `agent-client-protocol` dependency and enables:
 
 - `kova acp`
-- `hermes-acp`
+- `kova-acp`
 - `python -m acp_adapter`
 
 ## Launching the ACP server
@@ -54,7 +54,7 @@ kova acp
 ```
 
 ```bash
-hermes-acp
+kova-acp
 ```
 
 ```bash
@@ -109,7 +109,7 @@ If you want to define Kova manually, add it through VS Code settings under `acp.
 {
   "acp.agents": {
     "Kova Agent": {
-      "command": "hermes",
+      "command": "kova",
       "args": ["acp"]
     }
   }
@@ -126,9 +126,9 @@ Configure Kova as a custom agent server in Zed settings:
 ```json
 {
   "agent_servers": {
-    "hermes-agent": {
+    "kova-agent": {
       "type": "custom",
-      "command": "hermes",
+      "command": "kova",
       "args": ["acp"]
     }
   }
@@ -139,11 +139,11 @@ Configure Kova as a custom agent server in Zed settings:
 
 Prerequisites:
 
-- Configure Kova provider credentials first with `hermes model`, or set them in `~/.hermes/.env` / `~/.hermes/config.yaml`.
+- Configure Kova provider credentials first with `kova model`, or set them in `~/.hermes/.env` / `~/.hermes/config.yaml`.
 
 ### JetBrains
 
-Use an ACP-compatible plugin and point it at `kova acp` or `hermes-acp`.
+Use an ACP-compatible plugin and point it at `kova acp` or `kova-acp`.
 
 ## Configuration and credentials
 
@@ -207,7 +207,7 @@ Check:
 
 - For manual/local development, verify the custom `agent_servers` command points to `kova acp`.
 - Kova is installed and on your PATH.
-- The ACP extra is installed (`cd ~/.hermes/hermes-agent && uv pip install -e '.[acp]'`).
+- The ACP extra is installed (`cd ~/.hermes/kova-agent && uv pip install -e '.[acp]'`).
 
 ### ACP starts but immediately errors
 
@@ -228,7 +228,7 @@ ACP mode uses Kova' existing provider setup. Configure credentials with:
 kova model
 ```
 
-or by editing `~/.hermes/.env`. The terminal auth flow (`hermes acp --setup`) can also trigger the interactive provider/model setup.
+or by editing `~/.hermes/.env`. The terminal auth flow (`kova acp --setup`) can also trigger the interactive provider/model setup.
 
 ## See also
 

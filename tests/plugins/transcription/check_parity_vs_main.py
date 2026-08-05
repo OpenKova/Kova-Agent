@@ -2,7 +2,7 @@
 
 Spawns one subprocess per (version, scenario) cell — pinned to either
 ``origin/main`` (no plugin hook, no STT command-provider registry; only
-the legacy ``HERMES_LOCAL_STT_COMMAND`` escape hatch exists) or this PR's
+the legacy ``KOVA_LOCAL_STT_COMMAND`` escape hatch exists) or this PR's
 worktree (both new surfaces present).
 
 Each subprocess clears all STT-related env vars + writes a
@@ -71,7 +71,7 @@ os.environ["HERMES_HOME"] = home
 for k in (
     "GROQ_API_KEY", "OPENAI_API_KEY", "VOICE_TOOLS_OPENAI_KEY",
     "MISTRAL_API_KEY", "XAI_API_KEY",
-    "HERMES_LOCAL_STT_COMMAND",
+    "KOVA_LOCAL_STT_COMMAND",
 ):
     os.environ.pop(k, None)
 
@@ -90,7 +90,7 @@ for name in list(sys.modules):
     if (name.startswith("tools.")
             or name.startswith("agent.")
             or name.startswith("plugins.")
-            or name.startswith("hermes_cli.")):
+            or name.startswith("kova_cli.")):
         sys.modules.pop(name, None)
 
 # Try importing transcription_registry — only exists on PR side.

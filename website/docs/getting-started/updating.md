@@ -82,16 +82,16 @@ updates:
 
 `updates.pre_update_backup` is a single knob with three modes: `quick` (default — the lightweight state snapshot described above), `full` (the quick snapshot plus a complete `HERMES_HOME` zip; can add minutes on large homes), and `off` (no pre-update backup at all — `--no-backup` does the same for a single run). Legacy boolean values still work: `true` means `full`, `false` means `off`.
 
-### Windows: another `hermes.exe` is running
+### Windows: another `kova.exe` is running
 
-On Windows, `hermes update` will refuse to run if it detects another `hermes.exe` process holding the venv's entry-point executable open — most commonly the Kova Desktop app's spawned backend, an open `hermes` REPL in another terminal, or a running gateway:
+On Windows, `kova update` will refuse to run if it detects another `kova.exe` process holding the venv's entry-point executable open — most commonly the Kova Desktop app's spawned backend, an open `kova` REPL in another terminal, or a running gateway:
 
 ```
 $ kova update
-✗ Another hermes.exe is running:
-    PID 12345  hermes.exe
+✗ Another kova.exe is running:
+    PID 12345  kova.exe
 
-  Updating now would fail to overwrite ...\venv\Scripts\hermes.exe because
+  Updating now would fail to overwrite ...\venv\Scripts\kova.exe because
   Windows blocks REPLACE on a running executable.
 
   Close Kova Desktop, exit any open `kova` REPLs, and
@@ -155,7 +155,7 @@ You no longer need to wrap `kova update` in `screen` or `tmux` to survive a term
 kova version
 ```
 
-Compare against the latest release at the [GitHub releases page](https://github.com/NousResearch/hermes-agent/releases).
+Compare against the latest release at the [GitHub releases page](https://github.com/OpenKova/Kova-Agent/releases).
 
 ### Updating from Messaging Platforms
 
@@ -172,9 +172,9 @@ This pulls the latest code, updates dependencies, and restarts running gateways.
 If you installed manually (not via the quick installer):
 
 ```bash
-cd /path/to/hermes-agent
+cd /path/to/kova-agent
 # Activate the venv you created during install (outside the source tree)
-export VIRTUAL_ENV="$HOME/.hermes/venvs/hermes-dev"
+export VIRTUAL_ENV="$HOME/.hermes/venvs/kova-dev"
 export PATH="$VIRTUAL_ENV/bin:$PATH"
 
 # Pull latest code
@@ -193,7 +193,7 @@ kova config migrate   # Interactively add any missing options
 If an update introduces a problem, you can roll back to a previous version:
 
 ```bash
-cd /path/to/hermes-agent
+cd /path/to/kova-agent
 
 # List recent versions
 git log --oneline -10
@@ -223,10 +223,10 @@ Nix is no longer an explicitly supported install path (best-effort only) — see
 
 ```bash
 # Update the flake input
-nix flake update hermes-agent
+nix flake update kova-agent
 
 # Or rebuild with the latest
-nix profile upgrade hermes-agent
+nix profile upgrade kova-agent
 ```
 
 Nix installations are immutable — rollback is handled by Nix's generation system:
@@ -250,8 +250,8 @@ The uninstaller gives you the option to keep your configuration files (`~/.herme
 ### Manual Uninstall
 
 ```bash
-rm -f ~/.local/bin/hermes
-rm -rf /path/to/hermes-agent
+rm -f ~/.local/bin/kova
+rm -rf /path/to/kova-agent
 rm -rf ~/.hermes            # Optional — keep if you plan to reinstall
 ```
 
@@ -259,7 +259,7 @@ rm -rf ~/.hermes            # Optional — keep if you plan to reinstall
 If you installed the gateway as a system service, stop and disable it first:
 ```bash
 kova gateway stop
-# Linux: systemctl --user disable hermes-gateway
-# macOS: launchctl remove ai.hermes.gateway
+# Linux: systemctl --user disable kova-gateway
+# macOS: launchctl remove ai.kova.gateway
 ```
 :::

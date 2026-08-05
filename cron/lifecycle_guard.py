@@ -1,8 +1,8 @@
 """Gateway lifecycle guard for cron job creation (#30719).
 
 An agent running inside a gateway can schedule a cron job that calls
-``kova gateway restart`` (or ``launchctl kickstart ai.hermes.gateway``
-or ``systemctl restart hermes-gateway``).  When the cron fires, the
+``kova gateway restart`` (or ``launchctl kickstart ai.kova.gateway``
+or ``systemctl restart kova-gateway``).  When the cron fires, the
 gateway dies, the supervisor (launchd KeepAlive / systemd Restart=)
 revives it, auto-resume picks up the offending session, and the resumed
 turn re-runs the same logic — a SIGTERM-respawn loop every ~10 seconds
@@ -15,8 +15,8 @@ direct shell-level gateway-lifecycle command.  It is enforced at
 tool (which calls ``create_job`` directly, bypassing the CLI layer).
 
 The pattern is intentionally command-shaped: it anchors on a concrete
-command identifier (``kova gateway``, ``launchctl ... hermes-gateway``,
-``systemctl ... hermes-gateway``, ``pkill`` against the gateway) so it
+command identifier (``kova gateway``, ``launchctl ... kova-gateway``,
+``systemctl ... kova-gateway``, ``pkill`` against the gateway) so it
 cannot fire on prose.  A cron ``prompt`` is fed to a future LLM, not a
 shell, so an over-broad substring match on English ("Kong API gateway
 autoscaling and restart behavior") would produce a high false-positive
@@ -24,7 +24,7 @@ rate without preventing the actual foot-gun, which requires a real
 command shape.
 
 This is a defence-in-depth layer.  ``tools/terminal_tool.py`` already
-blocks these commands at *execution* time when ``_HERMES_GATEWAY=1``, and
+blocks these commands at *execution* time when ``_KOVA_GATEWAY=1``, and
 ``kova gateway stop|restart`` refuse to self-target from inside the
 gateway.  Blocking at *creation* time as well means the agent gets an
 immediate, informative rejection instead of scheduling a job that will
@@ -52,19 +52,19 @@ _GATEWAY_LIFECYCLE_PATTERN = re.compile(
     # gateway from inside a gateway is benign (a no-op or "already running"
     # error), and a legitimate cron job might start a sibling profile's
     # gateway.
-    r"(?:(?:hermes|kova)\s+gateway\s+(?:restart|stop))"
-    # Branch B: launchctl ops on a hermes-gateway / kova-gateway label.
-    # macOS launchd labels look like `ai.hermes.gateway` / `hermes-gateway`
+    r"(?:(?:kova|kova)\s+gateway\s+(?:restart|stop))"
+    # Branch B: launchctl ops on a kova-gateway / kova-gateway label.
+    # macOS launchd labels look like `ai.kova.gateway` / `kova-gateway`
     # (and the kova equivalents). Requiring the gateway identifier prevents
-    # blocking unrelated hermes/kova services (e.g. `launchctl unload
-    # ai.hermes.update-checker.plist`).
-    r"|(?:launchctl\s+(?:kickstart|unload|load|stop|restart)\b[^\n]*\b(?:hermes|kova)[.\-]?gateway)"
-    # Branch C: systemctl ops on a hermes-gateway / kova-gateway unit.
-    r"|(?:systemctl\s+(?:-\S+\s+)*(?:restart|stop|start)\b[^\n]*\b(?:hermes|kova)[.\-]?gateway)"
-    # Branch D: pkill / kill targeting the hermes/kova gateway process. Both
+    # blocking unrelated kova/kova services (e.g. `launchctl unload
+    # ai.kova.update-checker.plist`).
+    r"|(?:launchctl\s+(?:kickstart|unload|load|stop|restart)\b[^\n]*\b(?:kova|kova)[.\-]?gateway)"
+    # Branch C: systemctl ops on a kova-gateway / kova-gateway unit.
+    r"|(?:systemctl\s+(?:-\S+\s+)*(?:restart|stop|start)\b[^\n]*\b(?:kova|kova)[.\-]?gateway)"
+    # Branch D: pkill / kill targeting the kova/kova gateway process. Both
     # token orders because real reproductions show both.
-    r"|(?:p?kill\b[^\n]*\b(?:hermes|kova)\b[^\n]*\bgateway)"
-    r"|(?:p?kill\b[^\n]*\bgateway\b[^\n]*\b(?:hermes|kova))"
+    r"|(?:p?kill\b[^\n]*\b(?:kova|kova)\b[^\n]*\bgateway)"
+    r"|(?:p?kill\b[^\n]*\bgateway\b[^\n]*\b(?:kova|kova))"
 )
 
 
@@ -86,12 +86,12 @@ def _resolve_script_path(script_path: str) -> Path:
     ``restart.sh`` would read as a nonexistent relative path and silently
     scan prompt-only content, letting the command through.
     """
-    from hermes_constants import get_hermes_home
+    from kova_constants import get_kova_home
 
     raw = Path(script_path).expanduser()
     if raw.is_absolute():
         return raw
-    return get_hermes_home() / "scripts" / raw
+    return get_kova_home() / "scripts" / raw
 
 
 def _read_script_for_scanning(script_path: str) -> str:

@@ -4,7 +4,7 @@ description: Gateway to 400+ genomics and computational biology skills.
 version: 1.0.0
 platforms: [linux, macos]
 metadata:
-  hermes:
+  kova:
     tags: [bioinformatics, genomics, sequencing, biology, research, science]
     category: research
 ---

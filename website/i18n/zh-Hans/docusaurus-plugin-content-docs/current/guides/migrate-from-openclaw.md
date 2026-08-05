@@ -33,7 +33,7 @@ kova claw migrate --preset full --migrate-secrets --yes
 | `--preset <name>` | `full`（所有兼容设置）或 `user-data`（排除基础设施配置）。两种预设默认均不导入密钥——需显式传入 `--migrate-secrets`。 |
 | `--overwrite` | 冲突时覆盖已有 Kova 文件（默认：计划存在冲突时拒绝执行）。 |
 | `--migrate-secrets` | 包含 API 密钥。即使使用 `--preset full` 也需要显式指定——没有任何预设会静默导入密钥。 |
-| `--no-backup` | 跳过迁移前对 `~/.hermes/` 的 zip 快照备份（默认在执行前写入单个还原点归档，位于 `~/.hermes/backups/pre-migration-*.zip`；可通过 `hermes import` 还原）。 |
+| `--no-backup` | 跳过迁移前对 `~/.hermes/` 的 zip 快照备份（默认在执行前写入单个还原点归档，位于 `~/.hermes/backups/pre-migration-*.zip`；可通过 `kova import` 还原）。 |
 | `--source <path>` | 自定义 OpenClaw 目录。 |
 | `--workspace-target <path>` | `AGENTS.md` 的放置位置。 |
 | `--skill-conflict <mode>` | `skip`（默认）、`overwrite` 或 `rename`。 |
@@ -155,7 +155,7 @@ TTS 设置从 OpenClaw 配置的**两个**位置读取，优先级如下：
 | 浏览器 CDP URL | `browser.cdpUrl` | `config.yaml` → `browser.cdp_url` | |
 | 浏览器无头模式 | `browser.headless` | `config.yaml` → `browser.headless` | |
 | Brave 搜索密钥 | `tools.web.search.brave.apiKey` | `.env` → `BRAVE_API_KEY` | 需要 `--migrate-secrets` |
-| Gateway 认证 token | `gateway.auth.token` | `.env` → `HERMES_GATEWAY_TOKEN` | 需要 `--migrate-secrets` |
+| Gateway 认证 token | `gateway.auth.token` | `.env` → `KOVA_GATEWAY_TOKEN` | 需要 `--migrate-secrets` |
 | 工作目录 | `agents.defaults.workspace` | `.env` → `MESSAGING_CWD` | |
 
 ### 已归档（无对应 Kova 等效项）
@@ -223,7 +223,7 @@ OpenClaw 配置中 token 和 API 密钥的值支持三种格式：
 
 4. **验证 API 密钥** — 运行 `kova status` 检查 provider 认证状态。
 
-5. **测试消息平台** — 若迁移了平台 token，重启 gateway：`systemctl --user restart hermes-gateway`
+5. **测试消息平台** — 若迁移了平台 token，重启 gateway：`systemctl --user restart kova-gateway`
 
 6. **检查会话策略** — 验证 `kova config get session_reset` 是否符合预期。
 

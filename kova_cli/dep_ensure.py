@@ -23,7 +23,7 @@ import sys
 from pathlib import Path
 
 from kova_constants import agent_browser_runnable
-from tools.environments.local import hermes_subprocess_env
+from tools.environments.local import kova_subprocess_env
 
 _IS_WINDOWS = platform.system() == "Windows"
 
@@ -32,7 +32,7 @@ _DEP_CHECKS = {
     "browser": lambda: (
         agent_browser_runnable(shutil.which("agent-browser"))
         or _has_system_browser()
-        or _has_hermes_agent_browser()
+        or _has_kova_agent_browser()
     ),
     "ripgrep": lambda: shutil.which("rg") is not None,
     "ffmpeg": lambda: shutil.which("ffmpeg") is not None,
@@ -57,9 +57,9 @@ def _has_system_browser() -> bool:
     return False
 
 
-def _has_hermes_agent_browser() -> bool:
-    from kova_constants import get_hermes_home
-    home = get_hermes_home()
+def _has_kova_agent_browser() -> bool:
+    from kova_constants import get_kova_home
+    home = get_kova_home()
     if _IS_WINDOWS:
         # npm -g --prefix puts .cmd shims directly in the prefix dir on Windows
         return (home / "node" / "agent-browser.cmd").is_file()
@@ -133,7 +133,7 @@ def ensure_dependency(
             return False
 
     if shell == "powershell":
-        from kova_constants import get_hermes_home
+        from kova_constants import get_kova_home
         ps_bin = shutil.which("powershell") or shutil.which("pwsh")
         if not ps_bin:
             if interactive:
@@ -144,12 +144,12 @@ def ensure_dependency(
             "-ExecutionPolicy", "Bypass",
             "-File", str(script),
             "-Ensure", dep,
-            "-HermesHome", str(get_hermes_home()),
+            "-KovaHome", str(get_kova_home()),
         ]
     else:
         cmd = ["bash", str(script), "--ensure", dep]
 
-    run_env = hermes_subprocess_env(inherit_credentials=False)
+    run_env = kova_subprocess_env(inherit_credentials=False)
     run_env["IS_INTERACTIVE"] = "false"
     result = subprocess.run(
         cmd,

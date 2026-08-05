@@ -47,10 +47,10 @@ Where the installer puts things depends on whether you're installing as a normal
 
 | Installer                              | Code lives at                  | `kova` binary                         | Data directory                       |
 | -------------------------------------- | ------------------------------ | --------------------------------------- | ------------------------------------ |
-| Per-user (git installer)               | `~/.hermes/hermes-agent/`      | `~/.local/bin/hermes` (symlink)         | `~/.hermes/`                         |
-| Root-mode (`sudo curl … \| sudo bash`) | `/usr/local/lib/hermes-agent/` | `/usr/local/bin/hermes`                 | `/root/.hermes/` (or `$HERMES_HOME`) |
+| Per-user (git installer)               | `~/.hermes/kova-agent/`      | `~/.local/bin/kova` (symlink)         | `~/.hermes/`                         |
+| Root-mode (`sudo curl … \| sudo bash`) | `/usr/local/lib/kova-agent/` | `/usr/local/bin/kova`                 | `/root/.hermes/` (or `$HERMES_HOME`) |
 
-The root-mode **FHS layout** (`/usr/local/lib/…`, `/usr/local/bin/hermes`) matches where other system-wide developer tools land on Linux. It's useful for shared-machine deployments where one system install should serve every user. Per-user config (auth, skills, sessions) still lives under each user's `~/.hermes/` or explicit `HERMES_HOME`.
+The root-mode **FHS layout** (`/usr/local/lib/…`, `/usr/local/bin/kova`) matches where other system-wide developer tools land on Linux. It's useful for shared-machine deployments where one system install should serve every user. Per-user config (auth, skills, sessions) still lives under each user's `~/.hermes/` or explicit `HERMES_HOME`.
 
 ### After Installation
 
@@ -132,16 +132,16 @@ Running Kova as a dedicated unprivileged user (e.g. a `kova` systemd service acc
    curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- --skip-browser
    ```
 
-3. **Make `hermes` available to the service user's shells.** The installer writes the launcher to `~/.local/bin/hermes`. System service accounts often have a minimal PATH that doesn't include `~/.local/bin`. Either add it to the user's environment, or symlink the launcher into a system location:
+3. **Make `kova` available to the service user's shells.** The installer writes the launcher to `~/.local/bin/kova`. System service accounts often have a minimal PATH that doesn't include `~/.local/bin`. Either add it to the user's environment, or symlink the launcher into a system location:
    ```bash
    # Option A — add to the service user's profile
    echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 
    # Option B — symlink system-wide (run as an admin)
-   sudo ln -s /home/hermes/.hermes/hermes-agent/venv/bin/hermes /usr/local/bin/hermes
+   sudo ln -s /home/kova/.hermes/hermes-agent/venv/bin/kova /usr/local/bin/kova
    ```
 
-4. **Verify:** `hermes doctor` should now run cleanly. If you get `ModuleNotFoundError: No module named 'dotenv'`, you're invoking the repo source `hermes` file (`~/.hermes/hermes-agent/hermes`) with system Python instead of the venv launcher (`~/.hermes/hermes-agent/venv/bin/hermes`) — fix step 3.
+4. **Verify:** `kova doctor` should now run cleanly. If you get `ModuleNotFoundError: No module named 'dotenv'`, you're invoking the repo source `kova` file (`~/.hermes/kova-agent/kova`) with system Python instead of the venv launcher (`~/.hermes/hermes-agent/venv/bin/kova`) — fix step 3.
 
 The same pattern works on Arch (the installer uses pacman with the same sudo-detection logic), Fedora/RHEL, and openSUSE — those distros don't support `--with-deps` at all, so an administrator always installs the system libraries separately. The relevant `dnf`/`zypper` commands are printed by the installer.
 
@@ -151,7 +151,7 @@ The same pattern works on Arch (the installer uses pacman with the same sudo-det
 
 | Problem | Solution |
 |---------|----------|
-| `hermes: command not found` | Reload your shell (`source ~/.bashrc`) or check PATH |
+| `kova: command not found` | Reload your shell (`source ~/.bashrc`) or check PATH |
 | `API key not set` | Run `kova model` to configure your provider, or `kova config set OPENROUTER_API_KEY your_key` |
 | Missing config after update | Run `kova config check` then `kova config migrate` |
 
@@ -159,4 +159,4 @@ For more diagnostics, run `kova doctor` — it will tell you exactly what's miss
 
 ## Install method auto-detection
 
-Kova auto-detects whether it was installed via the git installer, Docker, or NixOS, and `hermes update` prints the matching update command for that path. There's no env var to set — the detection is based on the install layout (`~/.hermes/hermes-agent/` checkout, Docker image stamp, or Nix store path). `hermes doctor` also surfaces the detected method under its environment summary.
+Kova auto-detects whether it was installed via the git installer, Docker, or NixOS, and `kova update` prints the matching update command for that path. There's no env var to set — the detection is based on the install layout (`~/.hermes/kova-agent/` checkout, Docker image stamp, or Nix store path). `kova doctor` also surfaces the detected method under its environment summary.

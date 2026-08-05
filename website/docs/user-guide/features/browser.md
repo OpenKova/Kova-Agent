@@ -377,7 +377,7 @@ For that setup, prefer `chrome-devtools-mcp` through Kova MCP support.
 
 See the MCP guide for the practical setup:
 
-- [Use MCP with Kova](../../guides/use-mcp-with-hermes.md#wsl2-bridge-hermes-in-wsl-to-windows-chrome)
+- [Use MCP with Kova](../../guides/use-mcp-with-kova.md#wsl2-bridge-kova-in-wsl-to-windows-chrome)
 
 ### Local browser mode
 
@@ -419,7 +419,7 @@ npm install
 ```
 
 :::info
-The `browser` toolset must be included in your config's `toolsets` list or enabled via `kova config set toolsets '["hermes-cli", "browser"]'`.
+The `browser` toolset must be included in your config's `toolsets` list or enabled via `kova config set toolsets '["kova-cli", "browser"]'`.
 :::
 
 ## Available Tools

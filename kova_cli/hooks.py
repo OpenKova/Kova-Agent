@@ -2,10 +2,10 @@
 
 Usage::
 
-    hermes hooks list
-    hermes hooks test <event> [--for-tool X] [--payload-file F]
-    hermes hooks revoke <command>
-    hermes hooks doctor
+    kova hooks list
+    kova hooks test <event> [--for-tool X] [--payload-file F]
+    kova hooks revoke <command>
+    kova hooks doctor
 
 Consent records live under ``~/.hermes/shell-hooks-allowlist.json`` and
 hook definitions come from the ``hooks:`` block in ``~/.hermes/config.yaml``

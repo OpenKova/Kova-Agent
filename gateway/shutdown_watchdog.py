@@ -31,7 +31,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 
-from hermes_constants import get_hermes_home
+from kova_constants import get_kova_home
 from utils import atomic_json_write
 
 logger = logging.getLogger(__name__)
@@ -44,23 +44,23 @@ _HEARTBEAT_RELATIVE = ("state", "gateway.heartbeat")
 _WATCHDOG_DUMP_RELATIVE = ("logs", "gateway-shutdown-watchdog.log")
 
 
-def _process_hermes_home() -> Path:
+def _process_kova_home() -> Path:
     """HERMES_HOME for process-level identity files (ignore profile overrides)."""
     val = os.environ.get("HERMES_HOME", "").strip()
     if val:
         return Path(val)
-    return get_hermes_home()
+    return get_kova_home()
 
 
 def get_loop_heartbeat_path(home: Optional[Path] = None) -> Path:
     """Return ``<HERMES_HOME>/state/gateway.heartbeat``."""
-    base = home if home is not None else _process_hermes_home()
+    base = home if home is not None else _process_kova_home()
     return base.joinpath(*_HEARTBEAT_RELATIVE)
 
 
 def get_shutdown_watchdog_dump_path(home: Optional[Path] = None) -> Path:
     """Return the faulthandler / metadata dump path for a fired watchdog."""
-    base = home if home is not None else _process_hermes_home()
+    base = home if home is not None else _process_kova_home()
     return base.joinpath(*_WATCHDOG_DUMP_RELATIVE)
 
 
@@ -230,7 +230,7 @@ def arm_shutdown_watchdog(
         except Exception:
             pass
         try:
-            from hermes_logging import drain_log_queue
+            from kova_logging import drain_log_queue
             drain_log_queue(timeout=1.0)
         except Exception:
             pass

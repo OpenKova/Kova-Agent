@@ -19,7 +19,7 @@ Kova Agent 可作为 ACP 服务器运行，让兼容 ACP 的编辑器通过 stdi
 
 ## Kova 在 ACP 模式下暴露的内容
 
-Kova 使用专为编辑器工作流设计的精选 `hermes-acp` 工具集运行，包括：
+Kova 使用专为编辑器工作流设计的精选 `kova-acp` 工具集运行，包括：
 
 - 文件工具：`read_file`、`write_file`、`patch`、`search_files`
 - 终端工具：`terminal`、`process`
@@ -36,13 +36,13 @@ Kova 使用专为编辑器工作流设计的精选 `hermes-acp` 工具集运行�
 正常安装 Kova 后，从安装检出目录添加 ACP 扩展：
 
 ```bash
-cd ~/.hermes/hermes-agent && uv pip install -e '.[acp]'
+cd ~/.hermes/kova-agent && uv pip install -e '.[acp]'
 ```
 
 这将安装 `agent-client-protocol` 依赖并启用：
 
 - `kova acp`
-- `hermes-acp`
+- `kova-acp`
 - `python -m acp_adapter`
 
 ## 启动 ACP 服务器
@@ -54,7 +54,7 @@ kova acp
 ```
 
 ```bash
-hermes-acp
+kova-acp
 ```
 
 ```bash
@@ -107,7 +107,7 @@ kova acp --setup-browser --yes     # 非交互式接受下载
 {
   "acp.agents": {
     "Kova Agent": {
-      "command": "hermes",
+      "command": "kova",
       "args": ["acp"]
     }
   }
@@ -124,9 +124,9 @@ kova acp --setup-browser --yes     # 非交互式接受下载
 ```json
 {
   "agent_servers": {
-    "hermes-agent": {
+    "kova-agent": {
       "type": "custom",
-      "command": "hermes",
+      "command": "kova",
       "args": ["acp"]
     }
   }
@@ -137,11 +137,11 @@ kova acp --setup-browser --yes     # 非交互式接受下载
 
 前提条件：
 
-- 先通过 `hermes model` 配置 Kova provider 凭据，或在 `~/.hermes/.env` / `~/.hermes/config.yaml` 中设置。
+- 先通过 `kova model` 配置 Kova provider 凭据，或在 `~/.hermes/.env` / `~/.hermes/config.yaml` 中设置。
 
 ### JetBrains
 
-使用兼容 ACP 的插件并将其指向 `kova acp` 或 `hermes-acp`。
+使用兼容 ACP 的插件并将其指向 `kova acp` 或 `kova-acp`。
 
 ## 配置与凭据
 
@@ -205,7 +205,7 @@ ACP 桥接将这些选项映射到 Kova 的内部审批语义——`allow_always
 
 - 对于手动/本地开发，验证自定义 `agent_servers` 命令是否指向 `kova acp`。
 - Kova 已安装且在 PATH 中。
-- ACP 扩展已安装（`cd ~/.hermes/hermes-agent && uv pip install -e '.[acp]'`）。
+- ACP 扩展已安装（`cd ~/.hermes/kova-agent && uv pip install -e '.[acp]'`）。
 
 ### ACP 启动后立即报错
 
@@ -226,7 +226,7 @@ ACP 模式使用 Kova 现有的 provider 设置。通过以下方式配置凭据
 kova model
 ```
 
-或编辑 `~/.hermes/.env`。终端认证流程（`hermes acp --setup`）也可以触发交互式 provider/模型设置。
+或编辑 `~/.hermes/.env`。终端认证流程（`kova acp --setup`）也可以触发交互式 provider/模型设置。
 
 ## 另请参阅
 

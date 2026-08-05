@@ -52,7 +52,7 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-from kova_cli import __version__ as _HERMES_VERSION
+from kova_cli import __version__ as _KOVA_VERSION
 from utils import atomic_replace
 
 logger = logging.getLogger(__name__)
@@ -77,7 +77,7 @@ DEFAULT_TTL_HOURS = 1
 DEFAULT_FETCH_TIMEOUT = 8.0
 SUPPORTED_SCHEMA_VERSION = 1
 
-_HERMES_USER_AGENT = f"hermes-cli/{_HERMES_VERSION}"
+_KOVA_USER_AGENT = f"kova-cli/{_KOVA_VERSION}"
 
 # In-process cache to avoid repeated disk + parse work across multiple
 # calls within the same session. Invalidated by TTL against the disk file's
@@ -113,8 +113,8 @@ def _load_catalog_config() -> dict[str, Any]:
 
 def _cache_path() -> Path:
     """Return the disk cache path. Import lazily so tests can monkeypatch home."""
-    from kova_constants import get_hermes_home
-    return get_hermes_home() / "cache" / "model_catalog.json"
+    from kova_constants import get_kova_home
+    return get_kova_home() / "cache" / "model_catalog.json"
 
 
 # ---------------------------------------------------------------------------
@@ -129,7 +129,7 @@ def _fetch_manifest(url: str, timeout: float) -> dict[str, Any] | None:
             url,
             headers={
                 "Accept": "application/json",
-                "User-Agent": _HERMES_USER_AGENT,
+                "User-Agent": _KOVA_USER_AGENT,
             },
         )
         with urllib.request.urlopen(req, timeout=timeout) as resp:

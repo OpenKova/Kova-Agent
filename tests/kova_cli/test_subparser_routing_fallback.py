@@ -16,8 +16,8 @@ import sys
 
 
 def _build_parser():
-    """Build a minimal replica of the hermes top-level parser."""
-    parser = argparse.ArgumentParser(prog="hermes")
+    """Build a minimal replica of the kova top-level parser."""
+    parser = argparse.ArgumentParser(prog="kova")
     parser.add_argument("--version", "-V", action="store_true")
     parser.add_argument("--resume", "-r", metavar="SESSION", default=None)
     parser.add_argument(

@@ -44,16 +44,20 @@ def patched_manager(monkeypatch):
     Restored automatically after the test by monkeypatch.
     """
     from kova_cli import plugins as plugins_mod
+    from kova_cli import plugins as kova_plugins_mod
 
     fresh = PluginManager()
     fresh._discovered = True
     monkeypatch.setattr(plugins_mod, "_PLUGIN_MANAGER", fresh, raising=False)
+    monkeypatch.setattr(kova_plugins_mod, "_PLUGIN_MANAGER", fresh, raising=False)
 
     def _stub_get_manager() -> PluginManager:
         return fresh
 
     monkeypatch.setattr(plugins_mod, "get_plugin_manager", _stub_get_manager)
     monkeypatch.setattr(plugins_mod, "_ensure_plugins_discovered", _stub_get_manager)
+    monkeypatch.setattr(kova_plugins_mod, "get_plugin_manager", _stub_get_manager)
+    monkeypatch.setattr(kova_plugins_mod, "_ensure_plugins_discovered", _stub_get_manager)
     yield fresh
 
 
@@ -252,9 +256,9 @@ def test_reset_aux_to_auto_resets_plugin_tasks(tmp_path, monkeypatch, patched_ma
     from kova_cli.config import load_config, save_config
     from kova_cli.main import _reset_aux_to_auto
 
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".hermes"))
+    monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".kova"))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
-    (tmp_path / ".hermes").mkdir(exist_ok=True)
+    (tmp_path / ".kova").mkdir(exist_ok=True)
 
     manifest = PluginManifest(name="plug")
     ctx = PluginContext(manifest, patched_manager)
@@ -288,9 +292,9 @@ def test_get_auxiliary_task_config_layers_plugin_defaults(
     from pathlib import Path
     from agent.auxiliary_client import _get_auxiliary_task_config
 
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".hermes"))
+    monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".kova"))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
-    (tmp_path / ".hermes").mkdir(exist_ok=True)
+    (tmp_path / ".kova").mkdir(exist_ok=True)
 
     manifest = PluginManifest(name="plug")
     ctx = PluginContext(manifest, patched_manager)
@@ -316,9 +320,9 @@ def test_get_auxiliary_task_config_user_config_wins_over_plugin_defaults(
     from kova_cli.config import load_config, save_config
     from agent.auxiliary_client import _get_auxiliary_task_config
 
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".hermes"))
+    monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".kova"))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
-    (tmp_path / ".hermes").mkdir(exist_ok=True)
+    (tmp_path / ".kova").mkdir(exist_ok=True)
 
     manifest = PluginManifest(name="plug")
     ctx = PluginContext(manifest, patched_manager)
@@ -346,8 +350,8 @@ def test_get_auxiliary_task_config_unknown_task_returns_empty(
     from pathlib import Path
     from agent.auxiliary_client import _get_auxiliary_task_config
 
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".hermes"))
+    monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".kova"))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
-    (tmp_path / ".hermes").mkdir(exist_ok=True)
+    (tmp_path / ".kova").mkdir(exist_ok=True)
 
     assert _get_auxiliary_task_config("nonexistent") == {}

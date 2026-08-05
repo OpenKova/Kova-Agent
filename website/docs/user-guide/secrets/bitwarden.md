@@ -6,7 +6,7 @@ Pull API keys from [Bitwarden Secrets Manager](https://bitwarden.com/products/se
 
 1. You create a **machine account** in Bitwarden Secrets Manager, give it read access to a project, and generate an **access token**.
 2. Kova stores that single token in `~/.hermes/.env` as `BWS_ACCESS_TOKEN`.
-3. Every time `hermes` (or the gateway, or a cron job) starts, after `~/.hermes/.env` has loaded, Kova calls `bws secret list <project_id>` and sets the returned keys into `os.environ`.
+3. Every time `kova` (or the gateway, or a cron job) starts, after `~/.hermes/.env` has loaded, Kova calls `bws secret list <project_id>` and sets the returned keys into `os.environ`.
 4. By default Kova **overrides** values already in your environment, so Bitwarden is the source of truth — rotate a key once in the web app and every Kova process picks it up on next start. Flip `override_existing: false` in config if you want `.env` to win instead.
 
 The `bws` binary is auto-downloaded into `~/.hermes/bin/` on first use — no `apt`, no `brew`, no `sudo`.

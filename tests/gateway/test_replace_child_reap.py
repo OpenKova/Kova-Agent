@@ -159,9 +159,9 @@ class TestScopedLockTakeoverReapsChildren:
         record = {
             "pid": pid,
             "kind": "kova-gateway",
-            "argv": ["python", "-m", "hermes_cli.main", "gateway", "run"],
+            "argv": ["python", "-m", "kova_cli.main", "gateway", "run"],
             "start_time": start_time,
-            "hermes_home": str(target_home),
+            "kova_home": str(target_home),
         }
         (target_home / "gateway.pid").write_text(json.dumps(record))
         return record
@@ -178,7 +178,7 @@ class TestScopedLockTakeoverReapsChildren:
         monkeypatch.setattr(
             status,
             "_read_process_cmdline",
-            lambda _pid: "python -m hermes_cli.main gateway run",
+            lambda _pid: "python -m kova_cli.main gateway run",
         )
         return record
 
@@ -319,10 +319,10 @@ async def test_start_gateway_replace_reaps_old_gateway_children_posix(
     monkeypatch.setattr("time.sleep", lambda _: None)
     monkeypatch.setattr("tools.skills_sync.sync_skills", lambda quiet=True: None)
     monkeypatch.setattr(
-        "hermes_logging.setup_logging", lambda hermes_home, mode: tmp_path
+        "kova_logging.setup_logging", lambda kova_home, mode: tmp_path
     )
     monkeypatch.setattr(
-        "hermes_logging._add_rotating_handler", lambda *args, **kwargs: None
+        "kova_logging._add_rotating_handler", lambda *args, **kwargs: None
     )
     monkeypatch.setattr("gateway.run.GatewayRunner", _CleanExitRunner)
 

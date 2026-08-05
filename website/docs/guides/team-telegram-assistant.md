@@ -42,7 +42,7 @@ Every Telegram bot starts with **@BotFather** — Telegram's official bot for cr
 
 2. **Send `/newbot`** — BotFather will ask you two things:
    - **Display name** — what users see (e.g., `Team Kova Assistant`)
-   - **Username** — must end in `bot` (e.g., `myteam_hermes_bot`)
+   - **Username** — must end in `bot` (e.g., `myteam_kova_bot`)
 
 3. **Copy the bot token** — BotFather replies with something like:
    ```
@@ -155,7 +155,7 @@ kova gateway stop
 kova gateway status
 
 # View live logs
-journalctl --user -u hermes-gateway -f
+journalctl --user -u kova-gateway -f
 
 # Keep running after SSH logout
 sudo loginctl enable-linger $USER
@@ -163,7 +163,7 @@ sudo loginctl enable-linger $USER
 # Linux servers — explicit system-service commands
 sudo kova gateway start --system
 sudo kova gateway status --system
-journalctl -u hermes-gateway -f
+journalctl -u kova-gateway -f
 ```
 
 ```bash
@@ -291,7 +291,7 @@ Users can also change this per-session with the `/verbose` command in chat.
 
 Customize how the bot communicates by editing `~/.hermes/SOUL.md`:
 
-For a full guide, see [Use SOUL.md with Kova](/guides/use-soul-with-hermes).
+For a full guide, see [Use SOUL.md with Kova](/guides/use-soul-with-kova).
 
 ```markdown
 # Soul
@@ -397,7 +397,7 @@ This way, even if someone asks the bot to run something destructive, your host s
 kova gateway status
 
 # Watch live logs (Linux)
-journalctl --user -u hermes-gateway -f
+journalctl --user -u kova-gateway -f
 
 # Watch live logs (macOS)
 tail -f ~/.hermes/logs/gateway.log
@@ -416,7 +416,7 @@ kova gateway stop && kova gateway start
 
 | What | Location |
 |------|----------|
-| Gateway logs | `journalctl --user -u hermes-gateway` (Linux) or `~/.hermes/logs/gateway.log` (macOS) |
+| Gateway logs | `journalctl --user -u kova-gateway` (Linux) or `~/.hermes/logs/gateway.log` (macOS) |
 | Cron job output | `~/.hermes/cron/output/{job_id}/{timestamp}.md` |
 | Cron job definitions | `~/.hermes/cron/jobs.json` |
 | Pairing data | `~/.hermes/pairing/` |

@@ -34,14 +34,14 @@ def test_default_config_clamps_reasoning():
 
 
 def _seed_config(tmp_path, monkeypatch):
-    hh = tmp_path / ".hermes"
+    hh = tmp_path / ".kova"
     hh.mkdir()
     (hh / "config.yaml").write_text("display:\n  show_reasoning: true\n")
     monkeypatch.setenv("HERMES_HOME", str(hh))
-    # cli captures _hermes_home at import; force it to the temp home.
+    # cli captures _kova_home at import; force it to the temp home.
     import cli
 
-    monkeypatch.setattr(cli, "_hermes_home", hh, raising=False)
+    monkeypatch.setattr(cli, "_kova_home", hh, raising=False)
     return hh
 
 

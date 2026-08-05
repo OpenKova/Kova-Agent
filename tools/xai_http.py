@@ -39,9 +39,9 @@ def has_xai_credentials() -> bool:
     if os.environ.get("XAI_API_KEY", "").strip():
         return True
     try:
-        from hermes_constants import get_hermes_home
+        from kova_constants import get_kova_home
 
-        auth_path = get_hermes_home() / "auth.json"
+        auth_path = get_kova_home() / "auth.json"
         if not auth_path.exists():
             return False
         store = json.loads(auth_path.read_text())
@@ -73,14 +73,14 @@ def has_xai_credentials() -> bool:
 def get_env_value(name: str, default=None):
     """Read ``name`` from ``~/.hermes/.env`` first, then ``os.environ``.
 
-    Wraps :func:`hermes_cli.config.get_env_value` so tests can patch
+    Wraps :func:`kova_cli.config.get_env_value` so tests can patch
     ``tools.xai_http.get_env_value`` to inject dotenv-only secrets into the
     xAI credential resolver.
     """
     try:
-        from hermes_cli.config import get_env_value as _hermes_get_env_value
+        from kova_cli.config import get_env_value as _kova_get_env_value
 
-        value = _hermes_get_env_value(name)
+        value = _kova_get_env_value(name)
         if value is not None:
             return value
     except Exception:
@@ -88,10 +88,10 @@ def get_env_value(name: str, default=None):
     return os.environ.get(name, default)
 
 
-def hermes_xai_user_agent() -> str:
+def kova_xai_user_agent() -> str:
     """Return a stable Kova-specific User-Agent for xAI HTTP calls."""
     try:
-        from hermes_cli import __version__
+        from kova_cli import __version__
     except Exception:
         __version__ = "unknown"
     return f"Kova-Agent/{__version__}"
@@ -100,7 +100,7 @@ def hermes_xai_user_agent() -> str:
 def _load_config_section(section_name: str) -> Dict[str, Any]:
     """Return a top-level Kova config section as a dict, or empty."""
     try:
-        from hermes_cli.config import load_config
+        from kova_cli.config import load_config
 
         cfg = load_config()
         section = cfg.get(section_name) if isinstance(cfg, dict) else None
@@ -227,9 +227,9 @@ def maybe_mark_xai_storage_notice_seen(section_name: str) -> Optional[str]:
     if not notice:
         return None
     try:
-        from hermes_constants import get_hermes_home
+        from kova_constants import get_kova_home
 
-        marker_dir = get_hermes_home() / "state"
+        marker_dir = get_kova_home() / "state"
         marker_dir.mkdir(parents=True, exist_ok=True)
         marker = marker_dir / f"{section_name}_xai_storage_notice_seen"
         if marker.exists():
@@ -248,7 +248,7 @@ def resolve_xai_http_credentials(
     """Resolve bearer credentials for direct xAI HTTP endpoints.
 
     Prefers Kova-managed xAI OAuth credentials when available, then falls back
-    to ``XAI_API_KEY`` resolved via ``hermes_cli.config.get_env_value`` so keys
+    to ``XAI_API_KEY`` resolved via ``kova_cli.config.get_env_value`` so keys
     stored in ``~/.hermes/.env`` (the standard Kova location) are honored —
     not just ones already exported into ``os.environ``. This keeps direct xAI
     endpoints (images, TTS, STT, etc.) aligned with the main runtime auth model
@@ -261,7 +261,7 @@ def resolve_xai_http_credentials(
     """
     try:
         from agent.credential_pool import load_pool
-        import hermes_cli.auth as auth_mod
+        import kova_cli.auth as auth_mod
 
         pool = load_pool("xai-oauth")
         entry = (
@@ -284,7 +284,7 @@ def resolve_xai_http_credentials(
             or auth_mod.DEFAULT_XAI_OAUTH_BASE_URL
         ).strip().rstrip("/")
         override_base_url = str(
-            get_env_value("HERMES_XAI_BASE_URL")
+            get_env_value("KOVA_XAI_BASE_URL")
             or get_env_value("XAI_BASE_URL")
             or ""
         ).strip().rstrip("/")

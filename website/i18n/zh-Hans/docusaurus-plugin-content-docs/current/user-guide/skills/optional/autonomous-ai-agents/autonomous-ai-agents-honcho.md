@@ -21,7 +21,7 @@ description: "配置并使用 Honcho 记忆功能与 Kova -- 跨会话用户建�
 | 许可证 | MIT |
 | 平台 | linux, macos, windows |
 | 标签 | `Honcho`, `Memory`, `Profiles`, `Observation`, `Dialectic`, `User-Modeling`, `Session-Summary` |
-| 相关 skills | [`hermes-agent`](/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-hermes-agent) |
+| 相关 skills | [`kova-agent`](/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-kova-agent) |
 
 ## 参考：完整 SKILL.md
 
@@ -58,7 +58,7 @@ kova honcho setup
 # select "local", enter base URL (e.g. http://localhost:8000)
 ```
 
-参见：https://docs.honcho.dev/v3/guides/integrations/hermes#running-honcho-locally-with-hermes
+参见：https://docs.honcho.dev/v3/guides/integrations/kova#running-honcho-locally-with-kova
 
 ### 验证
 
@@ -221,11 +221,11 @@ Honcho 的辩证行为由三个独立维度控制。每个维度可单独调整�
 
 ```bash
 kova profile create coder --clone
-# creates host block hermes.coder, AI peer "coder", inherits config from default
+# creates host block kova.coder, AI peer "coder", inherits config from default
 ```
 
 `--clone` 对 Honcho 的作用：
-1. 在 `honcho.json` 中创建 `hermes.coder` host 块
+1. 在 `honcho.json` 中创建 `kova.coder` host 块
 2. 设置 `aiPeer: "coder"`（配置文件名称）
 3. 从默认值继承 `workspace`、`peerName`、`writeFrequency`、`recallMode` 等
 4. 在 Honcho 中预先创建 peer，使其在第一条消息之前就已存在
@@ -243,7 +243,7 @@ kova honcho sync    # creates host blocks for all profiles that don't have one y
 ```json
 {
   "hosts": {
-    "hermes.coder": {
+    "kova.coder": {
       "aiPeer": "coder",
       "recallMode": "tools",
       "dialecticDepth": 2,
@@ -404,7 +404,7 @@ Honcho 在注入前对 `memory-context` 块进行净化，以防止 prompt 注�
 ## 故障排查
 
 ### "Honcho not configured"
-运行 `hermes honcho setup`。确保 `~/.hermes/config.yaml` 中包含 `memory.provider: honcho`。
+运行 `kova honcho setup`。确保 `~/.hermes/config.yaml` 中包含 `memory.provider: honcho`。
 
 ### 记忆未跨会话持久化
 检查 `kova honcho status` -- 验证 `saveMessages: true` 且 `writeFrequency` 不是 `session`（该选项仅在退出时写入）。

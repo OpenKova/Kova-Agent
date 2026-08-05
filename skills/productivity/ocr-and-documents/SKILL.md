@@ -6,7 +6,7 @@ author: Kova Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  hermes:
+  kova:
     tags: [PDF, Documents, Research, Arxiv, Text-Extraction, OCR]
     related_skills: [pdf, docx, powerpoint]
 ---

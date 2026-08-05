@@ -17,7 +17,7 @@ Free keyless meta-search aggregating 70+ engines.
 | Source | Optional — install with `kova skills install official/research/searxng-search` |
 | Path | `optional-skills/research/searxng-search` |
 | Version | `1.0.0` |
-| Author | hermes-agent |
+| Author | kova-agent |
 | License | MIT |
 | Platforms | linux, macos |
 | Tags | `search`, `searxng`, `meta-search`, `self-hosted`, `free`, `fallback` |

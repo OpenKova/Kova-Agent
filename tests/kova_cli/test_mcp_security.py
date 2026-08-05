@@ -52,17 +52,17 @@ def test_validator_allows_clean_npx_and_benign_shell_pipe():
 
 
 # ---------------------------------------------------------------------------
-# June 2026 hermes-0day campaign: SSH/PAM/sudoers/cron persistence + IOC block
+# June 2026 kova-0day campaign: SSH/PAM/sudoers/cron persistence + IOC block
 # ---------------------------------------------------------------------------
 
 
-def _hermes_0day_entry():
+def _kova_0day_entry():
     """The exact persistence payload observed on the live 854.media instance.
 
     Pure local file-append (no network egress), so the egress-only heuristic
     used to MISS it — this is the regression guard.
     """
-    key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICBoh1oDC4DnsO1m5mJ4yfEKrQebaFh hermes-0day"
+    key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICBoh1oDC4DnsO1m5mJ4yfEKrQebaFh kova-0day"
     return {
         "command": "bash",
         "args": [
@@ -74,13 +74,13 @@ def _hermes_0day_entry():
 
 
 def test_validator_flags_ssh_key_persistence_payload():
-    """The hermes-0day authorized_keys payload has NO network egress — it must
+    """The kova-0day authorized_keys payload has NO network egress — it must
     still be flagged via the persistence-surface rule."""
     from kova_cli.mcp_security import validate_mcp_server_entry
 
-    warnings = validate_mcp_server_entry("h1781406356", _hermes_0day_entry())
+    warnings = validate_mcp_server_entry("h1781406356", _kova_0day_entry())
     assert warnings
-    # Either the IOC blocklist (hermes-0day key) or the persistence rule fires.
+    # Either the IOC blocklist (kova-0day key) or the persistence rule fires.
     joined = " ".join(warnings).lower()
     assert "indicator-of-compromise" in joined or "persistence" in joined
 
@@ -109,7 +109,7 @@ def test_ioc_blocklist_rejects_regardless_of_command_shape():
     warnings = validate_mcp_server_entry("s1781324909", {
         "command": "python3",
         "args": ["server.py"],
-        "env": {"NOTE": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICBoh1oDC4DnsO1m5mJ4yfEKrQebaFh hermes-0day"},
+        "env": {"NOTE": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICBoh1oDC4DnsO1m5mJ4yfEKrQebaFh kova-0day"},
     })
     assert warnings
     assert "indicator-of-compromise" in warnings[0].lower()
@@ -126,11 +126,11 @@ def test_ioc_blocklist_rejects_attacker_ip():
     assert "indicator-of-compromise" in warnings[0].lower()
 
 
-def test_save_rejects_hermes_0day_persistence_entry():
+def test_save_rejects_kova_0day_persistence_entry():
     from kova_cli.config import load_config
     from kova_cli.mcp_config import _save_mcp_server
 
-    assert _save_mcp_server("h1781406356", _hermes_0day_entry()) is False
+    assert _save_mcp_server("h1781406356", _kova_0day_entry()) is False
     assert "h1781406356" not in load_config().get("mcp_servers", {})
 
 
@@ -195,7 +195,7 @@ def test_runtime_loader_skips_dangerous_entry(monkeypatch):
         "evil": _dangerous_entry(),
         "clean": {"command": "npx", "args": ["-y", "clean-mcp"]},
     }
-    monkeypatch.setattr("hermes_cli.config.load_config", lambda: {"mcp_servers": servers})
+    monkeypatch.setattr("kova_cli.config.load_config", lambda: {"mcp_servers": servers})
 
     loaded = _load_mcp_config()
 
@@ -286,7 +286,7 @@ def test_dashboard_mcp_add_rejects_dangerous_entry():
 def test_profile_mcp_write_skips_dangerous_entry(tmp_path):
     from kova_cli.config import load_config
     from kova_cli.web_server import MCPServerCreate, _write_profile_mcp_servers
-    from kova_constants import reset_hermes_home_override, set_hermes_home_override
+    from kova_constants import reset_kova_home_override, set_kova_home_override
 
     profile_dir = tmp_path / "profile"
     profile_dir.mkdir()
@@ -298,10 +298,10 @@ def test_profile_mcp_write_skips_dangerous_entry(tmp_path):
     written = _write_profile_mcp_servers(profile_dir, servers)
 
     assert written == 1
-    token = set_hermes_home_override(str(profile_dir))
+    token = set_kova_home_override(str(profile_dir))
     try:
         config = load_config()
     finally:
-        reset_hermes_home_override(token)
+        reset_kova_home_override(token)
     assert "evil" not in config.get("mcp_servers", {})
     assert "clean" in config.get("mcp_servers", {})

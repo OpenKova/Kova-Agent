@@ -157,13 +157,13 @@ def test_remediation_never_raises_on_junk_cfg():
 
 
 def test_env_loader_prints_remediation_hint(tmp_path, monkeypatch, capsys):
-    from hermes_cli import env_loader
+    from kova_cli import env_loader
     from agent.secret_sources import registry
 
     registry._reset_registry_for_tests()
     env_loader.reset_secret_source_cache()
 
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".kova"
     home.mkdir()
     (home / "config.yaml").write_text(
         "secrets:\n"
@@ -194,7 +194,7 @@ def test_env_loader_prints_remediation_hint(tmp_path, monkeypatch, capsys):
 
 def test_env_loader_hint_survives_broken_remediation(tmp_path, monkeypatch, capsys):
     """A plugin source whose remediation() raises must not break startup."""
-    from hermes_cli import env_loader
+    from kova_cli import env_loader
     from agent.secret_sources import registry
 
     class _Broken(SecretSource):
@@ -217,7 +217,7 @@ def test_env_loader_hint_survives_broken_remediation(tmp_path, monkeypatch, caps
     registry.register_source(_Broken())
     env_loader.reset_secret_source_cache()
 
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".kova"
     home.mkdir()
     (home / "config.yaml").write_text(
         "secrets:\n  brokensrc:\n    enabled: true\n"

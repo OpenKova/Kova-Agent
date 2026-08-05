@@ -21,7 +21,7 @@ Configure and troubleshoot Honcho memory for Kova.
 | License | MIT |
 | Platforms | linux, macos, windows |
 | Tags | `Honcho`, `Memory`, `Profiles`, `Observation`, `Dialectic`, `User-Modeling`, `Session-Summary` |
-| Related skills | [`hermes-agent`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-hermes-agent) |
+| Related skills | [`kova-agent`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-kova-agent) |
 
 ## Reference: full SKILL.md
 
@@ -58,7 +58,7 @@ kova memory setup honcho
 # select "local", enter base URL (e.g. http://localhost:8000)
 ```
 
-See: https://docs.honcho.dev/v3/guides/integrations/hermes#running-honcho-locally-with-hermes
+See: https://docs.honcho.dev/v3/guides/integrations/kova#running-honcho-locally-with-kova
 
 ### Verify
 
@@ -221,11 +221,11 @@ Each Kova profile gets its own Honcho AI peer while sharing the same workspace (
 
 ```bash
 kova profile create coder --clone
-# creates host block hermes.coder, AI peer "coder", inherits config from default
+# creates host block kova.coder, AI peer "coder", inherits config from default
 ```
 
 What `--clone` does for Honcho:
-1. Creates a `hermes.coder` host block in `honcho.json`
+1. Creates a `kova.coder` host block in `honcho.json`
 2. Sets `aiPeer: "coder"` (the profile name)
 3. Inherits `workspace`, `peerName`, `writeFrequency`, `recallMode`, etc. from default
 4. Eagerly creates the peer in Honcho so it exists before first message
@@ -243,7 +243,7 @@ Override any setting in the host block:
 ```json
 {
   "hosts": {
-    "hermes.coder": {
+    "kova.coder": {
       "aiPeer": "coder",
       "recallMode": "tools",
       "dialecticDepth": 2,
@@ -404,7 +404,7 @@ This fix addresses edge cases where raw user conclusions containing markup or sp
 ## Troubleshooting
 
 ### "Honcho not configured"
-Run `hermes honcho setup`. Ensure `memory.provider: honcho` is in `~/.hermes/config.yaml`.
+Run `kova honcho setup`. Ensure `memory.provider: honcho` is in `~/.hermes/config.yaml`.
 
 ### Memory not persisting across sessions
 Check `kova honcho status` -- verify `saveMessages: true` and `writeFrequency` isn't `session` (which only writes on exit).

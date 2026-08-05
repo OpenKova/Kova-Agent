@@ -71,10 +71,10 @@ class TestFireworksConfigRegistry:
 
 class TestFireworksOverlay:
     def test_overlay_exists(self):
-        from kova_cli.providers import HERMES_OVERLAYS
+        from kova_cli.providers import KOVA_OVERLAYS
 
-        assert "fireworks" in HERMES_OVERLAYS
-        overlay = HERMES_OVERLAYS["fireworks"]
+        assert "fireworks" in KOVA_OVERLAYS
+        overlay = KOVA_OVERLAYS["fireworks"]
         assert overlay.transport == "openai_chat"
         assert overlay.base_url_override == "https://api.fireworks.ai/inference/v1"
         assert not overlay.base_url_env_var
@@ -93,7 +93,7 @@ class TestFireworksDoctor:
         dropped — that heuristic is for aggregator vendor slugs only."""
         from kova_cli import doctor as doctor_mod
 
-        home = tmp_path / ".hermes"
+        home = tmp_path / ".kova"
         home.mkdir(parents=True)
         (home / "config.yaml").write_text(
             "model:\n"

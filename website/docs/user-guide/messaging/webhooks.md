@@ -138,7 +138,7 @@ platforms:
           secret: "todoist-secret"
           filters:
             - field: "payload.labels"
-              contains: "hermes"
+              contains: "kova"
             - any:
                 - field: "payload.priority"
                   equals: 4
@@ -167,13 +167,13 @@ Use `script` when declarative filters are not enough. Scripts must live under `~
 The route payload is sent to stdin as JSON:
 
 ```python
-# ~/.hermes/scripts/todoist-hermes-label.py
+# ~/.hermes/scripts/todoist-kova-label.py
 import json
 import sys
 
 payload = json.load(sys.stdin)
 labels = payload.get("payload", {}).get("labels", [])
-if "hermes" not in labels:
+if "kova" not in labels:
     print("[SILENT]")
     raise SystemExit(0)
 
@@ -185,7 +185,7 @@ Script outcomes:
 
 - JSON object stdout replaces the payload used by `prompt` and `deliver_extra`.
 - Non-JSON text stdout is added to the payload as `script_output`.
-- Empty stdout, exact `[SILENT]`, `{"__hermes_ignore__": true}`, timeout, missing script, or nonzero exit code returns HTTP 200 with `{"status":"ignored","reason":"script"}`.
+- Empty stdout, exact `[SILENT]`, `{"__kova_ignore__": true}`, timeout, missing script, or nonzero exit code returns HTTP 200 with `{"status":"ignored","reason":"script"}`.
 
 ### Prompt Templates
 

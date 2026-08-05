@@ -17,14 +17,14 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from hermes_constants import get_hermes_home
+from kova_constants import get_kova_home
 
 from plugins.google_meet import process_manager as pm
 from plugins.google_meet.meet_bot import _is_safe_meet_url
 
 
 def _auth_state_path() -> Path:
-    return Path(get_hermes_home()) / "workspace" / "meetings" / "auth.json"
+    return Path(get_kova_home()) / "workspace" / "meetings" / "auth.json"
 
 
 # ---------------------------------------------------------------------------
@@ -196,7 +196,7 @@ def _cmd_setup() -> int:
     auth_ok = auth_path.is_file()
     print(
         "  google auth    : "
-        + (f"ok ({auth_path})" if auth_ok else "not saved — run: hermes meet auth")
+        + (f"ok ({auth_path})" if auth_ok else "not saved — run: kova meet auth")
     )
 
     print()
@@ -204,7 +204,7 @@ def _cmd_setup() -> int:
     if all_ok:
         print(
             "ready. Join a meeting:  "
-            "hermes meet join https://meet.google.com/abc-defg-hij"
+            "kova meet join https://meet.google.com/abc-defg-hij"
         )
     else:
         print("not ready yet — fix the items above.")
@@ -250,7 +250,7 @@ def _cmd_install(*, realtime: bool, assume_yes: bool) -> int:
     pip_pkgs = ["playwright", "websockets"]
     print(f"\n[1/3] pip install: {' '.join(pip_pkgs)}")
     try:
-        from hermes_cli.tools_config import _pip_install
+        from kova_cli.tools_config import _pip_install
 
         res = _pip_install(["--upgrade", *pip_pkgs], capture_output=False)
         if res.returncode != 0:
@@ -323,7 +323,7 @@ def _cmd_install(*, realtime: bool, assume_yes: bool) -> int:
                 "\n  NOTE: macOS does not auto-route audio. Open\n"
                 "    System Settings → Sound → Input\n"
                 "  and select 'BlackHole 2ch' before starting a realtime meeting.\n"
-                "  hermes will not switch your default input for you."
+                "  kova will not switch your default input for you."
             )
     else:
         print("\n[3/3] skipped (pass --realtime to install audio tooling too)")
@@ -464,13 +464,13 @@ def _cmd_transcript(last: Optional[int]) -> int:
 
 
 def _cmd_stop() -> int:
-    res = pm.stop(reason="hermes meet stop")
+    res = pm.stop(reason="kova meet stop")
     print(json.dumps(res, indent=2))
     return 0 if res.get("ok") else 1
 
 
 if __name__ == "__main__":  # pragma: no cover
-    parser = argparse.ArgumentParser(prog="hermes meet")
+    parser = argparse.ArgumentParser(prog="kova meet")
     register_cli(parser)
     ns = parser.parse_args()
     sys.exit(meet_command(ns))

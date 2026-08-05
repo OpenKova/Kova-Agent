@@ -73,14 +73,14 @@ author: Your Name
 
 | 集成点 | 位置 | 获得的能力 |
 |---|---|---|
-| 凭据解析 | `hermes_cli/auth.py` | `PROVIDER_REGISTRY["acme-inference"]` 从 profile 填充 |
-| `--provider` CLI 标志 | `hermes_cli/main.py` | 接受 `acme-inference` |
-| `hermes model` 选择器 | `hermes_cli/models.py` | 出现在 `CANONICAL_PROVIDERS` 中，从 `{base_url}/models` 获取模型列表 |
-| `hermes doctor` | `hermes_cli/doctor.py` | 对 `ACME_API_KEY` 及 `{base_url}/models` 进行健康检查 |
-| `hermes setup` | `hermes_cli/config.py` | `ACME_API_KEY` 出现在 `OPTIONAL_ENV_VARS` 和设置向导中 |
+| 凭据解析 | `kova_cli/auth.py` | `PROVIDER_REGISTRY["acme-inference"]` 从 profile 填充 |
+| `--provider` CLI 标志 | `kova_cli/main.py` | 接受 `acme-inference` |
+| `kova model` 选择器 | `kova_cli/models.py` | 出现在 `CANONICAL_PROVIDERS` 中，从 `{base_url}/models` 获取模型列表 |
+| `kova doctor` | `kova_cli/doctor.py` | 对 `ACME_API_KEY` 及 `{base_url}/models` 进行健康检查 |
+| `kova setup` | `kova_cli/config.py` | `ACME_API_KEY` 出现在 `OPTIONAL_ENV_VARS` 和设置向导中 |
 | URL 反向映射 | `agent/model_metadata.py` | 主机名 → 提供商名称，用于自动检测 |
 | 辅助模型 | `agent/auxiliary_client.py` | 使用 `default_aux_model` 进行压缩/摘要 |
-| 运行时解析 | `hermes_cli/runtime_provider.py` | 返回正确的 `base_url`、`api_key`、`api_mode` |
+| 运行时解析 | `kova_cli/runtime_provider.py` | 返回正确的 `base_url`、`api_key`、`api_mode` |
 | 传输层 | `agent/transports/chat_completions.py` | Profile 路径通过 `prepare_messages` / `build_extra_body` / `build_api_kwargs_extras` 生成 kwargs |
 
 ## ProviderProfile 字段
@@ -224,7 +224,7 @@ for p in list_providers():
 将 `HERMES_HOME` 指向临时目录，避免污染真实配置：
 
 ```bash
-export HERMES_HOME=/tmp/hermes-plugin-test
+export HERMES_HOME=/tmp/kova-plugin-test
 mkdir -p $HERMES_HOME/plugins/model-providers/my-provider
 cat > $HERMES_HOME/plugins/model-providers/my-provider/__init__.py <<'EOF'
 from providers import register_provider
@@ -250,11 +250,11 @@ kova -z "hello" --provider my-provider -m some-model
 与所有 Kova 插件一样，模型提供商可以作为 pip 包发布。在你的 `pyproject.toml` 中添加入口点：
 
 ```toml
-[project.entry-points."hermes_agent.plugins"]
-acme-inference = "acme_hermes_plugin:register"
+[project.entry-points."kova_agent.plugins"]
+acme-inference = "acme_kova_plugin:register"
 ```
 
-……其中 `acme_hermes_plugin:register` 是一个调用 `register_provider(profile)` 的函数。通用 PluginManager 在 `discover_and_load()` 期间会拾取入口点插件。对于 `kind: model-provider` 的 pip 插件，你仍需在 manifest 中声明 kind（或依赖源码文本启发式检测）。
+……其中 `acme_kova_plugin:register` 是一个调用 `register_provider(profile)` 的函数。通用 PluginManager 在 `discover_and_load()` 期间会拾取入口点插件。对于 `kind: model-provider` 的 pip 插件，你仍需在 manifest 中声明 kind（或依赖源码文本启发式检测）。
 
 完整的入口点设置请参阅 [构建 Kova 插件](/developer-guide/plugins#distribute-via-pip)。
 

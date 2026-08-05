@@ -44,13 +44,13 @@ From your main repository (containing `.git/`), create a new worktree for a feat
 cd /path/to/your/repo
 
 # Create a new branch and worktree in ../repo-feature
-git worktree add ../repo-feature feature/hermes-experiment
+git worktree add ../repo-feature feature/kova-experiment
 ```
 
 This creates:
 
 - A new directory: `../repo-feature`
-- A new branch: `feature/hermes-experiment` checked out in that directory
+- A new branch: `feature/kova-experiment` checked out in that directory
 
 Now you can `cd` into the new worktree and run Kova there:
 
@@ -74,8 +74,8 @@ You can create multiple worktrees, each with its own branch:
 ```bash
 cd /path/to/your/repo
 
-git worktree add ../repo-experiment-a feature/hermes-a
-git worktree add ../repo-experiment-b feature/hermes-b
+git worktree add ../repo-experiment-a feature/kova-a
+git worktree add ../repo-experiment-b feature/kova-b
 ```
 
 In separate terminals:
@@ -92,7 +92,7 @@ kova
 
 Each Kova process:
 
-- Works on its own branch (`feature/hermes-a` vs `feature/hermes-b`).
+- Works on its own branch (`feature/kova-a` vs `feature/kova-b`).
 - Writes checkpoints under a different shadow repo hash (derived from the worktree path).
 - Can use `/rollback` independently without affecting the other.
 
@@ -130,7 +130,7 @@ Notes:
   - Create a dedicated branch/worktree for each substantial change.
   - This keeps diffs focused and PRs small and reviewable.
 - **Name branches after the experiment**
-  - e.g. `feature/hermes-checkpoints-docs`, `feature/hermes-refactor-tests`.
+  - e.g. `feature/kova-checkpoints-docs`, `feature/kova-refactor-tests`.
 - **Commit frequently**
   - Use git commits for high‑level milestones.
   - Use [checkpoints and /rollback](./checkpoints-and-rollback.md) as a safety net for tool‑driven edits in between.
@@ -149,7 +149,7 @@ kova -w
 Kova will:
 
 - Create a temporary worktree under `.worktrees/` inside your repo.
-- Check out an isolated branch (e.g. `hermes/hermes-<hash>`).
+- Check out an isolated branch (e.g. `kova/kova-<hash>`).
 - Run the full CLI session inside that worktree.
 
 This is the easiest way to get worktree isolation. You can also combine it with a single query:

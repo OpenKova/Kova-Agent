@@ -210,7 +210,7 @@ def test_auto_mount_replaces_persistent_workspace_bind(monkeypatch, tmp_path):
 
 def test_non_persistent_cleanup_removes_container(monkeypatch):
     """When persist_across_processes=false, cleanup() must docker stop AND
-    docker rm so containers don't leak across hermes processes.
+    docker rm so containers don't leak across kova processes.
 
     Updated for issue #20561: the previous implementation used fire-and-forget
     ``subprocess.Popen("... &", shell=True)`` which raced with parent exit;
@@ -272,23 +272,23 @@ def _make_execute_only_env(forward_env=None):
     env._docker_exe = "/usr/bin/docker"
     # Base class attributes needed by unified execute()
     env._session_id = "test123"
-    env._snapshot_path = "/tmp/hermes-snap-test123.sh"
-    env._cwd_file = "/tmp/hermes-cwd-test123.txt"
-    env._cwd_marker = "__HERMES_CWD_test123__"
+    env._snapshot_path = "/tmp/kova-snap-test123.sh"
+    env._cwd_file = "/tmp/kova-cwd-test123.txt"
+    env._cwd_marker = "__KOVA_CWD_test123__"
     env._snapshot_ready = True
     env._last_sync_time = None
     env._init_env_args = []
     return env
 
 
-def test_init_env_args_uses_hermes_dotenv_for_allowlisted_env(monkeypatch):
+def test_init_env_args_uses_kova_dotenv_for_allowlisted_env(monkeypatch):
     """_build_init_env_args picks up forwarded env vars from .env file at init time."""
-    # Use a var that is NOT in _HERMES_PROVIDER_ENV_BLOCKLIST (GITHUB_TOKEN
+    # Use a var that is NOT in _KOVA_PROVIDER_ENV_BLOCKLIST (GITHUB_TOKEN
     # is in the copilot provider's api_key_env_vars and gets stripped).
     env = _make_execute_only_env(["DATABASE_URL"])
 
     monkeypatch.delenv("DATABASE_URL", raising=False)
-    monkeypatch.setattr(docker_env, "_load_hermes_env_vars", lambda: {"DATABASE_URL": "value_from_dotenv"})
+    monkeypatch.setattr(docker_env, "_load_kova_env_vars", lambda: {"DATABASE_URL": "value_from_dotenv"})
 
     args = env._build_init_env_args()
     args_str = " ".join(args)
@@ -296,12 +296,12 @@ def test_init_env_args_uses_hermes_dotenv_for_allowlisted_env(monkeypatch):
     assert "DATABASE_URL=value_from_dotenv" in args_str
 
 
-def test_init_env_args_prefers_shell_env_over_hermes_dotenv(monkeypatch):
+def test_init_env_args_prefers_shell_env_over_kova_dotenv(monkeypatch):
     """Shell env vars take priority over .env file values in init env args."""
     env = _make_execute_only_env(["DATABASE_URL"])
 
     monkeypatch.setenv("DATABASE_URL", "value_from_shell")
-    monkeypatch.setattr(docker_env, "_load_hermes_env_vars", lambda: {"DATABASE_URL": "value_from_dotenv"})
+    monkeypatch.setattr(docker_env, "_load_kova_env_vars", lambda: {"DATABASE_URL": "value_from_dotenv"})
 
     args = env._build_init_env_args()
     args_str = " ".join(args)
@@ -310,7 +310,7 @@ def test_init_env_args_prefers_shell_env_over_hermes_dotenv(monkeypatch):
     assert "value_from_dotenv" not in args_str
 
 
-def test_init_env_args_uses_hermes_dotenv_for_empty_shell_env(monkeypatch):
+def test_init_env_args_uses_kova_dotenv_for_empty_shell_env(monkeypatch):
     """A transient empty-string in the live env must fall back to .env, not win.
 
     Regression: the disk fallback used to fire only on `value is None`, so a
@@ -320,7 +320,7 @@ def test_init_env_args_uses_hermes_dotenv_for_empty_shell_env(monkeypatch):
     env = _make_execute_only_env(["MY_SECRET"])
 
     monkeypatch.setenv("MY_SECRET", "")
-    monkeypatch.setattr(docker_env, "_load_hermes_env_vars", lambda: {"MY_SECRET": "value_from_dotenv"})
+    monkeypatch.setattr(docker_env, "_load_kova_env_vars", lambda: {"MY_SECRET": "value_from_dotenv"})
 
     args = env._build_init_env_args()
 
@@ -335,7 +335,7 @@ def test_init_env_args_never_forwards_blank_secret(monkeypatch):
     env = _make_execute_only_env(["MY_SECRET"])
 
     monkeypatch.setenv("MY_SECRET", "")
-    monkeypatch.setattr(docker_env, "_load_hermes_env_vars", lambda: {})
+    monkeypatch.setattr(docker_env, "_load_kova_env_vars", lambda: {})
 
     args = env._build_init_env_args()
 
@@ -379,7 +379,7 @@ def test_forward_env_overrides_docker_env_in_init_args(monkeypatch):
     env._env = {"MY_KEY": "static_value"}
 
     monkeypatch.setenv("MY_KEY", "dynamic_value")
-    monkeypatch.setattr(docker_env, "_load_hermes_env_vars", lambda: {})
+    monkeypatch.setattr(docker_env, "_load_kova_env_vars", lambda: {})
 
     args = env._build_init_env_args()
     args_str = " ".join(args)
@@ -394,7 +394,7 @@ def test_docker_env_and_forward_env_merge_in_init_args(monkeypatch):
     env._env = {"SSH_AUTH_SOCK": "/run/user/1000/agent.sock"}
 
     monkeypatch.setenv("TOKEN", "secret123")
-    monkeypatch.setattr(docker_env, "_load_hermes_env_vars", lambda: {})
+    monkeypatch.setattr(docker_env, "_load_kova_env_vars", lambda: {})
 
     args = env._build_init_env_args()
     args_str = " ".join(args)
@@ -596,7 +596,7 @@ def _labels_in_run_args(run_args):
     }
 
 
-def test_run_command_tags_hermes_agent_label(monkeypatch):
+def test_run_command_tags_kova_agent_label(monkeypatch):
     """Every container kova-agent starts must carry the kova-agent=1 label
     so the orphan reaper (and external operators) can identify them with a
     single ``docker ps --filter label=kova-agent=1`` call. Regression test
@@ -624,11 +624,11 @@ def test_run_command_tags_task_and_profile_labels(monkeypatch):
     _make_dummy_env(task_id="kanban-42")
 
     labels = _labels_in_run_args(_run_args_from_calls(calls))
-    assert "hermes-task-id=kanban-42" in labels, (
-        f"hermes-task-id=kanban-42 missing; got: {sorted(labels)}"
+    assert "kova-task-id=kanban-42" in labels, (
+        f"kova-task-id=kanban-42 missing; got: {sorted(labels)}"
     )
-    assert "hermes-profile=research-bot" in labels, (
-        f"hermes-profile=research-bot missing; got: {sorted(labels)}"
+    assert "kova-profile=research-bot" in labels, (
+        f"kova-profile=research-bot missing; got: {sorted(labels)}"
     )
 
 
@@ -660,7 +660,7 @@ def test_run_command_sanitizes_unsafe_task_id(monkeypatch):
 
     labels = _labels_in_run_args(_run_args_from_calls(calls))
     # Each non-OK character becomes an underscore; the safe chars survive.
-    assert "hermes-task-id=task_with_weird_chars" in labels, (
+    assert "kova-task-id=task_with_weird_chars" in labels, (
         f"sanitized task-id label missing; got: {sorted(labels)}"
     )
 
@@ -679,9 +679,9 @@ def test_labels_attribute_populated_after_init(monkeypatch):
         "kova-agent": "1",
         "kova-task-id": "abc",
         "kova-profile": "default",
-        "hermes-agent": "1",
-        "hermes-task-id": "abc",
-        "hermes-profile": "default",
+        "kova-agent": "1",
+        "kova-task-id": "abc",
+        "kova-profile": "default",
     }
 
 
@@ -837,7 +837,7 @@ def test_failed_docker_run_cleans_up_orphaned_container(monkeypatch):
     assert len(cleanup_calls) == 1, "docker rm should be called once for the orphaned container"
     rm_cmd = cleanup_calls[0]
     assert rm_cmd[1] == "rm" and rm_cmd[2] == "-f"
-    assert rm_cmd[3].startswith("hermes-"), "should remove the container by its generated name"
+    assert rm_cmd[3].startswith("kova-"), "should remove the container by its generated name"
 
 
 def test_docker_run_timeout_cleans_up_orphaned_container(monkeypatch):
@@ -872,7 +872,7 @@ def test_docker_run_timeout_cleans_up_orphaned_container(monkeypatch):
     assert len(cleanup_calls) == 1, "docker rm should be called once for the orphaned container"
     rm_cmd = cleanup_calls[0]
     assert rm_cmd[1] == "rm" and rm_cmd[2] == "-f"
-    assert rm_cmd[3].startswith("hermes-"), "should remove the container by its generated name"
+    assert rm_cmd[3].startswith("kova-"), "should remove the container by its generated name"
 
 
 def test_no_reuse_when_persist_across_processes_disabled(monkeypatch):
@@ -1343,7 +1343,7 @@ def test_reap_orphan_spares_recently_exited_container(monkeypatch):
 
 
 def test_reap_orphan_scopes_to_profile_filter_via_label(monkeypatch):
-    """The reaper must pass ``--filter label=hermes-profile=<profile>`` to
+    """The reaper must pass ``--filter label=kova-profile=<profile>`` to
     docker ps so it never sweeps another profile's containers. A research
     profile must not tear down the default profile's stragglers."""
     calls = _reaper_run_mock(monkeypatch, ps_ids=[], inspect_responses={})
@@ -1735,7 +1735,7 @@ def test_is_container_gone_matches_removal_errors(monkeypatch):
 
     # Positive: the daemon's "container gone" phrasings.
     assert env._is_container_gone(
-        "Error response from daemon: No such container: hermes-abc123"
+        "Error response from daemon: No such container: kova-abc123"
     )
     assert env._is_container_gone("Error: No such container: deadbeef")
     assert env._is_container_gone(
@@ -1765,7 +1765,7 @@ def test_execute_recovers_from_out_of_band_removal(monkeypatch):
 
     # First execute() sees a dead container; second (post-recovery) succeeds.
     outputs = iter([
-        {"output": "Error response from daemon: No such container: hermes-x", "returncode": 1},
+        {"output": "Error response from daemon: No such container: kova-x", "returncode": 1},
         {"output": "ok", "returncode": 0},
     ])
 

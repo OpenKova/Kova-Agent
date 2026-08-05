@@ -65,7 +65,7 @@ kova profile install github.com/you/my-research-agent --alias
 
 不适合的场景：
 
-- **你只想在自己的机器上备份一个 profile。** 使用 [`kova profile export` / `import`](../reference/profile-commands.md#hermes-profile-export)——那正是这两个命令的用途。
+- **你只想在自己的机器上备份一个 profile。** 使用 [`kova profile export` / `import`](../reference/profile-commands.md#kova-profile-export)——那正是这两个命令的用途。
 - **你想随 agent 一起共享 API 密钥。** `auth.json` 和 `.env` 被刻意排除在分发之外。每个安装者使用自己的凭据。
 - **你想共享记忆 / 会话 / 对话历史。** 这些是用户数据，不是分发内容，永远不会被发送。
 
@@ -97,7 +97,7 @@ research-bot chat                     # dogfood until it feels right
 name: research-bot
 version: 1.0.0
 description: "Autonomous research assistant with arXiv and web tools"
-hermes_requires: ">=0.12.0"
+kova_requires: ">=0.12.0"
 author: "Your Name"
 license: "MIT"
 
@@ -395,11 +395,11 @@ cd ~/.hermes/profiles/polymarket-trader
 git init && git add . && git commit -m "v1.0"
 git tag v1.0.0
 # 发布到公开 GitHub 仓库
-git remote add origin https://github.com/you/hermes-polymarket-trader.git
+git remote add origin https://github.com/you/kova-polymarket-trader.git
 git push -u origin main --tags
 
 # 任何人
-hermes profile install github.com/you/hermes-polymarket-trader --alias
+kova profile install github.com/you/kova-polymarket-trader --alias
 ```
 
 发推分享安装命令。尝试的人会给你提 issue 和 PR。想要自定义的人可以 fork——与大家已熟悉的 git 工作流完全相同。
@@ -413,7 +413,7 @@ hermes profile install github.com/you/hermes-polymarket-trader --alias
 name: telemetry-harness
 version: 2.3.1
 description: "Compliance telemetry harness — monitors and reviews regulated workflows"
-hermes_requires: ">=0.13.0"
+kova_requires: ">=0.13.0"
 author: "Acme Compliance Inc."
 license: "Commercial"
 
@@ -511,11 +511,11 @@ kova profile install github.com/yourname/forked-research-bot --alias
 
 ```bash
 # 从本地目录安装（无需 git push）
-hermes profile install ~/.hermes/profiles/research-bot --name research-bot-test --alias
+kova profile install ~/.hermes/profiles/research-bot --name research-bot-test --alias
 
 # 调整、删除、重新安装，直到满意
 kova profile delete research-bot-test --yes
-hermes profile install ~/.hermes/profiles/research-bot --name research-bot-test
+kova profile install ~/.hermes/profiles/research-bot --name research-bot-test
 ```
 
 ---
@@ -567,7 +567,7 @@ Profile 分发默认不带签名。你信任的是：
 
 - [Profiles：运行多个 Agent](./profiles.md) — 基础概念
 - [Profile 命令参考](../reference/profile-commands.md) — 每个标志、每个选项
-- [`kova profile export` / `import`](../reference/profile-commands.md#hermes-profile-export) — 本地备份 / 恢复（非分发）
-- [在 Kova 中使用 SOUL](../guides/use-soul-with-hermes.md) — 编写个性
+- [`kova profile export` / `import`](../reference/profile-commands.md#kova-profile-export) — 本地备份 / 恢复（非分发）
+- [在 Kova 中使用 SOUL](../guides/use-soul-with-kova.md) — 编写个性
 - [个性与 SOUL](./features/personality.md) — SOUL 在 agent 中的作用
 - [技能目录](../reference/skills-catalog.md) — 可打包的技能

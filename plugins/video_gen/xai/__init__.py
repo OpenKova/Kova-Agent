@@ -112,9 +112,9 @@ def _resolve_xai_credentials() -> Tuple[str, str]:
 
 def _xai_user_agent() -> str:
     try:
-        from tools.xai_http import hermes_xai_user_agent
+        from tools.xai_http import kova_xai_user_agent
 
-        return hermes_xai_user_agent()
+        return kova_xai_user_agent()
     except Exception:
         return "kova-agent/video_gen"
 
@@ -386,7 +386,7 @@ class XAIVideoGenProvider(VideoGenProvider):
 
     def get_setup_schema(self) -> Dict[str, Any]:
         # Auth resolution lives entirely in the shared ``xai_grok`` post_setup
-        # hook (``hermes_cli/tools_config.py``) so the picker doesn't blindly
+        # hook (``kova_cli/tools_config.py``) so the picker doesn't blindly
         # prompt for an API key when the user is already signed in via xAI
         # Grok OAuth (SuperGrok / Premium+) — TTS / image gen / video gen
         # all share the same credential resolver. The hook offers an
@@ -799,7 +799,7 @@ async def _submit_xai_video_payload(
 
         storage_options = build_xai_storage_options(
             "video_gen",
-            filename_prefix="hermes-xai-video",
+            filename_prefix="kova-xai-video",
             extension="mp4",
         )
         storage_notice = maybe_mark_xai_storage_notice_seen("video_gen")

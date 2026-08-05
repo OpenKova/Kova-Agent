@@ -12,7 +12,7 @@ import sys
 import shlex
 from pathlib import Path
 
-from kova_constants import get_hermes_home
+from kova_constants import get_kova_home
 from kova_cli.secret_prompt import masked_secret_prompt
 
 _CANCELLED = -1
@@ -223,8 +223,8 @@ def cmd_setup_provider(provider_name: str) -> None:
         config["memory"] = {}
 
     if hasattr(provider, "post_setup"):
-        hermes_home = str(get_hermes_home())
-        provider.post_setup(hermes_home, config)
+        kova_home = str(get_kova_home())
+        provider.post_setup(kova_home, config)
         return
 
     # Fallback: generic schema-based setup (same as cmd_setup)
@@ -279,8 +279,8 @@ def cmd_setup(args) -> None:
     # If the provider has a post_setup hook, delegate entirely to it.
     # The hook handles its own config, connection test, and activation.
     if hasattr(provider, "post_setup"):
-        hermes_home = str(get_hermes_home())
-        provider.post_setup(hermes_home, config)
+        kova_home = str(get_kova_home())
+        provider.post_setup(kova_home, config)
         return
 
     schema = provider.get_config_schema() if hasattr(provider, "get_config_schema") else []
@@ -289,7 +289,7 @@ def cmd_setup(args) -> None:
     if not isinstance(provider_config, dict):
         provider_config = {}
 
-    env_path = get_hermes_home() / ".env"
+    env_path = get_kova_home() / ".env"
     env_writes = {}
 
     if schema:
@@ -359,10 +359,10 @@ def cmd_setup(args) -> None:
     save_config(config)
 
     # Write non-secret config to provider's native location
-    hermes_home = str(get_hermes_home())
+    kova_home = str(get_kova_home())
     if provider_config and hasattr(provider, "save_config"):
         try:
-            provider.save_config(provider_config, hermes_home)
+            provider.save_config(provider_config, kova_home)
         except Exception as e:
             print(f"  Failed to write provider config: {e}")
 
@@ -429,7 +429,7 @@ def cmd_status(args) -> None:
     user_mark = "enabled ✓" if user_profile_enabled else "disabled ✗"
 
     # Check if the memory tool is enabled for the CLI platform via the
-    # canonical resolver (handles composite toolsets like hermes-cli).
+    # canonical resolver (handles composite toolsets like kova-cli).
     from kova_cli.tools_config import _get_platform_tools
     cli_tools = _get_platform_tools(config, "cli", include_default_mcp_servers=False)
     memory_tool_enabled = "memory" in cli_tools

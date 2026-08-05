@@ -214,9 +214,9 @@ def _media_cache_roots() -> list:
     downloaded inbound media and the tools' own URL-download temp dirs. Covers
     the consolidated ``cache/`` layout and the legacy flat directories.
     """
-    from hermes_constants import get_hermes_home
+    from kova_constants import get_kova_home
 
-    home = get_hermes_home()
+    home = get_kova_home()
     return [
         home / "cache",  # cache/images, cache/vision, cache/video(s), cache/audio
         home / "image_cache",

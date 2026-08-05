@@ -26,7 +26,7 @@ connected.
 
 1. Install the MCP server from the Nous catalog (one-time):
 
-       hermes mcp install blender
+       kova mcp install blender
 
    This configures the pinned `blender-mcp` stdio server with the curated
    tool set: `get_scene_info`, `get_object_info`, `get_viewport_screenshot`,

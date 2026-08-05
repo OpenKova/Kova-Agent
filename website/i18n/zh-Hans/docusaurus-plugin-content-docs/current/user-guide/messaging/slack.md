@@ -90,7 +90,7 @@ Socket Mode 让机器人通过 WebSocket 连接，无需公开 URL。
 1. 在侧边栏前往 **Settings → Socket Mode**
 2. 将 **Enable Socket Mode** 切换为开启
 3. 系统会提示你创建一个 **App-Level Token**：
-   - 命名为类似 `hermes-socket` 的名称（名称不重要）
+   - 命名为类似 `kova-socket` 的名称（名称不重要）
    - 添加 **`connections:write`** 权限范围
    - 点击 **Generate**
 4. **复制该令牌**——它以 `xapp-` 开头。这就是你的 `SLACK_APP_TOKEN`
@@ -216,7 +216,7 @@ sudo kova gateway install --system   # 仅 Linux：开机启动系统服务
 
 每个 Kova 命令（`/btw`、`/stop`、`/new`、`/model`、`/help`……）都是原生 Slack 斜杠命令——与它们在 Telegram 和 Discord 上的工作方式完全相同。在 Slack 中输入 `/`，自动补全选择器会列出每个 Kova 命令及其描述。
 
-底层实现：Kova 附带一个生成的 Slack 应用 manifest（见第一步，方式 A），它将 [`COMMAND_REGISTRY`](https://github.com/NousResearch/hermes-agent/blob/main/hermes_cli/commands.py) 中的每个命令声明为斜杠命令。在 Socket Mode 下，无论 manifest 的 `url` 字段如何，Slack 都会通过 WebSocket 路由命令事件。
+底层实现：Kova 附带一个生成的 Slack 应用 manifest（见第一步，方式 A），它将 [`COMMAND_REGISTRY`](https://github.com/OpenKova/Kova-Agent/blob/main/kova_cli/commands.py) 中的每个命令声明为斜杠命令。在 Socket Mode 下，无论 manifest 的 `url` 字段如何，Slack 都会通过 WebSocket 路由命令事件。
 
 ### 更新后刷新斜杠命令
 
@@ -233,9 +233,9 @@ kova slack manifest --write
 3. 粘贴 `~/.hermes/slack-manifest.json` 的新内容
 4. **保存**。如果权限范围或斜杠命令有变化，Slack 会提示重新安装应用。
 
-### 旧版 `/hermes <子命令>` 仍然有效
+### 旧版 `/kova <子命令>` 仍然有效
 
-为了向后兼容旧版 manifest，你仍然可以输入 `/hermes btw run the tests`——Kova 会以与 `/btw run the tests` 相同的方式路由它。自由形式的问题也有效：`/hermes what's the weather?` 会被当作普通消息处理。
+为了向后兼容旧版 manifest，你仍然可以输入 `/kova btw run the tests`——Kova 会以与 `/btw run the tests` 相同的方式路由它。自由形式的问题也有效：`/kova what's the weather?` 会被当作普通消息处理。
 
 ### 在话题（thread）中使用命令（`!cmd` 前缀）
 
@@ -353,8 +353,8 @@ slack:
   # 触发机器人的自定义提及模式
   # （除默认 @mention 检测外）
   mention_patterns:
-    - "hey hermes"
-    - "hermes,"
+    - "hey kova"
+    - "kova,"
 
   # 每条发出消息前添加的文本
   reply_prefix: ""

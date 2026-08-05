@@ -21,13 +21,13 @@ echo "MEM0_API_KEY=your-key" >> ~/.hermes/.env
 
 ## Config
 
-Behavioral settings live in `$HERMES_HOME/mem0.json` (set them via `hermes memory setup`). Only the secret `MEM0_API_KEY` belongs in `~/.hermes/.env`.
+Behavioral settings live in `$HERMES_HOME/mem0.json` (set them via `kova memory setup`). Only the secret `MEM0_API_KEY` belongs in `~/.hermes/.env`.
 
 | Key | Default | Description |
 |-----|---------|-------------|
 | `mode` | `platform` | `platform` (Mem0 Cloud) or `oss` (self-managed, in-process) |
 | `host` | — | Self-hosted Mem0 server URL (the Docker dashboard). When set, connects over HTTP with `X-API-Key`. Don't combine with `mode: oss` |
-| `user_id` | `hermes-user` | User identifier on Mem0 |
+| `user_id` | `kova-user` | User identifier on Mem0 |
 | `agent_id` | `kova` | Agent identifier |
 | `rerank` | `false` | Rerank search results for relevance (platform mode only) |
 

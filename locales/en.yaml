@@ -351,7 +351,7 @@ gateway:
   update:
     platform_not_messaging:  "✗ /update is only available from messaging platforms. Run `kova update` from the terminal."
     not_git_repo:            "✗ Not a git repository — cannot update."
-    hermes_cmd_not_found:    "✗ Could not locate the `kova` command. Kova is running, but the update command could not find the executable on PATH or via the current Python interpreter. Try running `kova update` manually in your terminal."
+    kova_cmd_not_found:    "✗ Could not locate the `kova` command. Kova is running, but the update command could not find the executable on PATH or via the current Python interpreter. Try running `kova update` manually in your terminal."
     start_failed:            "✗ Failed to start update: {error}"
     starting:                "⚕ Starting Kova update… I'll stream progress here."
 

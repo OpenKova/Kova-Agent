@@ -2,7 +2,7 @@
 
 ``begin_authorization`` / ``complete_authorization`` are the transport-agnostic
 core: the code can arrive via the loopback listener here or a future
-``hermes://`` handler. Endpoints are env-overridable with local-dev defaults
+``kova://`` handler. Endpoints are env-overridable with local-dev defaults
 because ``/authorize`` (dashboard) and ``/oauth/token`` (API) live on
 different origins.
 """
@@ -154,7 +154,7 @@ def begin_authorization(
     """Start an authorization: return ``(authorize_url, state)`` and stash PKCE.
 
     ``source`` tags the authorize link with the initiating surface
-    (``hermes-desktop`` / ``hermes-cli``) so the consent side can attribute
+    (``kova-desktop`` / ``kova-cli``) so the consent side can attribute
     connects and vary behavior per surface. ``config_path`` is a home-relative
     *display* string for the consent screen (never the absolute path); callers
     pass the actual write path separately to ``complete_authorization``.
@@ -374,7 +374,9 @@ def _detect_connection() -> tuple[bool, str | None]:
         from plugins.memory.honcho.client import HonchoClientConfig
 
         cfg = HonchoClientConfig.from_global_config()
-        block = (cfg.raw.get("hosts") or {}).get(cfg.host) or {}
+        from plugins.memory.honcho.client import _host_block
+
+        block = _host_block(cfg.raw, cfg.host)
         if oauth.OAuthCredential.from_host_block(block) is not None:
             return True, "oauth"
         if cfg.api_key:
@@ -400,7 +402,7 @@ def start_loopback_flow_background(
     *,
     config_path: Path | None = None,
     host: str | None = None,
-    source: str = "hermes-desktop",
+    source: str = "kova-desktop",
     timeout: float = 300.0,
 ) -> dict[str, str]:
     """Launch the loopback flow in a daemon thread; returns the initial status.

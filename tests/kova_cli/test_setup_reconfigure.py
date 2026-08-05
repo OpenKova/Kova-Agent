@@ -30,7 +30,7 @@ def _make_setup_args(**overrides):
 @pytest.fixture
 def existing_install(tmp_path, monkeypatch):
     """Simulate a returning user with an existing configured install."""
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".kova"
     home.mkdir()
     monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
     monkeypatch.setenv("HERMES_HOME", str(home))
@@ -40,7 +40,7 @@ def existing_install(tmp_path, monkeypatch):
 @pytest.fixture
 def fresh_install(tmp_path, monkeypatch):
     """Simulate a first-time user with no existing configuration."""
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".kova"
     home.mkdir()
     monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
     monkeypatch.setenv("HERMES_HOME", str(home))
@@ -55,7 +55,7 @@ def _enter_existing_install_patches(stack, **extra):
     """
     # Unconditional mocks (no return values to assert against).
     for target, kwargs in [
-        ("kova_cli.setup.ensure_hermes_home", {}),
+        ("kova_cli.setup.ensure_kova_home", {}),
         ("kova_cli.setup.is_interactive_stdin", {"return_value": True}),
         ("kova_cli.config.is_managed", {"return_value": False}),
         ("kova_cli.setup.load_config", {"return_value": {}}),
@@ -76,7 +76,7 @@ def _enter_existing_install_patches(stack, **extra):
 
 def _enter_fresh_install_patches(stack, **extra):
     for target, kwargs in [
-        ("kova_cli.setup.ensure_hermes_home", {}),
+        ("kova_cli.setup.ensure_kova_home", {}),
         ("kova_cli.setup.is_interactive_stdin", {"return_value": True}),
         ("kova_cli.config.is_managed", {"return_value": False}),
         ("kova_cli.setup.load_config", {"return_value": {}}),
@@ -244,7 +244,7 @@ class TestArgparse:
             "kova_cli.setup.run_setup_wizard",
             lambda args: captured.setdefault("args", args),
         )
-        monkeypatch.setattr(sys, "argv", ["hermes", "setup", "--reconfigure"])
+        monkeypatch.setattr(sys, "argv", ["kova", "setup", "--reconfigure"])
         try:
             main()
         except SystemExit:
@@ -261,7 +261,7 @@ class TestArgparse:
             "kova_cli.setup.run_setup_wizard",
             lambda args: captured.setdefault("args", args),
         )
-        monkeypatch.setattr(sys, "argv", ["hermes", "setup", "--quick"])
+        monkeypatch.setattr(sys, "argv", ["kova", "setup", "--quick"])
         try:
             main()
         except SystemExit:
@@ -278,7 +278,7 @@ class TestArgparse:
             "kova_cli.setup.run_setup_wizard",
             lambda args: captured.setdefault("args", args),
         )
-        monkeypatch.setattr(sys, "argv", ["hermes", "setup"])
+        monkeypatch.setattr(sys, "argv", ["kova", "setup"])
         try:
             main()
         except SystemExit:

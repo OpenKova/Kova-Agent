@@ -21,7 +21,7 @@ description: "调试 Python：pdb REPL + debugpy 远程（DAP）"
 | 许可证 | MIT |
 | 平台 | linux, macos |
 | 标签 | `debugging`, `python`, `pdb`, `debugpy`, `breakpoints`, `dap`, `post-mortem` |
-| 相关 skill | [`systematic-debugging`](/user-guide/skills/bundled/software-development/software-development-systematic-debugging), [`node-inspect-debugger`](/user-guide/skills/bundled/software-development/software-development-node-inspect-debugger), [`debugging-hermes-tui-commands`](/user-guide/skills/bundled/software-development/software-development-debugging-hermes-tui-commands) |
+| 相关 skill | [`systematic-debugging`](/user-guide/skills/bundled/software-development/software-development-systematic-debugging), [`node-inspect-debugger`](/user-guide/skills/bundled/software-development/software-development-node-inspect-debugger), [`debugging-kova-tui-commands`](/user-guide/skills/bundled/software-development/software-development-debugging-kova-tui-commands) |
 
 ## 参考：完整 SKILL.md
 
@@ -47,7 +47,7 @@ description: "调试 Python：pdb REPL + debugpy 远程（DAP）"
 
 - 测试失败，但 traceback 无法说明某个值为何出错
 - 需要逐步执行某个函数并观察集合的变化
-- 长期运行的进程（hermes gateway、tui_gateway）出现异常且无法重启
+- 长期运行的进程（kova gateway、tui_gateway）出现异常且无法重启
 - 事后分析（post-mortem）：异常在类生产代码中触发，需要检查崩溃现场的局部变量
 - 子进程 / 子进程（Python `_SlashWorker`、PTY bridge worker）才是实际的 bug 所在
 
@@ -112,7 +112,7 @@ python -m pdb path/to/script.py arg1 arg2
 
 ## 方案 3：调试 pytest 测试
 
-hermes 测试运行器和 pytest 均支持以下方式：
+kova 测试运行器和 pytest 均支持以下方式：
 
 ```bash
 # 在失败时（或任何异常抛出时）进入 pdb：
@@ -169,7 +169,7 @@ sys.excepthook = excepthook
 ### 安装
 
 ```bash
-source /home/bb/hermes-agent/.venv/bin/activate
+source /home/bb/kova-agent/.venv/bin/activate
 pip install debugpy
 ```
 
@@ -266,7 +266,7 @@ send({"type": "request", "command": "configurationDone"})
   "connect": { "host": "127.0.0.1", "port": 5678 },
   "justMyCode": false,
   "pathMappings": [
-    { "localRoot": "${workspaceFolder}", "remoteRoot": "/home/bb/hermes-agent" }
+    { "localRoot": "${workspaceFolder}", "remoteRoot": "/home/bb/kova-agent" }
   ]
 }
 ```

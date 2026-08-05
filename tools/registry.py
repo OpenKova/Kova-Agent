@@ -1,4 +1,4 @@
-"""Central registry for all hermes-agent tools.
+"""Central registry for all kova-agent tools.
 
 Each tool file calls ``registry.register()`` at module level to declare its
 schema, handler, toolset membership, and availability check.  ``model_tools.py``
@@ -342,7 +342,7 @@ class ToolRegistry:
             return mod
         # Also gate plugin modules currently loading but not yet policy-recorded
         # (defensive: a handler defined in the plugin namespace is plugin code).
-        if isinstance(mod, str) and mod.startswith("hermes_plugins."):
+        if isinstance(mod, str) and mod.startswith("kova_plugins."):
             return mod
         return None
 
@@ -480,9 +480,9 @@ class ToolRegistry:
                 caller_mod = self._caller_module()
                 owner = self._plugin_owner_of(entry.handler)
                 # Ownership check: bind to the plugin package root
-                # (``hermes_plugins.{name}``), not the exact module string.
-                # A handler defined in ``hermes_plugins.pkg.handlers`` is
-                # still owned by the ``hermes_plugins.pkg`` package — exact
+                # (``kova_plugins.{name}``), not the exact module string.
+                # A handler defined in ``kova_plugins.pkg.handlers`` is
+                # still owned by the ``kova_plugins.pkg`` package — exact
                 # string equality would wrongly block root-module cleanup code
                 # from removing tools registered by a submodule of the same
                 # plugin (egilewski review on #55840).
@@ -490,7 +490,7 @@ class ToolRegistry:
                 owner_root = ".".join(owner.split(".")[:2]) if owner else ""
                 same_plugin = bool(owner and caller_root == owner_root)
                 if (
-                    caller_mod.startswith("hermes_plugins.")
+                    caller_mod.startswith("kova_plugins.")
                     and not same_plugin
                     and not self._plugin_override_policy.get(caller_root, False)
                 ):

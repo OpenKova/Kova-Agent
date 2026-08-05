@@ -45,9 +45,9 @@ Teams 无法向 `localhost` 投递消息。本地开发时，使用任意隧道�
 
 ```bash
 # devtunnel（Microsoft 官方）
-devtunnel create hermes-bot --allow-anonymous
-devtunnel port create hermes-bot -p 3978 --protocol https  # 如已修改 TEAMS_PORT，请替换 3978
-devtunnel host hermes-bot
+devtunnel create kova-bot --allow-anonymous
+devtunnel port create kova-bot -p 3978 --protocol https  # 如已修改 TEAMS_PORT，请替换 3978
+devtunnel host kova-bot
 
 # ngrok
 ngrok http 3978  # 如已修改 TEAMS_PORT，请替换 3978
@@ -94,7 +94,7 @@ TEAMS_ALLOWED_USERS=<your-aad-object-id>
 ## 第五步：启动 Gateway
 
 ```bash
-HERMES_UID=$(id -u) HERMES_GID=$(id -g) docker compose up -d gateway
+KOVA_UID=$(id -u) KOVA_GID=$(id -g) docker compose up -d gateway
 ```
 
 此命令启动 gateway。默认 webhook 端口为 `3978`（可通过 `TEAMS_PORT` 覆盖）。检查运行状态：
@@ -228,7 +228,7 @@ teams app update --id <teamsAppId> --endpoint "https://your-domain.com/api/messa
 | 机器人响应时出现认证错误 | 验证 `TEAMS_CLIENT_ID`、`TEAMS_CLIENT_SECRET` 和 `TEAMS_TENANT_ID` 是否均已正确设置 |
 | `No inference provider configured` | 检查 `~/.hermes/.env` 中是否设置了 `ANTHROPIC_API_KEY`（或其他提供商密钥） |
 | 机器人收到消息但忽略它们 | 你的 AAD 对象 ID 可能不在 `TEAMS_ALLOWED_USERS` 中。运行 `teams status --verbose` 查找 |
-| 隧道 URL 在重启后变更 | 使用命名隧道（`devtunnel create hermes-bot`）时，devtunnel URL 是持久的。ngrok 和 cloudflared 每次运行都会生成新 URL（除非你有付费计划）——URL 变更时请用 `teams app update` 更新机器人端点 |
+| 隧道 URL 在重启后变更 | 使用命名隧道（`devtunnel create kova-bot`）时，devtunnel URL 是持久的。ngrok 和 cloudflared 每次运行都会生成新 URL（除非你有付费计划）——URL 变更时请用 `teams app update` 更新机器人端点 |
 | Teams 显示"此机器人未响应" | Webhook 返回了错误。检查 `docker logs kova` 中的错误堆栈 |
 | 日志中出现 `[teams] Failed to connect` | SDK 认证失败。仔细检查凭据，并确认租户 ID 与 `teams login` 时使用的账户匹配 |
 

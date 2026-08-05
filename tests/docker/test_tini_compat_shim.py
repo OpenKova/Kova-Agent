@@ -56,7 +56,7 @@ def test_entrypoint_is_init_not_tini(built_image: str) -> None:
     assert "/init" in entrypoint, (
         f"ENTRYPOINT is not /init: {entrypoint!r}"
     )
-    # The entrypoint array should be ["/init", "/opt/hermes/docker/main-wrapper.sh"]
+    # The entrypoint array should be ["/init", "/opt/kova/docker/main-wrapper.sh"]
     # /usr/bin/tini should NOT be in the entrypoint.
     assert "tini" not in entrypoint.lower(), (
         f"ENTRYPOINT references tini instead of /init: {entrypoint!r}"
@@ -69,7 +69,7 @@ def test_legacy_tini_g_entrypoint_does_not_boot_loop(built_image: str) -> None:
     Exact failure from #66679: after update, NAS templates still invoke
     ``/usr/bin/tini -g -- …``. The old symlink turned that into
     ``/init -g -- …``, rc.init tried to exec ``-g``, and the container
-    restart-looped. The shim must strip ``-g`` / ``--`` and reach hermes.
+    restart-looped. The shim must strip ``-g`` / ``--`` and reach kova.
     """
     r = subprocess.run(
         [

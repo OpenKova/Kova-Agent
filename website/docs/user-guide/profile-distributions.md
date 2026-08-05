@@ -65,7 +65,7 @@ Good fits:
 
 Not a fit:
 
-- **You just want to back up a profile on your own machine.** Use [`kova profile export` / `import`](../reference/profile-commands.md#hermes-profile-export) — that's what those are for.
+- **You just want to back up a profile on your own machine.** Use [`kova profile export` / `import`](../reference/profile-commands.md#kova-profile-export) — that's what those are for.
 - **You want to share API keys alongside the agent.** `auth.json` and `.env` are deliberately excluded from distributions. Each installer brings their own credentials.
 - **You want to share memories / sessions / conversation history.** Those are user data, not distribution content. Never shipped.
 
@@ -101,7 +101,7 @@ Create `~/.hermes/profiles/research-bot/distribution.yaml`:
 name: research-bot
 version: 1.0.0
 description: "Autonomous research assistant with arXiv and web tools"
-hermes_requires: ">=0.12.0"
+kova_requires: ">=0.12.0"
 author: "Your Name"
 license: "MIT"
 
@@ -138,7 +138,7 @@ auth.json
 state.db
 state.db-shm
 state.db-wal
-hermes_state.db
+kova_state.db
 response_store.db
 response_store.db-shm
 response_store.db-wal
@@ -165,7 +165,7 @@ browser_screenshots/
 cache/
 
 # Infrastructure (should not be in profile dir, but safe to exclude)
-hermes-agent/
+kova-agent/
 .worktrees/
 profiles/
 bin/
@@ -181,7 +181,7 @@ backups/
 
 # Logs
 errors.log
-.hermes_history
+.kova_history
 ```
 
 This mirrors the [hard-excluded paths](#whats-not-in-a-distribution-ever) that the installer strips on its end. Anything else you want to keep out of the repo (scratch files, large assets, local-only skills) should also go in here.
@@ -469,11 +469,11 @@ git init && git add . && git status   # confirm no secrets staged
 git commit -m "v1.0"
 git tag v1.0.0
 # Publish to a public GitHub repo
-git remote add origin https://github.com/you/hermes-polymarket-trader.git
+git remote add origin https://github.com/you/kova-polymarket-trader.git
 git push -u origin main --tags
 
 # Anyone
-hermes profile install github.com/you/hermes-polymarket-trader --alias
+kova profile install github.com/you/kova-polymarket-trader --alias
 ```
 
 Tweet the install command. People who try it send you issues and PRs. If someone wants to customize, they fork — same git workflow everyone already knows.
@@ -487,7 +487,7 @@ You built Kova-on-top — maybe a compliance-monitoring harness, a customer-supp
 name: telemetry-harness
 version: 2.3.1
 description: "Compliance telemetry harness — monitors and reviews regulated workflows"
-hermes_requires: ">=0.13.0"
+kova_requires: ">=0.13.0"
 author: "Acme Compliance Inc."
 license: "Commercial"
 
@@ -585,11 +585,11 @@ From the author's machine:
 
 ```bash
 # Install from a local directory (no git push needed)
-hermes profile install ~/.hermes/profiles/research-bot --name research-bot-test --alias
+kova profile install ~/.hermes/profiles/research-bot --name research-bot-test --alias
 
 # Tweak, delete, re-install until it's right
 kova profile delete research-bot-test --yes
-hermes profile install ~/.hermes/profiles/research-bot --name research-bot-test
+kova profile install ~/.hermes/profiles/research-bot --name research-bot-test
 ```
 
 ---
@@ -645,7 +645,7 @@ The short version:
 
 - [Profiles: Running Multiple Agents](./profiles.md) — the base concept
 - [Profile Commands reference](../reference/profile-commands.md) — every flag, every option
-- [`kova profile export` / `import`](../reference/profile-commands.md#hermes-profile-export) — local backup / restore (not distribution)
-- [Using SOUL with Kova](../guides/use-soul-with-hermes.md) — authoring personalities
+- [`kova profile export` / `import`](../reference/profile-commands.md#kova-profile-export) — local backup / restore (not distribution)
+- [Using SOUL with Kova](../guides/use-soul-with-kova.md) — authoring personalities
 - [Personality & SOUL](./features/personality.md) — how SOUL fits into the agent
 - [Skills catalog](../reference/skills-catalog.md) — skills you can bundle

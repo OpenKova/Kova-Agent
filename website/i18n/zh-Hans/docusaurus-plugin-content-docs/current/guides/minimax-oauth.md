@@ -225,4 +225,4 @@ kova auth logout minimax-oauth
 - [AI Providers 参考](../integrations/providers.md)
 - [环境变量](../reference/environment-variables.md)
 - [配置](../user-guide/configuration.md)
-- [hermes doctor](../reference/cli-commands.md)
+- [kova doctor](../reference/cli-commands.md)

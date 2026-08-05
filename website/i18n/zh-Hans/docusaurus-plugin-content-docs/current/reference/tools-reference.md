@@ -64,7 +64,7 @@ description: "Kova 内置工具权威参考，按工具集分组"
 
 ## `feishu_doc` 工具集
 
-仅限飞书文档评论智能回复处理器（`gateway/platforms/feishu_comment.py`）使用。不在 `hermes-cli` 或常规飞书聊天适配器中暴露。
+仅限飞书文档评论智能回复处理器（`gateway/platforms/feishu_comment.py`）使用。不在 `kova-cli` 或常规飞书聊天适配器中暴露。
 
 | 工具 | 描述 | 所需环境 |
 |------|------|----------|
@@ -117,18 +117,18 @@ description: "Kova 内置工具权威参考，按工具集分组"
 
 ## `kanban` 工具集
 
-在以下情况下注册：(a) agent 由 kanban 调度器生成（设置了 `HERMES_KANBAN_TASK` 环境变量），或 (b) 在显式启用 `kanban` 工具集的 profile 中运行。任务范围的 worker 使用生命周期工具处理其分配的任务；编排器 profile 还额外获得 `kanban_list` 和 `kanban_unblock` 等看板路由工具。完整工作流见 [Kanban 多 Agent](/user-guide/features/kanban)。
+在以下情况下注册：(a) agent 由 kanban 调度器生成（设置了 `KOVA_KANBAN_TASK` 环境变量），或 (b) 在显式启用 `kanban` 工具集的 profile 中运行。任务范围的 worker 使用生命周期工具处理其分配的任务；编排器 profile 还额外获得 `kanban_list` 和 `kanban_unblock` 等看板路由工具。完整工作流见 [Kanban 多 Agent](/user-guide/features/kanban)。
 
 | 工具 | 描述 | 所需环境 |
 |------|------|----------|
-| `kanban_show` | 显示分配给当前 worker 的活跃 kanban 任务（标题、描述、评论、依赖项）。 | `HERMES_KANBAN_TASK` 或 `kanban` 工具集 |
+| `kanban_show` | 显示分配给当前 worker 的活跃 kanban 任务（标题、描述、评论、依赖项）。 | `KOVA_KANBAN_TASK` 或 `kanban` 工具集 |
 | `kanban_list` | 带过滤器列出看板任务。仅限编排器；对调度器生成的任务 worker 隐藏。 | 含 `kanban` 工具集的 profile |
-| `kanban_complete` | 用结构化交接载荷（结果、产物、后续事项）将当前任务标记为完成。 | `HERMES_KANBAN_TASK` 或 `kanban` 工具集 |
-| `kanban_block` | 因需向用户提问而阻塞当前任务——调度器暂停、呈现问题，并在人工回复后恢复。 | `HERMES_KANBAN_TASK` 或 `kanban` 工具集 |
-| `kanban_heartbeat` | 在长时间运行的操作期间发送进度心跳，让调度器知道 worker 仍在运行。 | `HERMES_KANBAN_TASK` 或 `kanban` 工具集 |
-| `kanban_comment` | 在不改变任务状态的情况下向任务线程添加评论——适用于呈现中间发现。 | `HERMES_KANBAN_TASK` 或 `kanban` 工具集 |
-| `kanban_create` | 从当前任务派生子任务。由编排器和生成后续任务的 worker 使用。 | `HERMES_KANBAN_TASK` 或 `kanban` 工具集 |
-| `kanban_link` | 用父 → 子依赖边链接任务。 | `HERMES_KANBAN_TASK` 或 `kanban` 工具集 |
+| `kanban_complete` | 用结构化交接载荷（结果、产物、后续事项）将当前任务标记为完成。 | `KOVA_KANBAN_TASK` 或 `kanban` 工具集 |
+| `kanban_block` | 因需向用户提问而阻塞当前任务——调度器暂停、呈现问题，并在人工回复后恢复。 | `KOVA_KANBAN_TASK` 或 `kanban` 工具集 |
+| `kanban_heartbeat` | 在长时间运行的操作期间发送进度心跳，让调度器知道 worker 仍在运行。 | `KOVA_KANBAN_TASK` 或 `kanban` 工具集 |
+| `kanban_comment` | 在不改变任务状态的情况下向任务线程添加评论——适用于呈现中间发现。 | `KOVA_KANBAN_TASK` 或 `kanban` 工具集 |
+| `kanban_create` | 从当前任务派生子任务。由编排器和生成后续任务的 worker 使用。 | `KOVA_KANBAN_TASK` 或 `kanban` 工具集 |
+| `kanban_link` | 用父 → 子依赖边链接任务。 | `KOVA_KANBAN_TASK` 或 `kanban` 工具集 |
 | `kanban_unblock` | 将被阻塞的任务恢复为 `ready` 状态。仅限编排器；对调度器生成的任务 worker 隐藏。 | 含 `kanban` 工具集的 profile |
 
 ## `memory` 工具集
@@ -178,7 +178,7 @@ description: "Kova 内置工具权威参考，按工具集分组"
 
 ## `video` 工具集
 
-可选工具集（默认 `hermes-cli` 集中不加载）。通过 `--toolsets video` 添加，或在 `toolsets:` 配置中包含 `video`。
+可选工具集（默认 `kova-cli` 集中不加载）。通过 `--toolsets video` 添加，或在 `toolsets:` 配置中包含 `video`。
 
 | 工具 | 描述 | 所需环境 |
 |------|------|----------|
@@ -186,7 +186,7 @@ description: "Kova 内置工具权威参考，按工具集分组"
 
 ## `video_gen` 工具集
 
-可选工具集（默认 `hermes-cli` 集中不加载）。通过 `--toolsets video_gen` 添加，或在 `kova tools` → Video Generation 中启用（同时引导你选择后端）。
+可选工具集（默认 `kova-cli` 集中不加载）。通过 `--toolsets video_gen` 添加，或在 `kova tools` → Video Generation 中启用（同时引导你选择后端）。
 
 后端以插件形式存放于 `plugins/video_gen/<name>/`：
 
@@ -220,7 +220,7 @@ description: "Kova 内置工具权威参考，按工具集分组"
 
 ## `discord` 工具集
 
-在 `hermes-discord` 平台工具集（仅 gateway）上注册。使用与消息适配器相同的 bot token。
+在 `kova-discord` 平台工具集（仅 gateway）上注册。使用与消息适配器相同的 bot token。
 
 | 工具 | 描述 | 所需环境 |
 |------|------|----------|
@@ -228,7 +228,7 @@ description: "Kova 内置工具权威参考，按工具集分组"
 
 ## `discord_admin` 工具集
 
-在 `hermes-discord` 平台工具集上注册。审核操作需要 bot 持有相应的 Discord 权限。
+在 `kova-discord` 平台工具集上注册。审核操作需要 bot 持有相应的 Discord 权限。
 
 | 工具 | 描述 | 所需环境 |
 |------|------|----------|
@@ -248,9 +248,9 @@ description: "Kova 内置工具权威参考，按工具集分组"
 | `spotify_albums` | 获取 Spotify 专辑元数据或专辑曲目。 | Spotify OAuth |
 | `spotify_library` | 列出、保存或移除用户已保存的 Spotify 曲目或专辑。 | Spotify OAuth |
 
-## `hermes-yuanbao` 工具集
+## `kova-yuanbao` 工具集
 
-仅在 `hermes-yuanbao` 平台工具集上注册。元宝是腾讯的聊天应用；这些工具驱动其私信/群组/表情包 API。
+仅在 `kova-yuanbao` 平台工具集上注册。元宝是腾讯的聊天应用；这些工具驱动其私信/群组/表情包 API。
 
 | 工具 | 描述 | 所需环境 |
 |------|------|----------|

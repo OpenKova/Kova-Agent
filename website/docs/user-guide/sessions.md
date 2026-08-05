@@ -353,7 +353,7 @@ Works with `--format jsonl` (default) or `md`, honors the same filters for bulk 
 
 #### Traces (HF Agent Trace Viewer)
 
-`--format trace` emits Claude Code JSONL — the transcript shape the Hugging Face Hub auto-detects for its [Agent Trace Viewer](https://huggingface.co/docs/hub/agent-traces). Write it locally, or add `--upload` to push it to your own private `hermes-traces` dataset (reads `HF_TOKEN`):
+`--format trace` emits Claude Code JSONL — the transcript shape the Hugging Face Hub auto-detects for its [Agent Trace Viewer](https://huggingface.co/docs/hub/agent-traces). Write it locally, or add `--upload` to push it to your own private `kova-traces` dataset (reads `HF_TOKEN`):
 
 ```bash
 # Trace of the most recent session, to stdout
@@ -521,7 +521,7 @@ Total messages: 3847
 Database size: 12.4 MB
 ```
 
-For deeper analytics — token usage, cost estimates, tool breakdown, and activity patterns — use [`kova insights`](/reference/cli-commands#hermes-insights).
+For deeper analytics — token usage, cost estimates, tool breakdown, and activity patterns — use [`kova insights`](/reference/cli-commands#kova-insights).
 
 ## Session Search Tool
 

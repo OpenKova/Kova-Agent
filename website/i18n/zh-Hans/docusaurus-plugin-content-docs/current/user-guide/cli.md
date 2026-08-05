@@ -32,7 +32,7 @@ kova chat --provider openrouter  # 强制使用 OpenRouter
 kova chat --toolsets "web,terminal,skills"
 
 # 启动时预加载一个或多个 skill
-hermes -s hermes-agent-dev,github-auth
+kova -s kova-agent-dev,github-auth
 kova chat -s github-pr-workflow -q "open a draft PR"
 
 # 恢复之前的会话
@@ -71,7 +71,7 @@ kova -w -z "Fix issue #123"     # 在 worktree 中以单次查询模式运行
 | 🗜️ N | **上下文压缩次数**——当前运行会话被自动压缩的次数。首次压缩触发后显示。 |
 | ▶ N | **活跃后台任务数**——当前会话中仍在运行的 `/background` prompt（提示词）数量。至少有一个任务进行中时显示。 |
 | 时长 | 会话已用时间 |
-| ⚠ YOLO | **YOLO 模式警告**——当 `HERMES_YOLO_MODE` 开启时显示（通过启动时的 `kova --yolo` 或会话中的 `/yolo` 切换）。与横幅行警告保持同步，确保你不会忘记自己处于自动批准模式。 |
+| ⚠ YOLO | **YOLO 模式警告**——当 `KOVA_YOLO_MODE` 开启时显示（通过启动时的 `kova --yolo` 或会话中的 `/yolo` 切换）。与横幅行警告保持同步，确保你不会忘记自己处于自动批准模式。 |
 
 状态栏会根据终端宽度自适应——≥ 76 列时显示完整布局，52–75 列时显示紧凑布局，低于 52 列时显示最简布局（模型 + 时长，以及 YOLO 徽章（如已激活））。
 
@@ -148,7 +148,7 @@ kova -w -z "Fix issue #123"     # 在 worktree 中以单次查询模式运行
 quick_commands:
   status:
     type: exec
-    command: systemctl status hermes-agent
+    command: systemctl status kova-agent
   gpu:
     type: exec
     command: nvidia-smi --query-gpu=utilization.gpu,memory.used --format=csv,noheader
@@ -164,7 +164,7 @@ quick_commands:
 如果你已知道本次会话需要哪些 skill，可在启动时传入：
 
 ```bash
-hermes -s hermes-agent-dev,github-auth
+kova -s kova-agent-dev,github-auth
 kova chat -s github-pr-workflow -s github-auth
 ```
 

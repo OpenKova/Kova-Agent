@@ -133,12 +133,12 @@ pub fn run() {
             // `--reinstall`/`--repair` opts out so a broken install can be
             // repaired by re-running setup instead of launching the bad app.
             if cfg!(target_os = "macos") && mode == AppMode::Install && !force_setup {
-                let install_root = paths::hermes_home().join("hermes-agent");
-                if bootstrap::hermes_is_installed(&install_root) {
+                let install_root = paths::kova_home().join("kova-agent");
+                if bootstrap::kova_is_installed(&install_root) {
                     match bootstrap::spawn_installed_desktop(&install_root) {
                         Ok(()) => {
                             // Brief grace so the spawned app is registered
-                            // before we exit (mirrors launch_hermes_desktop).
+                            // before we exit (mirrors launch_kova_desktop).
                             std::thread::sleep(std::time::Duration::from_millis(200));
                             tracing::info!(
                                 "kova already installed — relaunched desktop; exiting installer"
@@ -178,10 +178,10 @@ pub fn run() {
             // Update lifecycle
             update::start_update,
             // Hand-off
-            bootstrap::launch_hermes_desktop,
+            bootstrap::launch_kova_desktop,
             // Diagnostics
             paths::get_log_path,
-            paths::get_hermes_home,
+            paths::get_kova_home,
             paths::open_log_dir,
         ])
         .run(tauri::generate_context!())

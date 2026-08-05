@@ -29,8 +29,8 @@ Two env vars name the canonical checkout:
 
 | Variable | Meaning |
 |----------|---------|
-| `HERMES_MAIN_CHECKOUT` | The deps checkout — where `node_modules` really lives, and whose `.venv/bin/python` runs the backend. |
-| `HERMES_GUI_DEPS_CHECKOUT` | Where the desktop deps (`apps/desktop/node_modules`) live. Defaults to `HERMES_MAIN_CHECKOUT`; override only if you keep desktop deps elsewhere. |
+| `KOVA_MAIN_CHECKOUT` | The deps checkout — where `node_modules` really lives, and whose `.venv/bin/python` runs the backend. |
+| `KOVA_GUI_DEPS_CHECKOUT` | Where the desktop deps (`apps/desktop/node_modules`) live. Defaults to `KOVA_MAIN_CHECKOUT`; override only if you keep desktop deps elsewhere. |
 
 Neither is read by Kova itself — they're private to these helpers. The variables Kova *does* read are covered in [Environment Variables](../reference/environment-variables.md).
 
@@ -41,16 +41,16 @@ The Ink TUI has a dev path already: `kova --tui --dev` runs the TypeScript sourc
 ```bash
 htui() {
   local root
-  root="$(_hermes_root)" || { echo "htui: not in a Kova checkout" >&2; return 1; }
+  root="$(_kova_root)" || { echo "htui: not in a Kova checkout" >&2; return 1; }
   ( cd "$root" && PYTHONPATH="$root" \
-      "$HERMES_MAIN_CHECKOUT/.venv/bin/python" -m hermes_cli.main --tui --dev "$@" )
+      "$KOVA_MAIN_CHECKOUT/.venv/bin/python" -m kova_cli.main --tui --dev "$@" )
 }
 ```
 
-`--dev` compiles from source, so it links `ui-tui/node_modules` from `HERMES_MAIN_CHECKOUT` when the root lockfile matches and installs locally otherwise (see [`_hermes_root` / linking helpers](#shared-helpers)).
+`--dev` compiles from source, so it links `ui-tui/node_modules` from `KOVA_MAIN_CHECKOUT` when the root lockfile matches and installs locally otherwise (see [`_kova_root` / linking helpers](#shared-helpers)).
 
-:::warning `--dev` and `HERMES_TUI_DIR` are mutually exclusive
-`HERMES_TUI_DIR` points Kova at a *prebuilt* bundle (Nix, system packages), which has no source to hot-reload. If it's set in your shell, `kova --tui --dev` exits with an error. Run `unset HERMES_TUI_DIR` before `htui`.
+:::warning `--dev` and `KOVA_TUI_DIR` are mutually exclusive
+`KOVA_TUI_DIR` points Kova at a *prebuilt* bundle (Nix, system packages), which has no source to hot-reload. If it's set in your shell, `kova --tui --dev` exits with an error. Run `unset KOVA_TUI_DIR` before `htui`.
 :::
 
 ## `hgui` — desktop app from the worktree
@@ -60,14 +60,14 @@ The desktop app is heavier: it needs `node_modules` at both the repo root and `a
 ```bash
 hgui() {
   local root deps desktop
-  root="$(_hermes_root)" || { echo "hgui: not in a Kova checkout" >&2; return 1; }
-  deps="${HERMES_GUI_DEPS_CHECKOUT:-$HERMES_MAIN_CHECKOUT}"
+  root="$(_kova_root)" || { echo "hgui: not in a Kova checkout" >&2; return 1; }
+  deps="${KOVA_GUI_DEPS_CHECKOUT:-$KOVA_MAIN_CHECKOUT}"
   desktop="$root/apps/desktop"
 
   # Borrow deps when locks match; otherwise install locally in the worktree.
   if cmp -s "$root/package-lock.json" "$deps/package-lock.json"; then
-    _hermes_link_deps "$desktop" "$deps/apps/desktop"
-    _hermes_link_deps "$root" "$deps"
+    _kova_link_deps "$desktop" "$deps/apps/desktop"
+    _kova_link_deps "$root" "$deps"
   else
     ( cd "$root" && npm ci ) || return 1
   fi
@@ -76,14 +76,14 @@ hgui() {
   lsof -t -i:5174 >/dev/null 2>&1 && killport 5174
 
   # Electron often survives Ctrl+C without reaping its ephemeral backends.
-  trap '_hermes_gui_cleanup "$root"' INT TERM EXIT
+  trap '_kova_gui_cleanup "$root"' INT TERM EXIT
 
   ( cd "$desktop"
     export PATH="$root/node_modules/.bin:$PATH"
-    HERMES_DESKTOP_HERMES_ROOT="$root" \
-    HERMES_DESKTOP_PYTHON="$HERMES_MAIN_CHECKOUT/.venv/bin/python" \
-    HERMES_DESKTOP_IGNORE_EXISTING=1 \
-    HERMES_DESKTOP_CWD="$root" \
+    KOVA_DESKTOP_KOVA_ROOT="$root" \
+    KOVA_DESKTOP_PYTHON="$KOVA_MAIN_CHECKOUT/.venv/bin/python" \
+    KOVA_DESKTOP_IGNORE_EXISTING=1 \
+    KOVA_DESKTOP_CWD="$root" \
     npm run dev )
 }
 ```
@@ -92,10 +92,10 @@ The desktop env vars it sets are all real backend-resolution knobs:
 
 | Variable | Role in `hgui` |
 |----------|----------------|
-| `HERMES_DESKTOP_HERMES_ROOT` | Runs the backend from **this worktree**, not the packaged/PATH `kova`. |
-| `HERMES_DESKTOP_PYTHON` | Reuses the deps checkout's venv instead of re-resolving a Python. |
-| `HERMES_DESKTOP_IGNORE_EXISTING` | Ignores any `kova` on `PATH` so it can't shadow the worktree. |
-| `HERMES_DESKTOP_CWD` | Opens the desktop chat rooted at the worktree. |
+| `KOVA_DESKTOP_KOVA_ROOT` | Runs the backend from **this worktree**, not the packaged/PATH `kova`. |
+| `KOVA_DESKTOP_PYTHON` | Reuses the deps checkout's venv instead of re-resolving a Python. |
+| `KOVA_DESKTOP_IGNORE_EXISTING` | Ignores any `kova` on `PATH` so it can't shadow the worktree. |
+| `KOVA_DESKTOP_CWD` | Opens the desktop chat rooted at the worktree. |
 
 Two footguns `hgui` handles that a bare `npm run dev` does not:
 
@@ -108,25 +108,25 @@ Both functions resolve the enclosing checkout and link deps the same way:
 
 ```bash
 # The enclosing worktree, verified as a real Kova checkout.
-_hermes_root() {
+_kova_root() {
   local root
   root="$(git rev-parse --show-toplevel 2>/dev/null)" || return 1
-  [[ -f "$root/hermes_cli/main.py" && -d "$root/ui-tui" ]] && print -r "$root"
+  [[ -f "$root/kova_cli/main.py" && -d "$root/ui-tui" ]] && print -r "$root"
 }
 
 # Symlink node_modules from the deps checkout — never over an existing tree.
-_hermes_link_deps() {
+_kova_link_deps() {
   local target="${1%/}" source="${2%/}"
   [[ -d "$source/node_modules" ]] || return 1
   [[ -e "$target/node_modules" ]] || ln -s "$source/node_modules" "$target/node_modules"
 }
 
 # Reap ephemeral backends Electron leaves behind on exit.
-_hermes_gui_cleanup() {
+_kova_gui_cleanup() {
   local root="$1"
   [[ -n "$root" ]] && pkill -TERM -f "${root}/apps/desktop/node_modules/electron" 2>/dev/null
   lsof -t -i:5174 >/dev/null 2>&1 && killport 5174
-  pgrep -f 'hermes_cli\.main.*dashboard.*--port 0' 2>/dev/null | xargs -r kill -TERM 2>/dev/null
+  pgrep -f 'kova_cli\.main.*dashboard.*--port 0' 2>/dev/null | xargs -r kill -TERM 2>/dev/null
 }
 ```
 
@@ -139,7 +139,7 @@ A symlink to a divergent `node_modules` is worse than no install — the worktre
 ## See also
 
 - [Git Worktrees](../user-guide/git-worktrees.md) — the isolation model these helpers build on
-- [TUI](../user-guide/tui.md) — `kova --tui --dev` and the `HERMES_TUI_DIR` prebuild path
+- [TUI](../user-guide/tui.md) — `kova --tui --dev` and the `KOVA_TUI_DIR` prebuild path
 - [Desktop App](../user-guide/desktop.md) — building from source and the backend resolution ladder
-- [`apps/desktop/README.md`](https://github.com/NousResearch/hermes-agent/blob/main/apps/desktop/README.md) — dev server, sandbox script, and packaging
-- [Environment Variables](../reference/environment-variables.md) — every `HERMES_*` variable Kova reads
+- [`apps/desktop/README.md`](https://github.com/OpenKova/Kova-Agent/blob/main/apps/desktop/README.md) — dev server, sandbox script, and packaging
+- [Environment Variables](../reference/environment-variables.md) — every `KOVA_*` variable Kova reads

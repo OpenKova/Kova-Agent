@@ -40,7 +40,7 @@ Plugin 系统允许你在不修改任何 Kova 核心代码的情况下添加平�
 
 ### plugin.yaml
 
-Plugin 元数据。`requires_env` 和 `optional_env` 块会自动填充 `kova config` UI 条目（参见下方[在 kova config 中暴露环境变量](#surfacing-env-vars-in-hermes-config)）。
+Plugin 元数据。`requires_env` 和 `optional_env` 块会自动填充 `kova config` UI 条目（参见下方[在 kova config 中暴露环境变量](#surfacing-env-vars-in-kova-config)）。
 
 ```yaml
 name: my-platform
@@ -198,7 +198,7 @@ gateway:
 
 ## 环境变量驱动的自动配置
 
-大多数用户通过将环境变量写入 `~/.hermes/.env` 来配置平台，而不是编辑 `config.yaml`。`env_enablement_fn` hook 允许你的 plugin 在适配器构建**之前**读取这些环境变量，使 `hermes gateway status`、`get_connected_platforms()` 和 cron 投递无需实例化平台 SDK 即可看到正确状态。
+大多数用户通过将环境变量写入 `~/.hermes/.env` 来配置平台，而不是编辑 `config.yaml`。`env_enablement_fn` hook 允许你的 plugin 在适配器构建**之前**读取这些环境变量，使 `kova gateway status`、`get_connected_platforms()` 和 cron 投递无需实例化平台 SDK 即可看到正确状态。
 
 ```python
 def _env_enablement() -> dict | None:
@@ -322,9 +322,9 @@ ctx.register_platform(
 
 该函数接收与实时适配器相同的 `pconfig` 和 `chat_id`，以及可选的 `thread_id`、`media_files` 和 `force_document` 关键字参数。返回 `{"success": True, "message_id": ...}` 视为成功投递；返回 `{"error": "..."}` 会将消息记录到 cron 的 `delivery_errors` 中。函数内抛出的异常由调度器捕获并报告为 `Plugin standalone send failed: <reason>`。参考实现位于 `plugins/platforms/{irc,teams,google_chat}/adapter.py`。
 
-## 在 `kova config` 中暴露环境变量 {#surfacing-env-vars-in-hermes-config}
+## 在 `kova config` 中暴露环境变量 {#surfacing-env-vars-in-kova-config}
 
-`hermes_cli/config.py` 在导入时扫描 `plugins/platforms/*/plugin.yaml`，并从 `requires_env` 和（可选的）`optional_env` 块自动填充 `OPTIONAL_ENV_VARS`。使用富字典形式可提供完整的描述、prompt、password 标志和 URL — CLI 设置 UI 会自动识别。
+`kova_cli/config.py` 在导入时扫描 `plugins/platforms/*/plugin.yaml`，并从 `requires_env` 和（可选的）`optional_env` 块自动填充 `OPTIONAL_ENV_VARS`。使用富字典形式可提供完整的描述、prompt、password 标志和 URL — CLI 设置 UI 会自动识别。
 
 ```yaml
 # plugins/platforms/my_platform/plugin.yaml
@@ -342,7 +342,7 @@ requires_env:
     url: "https://my-platform.example.com/bots"
     password: true
   - name: MY_PLATFORM_CHANNEL
-    description: "Channel to join (e.g. #hermes)"
+    description: "Channel to join (e.g. #kova)"
     prompt: "Channel"
     password: false
 optional_env:
@@ -553,12 +553,12 @@ await self.handle_message(event)
 
 ### 6. CLI 集成
 
-1. **`hermes_cli/config.py`** — 将所有 `NEWPLAT_*` 变量添加到 `_EXTRA_ENV_KEYS`
-2. **`hermes_cli/gateway.py`** — 在 `_PLATFORMS` 列表中添加条目，包含 key、label、emoji、token_var、setup_instructions 和 vars
-3. **`hermes_cli/platforms.py`** — 添加带 label 和 default_toolset 的 `PlatformInfo` 条目（供 `skills_config` 和 `tools_config` TUI 使用）
-4. **`hermes_cli/setup.py`** — 添加 `_setup_newplat()` 函数（可委托给 `gateway.py`）并将元组添加到消息平台列表
-5. **`hermes_cli/status.py`** — 添加平台检测条目：`"NewPlat": ("NEWPLAT_TOKEN", "NEWPLAT_HOME_CHANNEL")`
-6. **`hermes_cli/dump.py`** — 将 `"newplat": "NEWPLAT_TOKEN"` 添加到平台检测字典
+1. **`kova_cli/config.py`** — 将所有 `NEWPLAT_*` 变量添加到 `_EXTRA_ENV_KEYS`
+2. **`kova_cli/gateway.py`** — 在 `_PLATFORMS` 列表中添加条目，包含 key、label、emoji、token_var、setup_instructions 和 vars
+3. **`kova_cli/platforms.py`** — 添加带 label 和 default_toolset 的 `PlatformInfo` 条目（供 `skills_config` 和 `tools_config` TUI 使用）
+4. **`kova_cli/setup.py`** — 添加 `_setup_newplat()` 函数（可委托给 `gateway.py`）并将元组添加到消息平台列表
+5. **`kova_cli/status.py`** — 添加平台检测条目：`"NewPlat": ("NEWPLAT_TOKEN", "NEWPLAT_HOME_CHANNEL")`
+6. **`kova_cli/dump.py`** — 将 `"newplat": "NEWPLAT_TOKEN"` 添加到平台检测字典
 
 ### 7. 工具
 
@@ -567,8 +567,8 @@ await self.handle_message(event)
 
 ### 8. Toolset
 
-1. **`toolsets.py`** — 添加带 `_HERMES_CORE_TOOLS` 的 `"hermes-newplat"` toolset 定义
-2. **`toolsets.py`** — 将 `"hermes-newplat"` 添加到 `"hermes-gateway"` 的 includes 列表
+1. **`toolsets.py`** — 添加带 `_KOVA_CORE_TOOLS` 的 `"kova-newplat"` toolset 定义
+2. **`toolsets.py`** — 将 `"kova-newplat"` 添加到 `"kova-gateway"` 的 includes 列表
 
 ### 9. 可选：平台提示
 
@@ -602,7 +602,7 @@ _PLATFORM_HINTS = {
 | `website/docs/user-guide/messaging/newplat.md` | 完整的平台设置页面 |
 | `website/docs/user-guide/messaging/index.md` | 平台对比表、架构图、toolset 表、安全章节、下一步链接 |
 | `website/docs/reference/environment-variables.md` | 所有 NEWPLAT_* 环境变量 |
-| `website/docs/reference/toolsets-reference.md` | hermes-newplat toolset |
+| `website/docs/reference/toolsets-reference.md` | kova-newplat toolset |
 | `website/docs/integrations/index.md` | 平台链接 |
 | `website/sidebars.ts` | 文档页面的侧边栏条目 |
 | `website/docs/developer-guide/architecture.md` | 适配器数量 + 列表 |

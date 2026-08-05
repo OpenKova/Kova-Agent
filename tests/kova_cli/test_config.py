@@ -10,8 +10,8 @@ import yaml
 from kova_cli.config import (
     DEFAULT_CONFIG,
     check_config_version,
-    get_hermes_home,
-    ensure_hermes_home,
+    get_kova_home,
+    ensure_kova_home,
     get_compatible_custom_providers,
     _explicit_config_paths,
     _normalize_max_turns_config,
@@ -31,23 +31,23 @@ from kova_cli.config import (
 )
 
 
-class TestGetHermesHome:
+class TestGetKovaHome:
     def test_default_path(self):
         with patch.dict(os.environ, {}, clear=False):
             os.environ.pop("HERMES_HOME", None)
-            home = get_hermes_home()
+            home = get_kova_home()
             assert home == Path.home() / ".kova"
 
     def test_env_override(self):
         with patch.dict(os.environ, {"HERMES_HOME": "/custom/path"}):
-            home = get_hermes_home()
+            home = get_kova_home()
             assert home == Path("/custom/path")
 
 
-class TestEnsureHermesHome:
+class TestEnsureKovaHome:
     def test_creates_subdirs(self, tmp_path):
         with patch.dict(os.environ, {"HERMES_HOME": str(tmp_path)}):
-            ensure_hermes_home()
+            ensure_kova_home()
             assert (tmp_path / "cron").is_dir()
             assert (tmp_path / "sessions").is_dir()
             assert (tmp_path / "logs").is_dir()
@@ -55,7 +55,7 @@ class TestEnsureHermesHome:
 
     def test_creates_default_soul_md_if_missing(self, tmp_path):
         with patch.dict(os.environ, {"HERMES_HOME": str(tmp_path)}):
-            ensure_hermes_home()
+            ensure_kova_home()
             soul_path = tmp_path / "SOUL.md"
             assert soul_path.exists()
             assert soul_path.read_text(encoding="utf-8").strip() != ""
@@ -64,7 +64,7 @@ class TestEnsureHermesHome:
         with patch.dict(os.environ, {"HERMES_HOME": str(tmp_path)}):
             soul_path = tmp_path / "SOUL.md"
             soul_path.write_text("custom soul", encoding="utf-8")
-            ensure_hermes_home()
+            ensure_kova_home()
             assert soul_path.read_text(encoding="utf-8") == "custom soul"
 
     def test_upgrades_legacy_template_soul_md(self, tmp_path):
@@ -76,7 +76,7 @@ class TestEnsureHermesHome:
         with patch.dict(os.environ, {"HERMES_HOME": str(tmp_path)}):
             soul_path = tmp_path / "SOUL.md"
             soul_path.write_text(_LEGACY_TEMPLATE_SOULS[0] + "\n", encoding="utf-8")
-            ensure_hermes_home()
+            ensure_kova_home()
             assert soul_path.read_text(encoding="utf-8") == DEFAULT_SOUL_MD
 
     def test_preserves_legacy_template_with_user_persona(self, tmp_path):
@@ -88,23 +88,23 @@ class TestEnsureHermesHome:
         with patch.dict(os.environ, {"HERMES_HOME": str(tmp_path)}):
             soul_path = tmp_path / "SOUL.md"
             soul_path.write_text(mixed, encoding="utf-8")
-            ensure_hermes_home()
+            ensure_kova_home()
             assert soul_path.read_text(encoding="utf-8") == mixed
 
     def test_existing_named_profile_still_bootstraps_subdirs(self, tmp_path):
-        profile_home = tmp_path / ".hermes" / "profiles" / "coder"
+        profile_home = tmp_path / ".kova" / "profiles" / "coder"
         profile_home.mkdir(parents=True)
         with patch.dict(os.environ, {"HERMES_HOME": str(profile_home)}):
-            ensure_hermes_home()
+            ensure_kova_home()
             assert (profile_home / "cron").is_dir()
             assert (profile_home / "sessions").is_dir()
             assert (profile_home / "memories").is_dir()
 
     def test_missing_named_profile_is_not_recreated(self, tmp_path):
-        profile_home = tmp_path / ".hermes" / "profiles" / "coder"
+        profile_home = tmp_path / ".kova" / "profiles" / "coder"
         with patch.dict(os.environ, {"HERMES_HOME": str(profile_home)}):
             with pytest.raises(FileNotFoundError, match="Named profile home does not exist"):
-                ensure_hermes_home()
+                ensure_kova_home()
         assert not profile_home.exists()
 
 
@@ -166,7 +166,7 @@ class TestLoadConfigParseFailure:
             ), f"expected WARNING log, got: {[r.message for r in caplog.records]}"
 
             # stderr also got a user-visible message (with the ⚠️ marker so it
-            # stands out at hermes startup before logging is configured)
+            # stands out at kova startup before logging is configured)
             captured = capsys.readouterr()
             assert "kova config:" in captured.err
             assert str(tmp_path / "config.yaml") in captured.err
@@ -618,7 +618,7 @@ class TestSaveEnvValueSecure:
         import subprocess
         from dotenv import dotenv_values
 
-        path = "/Users/paulo/Library/Application Support/hermes/keys/id_ed25519"
+        path = "/Users/paulo/Library/Application Support/kova/keys/id_ed25519"
         with patch.dict(os.environ, {"HERMES_HOME": str(tmp_path)}, clear=False):
             os.environ.pop("TERMINAL_SSH_KEY", None)
             save_env_value("TERMINAL_SSH_KEY", path)
@@ -1111,16 +1111,16 @@ class TestOptionalEnvVarsRegistry:
         assert "TAVILY_API_KEY" in all_vars
 
     def test_max_iterations_not_offered_as_env_var(self):
-        """HERMES_MAX_ITERATIONS must NOT be in OPTIONAL_ENV_VARS (issue #17534).
+        """KOVA_MAX_ITERATIONS must NOT be in OPTIONAL_ENV_VARS (issue #17534).
 
         Offering it as an editable env var (dashboard, `kova setup`) lets a
         user write it to .env, recreating the stale ghost that shadows
         config.yaml's agent.max_turns. The iteration budget is configured ONLY
-        via config.yaml; HERMES_MAX_ITERATIONS remains a read-only backward-compat
+        via config.yaml; KOVA_MAX_ITERATIONS remains a read-only backward-compat
         fallback in the gateway/CLI, never a promoted write target.
         """
         from kova_cli.config import OPTIONAL_ENV_VARS
-        assert "HERMES_MAX_ITERATIONS" not in OPTIONAL_ENV_VARS
+        assert "KOVA_MAX_ITERATIONS" not in OPTIONAL_ENV_VARS
 
 
 class TestMemoryProviderEnvVarsRegistry:
@@ -1623,7 +1623,7 @@ class TestUserMessagePreviewConfig:
 class TestEnvWriteDenylist:
     """``save_env_value`` refuses to persist env-var names that
     influence how subprocesses execute — ``LD_PRELOAD``, ``PYTHONPATH``,
-    ``PATH``, ``EDITOR``, etc. — or any ``HERMES_*`` runtime flag.
+    ``PATH``, ``EDITOR``, etc. — or any ``KOVA_*`` runtime flag.
 
     The dashboard exposes ``PUT /api/env`` to any authed caller (and
     the session token lives in the SPA's HTML where any future plugin
@@ -1638,9 +1638,9 @@ class TestEnvWriteDenylist:
     """
 
     @pytest.fixture(autouse=True)
-    def _hermes_home(self, tmp_path, monkeypatch):
+    def _kova_home(self, tmp_path, monkeypatch):
         monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-        ensure_hermes_home()
+        ensure_kova_home()
 
     @pytest.mark.parametrize(
         "denied_key",
@@ -1664,9 +1664,9 @@ class TestEnvWriteDenylist:
             "GIT_SSH_COMMAND",
             "GIT_EXEC_PATH",
             "HERMES_HOME",
-            "HERMES_PROFILE",
-            "HERMES_CONFIG",
-            "HERMES_ENV",
+            "KOVA_PROFILE",
+            "KOVA_CONFIG",
+            "KOVA_ENV",
         ],
     )
     def test_denylisted_keys_rejected(self, denied_key):
@@ -1682,16 +1682,16 @@ class TestEnvWriteDenylist:
     @pytest.mark.parametrize(
         "allowed_key",
         [
-            "HERMES_LANGFUSE_PUBLIC_KEY",
-            "HERMES_SPOTIFY_CLIENT_ID",
-            "HERMES_QWEN_BASE_URL",
-            "HERMES_MAX_ITERATIONS",
+            "KOVA_LANGFUSE_PUBLIC_KEY",
+            "KOVA_SPOTIFY_CLIENT_ID",
+            "KOVA_QWEN_BASE_URL",
+            "KOVA_MAX_ITERATIONS",
         ],
     )
-    def test_hermes_integration_keys_still_writable(self, allowed_key):
-        """``HERMES_*`` overall is NOT blocked — only the four runtime
+    def test_kova_integration_keys_still_writable(self, allowed_key):
+        """``KOVA_*`` overall is NOT blocked — only the four runtime
         location names (HOME/PROFILE/CONFIG/ENV) are. Integration
-        credentials following the ``HERMES_*`` convention must keep
+        credentials following the ``KOVA_*`` convention must keep
         working or we'd regress every provider setup wizard that
         currently writes one of these (auth.py, Spotify, Langfuse, …)."""
         save_env_value(allowed_key, "test-value-123")
@@ -1706,7 +1706,7 @@ class TestEnvWriteDenylist:
 
     def test_arbitrary_user_key_still_works(self):
         """Plugin / user-defined env vars (anything outside the
-        denylist and outside ``HERMES_*``) keep working. The denylist
+        denylist and outside ``KOVA_*``) keep working. The denylist
         is narrow on purpose."""
         save_env_value("MY_PLUGIN_TOKEN", "plugin-secret-123")
         env = load_env()
@@ -2248,13 +2248,13 @@ class TestCodexAppServerAutoConfig:
                 tmp_path,
                 "_config_version: 31\n"
                 "compression:\n"
-                "  codex_app_server_auto: hermes\n",
+                "  codex_app_server_auto: kova\n",
             )
 
             migrate_config(interactive=False, quiet=True)
 
             raw = yaml.safe_load((tmp_path / "config.yaml").read_text())
-            assert raw["compression"]["codex_app_server_auto"] == "hermes"
+            assert raw["compression"]["codex_app_server_auto"] == "kova"
 
 
 class TestIsProviderEnabled:

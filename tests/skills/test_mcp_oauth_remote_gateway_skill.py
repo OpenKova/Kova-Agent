@@ -86,8 +86,8 @@ def _run_main(mod, tokens_dir, argv, responses):
     with patch.object(mod.os, "environ", dict(mod.os.environ, HERMES_HOME=str(tokens_dir.parent))), \
          patch.object(mod.urllib.request, "urlopen", side_effect=fake_urlopen), \
          patch.object(sys, "argv", ["diagnose-oauth-mcp.py", *argv]):
-        # Force the env-var fallback path (ignore any importable hermes_constants).
-        with patch.object(mod, "_hermes_home", lambda: str(tokens_dir.parent)):
+        # Force the env-var fallback path (ignore any importable kova_constants).
+        with patch.object(mod, "_kova_home", lambda: str(tokens_dir.parent)):
             buf = io.StringIO()
             from contextlib import redirect_stdout
             with redirect_stdout(buf):
@@ -201,12 +201,12 @@ def test_session_revoked_branch(tmp_path):
     assert on_disk["access_token"] == "at-stored"
 
 
-def test_hermes_home_env_fallback(tmp_path, monkeypatch):
+def test_kova_home_env_fallback(tmp_path, monkeypatch):
     mod = load_module()
     monkeypatch.setenv("HERMES_HOME", str(tmp_path / "custom-home"))
-    # Block the hermes_constants import so the env fallback is exercised
-    with patch.dict(sys.modules, {"hermes_constants": None}):
-        home = mod._hermes_home()
+    # Block the kova_constants import so the env fallback is exercised
+    with patch.dict(sys.modules, {"kova_constants": None}):
+        home = mod._kova_home()
     assert home == str(tmp_path / "custom-home")
 
 

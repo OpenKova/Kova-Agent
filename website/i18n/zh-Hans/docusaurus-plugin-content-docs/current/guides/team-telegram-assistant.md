@@ -42,7 +42,7 @@ description: "逐步指南：为整个团队搭建一个 Telegram 机器人，�
 
 2. **发送 `/newbot`**——BotFather 会询问两件事：
    - **显示名称**——用户看到的名字（例如 `Team Kova Assistant`）
-   - **用户名**——必须以 `bot` 结尾（例如 `myteam_hermes_bot`）
+   - **用户名**——必须以 `bot` 结尾（例如 `myteam_kova_bot`）
 
 3. **复制机器人 token**——BotFather 会回复类似内容：
    ```
@@ -155,7 +155,7 @@ kova gateway stop
 kova gateway status
 
 # 查看实时日志
-journalctl --user -u hermes-gateway -f
+journalctl --user -u kova-gateway -f
 
 # SSH 退出后保持运行
 sudo loginctl enable-linger $USER
@@ -163,7 +163,7 @@ sudo loginctl enable-linger $USER
 # Linux 服务器——显式系统服务命令
 sudo kova gateway start --system
 sudo kova gateway status --system
-journalctl -u hermes-gateway -f
+journalctl -u kova-gateway -f
 ```
 
 ```bash
@@ -291,7 +291,7 @@ display:
 
 通过编辑 `~/.hermes/SOUL.md` 自定义机器人的沟通方式：
 
-完整指南请参阅[在 Kova 中使用 SOUL.md](/guides/use-soul-with-hermes)。
+完整指南请参阅[在 Kova 中使用 SOUL.md](/guides/use-soul-with-kova)。
 
 ```markdown
 # Soul
@@ -397,7 +397,7 @@ terminal:
 kova gateway status
 
 # 查看实时日志（Linux）
-journalctl --user -u hermes-gateway -f
+journalctl --user -u kova-gateway -f
 
 # 查看实时日志（macOS）
 tail -f ~/.hermes/logs/gateway.log
@@ -416,7 +416,7 @@ kova gateway stop && kova gateway start
 
 | 内容 | 位置 |
 |------|----------|
-| Gateway 日志 | `journalctl --user -u hermes-gateway`（Linux）或 `~/.hermes/logs/gateway.log`（macOS） |
+| Gateway 日志 | `journalctl --user -u kova-gateway`（Linux）或 `~/.hermes/logs/gateway.log`（macOS） |
 | Cron 任务输出 | `~/.hermes/cron/output/{job_id}/{timestamp}.md` |
 | Cron 任务定义 | `~/.hermes/cron/jobs.json` |
 | 配对数据 | `~/.hermes/pairing/` |

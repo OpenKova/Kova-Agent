@@ -45,7 +45,7 @@ model:
 
 ## Configuration
 
-After running `hermes model`, your `~/.hermes/config.yaml` will contain:
+After running `kova model`, your `~/.hermes/config.yaml` will contain:
 
 ```yaml
 model:

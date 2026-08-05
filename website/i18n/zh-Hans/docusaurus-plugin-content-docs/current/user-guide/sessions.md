@@ -330,7 +330,7 @@ kova sessions export - --session-id 20250305_091523_a1b2c3d4 --only user-prompts
 
 #### Trace（HF Agent Trace Viewer）
 
-`--format trace` 生成 Claude Code JSONL — Hugging Face Hub 的 [Agent Trace Viewer](https://huggingface.co/docs/hub/agent-traces) 可自动识别的转录格式。可以写入本地文件，或加 `--upload` 推送到你自己的私有 `hermes-traces` 数据集（读取 `HF_TOKEN`）：
+`--format trace` 生成 Claude Code JSONL — Hugging Face Hub 的 [Agent Trace Viewer](https://huggingface.co/docs/hub/agent-traces) 可自动识别的转录格式。可以写入本地文件，或加 `--upload` 推送到你自己的私有 `kova-traces` 数据集（读取 `HF_TOKEN`）：
 
 ```bash
 # 最近一个 session 的 trace，输出到 stdout
@@ -430,7 +430,7 @@ Total messages: 3847
 Database size: 12.4 MB
 ```
 
-如需更深入的分析——token 用量、费用估算、工具分解和活动模式——请使用 [`kova insights`](/reference/cli-commands#hermes-insights)。
+如需更深入的分析——token 用量、费用估算、工具分解和活动模式——请使用 [`kova insights`](/reference/cli-commands#kova-insights)。
 
 ## Session 搜索工具
 

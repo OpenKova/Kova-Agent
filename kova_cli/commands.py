@@ -217,7 +217,7 @@ COMMAND_REGISTRY: list[CommandDef] = [
                cli_only=True),
     CommandDef("reload-mcp", "Reload MCP servers from config", "Tools & Skills",
                aliases=("reload_mcp",)),
-    CommandDef("reload-skills", "Re-scan ~/.kova/skills/ for newly installed or removed skills",
+    CommandDef("reload-skills", "Re-scan ~/.hermes/skills/ for newly installed or removed skills",
                "Tools & Skills", aliases=("reload_skills",)),
     CommandDef("browser", "Connect browser tools to your live Chromium-family browser via CDP", "Tools & Skills",
                cli_only=True, args_hint="[connect|disconnect|status]",
@@ -233,9 +233,9 @@ COMMAND_REGISTRY: list[CommandDef] = [
                gateway_only=True),
     CommandDef("usage", "Show token usage and rate limits; `reset` redeems a banked Codex limit reset", "Info",
                args_hint="[reset [--force]]"),
-    CommandDef("subscription", "View your plan and change it in the browser", "Info",
+    CommandDef("subscription", "View your Nous plan and change it in the browser", "Info",
                cli_only=True, aliases=("upgrade",)),
-    CommandDef("topup", "Show your balance and manage billing on the portal", "Info"),
+    CommandDef("topup", "Show your Nous balance and manage billing on the portal", "Info"),
     CommandDef("insights", "Show usage insights and analytics", "Info",
                args_hint="[days]"),
     CommandDef("platforms", "Show gateway/messaging platform status", "Info",
@@ -1168,7 +1168,9 @@ _SLACK_PRIORITY_ALIASES = ("btw", "bg")
 #   - moa: high-cost slash mode, available through /kova moa to avoid
 #     displacing existing native Slack slash commands at the 50-command cap.
 #   - debug: the log/report upload surface; reached via /kova debug on Slack.
-_SLACK_VIA_HERMES_ONLY = frozenset({"topup", "moa", "debug", "version"})
+#   - version: registry grew past the 50-slash cap; reached via /kova version
+#     on Slack (native on CLI, TUI, Telegram, Discord).
+_SLACK_VIA_KOVA_ONLY = frozenset({"topup", "moa", "debug", "version"})
 
 
 def _sanitize_slack_name(raw: str) -> str:
@@ -1208,13 +1210,13 @@ def slack_native_slashes() -> list[tuple[str, str, str]]:
     entries: list[tuple[str, str, str]] = []
     seen: set[str] = set()
 
-    # Reserve /kova and /hermes as the catch-all top-level commands so the
-    # legacy /hermes <subcommand> form keeps working (old workspace
+    # Reserve /kova and /kova as the catch-all top-level commands so the
+    # legacy /kova <subcommand> form keeps working (old workspace
     # manifests) alongside the new /kova form.
     entries.append(("kova", "Talk to Kova or run a subcommand", "[subcommand] [args]"))
     seen.add("kova")
-    entries.append(("hermes", "Talk to Kova or run a subcommand", "[subcommand] [args]"))
-    seen.add("hermes")
+    entries.append(("kova", "Talk to Kova or run a subcommand", "[subcommand] [args]"))
+    seen.add("kova")
 
     def _add(name: str, desc: str, hint: str) -> None:
         slack_name = _sanitize_slack_name(name)
@@ -1222,8 +1224,8 @@ def slack_native_slashes() -> list[tuple[str, str, str]]:
             return
         if slack_name in _SLACK_RESERVED_COMMANDS:
             return
-        if slack_name in _SLACK_VIA_HERMES_ONLY:
-            # Intentionally Slack-via-/kova only (see _SLACK_VIA_HERMES_ONLY).
+        if slack_name in _SLACK_VIA_KOVA_ONLY:
+            # Intentionally Slack-via-/kova only (see _SLACK_VIA_KOVA_ONLY).
             return
         if len(entries) >= _SLACK_MAX_SLASH_COMMANDS:
             return

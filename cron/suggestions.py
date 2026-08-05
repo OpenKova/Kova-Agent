@@ -36,16 +36,16 @@ import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from hermes_constants import get_hermes_home
-from hermes_time import now as _hermes_now
+from kova_constants import get_kova_home
+from kova_time import now as _kova_now
 from utils import atomic_replace
 
 logger = logging.getLogger(__name__)
 
 # Per-profile by design (issue #4707): suggestions live alongside the active
-# profile's cron store. Anchor on get_hermes_home() (profile home), not the
+# profile's cron store. Anchor on get_kova_home() (profile home), not the
 # shared default root. See cron/jobs.py for the full rationale.
-CRON_DIR = get_hermes_home().resolve() / "cron"
+CRON_DIR = get_kova_home().resolve() / "cron"
 SUGGESTIONS_FILE = CRON_DIR / "suggestions.json"
 
 # In-process lock protecting load->modify->save cycles (the background review
@@ -96,7 +96,7 @@ def _save_raw(suggestions: List[Dict[str, Any]]) -> None:
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             json.dump(
-                {"suggestions": suggestions, "updated_at": _hermes_now().isoformat()},
+                {"suggestions": suggestions, "updated_at": _kova_now().isoformat()},
                 f,
                 indent=2,
             )
@@ -170,7 +170,7 @@ def add_suggestion(
             "job_spec": job_spec,
             "dedup_key": dedup_key.strip(),
             "status": _STATUS_PENDING,
-            "created_at": _hermes_now().isoformat(),
+            "created_at": _kova_now().isoformat(),
         }
         suggestions.append(record)
         _save_raw(suggestions)
@@ -204,7 +204,7 @@ def _set_status(suggestion_id: str, status: str) -> bool:
         for s in suggestions:
             if s.get("id") == suggestion_id:
                 s["status"] = status
-                s["resolved_at"] = _hermes_now().isoformat()
+                s["resolved_at"] = _kova_now().isoformat()
                 changed = True
                 break
         if changed:

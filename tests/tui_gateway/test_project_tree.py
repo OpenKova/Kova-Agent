@@ -142,7 +142,7 @@ def test_user_worktree_under_dotworktrees_is_its_own_lane_not_kanban():
     )
     sessions = [
         _session("/repo", branch="main"),
-        _session("/repo/.worktrees/test-gui-stuff", branch="hermes/test-gui-stuff"),
+        _session("/repo/.worktrees/test-gui-stuff", branch="kova/test-gui-stuff"),
     ]
 
     tree = pt.build_tree([], sessions, [], resolve, hydrate=True)
@@ -424,7 +424,7 @@ def test_junk_root_never_becomes_an_auto_project():
 
 
 def test_junk_root_is_dropped_from_the_discovered_tier():
-    discovered = [{"root": "/home/me/.hermes", "label": ".hermes", "sessions": 0, "last_active": 9}]
+    discovered = [{"root": "/home/me/.hermes", "label": ".kova", "sessions": 0, "last_active": 9}]
 
     tree = pt.build_tree([], [], discovered, resolve=None, is_junk_root=lambda r: r == "/home/me/.hermes")
 

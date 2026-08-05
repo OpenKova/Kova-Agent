@@ -21,12 +21,12 @@ ACP 适配器将 Kova 的同步 `AIAgent` 封装为异步 JSON-RPC stdio 服务�
 ## 启动流程
 
 ```text
-kova acp / hermes-acp / python -m acp_adapter
+kova acp / kova-acp / python -m acp_adapter
   -> acp_adapter.entry.main()
   -> parse --version / --check / --setup before server startup
   -> load ~/.hermes/.env
   -> configure stderr logging
-  -> construct HermesACPAgent
+  -> construct KovaACPAgent
   -> acp.run_agent(agent, use_unstable_protocol=True)
 ```
 
@@ -34,7 +34,7 @@ stdout 保留用于 ACP JSON-RPC 传输。人类可读的日志输出至 stderr�
 
 ## 主要组件
 
-### `HermesACPAgent`
+### `KovaACPAgent`
 
 `acp_adapter/server.py` 实现 ACP agent 协议。
 
@@ -113,7 +113,7 @@ asyncio.run_coroutine_threadsafe(...)
 ```text
 new_session(cwd)
   -> create SessionState
-  -> create AIAgent(platform="acp", enabled_toolsets=["hermes-acp"])
+  -> create AIAgent(platform="acp", enabled_toolsets=["kova-acp"])
   -> bind task_id/session_id to cwd override
 
 prompt(..., session_id)
@@ -144,9 +144,9 @@ ACP 不实现自己的认证存储。
 而是复用 Kova 的运行时解析器：
 
 - `acp_adapter/auth.py`
-- `hermes_cli/runtime_provider.py`
+- `kova_cli/runtime_provider.py`
 
-因此 ACP 通告并使用当前配置的 Kova provider/凭据。它还始终通告一个终端 setup 认证方法（`hermes-setup`，参数 `--setup`），以便首次运行的 ACP 客户端在启动正常 ACP 会话前可以打开 Kova 的交互式模型/provider 配置。
+因此 ACP 通告并使用当前配置的 Kova provider/凭据。它还始终通告一个终端 setup 认证方法（`kova-setup`，参数 `--setup`），以便首次运行的 ACP 客户端在启动正常 ACP 会话前可以打开 Kova 的交互式模型/provider 配置。
 
 ## 工作目录绑定
 
@@ -176,6 +176,6 @@ ACP 在 prompt 执行期间临时在终端工具上安装审批回调，执行�
 ## 相关文件
 
 - `tests/acp/` — ACP 测试套件
-- `toolsets.py` — `hermes-acp` toolset 定义
-- `hermes_cli/main.py` — `hermes acp` CLI 子命令
-- `pyproject.toml` — `[acp]` 可选依赖 + `hermes-acp` 脚本
+- `toolsets.py` — `kova-acp` toolset 定义
+- `kova_cli/main.py` — `kova acp` CLI 子命令
+- `pyproject.toml` — `[acp]` 可选依赖 + `kova-acp` 脚本

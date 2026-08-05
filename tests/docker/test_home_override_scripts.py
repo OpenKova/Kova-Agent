@@ -50,14 +50,14 @@ def test_dashboard_service_resets_home(
     We check this by inspecting the environment of the dashboard service
     process if it's running, or by verifying the run script sets HOME
     before the exec. At runtime, the cleanest check is: start the
-    container with HERMES_DASHBOARD=1 and verify the dashboard process
+    container with KOVA_DASHBOARD=1 and verify the dashboard process
     (if it starts) has HOME=/opt/data.
 
     Since the dashboard requires an auth provider on non-loopback binds,
     we bind to 127.0.0.1 where the auth gate doesn't engage, and check
     the process env.
     """
-    start_container(built_image, container_name, "HERMES_DASHBOARD=1", "HERMES_DASHBOARD_HOST=127.0.0.1")
+    start_container(built_image, container_name, "KOVA_DASHBOARD=1", "KOVA_DASHBOARD_HOST=127.0.0.1")
 
     # Check if the dashboard process is running and inspect its HOME.
     r = docker_exec_sh(
@@ -70,7 +70,7 @@ def test_dashboard_service_resets_home(
         '  tr "\\0" "\\n" < /proc/$pid/environ | grep "^HOME="; '
         'else '
         '  grep -q "export HOME=/opt/data" '
-        '    /opt/hermes/docker/s6-rc.d/dashboard/run && '
+        '    /opt/kova/docker/s6-rc.d/dashboard/run && '
         '  echo "HOME=/opt/data"; '
         'fi',
         timeout=15,
@@ -85,7 +85,7 @@ def test_dashboard_does_not_auto_insecure_from_host(
     built_image: str, container_name: str,
 ) -> None:
     """The dashboard MUST NOT auto-add ``--insecure`` based on
-    HERMES_DASHBOARD_HOST. The auth gate is the authority now.
+    KOVA_DASHBOARD_HOST. The auth gate is the authority now.
 
     The auth gate is the authority on whether non-loopback binds are
     safe; ``--insecure`` must never be auto-derived from the bind host.
@@ -96,7 +96,7 @@ def test_dashboard_does_not_auto_insecure_from_host(
     gate correctly blocks an unauthenticated non-loopback bind), that's
     also acceptable — the point is no auto-insecure.
     """
-    start_container(built_image, container_name, "HERMES_DASHBOARD=1", "HERMES_DASHBOARD_HOST=0.0.0.0")
+    start_container(built_image, container_name, "KOVA_DASHBOARD=1", "KOVA_DASHBOARD_HOST=0.0.0.0")
 
     # Check the dashboard process command line for --insecure.
     r = docker_exec_sh(
@@ -121,7 +121,7 @@ def test_stage2_repairs_profiles_and_cron_ownership(
 ) -> None:
     """profiles/ and cron/ must both be reclaimed after root-context writes.
 
-    The stage2 hook chowns these dirs to hermes:hermes on every boot.
+    The stage2 hook chowns these dirs to kova:kova on every boot.
     We simulate a root-owned file in each, then restart the container
     and verify ownership is repaired.
     """
@@ -156,14 +156,14 @@ def test_stage2_repairs_profiles_and_cron_ownership(
     # Restart — stage2 hook runs again and repairs ownership.
     restart_container(container_name)
 
-    # Verify files are now owned by hermes.
+    # Verify files are now owned by kova.
     r = docker_exec_sh(
         container_name,
         'stat -c "%U" /opt/data/profiles/testprof/marker '
         '/opt/data/cron/root_owned.json',
         timeout=5,
     )
-    assert "hermes" in r.stdout, (
-        f"expected hermes-owned files after restart, got: {r.stdout!r} — "
+    assert "kova" in r.stdout, (
+        f"expected kova-owned files after restart, got: {r.stdout!r} — "
         f"stage2 hook did not repair profiles/ and cron/ ownership"
     )

@@ -48,7 +48,7 @@ import threading
 import time
 from typing import Any, Dict, List, Optional
 
-from hermes_constants import get_hermes_home
+from kova_constants import get_kova_home
 
 logger = logging.getLogger(__name__)
 
@@ -71,11 +71,11 @@ RECOVERED_MARKER = (
 
 
 def _db_path():
-    return get_hermes_home() / "state.db"
+    return get_kova_home() / "state.db"
 
 
 def _connect() -> sqlite3.Connection:
-    from hermes_state import apply_wal_with_fallback
+    from kova_state import apply_wal_with_fallback
 
     path = _db_path()
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -309,7 +309,7 @@ def ledger_enabled(config: Optional[Dict[str, Any]] = None) -> bool:
     """Read the ``gateway.delivery_ledger`` config gate (default on)."""
     try:
         if config is None:
-            from hermes_cli.config import load_config
+            from kova_cli.config import load_config
 
             config = load_config()
         gw = config.get("gateway") or {}

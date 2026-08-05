@@ -14,7 +14,7 @@ import pytest
 @pytest.fixture
 def config_home(tmp_path, monkeypatch):
     """Isolated HERMES_HOME with a minimal string-format config."""
-    home = tmp_path / "hermes"
+    home = tmp_path / "kova"
     home.mkdir()
     config_yaml = home / "config.yaml"
     # Start with model as a plain string — the format that triggered the bug
@@ -23,9 +23,9 @@ def config_home(tmp_path, monkeypatch):
     env_file.write_text("")
     monkeypatch.setenv("HERMES_HOME", str(home))
     # Clear env vars that could interfere
-    monkeypatch.delenv("HERMES_MODEL", raising=False)
+    monkeypatch.delenv("KOVA_MODEL", raising=False)
     monkeypatch.delenv("LLM_MODEL", raising=False)
-    monkeypatch.delenv("HERMES_INFERENCE_PROVIDER", raising=False)
+    monkeypatch.delenv("KOVA_INFERENCE_PROVIDER", raising=False)
     monkeypatch.delenv("GITHUB_TOKEN", raising=False)
     monkeypatch.delenv("GH_TOKEN", raising=False)
     monkeypatch.delenv("OPENAI_BASE_URL", raising=False)

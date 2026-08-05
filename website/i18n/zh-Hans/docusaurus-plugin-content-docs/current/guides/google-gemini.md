@@ -45,7 +45,7 @@ model:
 
 ## 配置
 
-运行 `hermes model` 后，`~/.hermes/config.yaml` 将包含：
+运行 `kova model` 后，`~/.hermes/config.yaml` 将包含：
 
 ```yaml
 model:

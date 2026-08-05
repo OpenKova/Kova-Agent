@@ -15,7 +15,7 @@ def main_mod():
 
 
 def _touch_ink(root: Path) -> None:
-    ink = root / "node_modules" / "@hermes" / "ink" / "package.json"
+    ink = root / "node_modules" / "@kova" / "ink" / "package.json"
     ink.parent.mkdir(parents=True, exist_ok=True)
     ink.write_text("{}")
 
@@ -204,7 +204,7 @@ def test_make_tui_argv_scopes_npm_install_on_termux_workspace(
     tui_dir = tmp_path / "ui-tui"
     tui_dir.mkdir()
     (tui_dir / "package.json").write_text("{}")
-    ink_dir = tui_dir / "packages" / "hermes-ink"
+    ink_dir = tui_dir / "packages" / "kova-ink"
     ink_dir.mkdir(parents=True)
     (ink_dir / "package.json").write_text("{}")
     (tmp_path / "package-lock.json").write_text("{}")
@@ -230,7 +230,7 @@ def test_make_tui_argv_scopes_npm_install_on_termux_workspace(
         "--workspace",
         "ui-tui",
         "--workspace",
-        "ui-tui/packages/hermes-ink",
+        "ui-tui/packages/kova-ink",
         "--include-workspace-root=false",
     ]
     assert calls[0][1]["cwd"] == str(tmp_path)
@@ -336,7 +336,7 @@ def test_make_tui_argv_keeps_desktop_always_build_behaviour(
 def test_make_tui_argv_decodes_dev_prebuild_with_utf8_replace(
     tmp_path: Path, main_mod, monkeypatch
 ) -> None:
-    ink_dir = tmp_path / "packages" / "hermes-ink"
+    ink_dir = tmp_path / "packages" / "kova-ink"
     ink_dir.mkdir(parents=True)
     tsx = tmp_path / "node_modules" / ".bin" / "tsx"
     tsx.parent.mkdir(parents=True)
@@ -374,7 +374,7 @@ def test_make_tui_argv_uses_bundled_tui_when_workspace_missing(
     runnable bundled TUI on disk. The bundled shortcut must succeed without
     ever touching the (missing) ui-tui workspace or git.
     """
-    monkeypatch.delenv("HERMES_TUI_DIR", raising=False)
+    monkeypatch.delenv("KOVA_TUI_DIR", raising=False)
     monkeypatch.setattr(main_mod, "_ensure_tui_node", lambda: None)
 
     bundled_entry = tmp_path / "bundled" / "entry.js"
@@ -412,7 +412,7 @@ def test_make_tui_argv_dev_mode_still_requires_workspace_even_with_bundle(
     from a bundled entry.js), so it must still hit the workspace guard when
     ui-tui/ is missing — the bundled-first reordering must not weaken --dev.
     """
-    monkeypatch.delenv("HERMES_TUI_DIR", raising=False)
+    monkeypatch.delenv("KOVA_TUI_DIR", raising=False)
     monkeypatch.setattr(main_mod, "_ensure_tui_node", lambda: None)
 
     bundled_entry = tmp_path / "bundled" / "entry.js"
@@ -438,7 +438,7 @@ def test_make_tui_argv_exits_with_recovery_hint_when_workspace_unrecoverable(
     tmp_path: Path, main_mod, monkeypatch, capsys
 ) -> None:
     """Missing ui-tui + no git checkout → clean error, never touches node/npm."""
-    monkeypatch.delenv("HERMES_TUI_DIR", raising=False)
+    monkeypatch.delenv("KOVA_TUI_DIR", raising=False)
     monkeypatch.setattr(main_mod, "_ensure_tui_node", lambda: None)
 
     # No .git beside ui-tui → _restore_tui_workspace bails, fallback message fires.
@@ -463,8 +463,8 @@ def test_make_tui_argv_restores_missing_workspace_from_git(
     tmp_path: Path, main_mod, monkeypatch, capsys
 ) -> None:
     """Missing ui-tui in a git checkout self-heals via `git restore` and continues."""
-    monkeypatch.delenv("HERMES_TUI_DIR", raising=False)
-    monkeypatch.delenv("HERMES_QUIET", raising=False)
+    monkeypatch.delenv("KOVA_TUI_DIR", raising=False)
+    monkeypatch.delenv("KOVA_QUIET", raising=False)
     monkeypatch.setattr(main_mod, "_ensure_tui_node", lambda: None)
 
     tui_dir = tmp_path / "ui-tui"
@@ -593,7 +593,7 @@ def test_no_stray_lockfiles_in_workspace_subdirs(main_mod) -> None:
         root / "apps" / "desktop",
         root / "apps" / "shared",
     ]
-    # Also sweep ui-tui/packages/* (hermes-ink etc.)
+    # Also sweep ui-tui/packages/* (kova-ink etc.)
     tui_pkgs = root / "ui-tui" / "packages"
     if tui_pkgs.is_dir():
         subdirs.extend(d for d in tui_pkgs.iterdir() if d.is_dir())

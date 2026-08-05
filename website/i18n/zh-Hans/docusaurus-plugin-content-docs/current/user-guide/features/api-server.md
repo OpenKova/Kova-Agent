@@ -1,12 +1,12 @@
 ---
 sidebar_position: 14
 title: "API 服务器"
-description: "将 hermes-agent 作为 OpenAI 兼容的 API 暴露给任意前端"
+description: "将 kova-agent 作为 OpenAI 兼容的 API 暴露给任意前端"
 ---
 
 # API 服务器
 
-API 服务器将 hermes-agent 作为 OpenAI 兼容的 HTTP 端点暴露出来。任何支持 OpenAI 格式的前端——Open WebUI、LobeChat、LibreChat、NextChat、ChatBox 以及数百个其他工具——都可以连接到 hermes-agent 并将其用作后端。
+API 服务器将 kova-agent 作为 OpenAI 兼容的 HTTP 端点暴露出来。任何支持 OpenAI 格式的前端——Open WebUI、LobeChat、LibreChat、NextChat、ChatBox 以及数百个其他工具——都可以连接到 kova-agent 并将其用作后端。
 
 你的 agent 使用完整工具集（终端、文件操作、网络搜索、记忆、技能）处理请求，并返回最终响应。在流式传输时，工具进度指示器会内联显示，让前端能够展示 agent 正在执行的操作。
 
@@ -48,7 +48,7 @@ kova gateway
 curl http://localhost:8642/v1/chat/completions \
   -H "Authorization: Bearer change-me-local-dev" \
   -H "Content-Type: application/json" \
-  -d '{"model": "hermes-agent", "messages": [{"role": "user", "content": "Hello!"}]}'
+  -d '{"model": "kova-agent", "messages": [{"role": "user", "content": "Hello!"}]}'
 ```
 
 或连接 Open WebUI、LobeChat 或其他任意前端——参见 [Open WebUI 集成指南](/user-guide/messaging/open-webui)获取分步说明。
@@ -62,7 +62,7 @@ curl http://localhost:8642/v1/chat/completions \
 **请求：**
 ```json
 {
-  "model": "hermes-agent",
+  "model": "kova-agent",
   "messages": [
     {"role": "system", "content": "You are a Python expert."},
     {"role": "user", "content": "Write a fibonacci function"}
@@ -77,7 +77,7 @@ curl http://localhost:8642/v1/chat/completions \
   "id": "chatcmpl-abc123",
   "object": "chat.completion",
   "created": 1710000000,
-  "model": "hermes-agent",
+  "model": "kova-agent",
   "choices": [{
     "index": 0,
     "message": {"role": "assistant", "content": "Here's a fibonacci function..."},
@@ -91,7 +91,7 @@ curl http://localhost:8642/v1/chat/completions \
 
 ```json
 {
-  "model": "hermes-agent",
+  "model": "kova-agent",
   "messages": [
     {
       "role": "user",
@@ -106,10 +106,10 @@ curl http://localhost:8642/v1/chat/completions \
 
 上传的文件（`file` / `input_file` / `file_id`）和非图像 `data:` URL 将返回 `400 unsupported_content_type`。
 
-**流式传输**（`"stream": true`）：返回逐 token 响应块的 Server-Sent Events（SSE）。对于 **Chat Completions**，流使用标准 `chat.completion.chunk` 事件，以及 Kova 自定义的 `hermes.tool.progress` 事件用于工具启动的 UX 展示。对于 **Responses**，流使用 OpenAI Responses 事件类型，如 `response.created`、`response.output_text.delta`、`response.output_item.added`、`response.output_item.done` 和 `response.completed`。
+**流式传输**（`"stream": true`）：返回逐 token 响应块的 Server-Sent Events（SSE）。对于 **Chat Completions**，流使用标准 `chat.completion.chunk` 事件，以及 Kova 自定义的 `kova.tool.progress` 事件用于工具启动的 UX 展示。对于 **Responses**，流使用 OpenAI Responses 事件类型，如 `response.created`、`response.output_text.delta`、`response.output_item.added`、`response.output_item.done` 和 `response.completed`。
 
 **流中的工具进度：**
-- **Chat Completions**：Kova 发出 `event: hermes.tool.progress` 以提供工具启动可见性，同时不污染持久化的 assistant 文本。
+- **Chat Completions**：Kova 发出 `event: kova.tool.progress` 以提供工具启动可见性，同时不污染持久化的 assistant 文本。
 - **Responses**：Kova 在 SSE 流期间发出符合规范的 `function_call` 和 `function_call_output` 输出项，让客户端能够实时渲染结构化工具 UI。
 
 ### POST /v1/responses
@@ -119,7 +119,7 @@ OpenAI Responses API 格式。通过 `previous_response_id` 支持服务端对�
 **请求：**
 ```json
 {
-  "model": "hermes-agent",
+  "model": "kova-agent",
   "input": "What files are in my project?",
   "instructions": "You are a helpful coding assistant.",
   "store": true
@@ -132,7 +132,7 @@ OpenAI Responses API 格式。通过 `previous_response_id` 支持服务端对�
   "id": "resp_abc123",
   "object": "response",
   "status": "completed",
-  "model": "hermes-agent",
+  "model": "kova-agent",
   "output": [
     {"type": "function_call", "name": "terminal", "arguments": "{\"command\": \"ls\"}", "call_id": "call_1"},
     {"type": "function_call_output", "call_id": "call_1", "output": "README.md src/ tests/"},
@@ -146,7 +146,7 @@ OpenAI Responses API 格式。通过 `previous_response_id` 支持服务端对�
 
 ```json
 {
-  "model": "hermes-agent",
+  "model": "kova-agent",
   "input": [
     {
       "role": "user",
@@ -196,7 +196,7 @@ OpenAI Responses API 格式。通过 `previous_response_id` 支持服务端对�
 
 ### GET /v1/models
 
-将 agent 列为可用模型。广播的模型名称默认为 [profile](/user-guide/profiles) 名称（默认 profile 则为 `hermes-agent`）。大多数前端进行模型发现时需要此端点。
+将 agent 列为可用模型。广播的模型名称默认为 [profile](/user-guide/profiles) 名称（默认 profile 则为 `kova-agent`）。大多数前端进行模型发现时需要此端点。
 
 ### GET /v1/capabilities
 
@@ -204,9 +204,9 @@ OpenAI Responses API 格式。通过 `previous_response_id` 支持服务端对�
 
 ```json
 {
-  "object": "hermes.api_server.capabilities",
-  "platform": "hermes-agent",
-  "model": "hermes-agent",
+  "object": "kova.api_server.capabilities",
+  "platform": "kova-agent",
+  "model": "kova-agent",
   "auth": {"type": "bearer", "required": true},
   "features": {
     "chat_completions": true,
@@ -254,11 +254,11 @@ Runs 接受简单的 `input` 字符串，以及可选的 `session_id`、`instruc
 
 ```json
 {
-  "object": "hermes.run",
+  "object": "kova.run",
   "run_id": "run_abc123",
   "status": "completed",
   "session_id": "space-session",
-  "model": "hermes-agent",
+  "model": "kova-agent",
   "output": "Done.",
   "usage": {"input_tokens": 50, "output_tokens": 200, "total_tokens": 250}
 }
@@ -315,7 +315,7 @@ run 会保持 `stopping` 并继续被跟踪，直到 executor 支持的工作退
 
 ## 系统 Prompt 处理
 
-当前端发送 `system` 消息（Chat Completions）或 `instructions` 字段（Responses API）时，hermes-agent 会将其**叠加在**核心系统 prompt 之上。你的 agent 保留所有工具、记忆和技能——前端的系统 prompt 只是添加额外指令。
+当前端发送 `system` 消息（Chat Completions）或 `instructions` 字段（Responses API）时，kova-agent 会将其**叠加在**核心系统 prompt 之上。你的 agent 保留所有工具、记忆和技能——前端的系统 prompt 只是添加额外指令。
 
 这意味着你可以按前端自定义行为，而不会失去能力：
 - Open WebUI 系统 prompt："You are a Python expert. Always include type hints."
@@ -332,7 +332,7 @@ Authorization: Bearer ***
 通过 `API_SERVER_KEY` 环境变量配置密钥。如果需要浏览器直接调用 Kova，还需将 `API_SERVER_CORS_ORIGINS` 设置为明确的允许列表。
 
 :::warning 安全
-API 服务器提供对 hermes-agent 工具集的完整访问权限，**包括终端命令**。当绑定到非回环地址（如 `0.0.0.0`）时，**必须**设置 `API_SERVER_KEY`。同时保持 `API_SERVER_CORS_ORIGINS` 范围尽量小，以控制浏览器访问。
+API 服务器提供对 kova-agent 工具集的完整访问权限，**包括终端命令**。当绑定到非回环地址（如 `0.0.0.0`）时，**必须**设置 `API_SERVER_KEY`。同时保持 `API_SERVER_CORS_ORIGINS` 范围尽量小，以控制浏览器访问。
 
 默认绑定地址（`127.0.0.1`）仅供本地使用。浏览器访问默认禁用；仅为明确的可信来源启用。
 :::
@@ -348,7 +348,7 @@ API 服务器提供对 hermes-agent 工具集的完整访问权限，**包括终
 | `API_SERVER_HOST` | `127.0.0.1` | 绑定地址（默认仅限本地） |
 | `API_SERVER_KEY` | _（无）_ | 认证用 Bearer token |
 | `API_SERVER_CORS_ORIGINS` | _（无）_ | 逗号分隔的允许浏览器来源 |
-| `API_SERVER_MODEL_NAME` | _（profile 名称）_ | `/v1/models` 上的模型名称。默认为 profile 名称，默认 profile 则为 `hermes-agent`。 |
+| `API_SERVER_MODEL_NAME` | _（profile 名称）_ | `/v1/models` 上的模型名称。默认为 profile 名称，默认 profile 则为 `kova-agent`。 |
 
 ### config.yaml
 
@@ -362,7 +362,7 @@ gateway:
     host: 127.0.0.1
     key: your-secret-key
     cors_origins: http://localhost:3000
-    model_name: my-hermes
+    model_name: my-kova
 ```
 
 `port`、`key`、`host`、`cors_origins` 和 `model_name` 会自动桥接到该平台的 `extra` 设置中，行为与对应的 `API_SERVER_*` 环境变量完全一致。环境变量优先于 `config.yaml` 中的值。该配置块同样可以放在 `gateway.platforms.api_server:` 或顶层 `platforms.api_server:` 小节下。

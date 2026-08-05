@@ -61,7 +61,7 @@ description: "与 Kova Agent 的第一次对话——从安装到开始聊天，
 curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
 ```
 
-安装脚本会在 `~/.hermes/hermes-agent` 创建一个受管理的隔离环境（独立的 uv 托管解释器和 venv），这是唯一受支持的安装方式 —— 包括开发用途。请勿使用 `pip install hermes-agent`。
+安装脚本会在 `~/.hermes/kova-agent` 创建一个受管理的隔离环境（独立的 uv 托管解释器和 venv），这是唯一受支持的安装方式 —— 包括开发用途。请勿使用 `pip install kova-agent`。
 
 :::tip Android / Termux
 如果你在手机上安装，请参阅专门的 [Termux 指南](./termux.md)，其中包含经过测试的手动安装步骤、支持的扩展功能以及当前 Android 特有的限制。
@@ -256,8 +256,8 @@ kova config set terminal.backend ssh       # 远程服务器
 
 ```bash
 # 在 Kova 安装目录下运行（curl 安装器在 Linux/macOS 上将其放置于
-# ~/.hermes/hermes-agent，在 Windows 上为 %LOCALAPPDATA%\hermes\hermes-agent）：
-cd ~/.hermes/hermes-agent
+# ~/.hermes/kova-agent，在 Windows 上为 %LOCALAPPDATA%\kova\kova-agent）：
+cd ~/.hermes/kova-agent
 uv pip install -e ".[voice]"
 # 包含 faster-whisper，用于免费的本地语音转文字
 ```
@@ -293,7 +293,7 @@ ACP 支持已包含在标准 `[all]` 扩展中，因此 curl 安装器已默认�
 kova acp
 ```
 
-（如果安装时未包含 `[all]`，请先运行 `cd ~/.hermes/hermes-agent && uv pip install -e ".[acp]"`。）
+（如果安装时未包含 `[all]`，请先运行 `cd ~/.hermes/kova-agent && uv pip install -e ".[acp]"`。）
 
 参阅 [ACP 编辑器集成](../user-guide/features/acp.md)。
 

@@ -33,7 +33,7 @@ from gateway.whatsapp_identity import (
     expand_whatsapp_aliases,
     normalize_whatsapp_identifier,
 )
-from hermes_constants import get_hermes_dir, get_hermes_home
+from kova_constants import get_kova_dir, get_kova_home
 from utils import atomic_replace
 
 logger = logging.getLogger(__name__)
@@ -52,7 +52,7 @@ LOCKOUT_SECONDS = 3600              # Lockout duration after too many failures
 MAX_PENDING_PER_PLATFORM = 3        # Max pending codes per platform
 MAX_FAILED_ATTEMPTS = 5             # Failed approvals before lockout
 
-PAIRING_DIR = get_hermes_dir("platforms/pairing", "pairing")
+PAIRING_DIR = get_kova_dir("platforms/pairing", "pairing")
 
 
 # Platform value -> its per-platform allowlist env var. When an operator has
@@ -129,7 +129,7 @@ def _sync_allowlist_add(platform: str, user_id: str) -> None:
         return  # Already covered.
     ids.append(str(user_id))
     try:
-        from hermes_cli.config import save_env_value
+        from kova_cli.config import save_env_value
 
         save_env_value(env_var, ",".join(ids))
     except Exception:
@@ -151,7 +151,7 @@ def _sync_allowlist_remove(platform: str, user_id: str) -> None:
     if len(remaining) == len(ids):
         return  # Not present.
     try:
-        from hermes_cli.config import save_env_value, remove_env_value
+        from kova_cli.config import save_env_value, remove_env_value
 
         if remaining:
             save_env_value(env_var, ",".join(remaining))
@@ -198,7 +198,7 @@ def _merge_pairing_dir(active_dir: Path, alternate_dir: Path) -> None:
 
 
 def _migrate_split_pairing_dirs() -> None:
-    home = get_hermes_home()
+    home = get_kova_home()
     old_dir = home / "pairing"
     new_dir = home / "platforms" / "pairing"
     active = PAIRING_DIR
@@ -245,15 +245,15 @@ class PairingStore:
     ``<HERMES_HOME>/profiles/<name>/pairing/`` (per-profile, used by
     multiplexing gateways so each profile has its own whitelist).
     Without a profile, storage is the global ``<HERMES_HOME>/pairing/``
-    directory (backward-compat for the ``hermes pairing`` CLI).
+    directory (backward-compat for the ``kova pairing`` CLI).
     """
 
     def __init__(self, profile: Optional[str] = None):
         # Resolve storage directory lazily — tests use a temp HERMES_HOME
         # and PairingStore may be constructed before the env is set.
         if profile:
-            from hermes_constants import get_hermes_home
-            self._dir = get_hermes_home() / "profiles" / profile / "pairing"
+            from kova_constants import get_kova_home
+            self._dir = get_kova_home() / "profiles" / profile / "pairing"
         else:
             self._dir = PAIRING_DIR
         self._dir.mkdir(parents=True, exist_ok=True)
@@ -288,7 +288,7 @@ class PairingStore:
             except PermissionError as e:
                 # Surface this loudly: a 0600 file owned by a different user
                 # (classic Docker symptom: `docker exec` runs as root and writes
-                # the file, then the gateway process — running as `hermes` after
+                # the file, then the gateway process — running as `kova` after
                 # gosu drop — can't read it) would otherwise be swallowed by
                 # the generic OSError branch below, silently leaving the user
                 # marked unauthorized. See issue #10270.
@@ -302,9 +302,9 @@ class PairingStore:
                 euid = os.geteuid() if hasattr(os, "geteuid") else "n/a"
                 logger.warning(
                     "Pairing file %s exists but is not readable as uid=%s (%s; %s). "
-                    "If you ran `docker exec <container> hermes pairing approve ...` as root, "
+                    "If you ran `docker exec <container> kova pairing approve ...` as root, "
                     "re-run with `docker exec -u kova <container> ...` and "
-                    "chown the existing file to the hermes user, or restart the "
+                    "chown the existing file to the kova user, or restart the "
                     "container so the entrypoint can fix ownership.",
                     path, euid, owner_info, e,
                 )

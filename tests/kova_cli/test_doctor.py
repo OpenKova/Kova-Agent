@@ -85,19 +85,19 @@ class TestDoctorEnvFileEncoding:
     ):
         import pathlib
 
-        hermes_home = tmp_path / ".hermes"
-        hermes_home.mkdir()
+        kova_home = tmp_path / ".kova"
+        kova_home.mkdir()
         # Write a UTF-8 .env containing an em dash (U+2014 = e2 80 94). The
         # 0x94 byte is exactly the one the issue reporter hit: it's invalid
         # as a GBK trailing byte in this position, so locale-default reads
         # raise UnicodeDecodeError on Chinese Windows.
-        env_path = hermes_home / ".env"
+        env_path = kova_home / ".env"
         env_path.write_text(
             "OPENAI_API_KEY=sk-test  # em-dash here — should not crash\n",
             encoding="utf-8",
         )
 
-        monkeypatch.setattr(doctor_mod, "HERMES_HOME", hermes_home)
+        monkeypatch.setattr(doctor_mod, "HERMES_HOME", kova_home)
 
         orig_read_text = pathlib.Path.read_text
 
@@ -152,7 +152,7 @@ class TestDoctorToolAvailabilityOverrides:
 
     def test_marks_kanban_available_only_when_missing_worker_env_gate(self, monkeypatch):
         monkeypatch.setattr(doctor, "_honcho_is_configured_for_doctor", lambda: False)
-        monkeypatch.delenv("HERMES_KANBAN_TASK", raising=False)
+        monkeypatch.delenv("KOVA_KANBAN_TASK", raising=False)
 
         available, unavailable = doctor._apply_doctor_tool_availability_overrides(
             [],
@@ -163,7 +163,7 @@ class TestDoctorToolAvailabilityOverrides:
         assert unavailable == []
 
     def test_leaves_kanban_unavailable_when_worker_env_is_set(self, monkeypatch):
-        monkeypatch.setenv("HERMES_KANBAN_TASK", "probe")
+        monkeypatch.setenv("KOVA_KANBAN_TASK", "probe")
         kanban_entry = {"name": "kanban", "env_vars": [], "tools": ["kanban_show"]}
 
         available, unavailable = doctor._apply_doctor_tool_availability_overrides(
@@ -175,7 +175,7 @@ class TestDoctorToolAvailabilityOverrides:
         assert unavailable == [kanban_entry]
 
     def test_leaves_non_worker_kanban_failure_unavailable(self, monkeypatch):
-        monkeypatch.delenv("HERMES_KANBAN_TASK", raising=False)
+        monkeypatch.delenv("KOVA_KANBAN_TASK", raising=False)
         kanban_entry = {"name": "kanban", "env_vars": [], "tools": ["kanban_show", "not_a_kanban_tool"]}
 
         available, unavailable = doctor._apply_doctor_tool_availability_overrides(
@@ -187,7 +187,7 @@ class TestDoctorToolAvailabilityOverrides:
         assert unavailable == [kanban_entry]
 
     def test_kanban_doctor_detail_explains_worker_gate(self, monkeypatch):
-        monkeypatch.delenv("HERMES_KANBAN_TASK", raising=False)
+        monkeypatch.delenv("KOVA_KANBAN_TASK", raising=False)
 
         assert doctor._doctor_tool_availability_detail("kanban") == "(runtime-gated; loaded only for dispatcher-spawned workers)"
 
@@ -217,18 +217,18 @@ class TestHonchoDoctorConfigDetection:
 def test_run_doctor_sets_interactive_env_for_tool_checks(monkeypatch, tmp_path):
     """Doctor should present CLI-gated tools as available in CLI context."""
     project_root = tmp_path / "project"
-    hermes_home = tmp_path / ".hermes"
+    kova_home = tmp_path / ".kova"
     project_root.mkdir()
-    hermes_home.mkdir()
+    kova_home.mkdir()
 
     monkeypatch.setattr(doctor_mod, "PROJECT_ROOT", project_root)
-    monkeypatch.setattr(doctor_mod, "HERMES_HOME", hermes_home)
-    monkeypatch.delenv("HERMES_INTERACTIVE", raising=False)
+    monkeypatch.setattr(doctor_mod, "HERMES_HOME", kova_home)
+    monkeypatch.delenv("KOVA_INTERACTIVE", raising=False)
 
     seen = {}
 
     def fake_check_tool_availability(*args, **kwargs):
-        seen["interactive"] = os.getenv("HERMES_INTERACTIVE")
+        seen["interactive"] = os.getenv("KOVA_INTERACTIVE")
         raise SystemExit(0)
 
     fake_model_tools = types.SimpleNamespace(
@@ -283,9 +283,9 @@ def test_check_gateway_service_linger_skips_when_service_not_installed(monkeypat
 class TestDoctorMemoryProviderSection:
     """The ◆ Memory Provider section should respect memory.provider config."""
 
-    def _make_hermes_home(self, tmp_path, provider=""):
+    def _make_kova_home(self, tmp_path, provider=""):
         """Create a minimal HERMES_HOME with config.yaml."""
-        home = tmp_path / ".hermes"
+        home = tmp_path / ".kova"
         home.mkdir(parents=True, exist_ok=True)
         import yaml
         config = {"memory": {"provider": provider}} if provider else {"memory": {}}
@@ -294,7 +294,7 @@ class TestDoctorMemoryProviderSection:
 
     def _run_doctor_and_capture(self, monkeypatch, tmp_path, provider=""):
         """Run doctor and capture stdout."""
-        home = self._make_hermes_home(tmp_path, provider)
+        home = self._make_kova_home(tmp_path, provider)
         monkeypatch.setattr(doctor_mod, "HERMES_HOME", home)
         monkeypatch.setattr(doctor_mod, "PROJECT_ROOT", tmp_path / "project")
         monkeypatch.setattr(doctor_mod, "_DHH", str(home))
@@ -380,7 +380,7 @@ def test_run_doctor_termux_treats_docker_and_browser_warnings_as_expected(monkey
 
 
 def test_run_doctor_accepts_named_provider_from_providers_section(monkeypatch, tmp_path):
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".kova"
     home.mkdir(parents=True, exist_ok=True)
 
     import yaml
@@ -432,7 +432,7 @@ def test_run_doctor_accepts_named_provider_from_providers_section(monkeypatch, t
 
 
 def test_run_doctor_accepts_bare_custom_provider(monkeypatch, tmp_path):
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".kova"
     home.mkdir(parents=True, exist_ok=True)
     (home / "config.yaml").write_text(
         "model:\n"
@@ -470,7 +470,7 @@ def test_run_doctor_accepts_bare_custom_provider(monkeypatch, tmp_path):
 
 
 def test_run_doctor_flags_missing_credentials_for_active_openrouter_provider(monkeypatch, tmp_path):
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".kova"
     home.mkdir(parents=True, exist_ok=True)
     (home / "config.yaml").write_text(
         "model:\n"
@@ -520,10 +520,10 @@ def test_run_doctor_flags_missing_credentials_for_active_openrouter_provider(mon
         ("moa", "anthropic/claude-sonnet-4.6"),
     ],
 )
-def test_run_doctor_accepts_hermes_provider_ids_that_catalog_aliases(
+def test_run_doctor_accepts_kova_provider_ids_that_catalog_aliases(
     monkeypatch, tmp_path, provider, default_model
 ):
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".kova"
     home.mkdir(parents=True, exist_ok=True)
     (home / "config.yaml").write_text(
         "model:\n"
@@ -566,7 +566,7 @@ def test_run_doctor_accepts_hermes_provider_ids_that_catalog_aliases(
 
 
 def test_run_doctor_accepts_vendor_slugs_for_named_custom_provider(monkeypatch, tmp_path):
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".kova"
     home.mkdir(parents=True, exist_ok=True)
     (home / "config.yaml").write_text(
         "model:\n"
@@ -616,7 +616,7 @@ def test_run_doctor_accepts_vendor_slugs_for_named_custom_provider(monkeypatch, 
 
 
 def test_run_doctor_accepts_kimi_coding_cn_provider(monkeypatch, tmp_path):
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".kova"
     home.mkdir(parents=True, exist_ok=True)
     (home / ".env").write_text("KIMI_CN_API_KEY=***\n", encoding="utf-8")
     (home / "config.yaml").write_text(
@@ -655,7 +655,7 @@ def test_run_doctor_accepts_kimi_coding_cn_provider(monkeypatch, tmp_path):
 
 
 def test_run_doctor_termux_does_not_mark_browser_available_without_agent_browser(monkeypatch, tmp_path):
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".kova"
     home.mkdir(parents=True, exist_ok=True)
     (home / "config.yaml").write_text("memory: {}\n", encoding="utf-8")
     project = tmp_path / "project"
@@ -699,7 +699,7 @@ def test_run_doctor_termux_does_not_mark_browser_available_without_agent_browser
 
 
 def test_run_doctor_kimi_cn_env_is_detected_and_probe_is_null_safe(monkeypatch, tmp_path):
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".kova"
     home.mkdir(parents=True, exist_ok=True)
     (home / "config.yaml").write_text("memory: {}\n", encoding="utf-8")
     (home / ".env").write_text("KIMI_CN_API_KEY=sk-test\n", encoding="utf-8")
@@ -747,7 +747,7 @@ def test_run_doctor_kimi_cn_env_is_detected_and_probe_is_null_safe(monkeypatch, 
 
 
 def test_run_doctor_dashscope_retries_china_endpoint_after_intl_unauthorized(monkeypatch, tmp_path):
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".kova"
     home.mkdir(parents=True, exist_ok=True)
     (home / "config.yaml").write_text("memory: {}\n", encoding="utf-8")
     (home / ".env").write_text("DASHSCOPE_API_KEY=sk-test\n", encoding="utf-8")
@@ -803,7 +803,7 @@ def test_run_doctor_dashscope_retries_china_endpoint_after_intl_unauthorized(mon
 
 @pytest.mark.parametrize("base_url", [None, "https://opencode.ai/zen/go/v1"])
 def test_run_doctor_opencode_go_skips_invalid_models_probe(monkeypatch, tmp_path, base_url):
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".kova"
     home.mkdir(parents=True, exist_ok=True)
     (home / "config.yaml").write_text("memory: {}\n", encoding="utf-8")
     (home / ".env").write_text("OPENCODE_GO_API_KEY=***\n", encoding="utf-8")
@@ -874,7 +874,7 @@ class TestGitHubTokenCheck:
         monkeypatch.setenv("HERMES_HOME", str(home))
 
     def test_no_token_and_not_gh_authenticated_shows_warn(self, monkeypatch, tmp_path):
-        home = tmp_path / ".hermes"
+        home = tmp_path / ".kova"
         home.mkdir(parents=True, exist_ok=True)
         self._isolate_home(monkeypatch, home)
         monkeypatch.setenv("PATH", "/nonexistent")  # gh not found
@@ -891,7 +891,7 @@ class TestGitHubTokenCheck:
         assert "60 req/hr" in out
 
     def test_token_env_present_shows_ok(self, monkeypatch, tmp_path):
-        home = tmp_path / ".hermes"
+        home = tmp_path / ".kova"
         home.mkdir(parents=True, exist_ok=True)
         self._isolate_home(monkeypatch, home)
         monkeypatch.setenv("GITHUB_TOKEN", "ghp_test123")
@@ -908,7 +908,7 @@ class TestGitHubTokenCheck:
         assert "GitHub token configured" in out
 
     def test_gh_authenticated_without_env_token_shows_ok(self, monkeypatch, tmp_path):
-        home = tmp_path / ".hermes"
+        home = tmp_path / ".kova"
         home.mkdir(parents=True, exist_ok=True)
         self._isolate_home(monkeypatch, home)
         # No GITHUB_TOKEN or GH_TOKEN
@@ -956,7 +956,7 @@ def _run_doctor_with_healthy_oauth_fallback(
     minimax_oauth_status: dict,
     xai_oauth_status: dict | None = None,
 ) -> str:
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".kova"
     home.mkdir(parents=True, exist_ok=True)
     (home / "config.yaml").write_text(
         "model:\n"
@@ -1101,7 +1101,7 @@ class TestDoctorXaiOAuthStatus:
 
     def _run(self, monkeypatch, tmp_path, *, xai_auth_fn) -> str:
         """Run doctor with a controlled xAI auth callable; return stdout."""
-        home = tmp_path / ".hermes"
+        home = tmp_path / ".kova"
         home.mkdir(parents=True, exist_ok=True)
         (home / "config.yaml").write_text("memory: {}\n", encoding="utf-8")
         project = tmp_path / "project"
@@ -1175,7 +1175,7 @@ class TestDoctorXaiOAuthStatus:
 
     def test_import_failure_does_not_crash_doctor(self, monkeypatch, tmp_path):
         """Doctor must not crash when get_xai_oauth_auth_status cannot be imported."""
-        home = tmp_path / ".hermes"
+        home = tmp_path / ".kova"
         home.mkdir(parents=True, exist_ok=True)
         (home / "config.yaml").write_text("memory: {}\n", encoding="utf-8")
         project = tmp_path / "project"
@@ -1206,7 +1206,7 @@ class TestDoctorXaiOAuthStatus:
 
     def test_import_failure_does_not_affect_other_providers(self, monkeypatch, tmp_path):
         """Nous / Codex / Gemini / MiniMax rows must survive an xAI import failure."""
-        home = tmp_path / ".hermes"
+        home = tmp_path / ".kova"
         home.mkdir(parents=True, exist_ok=True)
         (home / "config.yaml").write_text("memory: {}\n", encoding="utf-8")
         project = tmp_path / "project"
@@ -1266,7 +1266,7 @@ class TestDoctorCodexCliHintPlacement:
     """
 
     def _run(self, monkeypatch, tmp_path, *, codex_logged_in: bool, codex_cli_present: bool) -> str:
-        home = tmp_path / ".hermes"
+        home = tmp_path / ".kova"
         home.mkdir(parents=True, exist_ok=True)
         (home / "config.yaml").write_text("memory: {}\n", encoding="utf-8")
         project = tmp_path / "project"
@@ -1339,7 +1339,7 @@ class TestDoctorCodexCliHintPlacement:
 
 
 class TestDoctorStaleMaxIterationsDrift:
-    """Regression for #17534: a stale HERMES_MAX_ITERATIONS in .env shadows
+    """Regression for #17534: a stale KOVA_MAX_ITERATIONS in .env shadows
     agent.max_turns in config.yaml. The repro symptom is config.yaml saying
     400 while the gateway activity line reads N/90. Doctor must detect the
     drift, and `--fix` must remove the .env ghost (config.yaml wins).
@@ -1356,25 +1356,25 @@ class TestDoctorStaleMaxIterationsDrift:
         import io
         from argparse import Namespace
 
-        hermes_home = tmp_path / ".hermes"
-        hermes_home.mkdir(parents=True)
-        (hermes_home / "config.yaml").write_text(
+        kova_home = tmp_path / ".kova"
+        kova_home.mkdir(parents=True)
+        (kova_home / "config.yaml").write_text(
             f"agent:\n  max_turns: {cfg_turns}\n", encoding="utf-8"
         )
         env_lines = ["OPENAI_API_KEY=sk-test\n"]
         if ghost is not None:
-            env_lines.append(f"HERMES_MAX_ITERATIONS={ghost}\n")
-        (hermes_home / ".env").write_text("".join(env_lines), encoding="utf-8")
+            env_lines.append(f"KOVA_MAX_ITERATIONS={ghost}\n")
+        (kova_home / ".env").write_text("".join(env_lines), encoding="utf-8")
 
-        monkeypatch.setattr(doctor_mod, "HERMES_HOME", hermes_home)
-        monkeypatch.setattr(doctor_mod, "get_hermes_home", lambda: hermes_home)
+        monkeypatch.setattr(doctor_mod, "HERMES_HOME", kova_home)
+        monkeypatch.setattr(doctor_mod, "get_kova_home", lambda: kova_home)
         # Point the config helpers at the temp home.
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        monkeypatch.setenv("HERMES_HOME", str(kova_home))
         if os_environ_value is not None:
             # Simulate the gateway bridge having already overridden os.environ.
-            monkeypatch.setenv("HERMES_MAX_ITERATIONS", str(os_environ_value))
+            monkeypatch.setenv("KOVA_MAX_ITERATIONS", str(os_environ_value))
         else:
-            monkeypatch.delenv("HERMES_MAX_ITERATIONS", raising=False)
+            monkeypatch.delenv("KOVA_MAX_ITERATIONS", raising=False)
 
         # Short-circuit at the Tool Availability stage — the drift check runs
         # well before it in the Configuration Files section.
@@ -1387,26 +1387,26 @@ class TestDoctorStaleMaxIterationsDrift:
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf), pytest.raises(SystemExit):
             doctor_mod.run_doctor(Namespace(fix=fix))
-        return buf.getvalue(), hermes_home
+        return buf.getvalue(), kova_home
 
     def test_detects_drift_warn_only(self, monkeypatch, tmp_path):
-        out, hermes_home = self._run_config_section(
+        out, kova_home = self._run_config_section(
             monkeypatch, tmp_path, fix=False, ghost=90, cfg_turns=400,
             os_environ_value=400,  # bridge contaminated os.environ
         )
-        assert "HERMES_MAX_ITERATIONS=90" in out
+        assert "KOVA_MAX_ITERATIONS=90" in out
         assert "shadows" in out
         # Warn-only must NOT mutate .env.
-        assert "HERMES_MAX_ITERATIONS=90" in (hermes_home / ".env").read_text(encoding="utf-8")
+        assert "KOVA_MAX_ITERATIONS=90" in (kova_home / ".env").read_text(encoding="utf-8")
 
     def test_fix_removes_ghost(self, monkeypatch, tmp_path):
-        out, hermes_home = self._run_config_section(
+        out, kova_home = self._run_config_section(
             monkeypatch, tmp_path, fix=True, ghost=90, cfg_turns=400,
             os_environ_value=400,
         )
-        assert "Removed stale HERMES_MAX_ITERATIONS" in out
-        env_after = (hermes_home / ".env").read_text(encoding="utf-8")
-        assert "HERMES_MAX_ITERATIONS" not in env_after
+        assert "Removed stale KOVA_MAX_ITERATIONS" in out
+        env_after = (kova_home / ".env").read_text(encoding="utf-8")
+        assert "KOVA_MAX_ITERATIONS" not in env_after
         assert "OPENAI_API_KEY=sk-test" in env_after  # other keys preserved
 
     def test_no_drift_when_values_match(self, monkeypatch, tmp_path):
@@ -1435,7 +1435,7 @@ def test_npm_audit_fix_hint_avoids_crashing_workspace_flag(monkeypatch, tmp_path
     Regression for user reports where doctor flagged the web/ui-tui workspaces
     and the suggested fix command errored out.
     """
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".kova"
     home.mkdir(parents=True, exist_ok=True)
     project = tmp_path / "project"
     (project / "node_modules").mkdir(parents=True)
@@ -1524,19 +1524,19 @@ class TestDoctorDeprecatedConfigAndEnv:
 
     def test_collect_deprecated_env_vars(self):
         env = {
-            "HERMES_TOOL_PROGRESS": "true",
+            "KOVA_TOOL_PROGRESS": "true",
             "TERMINAL_CWD": "/tmp/proj",
             "QQ_HOME_CHANNEL": "12345",
             "OPENAI_API_KEY": "sk-test",  # not deprecated
         }
         findings = doctor_mod.collect_deprecated_env_vars(env)
         names = {n for n, _ in findings}
-        assert "HERMES_TOOL_PROGRESS" in names
+        assert "KOVA_TOOL_PROGRESS" in names
         assert "TERMINAL_CWD" in names
         assert "QQ_HOME_CHANNEL" in names
         assert "OPENAI_API_KEY" not in names
         by_name = dict(findings)
-        assert "display.tool_progress" in by_name["HERMES_TOOL_PROGRESS"]
+        assert "display.tool_progress" in by_name["KOVA_TOOL_PROGRESS"]
         assert "terminal.cwd" in by_name["TERMINAL_CWD"]
         assert by_name["QQ_HOME_CHANNEL"] == "QQBOT_HOME_CHANNEL"
 
@@ -1546,19 +1546,19 @@ class TestDoctorDeprecatedConfigAndEnv:
         assert doctor_mod.collect_deprecated_env_vars(None) == []
 
     def _run_doctor_with_config(self, monkeypatch, tmp_path, *, config_yaml: str, env_text: str = ""):
-        hermes_home = tmp_path / ".hermes"
-        hermes_home.mkdir(parents=True)
-        (hermes_home / "config.yaml").write_text(config_yaml, encoding="utf-8")
+        kova_home = tmp_path / ".kova"
+        kova_home.mkdir(parents=True)
+        (kova_home / "config.yaml").write_text(config_yaml, encoding="utf-8")
         env_body = env_text if env_text else "OPENAI_API_KEY=sk-test\n"
-        (hermes_home / ".env").write_text(env_body, encoding="utf-8")
+        (kova_home / ".env").write_text(env_body, encoding="utf-8")
 
-        monkeypatch.setattr(doctor_mod, "HERMES_HOME", hermes_home)
-        monkeypatch.setattr(doctor_mod, "get_hermes_home", lambda: hermes_home)
-        monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+        monkeypatch.setattr(doctor_mod, "HERMES_HOME", kova_home)
+        monkeypatch.setattr(doctor_mod, "get_kova_home", lambda: kova_home)
+        monkeypatch.setenv("HERMES_HOME", str(kova_home))
         # Clear process-level legacy env so tests only see the on-disk .env.
         for k in (
-            "HERMES_TOOL_PROGRESS",
-            "HERMES_TOOL_PROGRESS_MODE",
+            "KOVA_TOOL_PROGRESS",
+            "KOVA_TOOL_PROGRESS_MODE",
             "TERMINAL_CWD",
             "MESSAGING_CWD",
             "QQ_HOME_CHANNEL",
@@ -1575,7 +1575,7 @@ class TestDoctorDeprecatedConfigAndEnv:
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf), pytest.raises(SystemExit):
             doctor_mod.run_doctor(Namespace(fix=False))
-        return buf.getvalue(), hermes_home
+        return buf.getvalue(), kova_home
 
     def test_doctor_warns_on_tool_progress_overrides_and_max_async_children(
         self, monkeypatch, tmp_path
@@ -1588,13 +1588,13 @@ delegation:
   max_async_children: 8
   max_concurrent_children: 3
 """
-        out, hermes_home = self._run_doctor_with_config(monkeypatch, tmp_path, config_yaml=cfg)
+        out, kova_home = self._run_doctor_with_config(monkeypatch, tmp_path, config_yaml=cfg)
         assert "Deprecated: display.tool_progress_overrides" in out
         assert "display.platforms" in out
         assert "Deprecated: delegation.max_async_children" in out
         assert "max_concurrent_children" in out
         # Warn-only: must not mutate config.
-        on_disk = (hermes_home / "config.yaml").read_text(encoding="utf-8")
+        on_disk = (kova_home / "config.yaml").read_text(encoding="utf-8")
         assert "tool_progress_overrides" in on_disk
         assert "max_async_children" in on_disk
 
@@ -1608,7 +1608,7 @@ compression:
 """
         env = (
             "OPENAI_API_KEY=sk-test\n"
-            "HERMES_TOOL_PROGRESS=true\n"
+            "KOVA_TOOL_PROGRESS=true\n"
             "TERMINAL_CWD=/old/path\n"
             "QQ_HOME_CHANNEL=999\n"
         )
@@ -1617,7 +1617,7 @@ compression:
         )
         assert "Deprecated: compression.summary_model" in out
         assert "auxiliary.compression" in out
-        assert "Deprecated: HERMES_TOOL_PROGRESS" in out
+        assert "Deprecated: KOVA_TOOL_PROGRESS" in out
         assert "display.tool_progress" in out
         assert "Deprecated: TERMINAL_CWD" in out
         assert "terminal.cwd" in out
@@ -1641,7 +1641,7 @@ terminal:
         assert "Deprecated: display.tool_progress_overrides" not in out
         assert "Deprecated: delegation.max_async_children" not in out
         assert "Deprecated: compression.summary_model" not in out
-        assert "Deprecated: HERMES_TOOL_PROGRESS" not in out
+        assert "Deprecated: KOVA_TOOL_PROGRESS" not in out
         assert "Deprecated: TERMINAL_CWD" not in out
         assert "Deprecated: QQ_HOME_CHANNEL" not in out
         assert "No deprecated config keys or env vars" in out
@@ -1650,10 +1650,10 @@ terminal:
         """report_deprecated_config_and_env is warn-only — no issues list mutation."""
         findings = doctor_mod.report_deprecated_config_and_env(
             {"delegation": {"max_async_children": 2}},
-            {"HERMES_TOOL_PROGRESS_MODE": "verbose"},
+            {"KOVA_TOOL_PROGRESS_MODE": "verbose"},
         )
         out = capsys.readouterr().out
         assert len(findings) == 2
         assert "Deprecated: delegation.max_async_children" in out
-        assert "Deprecated: HERMES_TOOL_PROGRESS_MODE" in out
+        assert "Deprecated: KOVA_TOOL_PROGRESS_MODE" in out
         assert "⚠" in out or "Deprecated" in out

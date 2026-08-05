@@ -1,5 +1,5 @@
 """
-Status command for hermes CLI.
+Status command for kova CLI.
 
 Shows the status of all Kova Agent components.
 """
@@ -13,7 +13,7 @@ PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 
 from kova_cli.auth import AuthError, resolve_provider
 from kova_cli.colors import Colors, color
-from kova_cli.config import get_env_path, get_env_value, get_hermes_home, load_config
+from kova_cli.config import get_env_path, get_env_value, get_kova_home, load_config
 from kova_cli.models import provider_label
 from kova_cli.nous_account import (
     format_nous_portal_entitlement_message,
@@ -525,7 +525,7 @@ def show_status(args):
     print()
     print(color("◆ Scheduled Jobs", Colors.CYAN, Colors.BOLD))
 
-    jobs_file = get_hermes_home() / "cron" / "jobs.json"
+    jobs_file = get_kova_home() / "cron" / "jobs.json"
     if jobs_file.exists():
         import json
         try:
@@ -565,7 +565,7 @@ def show_status(args):
     if _session_count is not None and _session_count > 0:
         print(f"  Active:       {_session_count} session(s)")
     else:
-        sessions_file = get_hermes_home() / "sessions" / "sessions.json"
+        sessions_file = get_kova_home() / "sessions" / "sessions.json"
         if sessions_file.exists():
             import json
             try:

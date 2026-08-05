@@ -105,7 +105,7 @@ CLI 界面中使用的文字字符串。
 |----|------|------|--------|
 | `tool_prefix` | 字符串 | CLI 中工具输出行的前缀字符 | `┊` |
 | `tool_emojis` | 字典 | 各工具的 emoji 覆盖，用于 spinner 和进度显示（`{tool_name: emoji}`） | `{}` |
-| `banner_logo` | 字符串 | Rich 标记 ASCII 艺术 logo（替换默认的 HERMES_AGENT 横幅） | `""` |
+| `banner_logo` | 字符串 | Rich 标记 ASCII 艺术 logo（替换默认的 KOVA_AGENT 横幅） | `""` |
 | `banner_hero` | 字符串 | Rich 标记英雄艺术图（替换默认的双蛇杖图案） | `""` |
 
 ## 自定义皮肤
@@ -214,9 +214,9 @@ tool_prefix: "▏"
 
 ## Kova Mod — 可视化皮肤编辑器
 
-[Kova Mod](https://github.com/cocktailpeanut/hermes-mod) 是一个社区构建的 Web UI，用于可视化创建和管理皮肤。无需手写 YAML，提供带实时预览的点击式编辑器。
+[Kova Mod](https://github.com/cocktailpeanut/kova-mod) 是一个社区构建的 Web UI，用于可视化创建和管理皮肤。无需手写 YAML，提供带实时预览的点击式编辑器。
 
-![Kova Mod skin editor](https://raw.githubusercontent.com/cocktailpeanut/hermes-mod/master/nous.png)
+![Kova Mod skin editor](https://raw.githubusercontent.com/cocktailpeanut/kova-mod/master/nous.png)
 
 **功能说明：**
 
@@ -237,14 +237,14 @@ tool_prefix: "▏"
 **方式二 — npx（终端最快方式）：**
 
 ```bash
-npx -y hermes-mod
+npx -y kova-mod
 ```
 
 **方式三 — 手动安装：**
 
 ```bash
-git clone https://github.com/cocktailpeanut/hermes-mod.git
-cd hermes-mod/app
+git clone https://github.com/cocktailpeanut/kova-mod.git
+cd kova-mod/app
 npm install
 npm start
 ```
@@ -263,7 +263,7 @@ Kova Mod 遵循 `HERMES_HOME` 环境变量，因此也适用于[配置文件](/u
 
 ## 操作说明
 
-- 内置皮肤从 `hermes_cli/skin_engine.py` 加载。
+- 内置皮肤从 `kova_cli/skin_engine.py` 加载。
 - 未知皮肤自动回退到 `default`。
 - `/skin` 立即更新当前会话的活动 CLI 主题。
 - `~/.hermes/skins/` 中的用户皮肤优先于同名内置皮肤。

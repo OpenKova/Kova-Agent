@@ -103,7 +103,7 @@ pub async fn resolve(
     emit_log: &impl Fn(&str),
 ) -> Result<ResolvedScript> {
     // 1. Dev shortcut.
-    if let Ok(repo_root) = std::env::var("HERMES_SETUP_DEV_REPO_ROOT") {
+    if let Ok(repo_root) = std::env::var("KOVA_SETUP_DEV_REPO_ROOT") {
         let candidate = PathBuf::from(repo_root).join("scripts").join(kind.filename());
         if candidate.exists() {
             emit_log(&format!(
@@ -469,7 +469,7 @@ mod tests {
     fn upgrade_cached_script_adds_bom_to_legacy_ps1() {
         // A .ps1 cached by a pre-#67193 installer has no BOM; the Reuse path
         // must upgrade it in place instead of serving the broken bytes forever.
-        let dir = std::env::temp_dir().join(format!("hermes-bom-test-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("kova-bom-test-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let cached = dir.join("install-abc1234.ps1");
         std::fs::write(&cached, b"Write-Host legacy\n").unwrap();
@@ -489,7 +489,7 @@ mod tests {
 
     #[test]
     fn upgrade_cached_script_leaves_sh_untouched() {
-        let dir = std::env::temp_dir().join(format!("hermes-bom-sh-test-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("kova-bom-sh-test-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let cached = dir.join("install-main.sh");
         std::fs::write(&cached, b"#!/bin/bash\n").unwrap();

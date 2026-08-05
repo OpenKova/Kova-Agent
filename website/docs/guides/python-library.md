@@ -15,8 +15,8 @@ Kova isn't just a CLI tool. You can import `AIAgent` directly and use it program
 Clone Kova and create its supported editable development environment:
 
 ```bash
-git clone https://github.com/NousResearch/hermes-agent.git
-cd hermes-agent
+git clone https://github.com/OpenKova/Kova-Agent.git
+cd kova-agent
 uv sync
 ```
 

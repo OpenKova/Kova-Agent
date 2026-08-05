@@ -82,15 +82,15 @@ def test_clear_discovered_repos_records_policy_atomically(conn):
 
 
 def test_create_get_list(conn):
-    pid = pdb.create_project(conn, name="Kova Agent", folders=["/tmp/hermes"])
+    pid = pdb.create_project(conn, name="Kova Agent", folders=["/tmp/kova"])
     proj = pdb.get_project(conn, pid)
 
     assert proj is not None
     assert proj.slug == "kova-agent"
     assert proj.name == "Kova Agent"
     # First folder becomes primary.
-    assert proj.primary_path == "/tmp/hermes"
-    assert [f.path for f in proj.folders] == ["/tmp/hermes"]
+    assert proj.primary_path == "/tmp/kova"
+    assert [f.path for f in proj.folders] == ["/tmp/kova"]
     assert proj.folders[0].is_primary is True
 
     # Lookup by slug too.
@@ -209,7 +209,7 @@ def test_per_profile_isolation(tmp_path):
         b.close()
 
 
-def test_db_path_under_hermes_home():
+def test_db_path_under_kova_home():
     # Resolves under HERMES_HOME (set by the autouse isolation fixture).
     assert pdb.projects_db_path().name == "projects.db"
     assert os.path.basename(str(pdb.projects_db_path().parent))  # non-empty parent

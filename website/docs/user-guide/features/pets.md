@@ -121,7 +121,7 @@ Generation uses the active [image-generation provider](/user-guide/features/imag
 
 - Resolution order prefers Nous Portal → OpenAI → OpenRouter.
 - If no reference-capable backend is configured, generation surfaces an actionable error pointing you to `kova tools` → Image Generation. (Installing/adopting existing gallery pets needs no image backend.)
-- Override the backend with the `HERMES_PET_IMAGE_PROVIDER` env var (e.g. `HERMES_PET_IMAGE_PROVIDER=openrouter`).
+- Override the backend with the `KOVA_PET_IMAGE_PROVIDER` env var (e.g. `KOVA_PET_IMAGE_PROVIDER=openrouter`).
 
 ## Desktop app
 
@@ -206,6 +206,6 @@ Common gotchas:
 
 ## See also
 
-- The [`hermes-agent` skill](../skills/bundled/autonomous-ai-agents/autonomous-ai-agents-hermes-agent.md)
+- The [`kova-agent` skill](../skills/bundled/autonomous-ai-agents/autonomous-ai-agents-kova-agent.md)
   lets the agent install and switch pets for you on request (see its
   `references/petdex.md`).

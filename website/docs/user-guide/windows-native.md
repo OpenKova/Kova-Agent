@@ -38,7 +38,7 @@ No admin rights required. The installer goes to `%LOCALAPPDATA%\kova\` and adds 
 | `-Tag` | unset | Pin install to a specific git tag (e.g. `v0.14.0`) |
 | `-NoVenv` | off | Skip venv creation (advanced — you manage Python yourself) |
 | `-SkipSetup` | off | Skip the post-install `kova setup` wizard |
-| `-HermesHome` | `%LOCALAPPDATA%\kova` | Override data directory |
+| `-KovaHome` | `%LOCALAPPDATA%\kova` | Override data directory |
 | `-InstallDir` | `%LOCALAPPDATA%\kova\kova-agent` | Override code location |
 
 The installer auto-retries flaky git fetches and strips BOM from any downloaded `install.ps1` payload, so a UTF-8 BOM picked up during HTTP transit no longer breaks the `[scriptblock]::Create((irm ...))` form.
@@ -51,7 +51,7 @@ Use the desktop installer when you want a familiar Windows install experience or
 
 ### Dependency bootstrap (`dep_ensure`)
 
-On first launch (and on demand when a missing tool is detected), Kova runs a small Python bootstrapper — `hermes_cli/dep_ensure.py` — that checks for and lazily installs the non-Python dependencies it needs. On Windows, the relevant ones are:
+On first launch (and on demand when a missing tool is detected), Kova runs a small Python bootstrapper — `kova_cli/dep_ensure.py` — that checks for and lazily installs the non-Python dependencies it needs. On Windows, the relevant ones are:
 
 | Dependency | Why Kova needs it |
 |---|---|
@@ -74,7 +74,7 @@ Top-to-bottom, in order:
 5. **Clones the repo** to `%LOCALAPPDATA%\kova\kova-agent` and creates a virtualenv inside it.
 6. **Tiered `uv pip install`** — tries `.[all]` first, falls back to progressively smaller sets (`[messaging,dashboard,ext]` → `[messaging]` → `.`) if a `git+https` dep flakes on rate-limited GitHub. Prevents "single flake drops you to a bare install" failure mode.
 7. **Auto-installs messaging SDKs** keyed off `.env` — if `TELEGRAM_BOT_TOKEN` / `DISCORD_BOT_TOKEN` / `SLACK_BOT_TOKEN` / `SLACK_APP_TOKEN` / `WHATSAPP_ENABLED` are present, runs `python -m ensurepip --upgrade` and targeted `pip install` calls so each platform's SDK is actually importable.
-8. **Sets `HERMES_GIT_BASH_PATH`** to the resolved `bash.exe` so Kova finds it deterministically in fresh shells.
+8. **Sets `KOVA_GIT_BASH_PATH`** to the resolved `bash.exe` so Kova finds it deterministically in fresh shells.
 9. **Adds `%LOCALAPPDATA%\kova\kova-agent\venv\Scripts` to User PATH and sets `HERMES_HOME=%LOCALAPPDATA%\kova`** — exposes the `kova` command (and points it at your data dir) after you open a new terminal.
 10. **Runs `kova setup`** — the normal first-run wizard (model, provider, toolsets). Skip with `-SkipSetup`.
 
@@ -107,13 +107,13 @@ Kova's terminal tool runs commands through **Git Bash**, same strategy Claude Co
 
 Resolution order for `bash.exe`:
 
-1. `HERMES_GIT_BASH_PATH` environment variable if set.
+1. `KOVA_GIT_BASH_PATH` environment variable if set.
 2. `%LOCALAPPDATA%\kova\git\usr\bin\bash.exe` (installer-managed PortableGit).
 3. `%LOCALAPPDATA%\kova\git\bin\bash.exe` (older Git-for-Windows layout).
 4. System Git-for-Windows install (`%ProgramFiles%\Git\bin\bash.exe`, etc.).
 5. MSYS2, Cygwin, or any `bash.exe` on PATH as a last resort.
 
-The installer sets `HERMES_GIT_BASH_PATH` explicitly so fresh PowerShell sessions don't have to re-discover. Override it if you want Kova to use a specific bash — for example, your system Git Bash or a WSL-hosted bash via a symlink.
+The installer sets `KOVA_GIT_BASH_PATH` explicitly so fresh PowerShell sessions don't have to re-discover. Override it if you want Kova to use a specific bash — for example, your system Git Bash or a WSL-hosted bash via a symlink.
 
 **Pitfall:** MinGit's layout is different from the full Git-for-Windows installer — bash lives under `usr\bin\bash.exe`, not `bin\bash.exe`. Kova checks both. If you're manually unpacking a MinGit zip, make sure you pick the **non-busybox** variant (`MinGit-*-64-bit.zip`, not `MinGit-*-busybox*.zip`) — busybox builds ship `ash` instead of `bash` and most coreutils are missing.
 
@@ -121,7 +121,7 @@ The installer sets `HERMES_GIT_BASH_PATH` explicitly so fresh PowerShell session
 
 Python's default stdio on Windows uses the console's active code page (usually cp1252 or cp437). Kova's banner, slash-command list, tool feed, Rich panels, and skill descriptions all contain Unicode. Without intervention, any of that crashes with `UnicodeEncodeError: 'charmap' codec can't encode character…`.
 
-The fix is in `hermes_cli/stdio.py::configure_windows_stdio()`, called early in every entry point (`cli.py::main`, `hermes_cli/main.py::main`, `gateway/run.py::main`). It:
+The fix is in `kova_cli/stdio.py::configure_windows_stdio()`, called early in every entry point (`cli.py::main`, `kova_cli/main.py::main`, `gateway/run.py::main`). It:
 
 1. Flips the console code page to CP_UTF8 (65001) via `kernel32.SetConsoleCP` / `SetConsoleOutputCP`.
 2. Reconfigures `sys.stdout` / `sys.stderr` / `sys.stdin` to UTF-8 with `errors='replace'`.
@@ -130,7 +130,7 @@ The fix is in `hermes_cli/stdio.py::configure_windows_stdio()`, called early in 
 
 Idempotent. No-op on non-Windows.
 
-**Opt out:** `HERMES_DISABLE_WINDOWS_UTF8=1` in the environment falls back to the legacy cp1252 stdio path. Useful for bisecting an encoding bug; unlikely to be the right setting in normal operation.
+**Opt out:** `KOVA_DISABLE_WINDOWS_UTF8=1` in the environment falls back to the legacy cp1252 stdio path. Useful for bisecting an encoding bug; unlikely to be the right setting in normal operation.
 
 ## The editor (`Ctrl-X Ctrl-E`, `/edit`)
 
@@ -176,7 +176,7 @@ kova gateway install
 
 What happens under the hood:
 
-1. `schtasks /Create /SC ONLOGON /RL LIMITED /TN HermesGateway` — registers a task that runs at your login with standard (non-elevated) permissions. No UAC prompt.
+1. `schtasks /Create /SC ONLOGON /RL LIMITED /TN KovaGateway` — registers a task that runs at your login with standard (non-elevated) permissions. No UAC prompt.
 2. If schtasks is blocked by group policy, falls back to writing a `start /min cmd.exe /d /c <wrapper>` shortcut into `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup`. Same effect, slightly cruder.
 3. Spawns the gateway **detached via `pythonw.exe`** — not `python.exe`. `pythonw.exe` has no console attached, which immunizes it against `CTRL_C_EVENT` broadcasts from sibling processes (a real issue that used to kill the gateway when you Ctrl+C'd anything in the same process group).
 
@@ -202,7 +202,7 @@ Services require admin rights to install and tie the gateway's lifecycle to mach
 
 | Path | Contents |
 |---|---|
-| `%LOCALAPPDATA%\kova\kova-agent\` | Git checkout + venv. `venv\Scripts\hermes.exe` is the command added to User PATH. Safe to `Remove-Item -Recurse` and reinstall. |
+| `%LOCALAPPDATA%\kova\kova-agent\` | Git checkout + venv. `venv\Scripts\kova.exe` is the command added to User PATH. Safe to `Remove-Item -Recurse` and reinstall. |
 | `%LOCALAPPDATA%\kova\git\` | PortableGit (only if the installer provisioned it). |
 | `%LOCALAPPDATA%\kova\node\` | Portable Node.js (only if the installer provisioned it). |
 | `%LOCALAPPDATA%\kova\bin\` | Kova's managed `uv.exe` (the Python manager it uses for updates). |
@@ -210,7 +210,7 @@ Services require admin rights to install and tie the gateway's lifecycle to mach
 
 On native Windows the installer sets `HERMES_HOME=%LOCALAPPDATA%\kova`, so your data and the disposable install live under the **same** `%LOCALAPPDATA%\kova` root: the install/runtime is the `kova-agent\`, `git\`, `node\`, and `bin\` subdirectories, while your data files sit directly in `%LOCALAPPDATA%\kova`. Reinstalling only replaces the `kova-agent\` checkout, so your data survives — but because the two share a root, **don't** `Remove-Item -Recurse %LOCALAPPDATA%\kova` if you want to keep your data; delete the `kova-agent\` subdirectory instead. Your data directory is identical in shape to a Linux `~/.hermes`, so you can mirror it between machines.
 
-**Override `HERMES_HOME`:** set the environment variable to point at a different data dir (e.g. `%USERPROFILE%\.hermes` to match a Linux/WSL layout). Works the same as on Linux.
+**Override `HERMES_HOME`:** set the environment variable to point at a different data dir (e.g. `%USERPROFILE%\.kova` to match a Linux/WSL layout). Works the same as on Linux.
 
 ## Browser tool
 
@@ -229,7 +229,7 @@ The installer adds `%LOCALAPPDATA%\kova\kova-agent\venv\Scripts` to your **User 
 Verify:
 
 ```powershell
-Get-Command hermes        # should print C:\Users\<you>\AppData\Local\hermes\kova-agent\venv\Scripts\hermes.exe
+Get-Command kova        # should print C:\Users\<you>\AppData\Local\kova\kova-agent\venv\Scripts\kova.exe
 kova --version
 ```
 
@@ -250,8 +250,8 @@ These only affect native Windows installs:
 
 | Variable | Effect |
 |---|---|
-| `HERMES_GIT_BASH_PATH` | Override bash.exe discovery. Point at any bash — full Git-for-Windows, WSL bash via symlink, MSYS2, Cygwin. The installer sets this automatically. |
-| `HERMES_DISABLE_WINDOWS_UTF8` | Set to `1` to disable the UTF-8 stdio shim and fall back to the locale code page. Useful for bisecting an encoding bug. |
+| `KOVA_GIT_BASH_PATH` | Override bash.exe discovery. Point at any bash — full Git-for-Windows, WSL bash via symlink, MSYS2, Cygwin. The installer sets this automatically. |
+| `KOVA_DISABLE_WINDOWS_UTF8` | Set to `1` to disable the UTF-8 stdio shim and fall back to the locale code page. Useful for bisecting an encoding bug. |
 | `EDITOR` / `VISUAL` | Your editor for `/edit` and `Ctrl-X Ctrl-E`. Kova defaults to `notepad` if both are unset. |
 
 ## Uninstall
@@ -262,7 +262,7 @@ From PowerShell:
 kova uninstall
 ```
 
-That's the clean path — removes the schtasks entry, Startup folder shortcut, `hermes.cmd` shim, deletes `%LOCALAPPDATA%\kova\kova-agent\`, and trims the User PATH. It leaves the rest of `%LOCALAPPDATA%\kova\` alone (your config, auth, skills, sessions, logs) in case you're reinstalling.
+That's the clean path — removes the schtasks entry, Startup folder shortcut, `kova.cmd` shim, deletes `%LOCALAPPDATA%\kova\kova-agent\`, and trims the User PATH. It leaves the rest of `%LOCALAPPDATA%\kova\` alone (your config, auth, skills, sessions, logs) in case you're reinstalling.
 
 To nuke everything:
 
@@ -270,9 +270,9 @@ To nuke everything:
 kova uninstall
 Remove-Item -Recurse -Force "$env:LOCALAPPDATA\kova"
 # Also remove a legacy pre-rebrand data dir if you ever used one:
-Remove-Item -Recurse -Force "$env:LOCALAPPDATA\hermes"
+Remove-Item -Recurse -Force "$env:LOCALAPPDATA\kova"
 # Also remove a legacy CLI/WSL data dir if you ever used one:
-Remove-Item -Recurse -Force "$env:USERPROFILE\.hermes"
+Remove-Item -Recurse -Force "$env:USERPROFILE\.kova"
 ```
 
 The `kova uninstall` CLI subcommand also handles the case where the schtasks entry was registered under a different task name (older installs) — it searches by install path rather than by hardcoded task name.
@@ -289,8 +289,8 @@ Consequence: any codepath that said "check if this PID is alive" via `os.kill(pi
 
 ## Common pitfalls
 
-**`hermes: command not found` right after install.**
-Open a new PowerShell window. The installer added `%LOCALAPPDATA%\kova\bin` to User PATH, but existing shells need to be restarted to pick it up. In the meantime you can run `& "$env:LOCALAPPDATA\hermes\bin\hermes.cmd"`.
+**`kova: command not found` right after install.**
+Open a new PowerShell window. The installer added `%LOCALAPPDATA%\kova\bin` to User PATH, but existing shells need to be restarted to pick it up. In the meantime you can run `& "$env:LOCALAPPDATA\kova\bin\kova.cmd"`.
 
 **`WinError 193: %1 is not a valid Win32 application` when running a tool.**
 You hit a shebang-script invocation that bypassed the `.cmd` shim. Kova resolves commands through `shutil.which(cmd, path=local_bin)` so PATHEXT picks up `.CMD` — if you're invoking the tool via a hardcoded path instead, switch to the `.cmd` variant (e.g., `npx.cmd`, not `npx`).
@@ -299,7 +299,7 @@ You hit a shebang-script invocation that bypassed the `.cmd` shim. Kova resolves
 Your download of `install.ps1` picked up a UTF-8 BOM. The `irm | iex` form strips BOMs automatically; `[scriptblock]::Create((irm ...))` does not. Re-run with the simple `irm | iex` form, or download the script manually and save it without a BOM via `[IO.File]::WriteAllText($path, $text, (New-Object Text.UTF8Encoding $false))`.
 
 **Gateway won't stay running after restart.**
-Check `kova gateway status` — it merges the schtasks entry, the Startup-folder shortcut (if used), and the live PID. If schtasks is registered but not running, group policy may be blocking `ONLOGON` triggers. Run `schtasks /Query /TN HermesGateway /V /FO LIST` to see the task's failure reason, or fall back to the Startup-folder path by uninstalling and reinstalling with `HERMES_GATEWAY_FORCE_STARTUP=1`.
+Check `kova gateway status` — it merges the schtasks entry, the Startup-folder shortcut (if used), and the live PID. If schtasks is registered but not running, group policy may be blocking `ONLOGON` triggers. Run `schtasks /Query /TN KovaGateway /V /FO LIST` to see the task's failure reason, or fall back to the Startup-folder path by uninstalling and reinstalling with `KOVA_GATEWAY_FORCE_STARTUP=1`.
 
 **`/edit` still does nothing after setting `$env:EDITOR`.**
 You set it in the current process only; close and reopen the shell, or set it at User scope in System Properties → Environment Variables. Verify with `echo $env:EDITOR` in a new PowerShell window.
@@ -311,7 +311,7 @@ Chromium is auto-installed on first run. If the install failed (rate-limited Git
 The installer provisions Node 22 at `%LOCALAPPDATA%\kova\node` but your PATH may have an older system Node 18 first. Either move Kova's node dir earlier on PATH, or delete the system install if you don't use Node elsewhere.
 
 **Chinese / Japanese / Arabic characters show as `?` in the CLI.**
-The UTF-8 stdio shim didn't activate. Check that `HERMES_DISABLE_WINDOWS_UTF8` is NOT set (`Get-ChildItem env:HERMES_DISABLE_WINDOWS_UTF8`). If it's empty and you still see `?`, the console host (very old `cmd.exe`) may not support UTF-8 at all — switch to Windows Terminal.
+The UTF-8 stdio shim didn't activate. Check that `KOVA_DISABLE_WINDOWS_UTF8` is NOT set (`Get-ChildItem env:KOVA_DISABLE_WINDOWS_UTF8`). If it's empty and you still see `?`, the console host (very old `cmd.exe`) may not support UTF-8 at all — switch to Windows Terminal.
 
 **Gateway can't send Telegram photos — "`BadRequest: payload contains invalid characters`".**
 This is unrelated to Windows but sometimes surfaces first there. Usually it means your file path contains unescaped backslashes in a JSON body. Telegram should be receiving paths Kova normalizes, not raw Windows paths — if you're seeing this inside a custom plugin, make sure you're passing the Kova-provided path, not `str(Path(...))` from user input.

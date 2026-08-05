@@ -25,8 +25,8 @@ be online at the same time. Common reasons:
   memory and skills
 
 Every profile already gets its own per-platform LaunchAgent
-(`ai.hermes.gateway-<name>.plist`) or systemd user service
-(`hermes-gateway-<name>.service`). This guide adds the patterns for managing
+(`ai.kova.gateway-<name>.plist`) or systemd user service
+(`kova-gateway-<name>.service`). This guide adds the patterns for managing
 them collectively.
 
 ## Quick start
@@ -245,7 +245,7 @@ falls back to the default home.
 
 The CLI ships with single-profile lifecycle commands. To act across every
 profile, wrap them in a shell loop. Put the snippet below in
-`~/.local/bin/hermes-gateways` and `chmod +x` it:
+`~/.local/bin/kova-gateways` and `chmod +x` it:
 
 ```sh
 #!/bin/sh
@@ -255,7 +255,7 @@ set -eu
 profiles="default coder personal-bot research"
 
 usage() {
-  echo "Usage: hermes-gateways {start|stop|restart|status|list}"
+  echo "Usage: kova-gateways {start|stop|restart|status|list}"
 }
 
 run_for_profile() {
@@ -289,11 +289,11 @@ esac
 Then:
 
 ```bash
-hermes-gateways start      # start every configured profile
-hermes-gateways stop       # stop every configured profile
-hermes-gateways restart    # restart all
-hermes-gateways status     # status across all
-hermes-gateways list       # delegates to `hermes gateway list`
+kova-gateways start      # start every configured profile
+kova-gateways stop       # stop every configured profile
+kova-gateways restart    # restart all
+kova-gateways status     # status across all
+kova-gateways list       # delegates to `kova gateway list`
 ```
 
 :::tip
@@ -326,11 +326,11 @@ never clash:
 
 | Platform | Path                                                              |
 | -------- | ----------------------------------------------------------------- |
-| macOS    | `~/Library/LaunchAgents/ai.hermes.gateway-<profile>.plist`        |
-| Linux    | `~/.config/systemd/user/hermes-gateway-<profile>.service`         |
+| macOS    | `~/Library/LaunchAgents/ai.kova.gateway-<profile>.plist`        |
+| Linux    | `~/.config/systemd/user/kova-gateway-<profile>.service`         |
 
-The default profile keeps the historical names: `ai.hermes.gateway.plist` /
-`hermes-gateway.service`.
+The default profile keeps the historical names: `ai.kova.gateway.plist` /
+`kova-gateway.service`.
 
 ## Viewing logs
 
@@ -364,9 +364,9 @@ kova logs --help              # filters, levels, JSON output
 
 ```bash
 kova profile list             # profiles + model + gateway state
-hermes-gateways status          # full status across every profile
+kova-gateways status          # full status across every profile
 launchctl list | grep kova    # macOS — PIDs and labels
-systemctl --user list-units 'hermes-gateway-*'   # Linux — units
+systemctl --user list-units 'kova-gateway-*'   # Linux — units
 ```
 
 ## Editing configuration
@@ -394,7 +394,7 @@ After editing `.env` or `config.yaml`, restart the affected gateway:
 ```bash
 coder gateway restart
 # or, for everything:
-hermes-gateways restart
+kova-gateways restart
 ```
 
 ## Keeping the host awake
@@ -448,7 +448,7 @@ sudo loginctl enable-linger "$USER"
 ```
 
 After enabling lingering, your systemd user units (including
-`hermes-gateway-<profile>.service`) continue running across SSH disconnects
+`kova-gateway-<profile>.service`) continue running across SSH disconnects
 and reboots.
 
 ## Token-conflict safety
@@ -471,7 +471,7 @@ every profile:
 
 ```bash
 kova update
-hermes-gateways restart
+kova-gateways restart
 ```
 
 User-modified skills are never overwritten.
@@ -491,7 +491,7 @@ service definition`). The service starts normally. Nothing to fix.
 If a profile's gateway shows `not running` but a process is still alive:
 
 ```bash
-ps -ef | grep "hermes_cli.*-p <profile>"
+ps -ef | grep "kova_cli.*-p <profile>"
 cat ~/.hermes/profiles/<profile>/gateway.pid
 kill -TERM <pid>          # graceful
 kill -KILL <pid>          # if that fails after a few seconds
@@ -502,11 +502,11 @@ kill -KILL <pid>          # if that fails after a few seconds
 
 ```bash
 # macOS
-launchctl unload ~/Library/LaunchAgents/ai.hermes.gateway-<profile>.plist
-launchctl load   ~/Library/LaunchAgents/ai.hermes.gateway-<profile>.plist
+launchctl unload ~/Library/LaunchAgents/ai.kova.gateway-<profile>.plist
+launchctl load   ~/Library/LaunchAgents/ai.kova.gateway-<profile>.plist
 
 # Linux
-systemctl --user restart hermes-gateway-<profile>.service
+systemctl --user restart kova-gateway-<profile>.service
 ```
 
 ### Health check

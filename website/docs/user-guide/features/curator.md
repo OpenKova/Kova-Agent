@@ -12,7 +12,7 @@ It exists so that skills created via the [self-improvement loop](/user-guide/fea
 
 By default (`prune_builtins: true`) the curator can archive **unused bundled built-in skills** (shipped with the repo) after `archive_after_days` of non-use, alongside the agent-created skills it primarily manages. Hub-installed skills (from [agentskills.io](https://agentskills.io)) are always off-limits. Set `curator.prune_builtins: false` to restore the old agent-created-only behavior, where bundled skills are never touched. The curator also **never auto-deletes** — the worst outcome is archival into `~/.hermes/skills/.archive/`, which is recoverable.
 
-Tracks [issue #7816](https://github.com/NousResearch/hermes-agent/issues/7816).
+Tracks [issue #7816](https://github.com/OpenKova/Kova-Agent/issues/7816).
 
 ## How it runs
 
@@ -94,7 +94,7 @@ kova curator run            # trigger a run now (blocks until done). Prune-only 
 kova curator run --consolidate # force the LLM consolidation pass on for this run, overriding the config default
 kova curator run --background  # fire-and-forget: start the run in a background thread
 kova curator run --dry-run  # preview only — report without any mutations
-hermes curator backup         # take a manual snapshot of ~/.hermes/skills/
+kova curator backup         # take a manual snapshot of ~/.hermes/skills/
 kova curator rollback       # restore from the newest snapshot
 kova curator rollback --list     # list available snapshots
 kova curator rollback --id <ts>  # restore a specific snapshot
@@ -104,7 +104,7 @@ kova curator resume
 kova curator pin <skill>    # never auto-transition this skill
 kova curator unpin <skill>
 kova curator restore <skill>  # move an archived skill back to active
-hermes curator list-archived    # list skills currently in ~/.hermes/skills/.archive/
+kova curator list-archived    # list skills currently in ~/.hermes/skills/.archive/
 kova curator archive <skill>  # manually archive a single skill now
 kova curator prune [--days N] # bulk-archive agent-created skills idle >= N days (default 90)
 ```
@@ -281,4 +281,4 @@ The curator also refuses to run if `min_idle_hours` hasn't elapsed, so on an act
 - [Skills System](/user-guide/features/skills) — how skills work in general and the self-improvement loop that creates them
 - [Memory](/user-guide/features/memory) — a parallel background review that maintains long-term memory
 - [Bundled Skills Catalog](/reference/skills-catalog)
-- [Issue #7816](https://github.com/NousResearch/hermes-agent/issues/7816) — original proposal and design discussion
+- [Issue #7816](https://github.com/OpenKova/Kova-Agent/issues/7816) — original proposal and design discussion

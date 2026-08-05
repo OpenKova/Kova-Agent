@@ -54,7 +54,7 @@ platforms: [macos, linux]          # Optional — restrict to specific OS platfo
                                    #   Valid: macos, linux, windows
                                    #   Omit to load on all platforms (default)
 metadata:
-  hermes:
+  kova:
     tags: [Category, Subcategory, Keywords]
     related_skills: [other-skill-name]
     requires_toolsets: [web]            # Optional — only show when these toolsets are active
@@ -111,7 +111,7 @@ Skill 可声明对特定 tool 或 toolset 的依赖，以控制该 skill 是否�
 
 ```yaml
 metadata:
-  hermes:
+  kova:
     requires_toolsets: [web]           # 若 web toolset 未激活则隐藏
     requires_tools: [web_search]       # 若 web_search tool 不可用则隐藏
     fallback_for_toolsets: [browser]   # 若 browser toolset 已激活则隐藏
@@ -184,7 +184,7 @@ Skill 可声明非密钥配置项，这些配置项存储在 `config.yaml` 的 `
 
 ```yaml
 metadata:
-  hermes:
+  kova:
     config:
       - key: myplugin.path
         description: Path to the plugin data directory
@@ -282,15 +282,15 @@ Skill 加载时，激活消息会将 skill 目录的绝对路径以 `[Skill dire
 
 | Token | 替换为 |
 |---|---|
-| `${HERMES_SKILL_DIR}` | skill 目录的绝对路径 |
-| `${HERMES_SESSION_ID}` | 当前会话 ID（若无会话则保留原样） |
+| `${KOVA_SKILL_DIR}` | skill 目录的绝对路径 |
+| `${KOVA_SESSION_ID}` | 当前会话 ID（若无会话则保留原样） |
 
 因此，SKILL.md 可以直接告知 agent 运行内置脚本：
 
 ```markdown
 To analyse the input, run:
 
-    node ${HERMES_SKILL_DIR}/scripts/analyse.js <input>
+    node ${KOVA_SKILL_DIR}/scripts/analyse.js <input>
 ```
 
 Agent 看到替换后的绝对路径，并使用 `terminal` tool 执行已就绪的命令——无需路径计算，无需额外的 `skill_view` 往返。可在 `config.yaml` 中设置 `skills.template_vars: false` 全局禁用替换。
@@ -301,7 +301,7 @@ Skill 也可在 SKILL.md 正文中嵌入以 `` !`cmd` `` 形式编写的内联 s
 
 ```markdown
 Current date: !`date -u +%Y-%m-%d`
-Git branch: !`git -C ${HERMES_SKILL_DIR} rev-parse --abbrev-ref HEAD`
+Git branch: !`git -C ${KOVA_SKILL_DIR} rev-parse --abbrev-ref HEAD`
 ```
 
 此功能**默认关闭**——SKILL.md 中的任何片段都会在未经审批的情况下在宿主机上运行，因此仅对你信任的 skill 来源启用：

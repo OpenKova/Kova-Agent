@@ -570,7 +570,7 @@ def test_delegate_task_background_waits_inside_kanban_worker(monkeypatch):
     from unittest.mock import MagicMock
     import tools.delegate_tool as dt
 
-    monkeypatch.setenv("HERMES_KANBAN_TASK", "t_review")
+    monkeypatch.setenv("KOVA_KANBAN_TASK", "t_review")
 
     parent = MagicMock()
     parent._delegate_depth = 0

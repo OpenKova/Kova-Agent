@@ -84,7 +84,7 @@ kova cron status        # scheduler status
 
 #### Option 2: systemd timer (recommended for Linux production deployments)
 
-Create `/etc/systemd/system/hermes-teams-pipeline-maintain.service`:
+Create `/etc/systemd/system/kova-teams-pipeline-maintain.service`:
 
 ```ini
 [Unit]
@@ -94,11 +94,11 @@ After=network-online.target
 [Service]
 Type=oneshot
 User=kova
-EnvironmentFile=/etc/hermes/env
-ExecStart=/usr/local/bin/hermes teams-pipeline maintain-subscriptions
+EnvironmentFile=/etc/kova/env
+ExecStart=/usr/local/bin/kova teams-pipeline maintain-subscriptions
 ```
 
-And `/etc/systemd/system/hermes-teams-pipeline-maintain.timer`:
+And `/etc/systemd/system/kova-teams-pipeline-maintain.timer`:
 
 ```ini
 [Unit]
@@ -117,14 +117,14 @@ Enable:
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable --now hermes-teams-pipeline-maintain.timer
-systemctl list-timers hermes-teams-pipeline-maintain.timer
+sudo systemctl enable --now kova-teams-pipeline-maintain.timer
+systemctl list-timers kova-teams-pipeline-maintain.timer
 ```
 
 #### Option 3: Plain crontab
 
 ```cron
-0 */12 * * * /usr/local/bin/hermes teams-pipeline maintain-subscriptions >> /var/log/hermes/teams-pipeline-maintain.log 2>&1
+0 */12 * * * /usr/local/bin/kova teams-pipeline maintain-subscriptions >> /var/log/kova/teams-pipeline-maintain.log 2>&1
 ```
 
 Make sure the cron environment has the `MSGRAPH_*` credentials. Simplest fix: source `~/.hermes/.env` at the top of a wrapper script that crontab calls.

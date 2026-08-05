@@ -27,7 +27,7 @@ Kova Kanban 是一个持久化任务看板，在所有 Kova 配置文件之间�
 - **工程流水线** —— 分解 → 在并行 worktree 中实现 → 审查 → 迭代 → PR。
 - **批量任务** —— 一个专家管理 N 个对象（50 个社交账号、12 个监控服务）。
 
-完整的设计原理、与 Cline Kanban / Paperclip / NanoClaw / Google Gemini Enterprise 的对比分析，以及八种典型协作模式，请参阅仓库中的 `docs/hermes-kanban-v1-spec.pdf`。
+完整的设计原理、与 Cline Kanban / Paperclip / NanoClaw / Google Gemini Enterprise 的对比分析，以及八种典型协作模式，请参阅仓库中的 `docs/kova-kanban-v1-spec.pdf`。
 
 ## Kanban 与 `delegate_task` 的对比
 
@@ -59,10 +59,10 @@ Kova Kanban 是一个持久化任务看板，在所有 Kova 配置文件之间�
 - **Link（链接）** —— `task_links` 行，记录父 → 子依赖关系。当所有父任务变为 `done` 时，调度器将 `todo → ready`。
 - **Comment（评论）** —— agent 间协议。Agent 和人类追加评论；当 worker 被（重新）启动时，它将完整的评论线程作为上下文的一部分读取。
 - **Workspace（工作区）** —— worker 操作的目录。三种类型：
-  - `scratch`（默认）—— 在 `~/.hermes/kanban/workspaces/<id>/` 下（非默认看板为 `~/.hermes/kanban/boards/<slug>/workspaces/<id>/`）创建的临时目录。**任务完成时删除** —— scratch 按设计是临时性的。通过 `kanban_complete(artifacts=[...])` 明确声明的文件会在清理前复制到持久的任务附件存储；旧版完成摘要中已存在的交付文件路径也会得到同样处理。其他 scratch 文件仍会被删除。如果声明的 scratch 交付文件不存在，任务会保持进行中，worker 可修正路径后重试。需要保留整个工作区时，请使用 `worktree:` 或 `dir:<path>`。在某次安装中首次创建 scratch 工作区时，调度器会记录警告并在任务上发出 `tip_scratch_workspace` 事件（可通过 `hermes kanban show <id>` 查看）。
+  - `scratch`（默认）—— 在 `~/.hermes/kanban/workspaces/<id>/` 下（非默认看板为 `~/.hermes/kanban/boards/<slug>/workspaces/<id>/`）创建的临时目录。**任务完成时删除** —— scratch 按设计是临时性的。通过 `kanban_complete(artifacts=[...])` 明确声明的文件会在清理前复制到持久的任务附件存储；旧版完成摘要中已存在的交付文件路径也会得到同样处理。其他 scratch 文件仍会被删除。如果声明的 scratch 交付文件不存在，任务会保持进行中，worker 可修正路径后重试。需要保留整个工作区时，请使用 `worktree:` 或 `dir:<path>`。在某次安装中首次创建 scratch 工作区时，调度器会记录警告并在任务上发出 `tip_scratch_workspace` 事件（可通过 `kova kanban show <id>` 查看）。
   - `dir:<path>` —— 现有的共享目录（Obsidian vault、邮件运维目录、每账号文件夹）。**必须是绝对路径。** 像 `dir:../tenants/foo/` 这样的相对路径在调度时会被拒绝，因为它们会相对于调度器碰巧所在的 CWD 解析，这是模糊的，也是混淆代理（confused-deputy）逃逸向量。路径本身是受信任的 —— 这是你的机器、你的文件系统，worker 以你的 uid 运行。这是受信任本地用户的威胁模型；kanban 设计为单主机。**完成时保留。**
   - `worktree` —— 用于编码任务的 git worktree，位于 `.worktrees/<id>/` 下。使用 `worktree:<path>` 固定确切的目标路径。Worker 端的 `git worktree add` 创建它，提供 `--branch` 时使用该分支。**完成时保留。**
-- **Dispatcher（调度器）** —— 一个长期运行的循环，每 N 秒（默认 60 秒）执行一次：回收过期的认领、回收崩溃的 worker（PID 消失但 TTL 尚未过期）、推进就绪任务、原子性认领、启动已分配的配置文件。默认**在 gateway 内部运行**（`kanban.dispatch_in_gateway: true`）。每次 tick 一个调度器扫描所有看板；worker 启动时固定了 `HERMES_KANBAN_BOARD`，因此无法看到其他看板。在同一任务上连续启动失败 `kanban.failure_limit` 次（默认：2）后，调度器会以最后一个错误为原因自动阻塞该任务 —— 防止因配置文件不存在、工作区无法挂载等原因导致的反复抖动。
+- **Dispatcher（调度器）** —— 一个长期运行的循环，每 N 秒（默认 60 秒）执行一次：回收过期的认领、回收崩溃的 worker（PID 消失但 TTL 尚未过期）、推进就绪任务、原子性认领、启动已分配的配置文件。默认**在 gateway 内部运行**（`kanban.dispatch_in_gateway: true`）。每次 tick 一个调度器扫描所有看板；worker 启动时固定了 `KOVA_KANBAN_BOARD`，因此无法看到其他看板。在同一任务上连续启动失败 `kanban.failure_limit` 次（默认：2）后，调度器会以最后一个错误为原因自动阻塞该任务 —— 防止因配置文件不存在、工作区无法挂载等原因导致的反复抖动。
 - **Tenant（租户）** —— 看板*内*的可选字符串命名空间。一个专家团队可以通过工作区路径和内存键前缀为多个业务提供数据隔离服务（`--tenant business-a`）。租户是软过滤器；看板是硬隔离边界。
 
 ## 看板（多项目） {#boards-multi-project}
@@ -73,7 +73,7 @@ Kova Kanban 是一个持久化任务看板，在所有 Kova 配置文件之间�
 
 - 每个看板有独立的 SQLite DB（`~/.hermes/kanban/boards/<slug>/kanban.db`）。
 - 独立的 `workspaces/` 和 `logs/` 目录。
-- 为任务启动的 Worker 只能看到**其所在看板**的任务 —— 调度器在子进程环境中设置 `HERMES_KANBAN_BOARD`，worker 可访问的每个 `kanban_*` 工具都会读取它。
+- 为任务启动的 Worker 只能看到**其所在看板**的任务 —— 调度器在子进程环境中设置 `KOVA_KANBAN_BOARD`，worker 可访问的每个 `kanban_*` 工具都会读取它。
 - 不允许跨看板链接任务（保持 schema 简单；如果确实需要跨项目引用，请使用自由文本提及并通过 id 手动查找）。
 
 ### 通过 CLI 管理看板
@@ -111,8 +111,8 @@ kova kanban boards rm atm10-server --delete
 看板解析顺序（优先级从高到低）：
 
 1. CLI 调用中的显式 `--board <slug>`。
-2. `HERMES_KANBAN_BOARD` 环境变量（调度器在启动 worker 时设置，因此 worker 无法看到其他看板）。
-3. `~/.hermes/kanban/current` —— 由 `hermes kanban boards switch` 持久化的 slug。
+2. `KOVA_KANBAN_BOARD` 环境变量（调度器在启动 worker 时设置，因此 worker 无法看到其他看板）。
+3. `~/.hermes/kanban/current` —— 由 `kova kanban boards switch` 持久化的 slug。
 4. `default`。
 
 Slug 经过验证：小写字母数字 + 连字符 + 下划线，1-64 个字符，必须以字母数字开头。大写输入会自动转为小写。其他任何内容（斜杠、空格、点、`..`）在 CLI 层被拒绝，以防止路径遍历技巧命名看板。
@@ -163,7 +163,7 @@ kanban:
   dispatch_interval_seconds: 60    # 默认
 ```
 
-通过 `HERMES_KANBAN_DISPATCH_IN_GATEWAY=0` 在运行时覆盖配置标志以进行调试。标准 gateway 监督适用：直接运行 `kova gateway start`，或将 gateway 配置为 systemd 用户单元（参见 gateway 文档）。没有运行中的 gateway，`ready` 任务会保持原状，直到 gateway 启动 —— `kova kanban create` 在创建时会对此发出警告。
+通过 `KOVA_KANBAN_DISPATCH_IN_GATEWAY=0` 在运行时覆盖配置标志以进行调试。标准 gateway 监督适用：直接运行 `kova gateway start`，或将 gateway 配置为 systemd 用户单元（参见 gateway 文档）。没有运行中的 gateway，`ready` 任务会保持原状，直到 gateway 启动 —— `kova kanban create` 在创建时会对此发出警告。
 
 将 `kova kanban daemon` 作为单独进程运行已**弃用**；请使用 gateway。如果你确实无法运行 gateway（无头主机策略禁止长期运行的服务等），`--force` 逃生舱口在一个发布周期内保持旧的独立守护进程可用，但同时运行 gateway 内嵌调度器和针对同一 `kanban.db` 的独立守护进程会导致认领竞争，不受支持。
 
@@ -191,7 +191,7 @@ kova kanban block    t_abc "need input" --ids t_def t_hij
 
 ## Worker 如何与看板交互 {#how-workers-interact-with-the-board}
 
-**Worker 不会 shell 执行 `kova kanban`。** 当调度器启动 worker 时，它在子进程环境中设置 `HERMES_KANBAN_TASK=t_abcd`，该环境变量在模型的 schema 中启用专用的 **kanban 工具集**。同一工具集也可供在工具集配置中启用 `kanban` 的编排器配置文件使用。这些工具通过 Python `kanban_db` 层直接读取和修改看板，与 CLI 的做法相同。运行中的 worker 像调用任何其他工具一样调用这些工具；它从不看到或需要 `kova kanban` CLI。
+**Worker 不会 shell 执行 `kova kanban`。** 当调度器启动 worker 时，它在子进程环境中设置 `KOVA_KANBAN_TASK=t_abcd`，该环境变量在模型的 schema 中启用专用的 **kanban 工具集**。同一工具集也可供在工具集配置中启用 `kanban` 的编排器配置文件使用。这些工具通过 Python `kanban_db` 层直接读取和修改看板，与 CLI 的做法相同。运行中的 worker 像调用任何其他工具一样调用这些工具；它从不看到或需要 `kova kanban` CLI。
 
 | 工具 | 用途 | 必需参数 |
 |---|---|---|
@@ -209,7 +209,7 @@ kova kanban block    t_abc "need input" --ids t_def t_hij
 
 ```
 # 模型的工具调用，按顺序：
-kanban_show()                                     # 无参数 —— 使用 HERMES_KANBAN_TASK
+kanban_show()                                     # 无参数 —— 使用 KOVA_KANBAN_TASK
 # （模型读取返回的 worker_context，通过终端/文件工具完成工作）
 kanban_heartbeat(note="halfway through — 4 of 8 files transformed")
 # （更多工作）
@@ -246,11 +246,11 @@ kanban_complete(summary="decomposed into 2 research tasks + 1 writer; linked dep
 
 三个原因：
 
-1. **后端可移植性。** 终端工具指向远程后端（Docker / Modal / Singularity / SSH）的 worker 会在容器*内部*运行 `hermes kanban complete`，而容器中没有安装 `hermes`，也没有挂载 `~/.hermes/kanban.db`。kanban 工具在 agent 自己的 Python 进程中运行，无论终端后端如何，始终能访问 `~/.hermes/kanban.db`。
+1. **后端可移植性。** 终端工具指向远程后端（Docker / Modal / Singularity / SSH）的 worker 会在容器*内部*运行 `kova kanban complete`，而容器中没有安装 `kova`，也没有挂载 `~/.hermes/kanban.db`。kanban 工具在 agent 自己的 Python 进程中运行，无论终端后端如何，始终能访问 `~/.hermes/kanban.db`。
 2. **无 shell 引用脆弱性。** 通过 shlex + argparse 传递 `--metadata '{"files": [...]}'` 是潜在的隐患。结构化工具参数完全绕过了这个问题。
 3. **更好的错误处理。** 工具结果是模型可以推理的结构化 JSON，而不是需要解析的 stderr 字符串。
 
-**对普通会话零 schema 占用。** 普通的 `kova chat` 会话在其 schema 中没有任何 `kanban_*` 工具，除非活动配置文件为编排器工作显式启用了 `kanban` 工具集。调度器启动的任务 worker 因为设置了 `HERMES_KANBAN_TASK` 而获得任务范围的工具；编排器配置文件通过配置获得更广泛的路由界面。对于从不使用 kanban 的用户，没有工具膨胀。
+**对普通会话零 schema 占用。** 普通的 `kova chat` 会话在其 schema 中没有任何 `kanban_*` 工具，除非活动配置文件为编排器工作显式启用了 `kanban` 工具集。调度器启动的任务 worker 因为设置了 `KOVA_KANBAN_TASK` 而获得任务范围的工具；编排器配置文件通过配置获得更广泛的路由界面。对于从不使用 kanban 的用户，没有工具膨胀。
 
 自动注入的 kanban 指引教导模型何时调用哪个工具以及调用顺序。
 
@@ -263,7 +263,7 @@ kanban_complete(summary="decomposed into 2 research tasks + 1 writer; linked dep
 ```json
 {
   "changed_files": ["path/to/file.py"],
-  "verification": ["pytest tests/hermes_cli/test_kanban_db.py -q"],
+  "verification": ["pytest tests/kova_cli/test_kanban_db.py -q"],
   "dependencies": ["parent task id or external issue, if any"],
   "blocked_reason": null,
   "retry_notes": "what failed before, if this was a retry",
@@ -285,7 +285,7 @@ kanban_complete(summary="decomposed into 2 research tasks + 1 writer; linked dep
 任何处理 kanban 任务的配置文件都会**自动**获得 worker 生命周期 —— 它在启动时被注入到 worker 的系统 prompt 中（`KANBAN_GUIDANCE` 块），因此**无需安装或配置任何东西**。它通过**工具调用**（而非 CLI 命令）教导 worker 完整的生命周期：
 
 1. 启动时，调用 `kanban_show()` 读取标题 + 正文 + 父级交接 + 先前尝试 + 完整评论线程。
-2. 通过终端工具执行 `cd $HERMES_KANBAN_WORKSPACE`，在那里完成工作。
+2. 通过终端工具执行 `cd $KOVA_KANBAN_WORKSPACE`，在那里完成工作。
 3. 在长时间操作期间每隔几分钟调用一次 `kanban_heartbeat(note="...")`。**如果你的工作可能运行超过 1 小时，请至少每小时调用一次 `kanban_heartbeat`** —— 调度器会回收运行时间超过 `kanban.dispatch_stale_timeout_seconds`（默认 4 小时）且最近一小时内没有心跳的任务，认为 worker 在没有清理的情况下崩溃了。回收是无害的（任务返回 `ready` 重新调度，不增加失败计数器），但你会失去当前运行的进度。
 4. 以 `kanban_complete(summary="...", metadata={...})` 完成，或在卡住时以 `kanban_block(reason="...")` 完成。
 
@@ -492,7 +492,7 @@ WebSocket 额外增加了一步：它要求仪表盘的临时会话 token 作为
 
 如果你运行 `kova dashboard --host 0.0.0.0`，每个插件路由 —— 包括 kanban —— 都可以从网络访问。**不要在共享主机上这样做。** 看板包含任务正文、评论和工作区路径；攻击者访问这些路由可以读取你整个协作界面，还可以创建 / 重新分配 / 归档任务。
 
-`~/.hermes/kanban.db` 中的任务是有意与配置文件无关的（这是协调原语）。如果你用 `hermes -p <profile> dashboard` 打开仪表盘，看板仍然显示主机上任何其他配置文件创建的任务。同一用户拥有所有配置文件，但如果多个角色共存，这一点值得了解。
+`~/.hermes/kanban.db` 中的任务是有意与配置文件无关的（这是协调原语）。如果你用 `kova -p <profile> dashboard` 打开仪表盘，看板仍然显示主机上任何其他配置文件创建的任务。同一用户拥有所有配置文件，但如果多个角色共存，这一点值得了解。
 
 ### 实时更新
 
@@ -548,7 +548,7 @@ kova kanban dispatch [--dry-run] [--max N]           # 单次扫描
 kova kanban daemon --force                           # 已弃用 —— 独立调度器（改用 `kova gateway start`）
         [--failure-limit N] [--pidfile PATH] [-v]
 kova kanban stats [--json]                           # 每状态 + 每受让人计数
-hermes kanban log <id> [--tail BYTES]                  # 来自 ~/.hermes/kanban/logs/ 的 worker 日志
+kova kanban log <id> [--tail BYTES]                  # 来自 ~/.hermes/kanban/logs/ 的 worker 日志
 kova kanban notify-subscribe <id>                    # gateway 桥接钩子（由 gateway 中的 /kanban 使用）
         --platform <name> --chat-id <id> [--thread-id <id>] [--user-id <id>]
 kova kanban notify-list [<id>] [--json]
@@ -567,7 +567,7 @@ kova kanban gc [--event-retention-days N]            # 工作区 + 旧事件 + �
 
 ## `/kanban` 斜杠命令 {#kanban-slash-command}
 
-每个 `hermes kanban <action>` 动词也可以作为 `/kanban <action>` 访问 —— 从交互式 `hermes chat` 会话内部**以及**从任何 gateway 平台（Telegram、Discord、Slack、WhatsApp、Signal、Matrix、Mattermost、电子邮件、SMS）。两个界面都调用完全相同的 `hermes_cli.kanban.run_slash()` 入口点，该入口点复用 `hermes kanban` argparse 树，因此参数界面、标志和输出格式在 CLI、`/kanban` 和 `hermes kanban` 之间完全相同。你不必离开聊天来驱动看板。
+每个 `kova kanban <action>` 动词也可以作为 `/kanban <action>` 访问 —— 从交互式 `kova chat` 会话内部**以及**从任何 gateway 平台（Telegram、Discord、Slack、WhatsApp、Signal、Matrix、Mattermost、电子邮件、SMS）。两个界面都调用完全相同的 `kova_cli.kanban.run_slash()` 入口点，该入口点复用 `kova kanban` argparse 树，因此参数界面、标志和输出格式在 CLI、`/kanban` 和 `kova kanban` 之间完全相同。你不必离开聊天来驱动看板。
 
 ```
 /kanban list
@@ -633,7 +633,7 @@ Gateway 平台有实际的消息长度限制。如果 `/kanban list`、`/kanban 
 | **P8 批量任务** | 一个配置文件，N 个对象 | 50 个社交账号 |
 | **P9 分诊规格器** | 粗略想法 → `triage` → `kova kanban specify` 扩展正文 → `todo` | "将这个一行描述变成规格化任务" |
 
-每种模式的详细示例，请参阅 `docs/hermes-kanban-v1-spec.pdf`。
+每种模式的详细示例，请参阅 `docs/kova-kanban-v1-spec.pdf`。
 
 ## 多租户使用
 
@@ -646,7 +646,7 @@ kova kanban create "monthly report" \
     --workspace dir:~/tenants/business-a/data/
 ```
 
-Worker 接收 `$HERMES_TENANT` 并按前缀命名空间化其内存写入。看板、调度器和配置文件定义都是共享的；只有数据是有范围的。
+Worker 接收 `$KOVA_TENANT` 并按前缀命名空间化其内存写入。看板、调度器和配置文件定义都是共享的；只有数据是有范围的。
 
 ## Gateway 通知
 
@@ -766,4 +766,4 @@ Kanban 是刻意单主机的。`~/.hermes/kanban.db` 是本地 SQLite 文件，�
 
 ## 设计规范
 
-完整的设计 —— 架构、并发正确性、与其他系统的比较、实现计划、风险、开放问题 —— 存在于 `docs/hermes-kanban-v1-spec.pdf` 中。在提交任何行为变更 PR 之前请先阅读它。
+完整的设计 —— 架构、并发正确性、与其他系统的比较、实现计划、风险、开放问题 —— 存在于 `docs/kova-kanban-v1-spec.pdf` 中。在提交任何行为变更 PR 之前请先阅读它。

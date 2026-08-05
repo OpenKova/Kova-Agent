@@ -3,18 +3,18 @@
 Gives users direct visibility and control over the filesystem checkpoint
 store at ``~/.hermes/checkpoints/``.  Actions:
 
-    kova checkpoints               # same as `status`
-    hermes checkpoints status        # total size, project count, breakdown
-    hermes checkpoints list          # per-project checkpoint counts + workdir
-    hermes checkpoints prune [opts]  # force a sweep (ignores the 24h marker)
-    hermes checkpoints clear [-f]    # nuke the entire base (asks first)
-    hermes checkpoints clear-legacy  # delete just the legacy-* archives
+    kova checkpoints                 # same as `status`
+    kova checkpoints status          # total size, project count, breakdown
+    kova checkpoints list            # per-project checkpoint counts + workdir
+    kova checkpoints prune [opts]    # force a sweep (ignores the 24h marker)
+    kova checkpoints clear [-f]      # nuke the entire base (asks first)
+    kova checkpoints clear-legacy    # delete just the legacy-* archives
 
 Examples::
 
-    hermes checkpoints
-    hermes checkpoints prune --retention-days 3 --max-size-mb 200
-    hermes checkpoints clear -f
+    kova checkpoints
+    kova checkpoints prune --retention-days 3 --max-size-mb 200
+    kova checkpoints clear -f
 
 None of these require the agent to be running.  Safe to call any time.
 """

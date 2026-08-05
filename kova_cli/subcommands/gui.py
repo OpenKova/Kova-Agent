@@ -40,15 +40,15 @@ def build_gui_parser(subparsers, *, cmd_gui: Callable) -> None:
     gui_parser.add_argument(
         "--ignore-existing",
         action="store_true",
-        help="Force Desktop to ignore any hermes CLI already on PATH during backend resolution",
+        help="Force Desktop to ignore any kova CLI already on PATH during backend resolution",
     )
     gui_parser.add_argument(
-        "--hermes-root",
-        help="Override the Kova source root used by Desktop (sets HERMES_DESKTOP_HERMES_ROOT)",
+        "--kova-root",
+        help="Override the Kova source root used by Desktop (sets KOVA_DESKTOP_KOVA_ROOT)",
     )
     gui_parser.add_argument(
         "--cwd",
-        help="Initial project directory for Desktop chat sessions (sets HERMES_DESKTOP_CWD)",
+        help="Initial project directory for Desktop chat sessions (sets KOVA_DESKTOP_CWD)",
     )
     gui_parser.add_argument(
         "--skip-build",

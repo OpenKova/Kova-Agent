@@ -28,7 +28,7 @@ import re
 from pathlib import Path
 from typing import Any, Optional
 
-logger = logging.getLogger("hermes.security_audit")
+logger = logging.getLogger("kova.security_audit")
 
 # Sentinel so the audit only runs once per process even if both the CLI and
 # gateway startup paths call it.
@@ -116,7 +116,7 @@ def _in_container() -> bool:
     """Best-effort container detection (Docker / Podman / generic OCI)."""
     if os.path.exists("/.dockerenv"):
         return True
-    if os.environ.get("HERMES_DESKTOP_CHILD_PID"):
+    if os.environ.get("KOVA_DESKTOP_CHILD_PID"):
         return False  # desktop child, not a server container
     try:
         cgroup = Path("/proc/1/cgroup").read_text(encoding="utf-8", errors="replace")
@@ -165,10 +165,10 @@ def _path_is_mounted(path: Path) -> bool:
     return best_fstype not in ("overlay", "tmpfs", "aufs")
 
 
-def _container_no_volume_mount(hermes_home: Optional[Path]) -> Optional[str]:
+def _container_no_volume_mount(kova_home: Optional[Path]) -> Optional[str]:
     if not _in_container():
         return None
-    home = hermes_home or Path(
+    home = kova_home or Path(
         os.environ.get("HERMES_HOME", os.path.expanduser("~/.hermes"))
     )
     try:
@@ -221,7 +221,7 @@ def _network_listener_without_auth(config: Optional[dict]) -> list[str]:
 
 
 def run_security_audit(
-    *, hermes_home: Optional[Path] = None, config: Optional[dict] = None
+    *, kova_home: Optional[Path] = None, config: Optional[dict] = None
 ) -> list[str]:
     """Run all checks and return a list of human-readable warning strings.
 
@@ -241,7 +241,7 @@ def run_security_audit(
         except Exception:
             continue
     try:
-        r = _container_no_volume_mount(hermes_home)
+        r = _container_no_volume_mount(kova_home)
         if r:
             findings.append(r)
     except Exception:
@@ -255,7 +255,7 @@ def run_security_audit(
 
 def log_startup_security_warnings(
     *,
-    hermes_home: Optional[Path] = None,
+    kova_home: Optional[Path] = None,
     config: Optional[dict] = None,
     force: bool = False,
 ) -> list[str]:
@@ -269,7 +269,7 @@ def log_startup_security_warnings(
         return []
     _AUDIT_RAN = True
     try:
-        findings = run_security_audit(hermes_home=hermes_home, config=config)
+        findings = run_security_audit(kova_home=kova_home, config=config)
     except Exception:
         return []
     if findings:

@@ -117,7 +117,7 @@ agent 将：
 
 ### "No xAI credentials available"
 
-当两种认证路径均失败时，工具会显示此错误。请在 `~/.hermes/.env` 中设置 `XAI_API_KEY`，或运行 `hermes auth add xai-oauth` 并完成浏览器登录。然后重启会话，让 agent 重新加载工具注册表。
+当两种认证路径均失败时，工具会显示此错误。请在 `~/.hermes/.env` 中设置 `XAI_API_KEY`，或运行 `kova auth add xai-oauth` 并完成浏览器登录。然后重启会话，让 agent 重新加载工具注册表。
 
 ### "`x_search` is not enabled for this model"
 

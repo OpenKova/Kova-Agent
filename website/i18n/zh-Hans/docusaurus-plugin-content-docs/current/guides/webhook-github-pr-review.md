@@ -88,7 +88,7 @@ platforms:
 | `deliver_extra.pr_number` | 从 payload 中解析为 PR 编号。 |
 
 :::note Payload 中不包含代码
-GitHub webhook payload 包含 PR 元数据（标题、描述、分支名、URL），但**不包含 diff**。上方的 prompt 指示 agent 运行 `gh pr diff` 来获取实际变更。`terminal` 工具已包含在默认的 `hermes-webhook` 工具集中，无需额外配置。
+GitHub webhook payload 包含 PR 元数据（标题、描述、分支名、URL），但**不包含 diff**。上方的 prompt 指示 agent 运行 `gh pr diff` 来获取实际变更。`terminal` 工具已包含在默认的 `kova-webhook` 工具集中，无需额外配置。
 :::
 
 ---

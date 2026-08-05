@@ -379,7 +379,7 @@ xAI Web Search **不在**自动检测链中——设置了 `XAI_API_KEY`（或�
 
 ```bash
 # 激活 venv 并直接运行网页工具模块
-source ~/.hermes/hermes-agent/.venv/bin/activate
+source ~/.hermes/kova-agent/.venv/bin/activate
 python -m tools.web_tools
 ```
 

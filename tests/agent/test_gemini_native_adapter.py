@@ -224,7 +224,7 @@ def test_translate_native_response_surfaces_reasoning_and_tool_calls():
                 "content": {
                     "parts": [
                         {"thought": True, "text": "thinking..."},
-                        {"functionCall": {"name": "search", "args": {"q": "hermes"}}},
+                        {"functionCall": {"name": "search", "args": {"q": "kova"}}},
                     ]
                 },
                 "finishReason": "STOP",
@@ -242,7 +242,7 @@ def test_translate_native_response_surfaces_reasoning_and_tool_calls():
     assert choice.finish_reason == "tool_calls"
     assert choice.message.reasoning == "thinking..."
     assert choice.message.tool_calls[0].function.name == "search"
-    assert json.loads(choice.message.tool_calls[0].function.arguments) == {"q": "hermes"}
+    assert json.loads(choice.message.tool_calls[0].function.arguments) == {"q": "kova"}
 
 
 def test_native_client_uses_x_goog_api_key_and_native_models_endpoint(monkeypatch):
@@ -520,31 +520,31 @@ def test_x_goog_api_client_header_is_set():
 
 def test_x_goog_api_client_header_format():
     """Header value should be 'kova-agent/<version>' matching the package version."""
-    from agent.gemini_native_adapter import GeminiNativeClient, _HERMES_VERSION
+    from agent.gemini_native_adapter import GeminiNativeClient, _KOVA_VERSION
 
     client = GeminiNativeClient(api_key="fake-key", model="gemini-2.0-flash")
     headers = client._headers()
 
-    expected = f"kova-agent/{_HERMES_VERSION}"
+    expected = f"kova-agent/{_KOVA_VERSION}"
     assert headers["X-Goog-Api-Client"] == expected
 
 
 def test_user_agent_contains_version():
     """User-Agent should include the kova-agent version."""
-    from agent.gemini_native_adapter import GeminiNativeClient, _HERMES_VERSION
+    from agent.gemini_native_adapter import GeminiNativeClient, _KOVA_VERSION
 
     client = GeminiNativeClient(api_key="fake-key", model="gemini-2.0-flash")
     headers = client._headers()
 
-    assert f"kova-agent/{_HERMES_VERSION}" in headers["User-Agent"]
+    assert f"kova-agent/{_KOVA_VERSION}" in headers["User-Agent"]
 
 
-def test_hermes_version_is_valid():
-    """_HERMES_VERSION should be a non-empty string."""
-    from agent.gemini_native_adapter import _HERMES_VERSION
+def test_kova_version_is_valid():
+    """_KOVA_VERSION should be a non-empty string."""
+    from agent.gemini_native_adapter import _KOVA_VERSION
 
-    assert isinstance(_HERMES_VERSION, str)
-    assert len(_HERMES_VERSION) > 0
-    assert _HERMES_VERSION != "0.0.0", (
-        "Version should resolve from hermes_cli.__version__, not the fallback"
+    assert isinstance(_KOVA_VERSION, str)
+    assert len(_KOVA_VERSION) > 0
+    assert _KOVA_VERSION != "0.0.0", (
+        "Version should resolve from kova_cli.__version__, not the fallback"
     )

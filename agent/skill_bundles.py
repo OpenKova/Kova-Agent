@@ -50,7 +50,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import yaml
 
-from hermes_constants import get_hermes_home
+from kova_constants import get_kova_home
 
 logger = logging.getLogger(__name__)
 
@@ -66,13 +66,13 @@ _bundles_cache_mtime: Optional[float] = None
 def _bundles_dir() -> Path:
     """Return the canonical bundles directory under HERMES_HOME.
 
-    Honors ``HERMES_BUNDLES_DIR`` for tests; falls back to
+    Honors ``KOVA_BUNDLES_DIR`` for tests; falls back to
     ``<HERMES_HOME>/skill-bundles``.
     """
-    override = os.environ.get("HERMES_BUNDLES_DIR")
+    override = os.environ.get("KOVA_BUNDLES_DIR")
     if override:
         return Path(override).expanduser()
-    return get_hermes_home() / "skill-bundles"
+    return get_kova_home() / "skill-bundles"
 
 
 def _slugify(name: str) -> str:

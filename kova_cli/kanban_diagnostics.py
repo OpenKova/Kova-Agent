@@ -453,7 +453,7 @@ def _rule_triage_aux_unavailable(task, events, runs, now, cfg) -> list[Diagnosti
     if not auto_decompose:
         actions.append(DiagnosticAction(
             kind="cli_hint",
-            label=f"Specify manually: hermes kanban specify {task_id}",
+            label=f"Specify manually: kova kanban specify {task_id}",
             payload={"command": f"kova kanban specify {task_id}"},
         ))
 
@@ -598,7 +598,7 @@ def _rule_repeated_failures(task, events, runs, now, cfg) -> list[Diagnostic]:
         if task_id:
             actions.append(DiagnosticAction(
                 kind="cli_hint",
-                label=f"Check logs: hermes kanban log {task_id}",
+                label=f"Check logs: kova kanban log {task_id}",
                 payload={"command": f"kova kanban log {task_id}"},
                 suggested=True,
             ))
@@ -713,7 +713,7 @@ def _rule_repeated_crashes(task, events, runs, now, cfg) -> list[Diagnostic]:
     if task_id:
         actions.append(DiagnosticAction(
             kind="cli_hint",
-            label=f"Check logs: hermes kanban log {task_id}",
+            label=f"Check logs: kova kanban log {task_id}",
             payload={"command": f"kova kanban log {task_id}"},
             suggested=True,
         ))
@@ -851,7 +851,7 @@ def _rule_block_unblock_cycling(task, events, runs, now, cfg) -> list[Diagnostic
     if task_id:
         actions.append(DiagnosticAction(
             kind="cli_hint",
-            label=f"Check block reasons: hermes kanban events {task_id}",
+            label=f"Check block reasons: kova kanban events {task_id}",
             payload={"command": f"kova kanban events {task_id}"},
             suggested=True,
         ))

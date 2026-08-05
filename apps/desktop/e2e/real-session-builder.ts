@@ -44,7 +44,7 @@ export interface RealSession {
 
 /**
  * Creates durable desktop session history through the real TUI gateway and
- * AIAgent loop, using the E2E mock provider configured in `hermesHome`.
+ * AIAgent loop, using the E2E mock provider configured in `kovaHome`.
  *
  * This intentionally uses the shipped stdio JSON-RPC transport instead of
  * importing SessionDB or launching Electron. The desktop's WebSocket backend
@@ -63,12 +63,12 @@ export class RealSessionBuilder {
   private readonly stderr: string[] = []
   private closed = false
 
-  private constructor(hermesHome: string) {
+  private constructor(kovaHome: string) {
     this.child = spawn('uv', ['run', '--active', '--no-sync', 'python', '-m', 'tui_gateway.entry'], {
       cwd: REPO_ROOT,
       env: {
         ...process.env,
-        HERMES_HOME: hermesHome,
+        HERMES_HOME: kovaHome,
         PYTHONPATH: REPO_ROOT,
       },
       stdio: 'pipe',
@@ -87,8 +87,8 @@ export class RealSessionBuilder {
     })
   }
 
-  static async start(hermesHome: string): Promise<RealSessionBuilder> {
-    const builder = new RealSessionBuilder(hermesHome)
+  static async start(kovaHome: string): Promise<RealSessionBuilder> {
+    const builder = new RealSessionBuilder(kovaHome)
     await builder.waitForEvent(frame => frame.params?.type === 'gateway.ready')
     return builder
   }

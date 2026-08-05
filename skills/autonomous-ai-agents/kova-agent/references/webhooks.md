@@ -43,7 +43,7 @@ After configuration, start (or restart) the gateway:
 ```bash
 kova gateway run
 # Or if using systemd:
-systemctl --user restart hermes-gateway
+systemctl --user restart kova-gateway
 ```
 
 Verify it's running:
@@ -77,9 +77,9 @@ Two mechanisms narrow broad event streams (e.g. Todoist/GitHub fire on every upd
 - **Route scripts** (`--script` on subscribe, or `script:` on a config route): a script under `~/.hermes/scripts/` receives the payload as JSON on stdin. JSON stdout replaces the payload before prompt templating; empty stdout, `[SILENT]`, or a nonzero exit ignores the webhook. `.sh`/`.bash` run with bash, everything else with Python. Scripts cannot live outside `~/.hermes/scripts/` (path traversal is blocked).
 
 ```bash
-kova webhook subscribe todoist-hermes \
+kova webhook subscribe todoist-kova \
   --prompt "Task changed: {payload.content}" \
-  --script "todoist-hermes-label.py" \
+  --script "todoist-kova-label.py" \
   --deliver telegram --deliver-chat-id "12345"
 ```
 
@@ -195,7 +195,7 @@ Requires `--deliver` to be a real target (telegram, discord, slack, github_comme
 
 ## How It Works
 
-1. `hermes webhook subscribe` writes to `~/.hermes/webhook_subscriptions.json`
+1. `kova webhook subscribe` writes to `~/.hermes/webhook_subscriptions.json`
 2. The webhook adapter hot-reloads this file on each incoming request (mtime-gated, negligible overhead)
 3. When a POST arrives matching a route, the adapter formats the prompt and triggers an agent run
 4. The agent's response is delivered to the configured target (Telegram, Discord, GitHub comment, etc.)
@@ -204,7 +204,7 @@ Requires `--deliver` to be a real target (telegram, discord, slack, github_comme
 
 If webhooks aren't working:
 
-1. **Is the gateway running?** Check with `systemctl --user status hermes-gateway` or `ps aux | grep gateway`
+1. **Is the gateway running?** Check with `systemctl --user status kova-gateway` or `ps aux | grep gateway`
 2. **Is the webhook server listening?** `curl http://localhost:8644/health` should return `{"status": "ok"}`
 3. **Check gateway logs:** `grep webhook ~/.hermes/logs/gateway.log | tail -20`
 4. **Signature mismatch?** Verify the secret in your service matches the one from `kova webhook list`. GitHub sends `X-Hub-Signature-256`, GitLab sends `X-Gitlab-Token`.

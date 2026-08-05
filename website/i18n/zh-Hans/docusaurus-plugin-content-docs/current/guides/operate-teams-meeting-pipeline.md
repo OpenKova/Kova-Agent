@@ -84,7 +84,7 @@ kova cron status        # 调度器状态
 
 #### 方式二：systemd timer（推荐用于 Linux 生产部署）
 
-创建 `/etc/systemd/system/hermes-teams-pipeline-maintain.service`：
+创建 `/etc/systemd/system/kova-teams-pipeline-maintain.service`：
 
 ```ini
 [Unit]
@@ -94,11 +94,11 @@ After=network-online.target
 [Service]
 Type=oneshot
 User=kova
-EnvironmentFile=/etc/hermes/env
-ExecStart=/usr/local/bin/hermes teams-pipeline maintain-subscriptions
+EnvironmentFile=/etc/kova/env
+ExecStart=/usr/local/bin/kova teams-pipeline maintain-subscriptions
 ```
 
-以及 `/etc/systemd/system/hermes-teams-pipeline-maintain.timer`：
+以及 `/etc/systemd/system/kova-teams-pipeline-maintain.timer`：
 
 ```ini
 [Unit]
@@ -117,14 +117,14 @@ WantedBy=timers.target
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable --now hermes-teams-pipeline-maintain.timer
-systemctl list-timers hermes-teams-pipeline-maintain.timer
+sudo systemctl enable --now kova-teams-pipeline-maintain.timer
+systemctl list-timers kova-teams-pipeline-maintain.timer
 ```
 
 #### 方式三：普通 crontab
 
 ```cron
-0 */12 * * * /usr/local/bin/hermes teams-pipeline maintain-subscriptions >> /var/log/hermes/teams-pipeline-maintain.log 2>&1
+0 */12 * * * /usr/local/bin/kova teams-pipeline maintain-subscriptions >> /var/log/kova/teams-pipeline-maintain.log 2>&1
 ```
 
 确保 cron 环境中包含 `MSGRAPH_*` 凭据。最简单的方法：在 crontab 调用的包装脚本顶部 source `~/.hermes/.env`。

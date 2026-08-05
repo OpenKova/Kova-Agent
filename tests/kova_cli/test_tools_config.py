@@ -62,19 +62,19 @@ def test_agent_disabled_toolsets_with_explicit_platform_config():
 
 def test_all_invalid_platform_toolsets_logs_runtime_warning(caplog):
     """#38798: an explicit platform config whose toolset names are all invalid
-    (e.g. 'hermes' instead of 'hermes-cli') must warn at resolve time so an
+    (e.g. 'kova' instead of 'kova-cli') must warn at resolve time so an
     already-corrupted config is caught at runtime, not just during migration."""
     import kova_cli.tools_config as _tc
     # The runtime warning fires once per platform per process; clear the guard
     # so this test is deterministic regardless of prior resolutions.
     _tc._warned_invalid_platform_toolsets.discard("cli")
-    config = {"platform_toolsets": {"cli": ["hermes"]}}
+    config = {"platform_toolsets": {"cli": ["kova"]}}
 
     with caplog.at_level(logging.WARNING, logger="kova_cli.tools_config"):
         _get_platform_tools(config, "cli")
 
     warnings = [r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING]
-    assert any("#38798" in m and "hermes" in m for m in warnings), warnings
+    assert any("#38798" in m and "kova" in m for m in warnings), warnings
 
 
 def test_invalid_platform_toolsets_runtime_warning_fires_once(caplog):
@@ -82,7 +82,7 @@ def test_invalid_platform_toolsets_runtime_warning_fires_once(caplog):
     config must not spam an identical warning on every tool resolution."""
     import kova_cli.tools_config as _tc
     _tc._warned_invalid_platform_toolsets.discard("cli")
-    config = {"platform_toolsets": {"cli": ["hermes"]}}
+    config = {"platform_toolsets": {"cli": ["kova"]}}
 
     with caplog.at_level(logging.WARNING, logger="kova_cli.tools_config"):
         _get_platform_tools(config, "cli")
@@ -95,7 +95,7 @@ def test_invalid_platform_toolsets_runtime_warning_fires_once(caplog):
 
 def test_valid_platform_toolsets_no_runtime_warning(caplog):
     """A correctly-configured platform must not emit the #38798 warning."""
-    config = {"platform_toolsets": {"cli": ["hermes-cli"]}}
+    config = {"platform_toolsets": {"cli": ["kova-cli"]}}
 
     with caplog.at_level(logging.WARNING, logger="kova_cli.tools_config"):
         _get_platform_tools(config, "cli")
@@ -107,7 +107,7 @@ def test_partially_valid_platform_toolsets_no_runtime_warning(caplog):
     """When at least one configured toolset is valid, tools still resolve, so
     the runtime zero-tools warning must not fire (the migration-time check still
     flags the individual bad name)."""
-    config = {"platform_toolsets": {"cli": ["hermes-cli", "bogus"]}}
+    config = {"platform_toolsets": {"cli": ["kova-cli", "bogus"]}}
 
     with caplog.at_level(logging.WARNING, logger="kova_cli.tools_config"):
         _get_platform_tools(config, "cli")
@@ -246,34 +246,34 @@ def test_get_platform_tools_x_search_auto_enabled_when_xai_oauth_present(monkeyp
 
 # ─── #35527: platform-restricted default-off toolsets (discord/discord_admin)
 # are stripped by _DEFAULT_OFF_TOOLSETS even when the user explicitly opts in
-# via the platform's native composite. The composite ``hermes-discord``
+# via the platform's native composite. The composite ``kova-discord``
 # contains both ``discord`` and ``discord_admin`` tools, so configuring it is
 # an explicit opt-in that should survive the default-off strip. ───────────────
 
 
 def test_discord_composite_only_enables_discord_toolsets():
-    """Layer 1: ``platform_toolsets.discord: [hermes-discord]`` is an explicit
+    """Layer 1: ``platform_toolsets.discord: [kova-discord]`` is an explicit
     opt-in to the full Discord bundle (which includes the ``discord`` and
     ``discord_admin`` tools). They must not be silently stripped."""
-    config = {"platform_toolsets": {"discord": ["hermes-discord"]}}
+    config = {"platform_toolsets": {"discord": ["kova-discord"]}}
     enabled = _get_platform_tools(config, "discord")
-    assert "discord" in enabled, "discord toolset missing from hermes-discord composite"
+    assert "discord" in enabled, "discord toolset missing from kova-discord composite"
     assert "discord_admin" in enabled, "discord_admin toolset missing from composite"
 
 
 def test_discord_composite_plus_configurable_enables_discord_toolsets():
     """Layer 2: mixing the composite with a configurable key (e.g. spotify)
     still opts into the Discord toolsets carried by the composite."""
-    config = {"platform_toolsets": {"discord": ["hermes-discord", "spotify"]}}
+    config = {"platform_toolsets": {"discord": ["kova-discord", "spotify"]}}
     enabled = _get_platform_tools(config, "discord")
     assert "discord" in enabled
     assert "discord_admin" in enabled
 
 
 def test_discord_composite_plus_partial_explicit_enables_sibling():
-    """Layer 3: ``[hermes-discord, discord]`` lists discord explicitly but
+    """Layer 3: ``[kova-discord, discord]`` lists discord explicitly but
     discord_admin arrives only via the composite. Both must survive."""
-    config = {"platform_toolsets": {"discord": ["hermes-discord", "discord"]}}
+    config = {"platform_toolsets": {"discord": ["kova-discord", "discord"]}}
     enabled = _get_platform_tools(config, "discord")
     assert "discord" in enabled
     assert "discord_admin" in enabled
@@ -301,7 +301,7 @@ def test_discord_toolsets_do_not_leak_to_other_platforms():
     """Layer 4 (guard): discord/discord_admin are platform-restricted — they
     must never appear on a non-discord platform even when that platform is
     explicitly configured."""
-    config = {"platform_toolsets": {"telegram": ["hermes-telegram", "discord"]}}
+    config = {"platform_toolsets": {"telegram": ["kova-telegram", "discord"]}}
     enabled = _get_platform_tools(config, "telegram")
     assert "discord" not in enabled
     assert "discord_admin" not in enabled
@@ -311,7 +311,7 @@ def test_discord_explicit_workaround_still_works():
     """Regression guard: the documented workaround of listing toolsets
     explicitly must keep working after the fix."""
     config = {
-        "platform_toolsets": {"discord": ["hermes-discord", "discord", "discord_admin"]}
+        "platform_toolsets": {"discord": ["kova-discord", "discord", "discord_admin"]}
     }
     enabled = _get_platform_tools(config, "discord")
     assert "discord" in enabled
@@ -349,25 +349,25 @@ def test_get_platform_tools_x_search_respects_explicit_config(monkeypatch):
     )
 
     # User explicitly opted into spotify but not x_search via `kova tools`.
-    config = {"platform_toolsets": {"cli": ["hermes-cli", "spotify"]}}
+    config = {"platform_toolsets": {"cli": ["kova-cli", "spotify"]}}
     enabled = _get_platform_tools(config, "cli")
     assert "x_search" not in enabled
     assert "spotify" in enabled
 
 
 def test_get_platform_tools_expands_composite_when_mixed_with_configurable():
-    """``[hermes-cli, spotify]`` (composite + configurable) must keep the full
-    ``hermes-cli`` toolset alongside the explicit Spotify opt-in. The
-    has_explicit_config branch used to drop ``hermes-cli`` on the floor,
+    """``[kova-cli, spotify]`` (composite + configurable) must keep the full
+    ``kova-cli`` toolset alongside the explicit Spotify opt-in. The
+    has_explicit_config branch used to drop ``kova-cli`` on the floor,
     leaving sessions with only ``{spotify, kanban}``."""
-    config = {"platform_toolsets": {"cli": ["hermes-cli", "spotify"]}}
+    config = {"platform_toolsets": {"cli": ["kova-cli", "spotify"]}}
 
     enabled = _get_platform_tools(config, "cli", include_default_mcp_servers=False)
 
     # Native tools must reappear.
     for ts in ("terminal", "file", "web", "browser", "memory", "delegation",
                "code_execution", "todo", "session_search", "skills"):
-        assert ts in enabled, f"{ts} should be enabled when hermes-cli is listed"
+        assert ts in enabled, f"{ts} should be enabled when kova-cli is listed"
     # User explicitly opted into Spotify — must survive _DEFAULT_OFF_TOOLSETS subtraction.
     assert "spotify" in enabled
 
@@ -377,7 +377,7 @@ def test_get_platform_tools_composite_only_unchanged():
     else-branch path and produce the full toolset — guards against the new
     code accidentally hijacking the composite-only case."""
     composite_only = _get_platform_tools(
-        {"platform_toolsets": {"cli": ["hermes-cli"]}},
+        {"platform_toolsets": {"cli": ["kova-cli"]}},
         "cli",
         include_default_mcp_servers=False,
     )
@@ -402,9 +402,9 @@ def test_get_platform_tools_configurable_only_no_expansion():
 
 def test_get_platform_tools_mixed_does_not_resurrect_default_off():
     """Expansion must subtract _DEFAULT_OFF_TOOLSETS from the implicit
-    pull-in. Without this, ``hermes-cli`` expansion would re-enable
+    pull-in. Without this, ``kova-cli`` expansion would re-enable
     ``moa`` / ``rl`` / ``homeassistant`` for users who never opted in."""
-    config = {"platform_toolsets": {"cli": ["hermes-cli", "terminal"]}}
+    config = {"platform_toolsets": {"cli": ["kova-cli", "terminal"]}}
 
     enabled = _get_platform_tools(config, "cli", include_default_mcp_servers=False)
 
@@ -421,7 +421,7 @@ def test_get_platform_tools_preserves_explicit_empty_selection():
     # An explicit empty list disables every CONFIGURABLE toolset (web,
     # terminal, memory, …). Non-configurable platform toolsets that ride
     # along on the platform's default composite (e.g. `kanban`, whose tools
-    # live in _HERMES_CORE_TOOLS but aren't user-toggleable) are still
+    # live in _KOVA_CORE_TOOLS but aren't user-toggleable) are still
     # auto-recovered by _get_platform_tools so saving via `kova tools`
     # doesn't silently drop them. The contract this test guards is the
     # configurable side: nothing the user could have checked in the TUI
@@ -621,7 +621,7 @@ def test_save_platform_tools_handles_invalid_existing_config():
 
 
 def test_save_platform_tools_does_not_preserve_platform_default_toolsets():
-    """Platform default toolsets (hermes-cli, hermes-telegram, etc.) must NOT
+    """Platform default toolsets (kova-cli, kova-telegram, etc.) must NOT
     be preserved across saves.
 
     These "super" toolsets resolve to ALL tools, so if they survive in the
@@ -631,14 +631,14 @@ def test_save_platform_tools_does_not_preserve_platform_default_toolsets():
     (like MCP server names), causing them to be kept unconditionally.
 
     Regression test: user unchecks image_gen and homeassistant via
-    ``kova tools``, but hermes-cli stays in the config and re-enables
+    ``kova tools``, but kova-cli stays in the config and re-enables
     everything on the next read.
     """
     config = {
         "platform_toolsets": {
             "cli": [
                 "browser", "clarify", "code_execution", "cronjob",
-                "delegation", "file", "hermes-cli",  # <-- the culprit
+                "delegation", "file", "kova-cli",  # <-- the culprit
                 "memory", "session_search", "skills", "terminal",
                 "todo", "tts", "vision", "web",
             ]
@@ -657,8 +657,8 @@ def test_save_platform_tools_does_not_preserve_platform_default_toolsets():
 
     saved = config["platform_toolsets"]["cli"]
 
-    # hermes-cli must NOT survive — it's a platform default, not an MCP server
-    assert "hermes-cli" not in saved
+    # kova-cli must NOT survive — it's a platform default, not an MCP server
+    assert "kova-cli" not in saved
 
     # The individual toolset keys the user selected must be present
     assert "web" in saved
@@ -671,12 +671,12 @@ def test_save_platform_tools_does_not_preserve_platform_default_toolsets():
     assert "moa" not in saved
 
 
-def test_save_platform_tools_does_not_preserve_hermes_telegram():
-    """Same bug for Telegram — hermes-telegram must not be preserved."""
+def test_save_platform_tools_does_not_preserve_kova_telegram():
+    """Same bug for Telegram — kova-telegram must not be preserved."""
     config = {
         "platform_toolsets": {
             "telegram": [
-                "browser", "file", "hermes-telegram", "terminal", "web",
+                "browser", "file", "kova-telegram", "terminal", "web",
             ]
         }
     }
@@ -687,7 +687,7 @@ def test_save_platform_tools_does_not_preserve_hermes_telegram():
         _save_platform_tools(config, "telegram", new_selection)
 
     saved = config["platform_toolsets"]["telegram"]
-    assert "hermes-telegram" not in saved
+    assert "kova-telegram" not in saved
     assert "web" in saved
 
 
@@ -697,7 +697,7 @@ def test_save_platform_tools_still_preserves_mcp_with_platform_default_present()
     config = {
         "platform_toolsets": {
             "cli": [
-                "web", "terminal", "hermes-cli", "my-mcp-server", "github-tools",
+                "web", "terminal", "kova-cli", "my-mcp-server", "github-tools",
             ]
         }
     }
@@ -714,7 +714,7 @@ def test_save_platform_tools_still_preserves_mcp_with_platform_default_present()
     assert "github-tools" in saved
 
     # Platform default stripped
-    assert "hermes-cli" not in saved
+    assert "kova-cli" not in saved
 
     # User selections present
     assert "web" in saved
@@ -1121,11 +1121,11 @@ class TestPlatformToolsetConsistency:
             )
 
     def test_gateway_toolset_includes_all_messaging_platforms(self):
-        """hermes-gateway includes list should cover all messaging platforms."""
+        """kova-gateway includes list should cover all messaging platforms."""
         from kova_cli.tools_config import PLATFORMS
         from toolsets import TOOLSETS
 
-        gateway_includes = set(TOOLSETS["hermes-gateway"]["includes"])
+        gateway_includes = set(TOOLSETS["kova-gateway"]["includes"])
         # Exclude non-messaging platforms from the check
         non_messaging = {"cli", "api_server", "cron"}
         for platform, meta in PLATFORMS.items():
@@ -1134,7 +1134,7 @@ class TestPlatformToolsetConsistency:
             ts_name = meta["default_toolset"]
             assert ts_name in gateway_includes, (
                 f"Platform {platform!r} toolset {ts_name!r} missing from "
-                f"hermes-gateway includes"
+                f"kova-gateway includes"
             )
 
     def test_skills_config_covers_tools_config_platforms(self):
@@ -1208,11 +1208,11 @@ def test_computer_use_skips_configuration_when_cua_driver_already_installed():
 
 
 def test_computer_use_respects_custom_cua_driver_command():
-    """The setup gate should match runtime's HERMES_CUA_DRIVER_CMD override."""
+    """The setup gate should match runtime's KOVA_CUA_DRIVER_CMD override."""
     def fake_which(name: str):
         return "/opt/bin/custom-cua" if name == "custom-cua" else None
 
-    with patch.dict("os.environ", {"HERMES_CUA_DRIVER_CMD": "custom-cua"}), \
+    with patch.dict("os.environ", {"KOVA_CUA_DRIVER_CMD": "custom-cua"}), \
          patch("shutil.which", side_effect=fake_which):
         assert _toolset_needs_configuration_prompt("computer_use", {}) is False
 
@@ -1222,7 +1222,7 @@ def test_computer_use_blank_custom_driver_command_falls_back_to_default():
     def fake_which(name: str):
         return "/usr/local/bin/cua-driver" if name == "cua-driver" else None
 
-    with patch.dict("os.environ", {"HERMES_CUA_DRIVER_CMD": "   "}), \
+    with patch.dict("os.environ", {"KOVA_CUA_DRIVER_CMD": "   "}), \
          patch("shutil.which", side_effect=fake_which):
         assert _toolset_needs_configuration_prompt("computer_use", {}) is False
 
@@ -1232,7 +1232,7 @@ def test_computer_use_post_setup_respects_custom_driver_command_when_installed()
     def fake_which(name: str):
         return "/opt/bin/custom-cua" if name == "custom-cua" else None
 
-    with patch.dict("os.environ", {"HERMES_CUA_DRIVER_CMD": "custom-cua"}), \
+    with patch.dict("os.environ", {"KOVA_CUA_DRIVER_CMD": "custom-cua"}), \
          patch("platform.system", return_value="Darwin"), \
          patch("shutil.which", side_effect=fake_which), \
          patch("subprocess.run") as run:
@@ -1242,7 +1242,7 @@ def test_computer_use_post_setup_respects_custom_driver_command_when_installed()
 
     run.assert_called_once()
     # Probe the resolved absolute path so thin GUI PATHs cannot reintroduce a
-    # bare-command miss after HERMES_CUA_DRIVER_CMD was looked up via which().
+    # bare-command miss after KOVA_CUA_DRIVER_CMD was looked up via which().
     assert run.call_args.args[0] == ["/opt/bin/custom-cua", "--version"]
 
 
@@ -1258,7 +1258,7 @@ def test_computer_use_post_setup_missing_override_does_not_accept_default_binary
             return None
         return None
 
-    with patch.dict("os.environ", {"HERMES_CUA_DRIVER_CMD": "custom-cua"}), \
+    with patch.dict("os.environ", {"KOVA_CUA_DRIVER_CMD": "custom-cua"}), \
          patch("platform.system", return_value="Darwin"), \
          patch("shutil.which", side_effect=fake_which), \
          patch("subprocess.run") as run:
@@ -1422,14 +1422,14 @@ def test_get_platform_tools_recovers_non_configurable_toolsets_from_composite():
         "tools": ["_test_special_tool"],
         "includes": [],
     }
-    fake_toolsets["hermes-_test_platform"] = {
+    fake_toolsets["kova-_test_platform"] = {
         "description": "test composite",
         "tools": ["web_search", "web_extract", "terminal", "process", "_test_special_tool"],
         "includes": [],
     }
 
     test_platforms = {
-        "_test_platform": {"label": "Test", "default_toolset": "hermes-_test_platform"},
+        "_test_platform": {"label": "Test", "default_toolset": "kova-_test_platform"},
     }
 
     with mock_patch("kova_cli.tools_config.PLATFORMS", {**PLATFORMS, **test_platforms}):
@@ -1443,7 +1443,7 @@ def test_get_platform_tools_recovers_non_configurable_toolsets_from_composite():
 
 def test_get_platform_tools_second_pass_skips_fully_claimed_toolsets():
     """Toolsets whose tools are fully covered by configurable keys should NOT
-    be added by the second pass (prevents 'search', 'hermes-acp' noise).
+    be added by the second pass (prevents 'search', 'kova-acp' noise).
     """
     enabled = _get_platform_tools({}, "cli")
 

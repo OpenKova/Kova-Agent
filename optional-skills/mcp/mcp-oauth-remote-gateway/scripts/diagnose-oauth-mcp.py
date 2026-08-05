@@ -30,17 +30,17 @@ import json, os, sys, time, argparse, urllib.request, urllib.error, urllib.parse
 UA = "python-httpx/0.27"  # CF blocks default urllib UA on many providers
 
 
-def _hermes_home():
+def _kova_home():
     # Prefer Kova' own resolver (profile-safe); fall back to env then ~/.hermes.
     try:
-        from hermes_constants import get_hermes_home
-        return str(get_hermes_home())
+        from kova_constants import get_kova_home
+        return str(get_kova_home())
     except Exception:
         return os.environ.get("HERMES_HOME") or os.path.expanduser("~/.hermes")
 
 
 def _tokens_dir():
-    return os.path.join(_hermes_home(), "mcp-tokens")
+    return os.path.join(_kova_home(), "mcp-tokens")
 
 
 def _post(url, data=None, headers=None, form=False, timeout=30):
@@ -70,7 +70,7 @@ def _mcp_initialize(mcp_url, access_token):
         data={
             "jsonrpc": "2.0", "id": 1, "method": "initialize",
             "params": {"protocolVersion": "2025-06-18", "capabilities": {},
-                       "clientInfo": {"name": "hermes-diag", "version": "1.0"}},
+                       "clientInfo": {"name": "kova-diag", "version": "1.0"}},
         },
         headers={
             "Authorization": "Bearer " + access_token,

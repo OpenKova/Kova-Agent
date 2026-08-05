@@ -21,7 +21,7 @@ description: "调试 Node"
 | 许可证 | MIT |
 | 平台 | linux, macos, windows |
 | 标签 | `debugging`, `nodejs`, `node-inspect`, `cdp`, `breakpoints`, `ui-tui` |
-| 相关 skill | [`systematic-debugging`](/user-guide/skills/bundled/software-development/software-development-systematic-debugging), [`python-debugpy`](/user-guide/skills/bundled/software-development/software-development-python-debugpy), [`debugging-hermes-tui-commands`](/user-guide/skills/bundled/software-development/software-development-debugging-hermes-tui-commands) |
+| 相关 skill | [`systematic-debugging`](/user-guide/skills/bundled/software-development/software-development-systematic-debugging), [`python-debugpy`](/user-guide/skills/bundled/software-development/software-development-python-debugpy), [`debugging-kova-tui-commands`](/user-guide/skills/bundled/software-development/software-development-debugging-kova-tui-commands) |
 
 ## 参考：完整 SKILL.md
 
@@ -201,7 +201,7 @@ TUI 基于 Ink + tsx 构建。两种常见场景：
 `ui-tui/package.json` 有 `npm run dev`（tsx --watch）。直接运行 tsx 并添加 `--inspect-brk`：
 
 ```bash
-cd /home/bb/hermes-agent/ui-tui
+cd /home/bb/kova-agent/ui-tui
 npm run build    # produce dist/ once so transpile isn't needed on first load
 node --inspect-brk dist/entry.js
 # In another terminal:
@@ -245,7 +245,7 @@ node inspect ws://127.0.0.1:9229/<uuid>
 ## 在调试器下运行 Vitest 测试
 
 ```bash
-cd /home/bb/hermes-agent/ui-tui
+cd /home/bb/kova-agent/ui-tui
 # Run a single test file paused on entry
 node --inspect-brk ./node_modules/vitest/vitest.mjs run --no-file-parallelism src/app/foo.test.tsx
 ```

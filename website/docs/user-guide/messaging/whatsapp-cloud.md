@@ -70,7 +70,7 @@ You'll need these values from the dashboard — the wizard prompts for them in t
 Temporary access tokens expire after **24 hours**, which means a token generated today stops working tomorrow.  For production deployments use a **System User permanent token**:
 
 1. Go to [business.facebook.com/latest/settings](https://business.facebook.com/latest/settings) → **System users** (left sidebar).
-2. **Add** → name (e.g. `hermes-bot`) → role: **Admin**.
+2. **Add** → name (e.g. `kova-bot`) → role: **Admin**.
 3. Select the new user → **Assign Assets**:
    - Select your app → toggle **Manage app** under Full control.
    - Select your WhatsApp account → toggle **Manage WhatsApp Business Accounts** under Full control.
@@ -309,7 +309,7 @@ Meta only allows **free-form messages** within a 24-hour window after the user's
 
 Kova warns the agent about this window in its system prompt, so the model knows to mention it when scheduling delayed messages.
 
-Message-template support (the workaround for outside-window sends) is not yet implemented in Kova. If you need it, please [open an issue](https://github.com/NousResearch/hermes-agent/issues) — it's planned but waiting on a clear demand signal.
+Message-template support (the workaround for outside-window sends) is not yet implemented in Kova. If you need it, please [open an issue](https://github.com/OpenKova/Kova-Agent/issues) — it's planned but waiting on a clear demand signal.
 
 ### Group chats
 
@@ -359,9 +359,9 @@ Same 401 root causes as outbound (`graph error 190`) — the access token is inv
 
 ### Bot replies appear as raw JSON / tool-call leakage
 
-Common cause: the toolset configured for `whatsapp_cloud` is missing the tools the agent wants to call.  Check `kova tools list` and verify the platform is using `hermes-whatsapp` (the default Cloud adapter toolset, same as Baileys).
+Common cause: the toolset configured for `whatsapp_cloud` is missing the tools the agent wants to call.  Check `kova tools list` and verify the platform is using `kova-whatsapp` (the default Cloud adapter toolset, same as Baileys).
 
-If the model emits tool-call-shaped text instead of a structured call, it usually means the toolset was effectively empty.  See `hermes_cli/platforms.py` for the platform → default toolset mapping.
+If the model emits tool-call-shaped text instead of a structured call, it usually means the toolset was effectively empty.  See `kova_cli/platforms.py` for the platform → default toolset mapping.
 
 ### STT (voice note transcription) returns empty / "could not transcribe"
 

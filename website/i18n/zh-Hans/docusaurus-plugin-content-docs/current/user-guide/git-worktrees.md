@@ -44,13 +44,13 @@ Kova 将**当前工作目录**视为项目根目录：
 cd /path/to/your/repo
 
 # 在 ../repo-feature 中创建新分支和 worktree
-git worktree add ../repo-feature feature/hermes-experiment
+git worktree add ../repo-feature feature/kova-experiment
 ```
 
 这将创建：
 
 - 新目录：`../repo-feature`
-- 新分支：`feature/hermes-experiment`，已在该目录中检出
+- 新分支：`feature/kova-experiment`，已在该目录中检出
 
 现在可以 `cd` 进入新 worktree 并在其中运行 Kova：
 
@@ -74,8 +74,8 @@ Kova 将：
 ```bash
 cd /path/to/your/repo
 
-git worktree add ../repo-experiment-a feature/hermes-a
-git worktree add ../repo-experiment-b feature/hermes-b
+git worktree add ../repo-experiment-a feature/kova-a
+git worktree add ../repo-experiment-b feature/kova-b
 ```
 
 在不同终端中分别运行：
@@ -92,7 +92,7 @@ kova
 
 每个 Kova 进程：
 
-- 在各自的分支上工作（`feature/hermes-a` 与 `feature/hermes-b`）。
+- 在各自的分支上工作（`feature/kova-a` 与 `feature/kova-b`）。
 - 在不同的 shadow repo 哈希下写入 checkpoint（由 worktree 路径派生）。
 - 可独立使用 `/rollback`，互不影响。
 
@@ -130,7 +130,7 @@ git worktree remove ../repo-feature
   - 为每项重要变更创建专用的分支/worktree。
   - 这样可保持 diff 聚焦，PR 小而易于审查。
 - **以实验内容命名分支**
-  - 例如：`feature/hermes-checkpoints-docs`、`feature/hermes-refactor-tests`。
+  - 例如：`feature/kova-checkpoints-docs`、`feature/kova-refactor-tests`。
 - **频繁提交**
   - 使用 git commit 记录高层级里程碑。
   - 使用 [checkpoints 与 /rollback](./checkpoints-and-rollback.md) 作为工具驱动编辑之间的安全网。
@@ -149,7 +149,7 @@ kova -w
 Kova 将：
 
 - 在仓库内的 `.worktrees/` 下创建临时 worktree。
-- 检出一个隔离分支（例如 `hermes/hermes-<hash>`）。
+- 检出一个隔离分支（例如 `kova/kova-<hash>`）。
 - 在该 worktree 内运行完整的 CLI 会话。
 
 这是获得 worktree 隔离的最简便方式。也可与单次查询结合使用：

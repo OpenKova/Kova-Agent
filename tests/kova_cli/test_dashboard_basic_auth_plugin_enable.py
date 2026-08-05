@@ -12,9 +12,9 @@ from unittest.mock import patch
 import pytest
 import yaml
 
-from hermes_cli.dashboard_auth import clear_providers, list_providers
-from hermes_cli.plugins import PluginManager, discover_plugins
-from hermes_cli.plugins_cmd import ensure_basic_auth_plugin_enabled_in_config
+from kova_cli.dashboard_auth import clear_providers, list_providers
+from kova_cli.plugins import PluginManager, discover_plugins
+from kova_cli.plugins_cmd import ensure_basic_auth_plugin_enabled_in_config
 import plugins.dashboard_auth.basic as basic_plugin
 
 
@@ -26,8 +26,8 @@ def _reset_auth_registry():
 
 
 @pytest.fixture
-def hermes_home(tmp_path, monkeypatch):
-    home = tmp_path / "hermes"
+def kova_home(tmp_path, monkeypatch):
+    home = tmp_path / "kova"
     home.mkdir()
     monkeypatch.setenv("HERMES_HOME", str(home))
     return home
@@ -54,10 +54,10 @@ class TestEnsureBasicAuthPluginEnabled:
 
 
 class TestBasicProviderLoadsAfterUnblock:
-    def test_disabled_basic_blocks_registration(self, hermes_home, monkeypatch):
+    def test_disabled_basic_blocks_registration(self, kova_home, monkeypatch):
         password_hash = basic_plugin.hash_password("hunter2")
         _write_config(
-            hermes_home,
+            kova_home,
             {
                 "dashboard": {
                     "basic_auth": {
@@ -70,7 +70,7 @@ class TestBasicProviderLoadsAfterUnblock:
             },
         )
 
-        import hermes_cli.plugins as plugins_mod
+        import kova_cli.plugins as plugins_mod
 
         with patch.object(plugins_mod, "_plugin_manager", None):
             discover_plugins(force=True)
@@ -78,7 +78,7 @@ class TestBasicProviderLoadsAfterUnblock:
         assert list_providers() == []
 
     def test_unblock_then_rediscover_registers_provider(
-        self, hermes_home, monkeypatch,
+        self, kova_home, monkeypatch,
     ):
         password_hash = basic_plugin.hash_password("hunter2")
         cfg = {
@@ -91,12 +91,12 @@ class TestBasicProviderLoadsAfterUnblock:
             },
             "plugins": {"disabled": ["basic"]},
         }
-        _write_config(hermes_home, cfg)
+        _write_config(kova_home, cfg)
 
         assert ensure_basic_auth_plugin_enabled_in_config(cfg) is True
-        _write_config(hermes_home, cfg)
+        _write_config(kova_home, cfg)
 
-        import hermes_cli.plugins as plugins_mod
+        import kova_cli.plugins as plugins_mod
 
         with patch.object(plugins_mod, "_plugin_manager", None):
             discover_plugins(force=True)

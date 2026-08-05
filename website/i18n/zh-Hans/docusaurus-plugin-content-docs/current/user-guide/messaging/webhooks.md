@@ -138,7 +138,7 @@ platforms:
           secret: "todoist-secret"
           filters:
             - field: "payload.labels"
-              contains: "hermes"
+              contains: "kova"
             - any:
                 - field: "payload.priority"
                   equals: 4
@@ -167,13 +167,13 @@ platforms:
 路由 payload 以 JSON 形式发送到 stdin：
 
 ```python
-# ~/.hermes/scripts/todoist-hermes-label.py
+# ~/.hermes/scripts/todoist-kova-label.py
 import json
 import sys
 
 payload = json.load(sys.stdin)
 labels = payload.get("payload", {}).get("labels", [])
-if "hermes" not in labels:
+if "kova" not in labels:
     print("[SILENT]")
     raise SystemExit(0)
 
@@ -185,7 +185,7 @@ print(json.dumps(payload))
 
 - stdout 为 JSON 对象时，替换 `prompt` 和 `deliver_extra` 使用的 payload。
 - 非 JSON 文本 stdout 会以 `script_output` 字段加入 payload。
-- 空 stdout、精确的 `[SILENT]`、`{"__hermes_ignore__": true}`、超时、脚本缺失或非零退出码，均返回 HTTP 200 及 `{"status":"ignored","reason":"script"}`。
+- 空 stdout、精确的 `[SILENT]`、`{"__kova_ignore__": true}`、超时、脚本缺失或非零退出码，均返回 HTTP 200 及 `{"status":"ignored","reason":"script"}`。
 
 ### Prompt 模板
 

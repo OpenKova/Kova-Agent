@@ -195,7 +195,7 @@ class TestVerifyCoreDependencies:
         self, temp_pyproject, fake_venv_python
     ):
         """Regression: the ``--reinstall -e .`` repair must
-        quarantine the running ``hermes.exe`` on Windows before installing.
+        quarantine the running ``kova.exe`` on Windows before installing.
 
         That reinstall rewrites the editable entry-point shims, and on Windows
         pip can't overwrite the live launcher — so without quarantine the shim
@@ -223,14 +223,14 @@ class TestVerifyCoreDependencies:
              patch("kova_cli.main._is_windows", return_value=True), \
              patch("kova_cli.main._venv_scripts_dir", return_value=fake_scripts), \
              patch("kova_cli.main._run_install_with_heartbeat"), \
-             patch("kova_cli.main._quarantine_running_hermes_exe", return_value=[]) as mock_quar:
+             patch("kova_cli.main._quarantine_running_kova_exe", return_value=[]) as mock_quar:
 
             from kova_cli.main import _verify_core_dependencies_installed
             _verify_core_dependencies_installed(["uv", "pip"], env=env)
 
             assert mock_quar.called, (
                 "the --reinstall -e . repair must quarantine the running "
-                "hermes.exe on Windows"
+                "kova.exe on Windows"
             )
             assert mock_quar.call_args[0][0] == fake_scripts
 

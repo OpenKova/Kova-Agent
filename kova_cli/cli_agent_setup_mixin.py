@@ -1,11 +1,11 @@
-"""Agent-construction and session-resume display methods for ``HermesCLI``.
+"""Agent-construction and session-resume display methods for ``KovaCLI``.
 
 Extracted from ``cli.py`` as part of the god-file decomposition campaign
 (``~/.hermes/plans/god-file-decomposition.md``, Phase 4 step 2). This mixin holds
 the agent lifecycle/setup cluster: runtime-credential resolution, per-turn agent
 config, first-use agent construction, and resumed-session preload + history recap.
 
-Behavior-neutral: every method is lifted verbatim from ``HermesCLI``. ``self.*``
+Behavior-neutral: every method is lifted verbatim from ``KovaCLI``. ``self.*``
 calls resolve unchanged via the MRO. Neutral dependencies are imported at module
 top level; ``cli.py``-internal helpers/constants are imported lazily inside each
 method (``from cli import ...`` resolves at call time, when ``cli`` is fully
@@ -20,7 +20,7 @@ from rich.markup import escape as _escape
 
 
 class CLIAgentSetupMixin:
-    """Agent construction + session-resume display methods for ``HermesCLI``."""
+    """Agent construction + session-resume display methods for ``KovaCLI``."""
 
     def _ensure_runtime_credentials(self) -> bool:
         """
@@ -46,7 +46,7 @@ class CLIAgentSetupMixin:
         except Exception as exc:
             _primary_exc = exc
 
-        # Primary provider auth failed â€” try fallback providers before giving up.
+        # Primary provider auth failed — try fallback providers before giving up.
         if runtime is None and _primary_exc is not None:
             from kova_cli.auth import AuthError
             if isinstance(_primary_exc, AuthError):
@@ -70,7 +70,7 @@ class CLIAgentSetupMixin:
                             "Primary provider auth failed (%s). Falling through to fallback: %s/%s",
                             _primary_exc, _fb_provider, _fb_model,
                         )
-                        _cprint(f"âš ï¸  Primary auth failed â€” switching to fallback: {_fb_provider} / {_fb_model}")
+                        _cprint(f"⚠️  Primary auth failed — switching to fallback: {_fb_provider} / {_fb_model}")
                         self.requested_provider = _fb_provider
                         self.model = _fb_model
                         _primary_exc = None
@@ -91,7 +91,7 @@ class CLIAgentSetupMixin:
         resolved_acp_args = list(runtime.get("args") or [])
         resolved_credential_pool = runtime.get("credential_pool")
         # A callable api_key is a bearer-token provider (Azure Foundry
-        # Entra ID â€” ``azure_identity_adapter.build_token_provider``).
+        # Entra ID — ``azure_identity_adapter.build_token_provider``).
         # The OpenAI SDK accepts ``Callable[[], str]`` for ``api_key`` and
         # invokes it before every request. Skip the string-only validation
         # and placeholder substitution for callables.
@@ -107,15 +107,15 @@ class CLIAgentSetupMixin:
                 api_key = "no-key-required"
                 logger.debug(
                     "No API key for custom endpoint %s (source=%s), "
-                    "using placeholder â€” local servers typically ignore auth",
+                    "using placeholder — local servers typically ignore auth",
                     base_url, _source,
                 )
             else:
-                print("\nâš ï¸  Provider resolver returned an empty API key. "
+                print("\n⚠️  Provider resolver returned an empty API key. "
                       "Set OPENROUTER_API_KEY or run: kova setup")
                 return False
         if not isinstance(base_url, str) or not base_url:
-            print("\nâš ï¸  Provider resolver returned an empty base URL. "
+            print("\n⚠️  Provider resolver returned an empty base URL. "
                   "Check your provider config or run: kova setup")
             return False
 
@@ -161,7 +161,7 @@ class CLIAgentSetupMixin:
                 if _default:
                     self.model = _default
                     logger.info(
-                        "No model configured â€” defaulting to %s for provider %s",
+                        "No model configured — defaulting to %s for provider %s",
                         _default, resolved_provider,
                     )
             except Exception:
@@ -256,7 +256,7 @@ class CLIAgentSetupMixin:
                 from kova_state import SessionDB
                 self._session_db = SessionDB()
             except Exception as e:
-                logger.warning("SQLite session store not available â€” session will NOT be indexed: %s", e)
+                logger.warning("SQLite session store not available — session will NOT be indexed: %s", e)
         
         # If resuming, validate the session exists and load its history.
         # _preload_resumed_session() may have already loaded it (called from
@@ -310,14 +310,14 @@ class CLIAgentSetupMixin:
                     title_part = f" \"{session_meta['title']}\""
                 if _quiet_mode:
                     print(
-                        f"â†» Resumed session {self.session_id}{title_part} "
+                        f"↻ Resumed session {self.session_id}{title_part} "
                         f"({msg_count} user message{'s' if msg_count != 1 else ''}, "
                         f"{len(restored)} total messages)",
                         file=sys.stderr,
                     )
                 else:
                     ChatConsole().print(
-                        f"[bold {_accent_hex()}]â†» Resumed session[/] "
+                        f"[bold {_accent_hex()}]↻ Resumed session[/] "
                         f"[bold]{_escape(self.session_id)}[/]"
                         f"[bold {_accent_hex()}]{_escape(title_part)}[/] "
                         f"({msg_count} user message{'s' if msg_count != 1 else ''}, {len(restored)} total messages)"
@@ -418,7 +418,7 @@ class CLIAgentSetupMixin:
             # cli.py a bare ``global _active_agent_ref`` worked; after the
             # god-file extraction into this mixin a ``global`` here would bind
             # *this module's* namespace, leaving ``cli._active_agent_ref`` None
-            # forever â€” so memory shutdown never ran on /exit (#49287).
+            # forever — so memory shutdown never ran on /exit (#49287).
             import cli as _cli
             _cli._active_agent_ref = self.agent
             # Route agent status output through prompt_toolkit so ANSI escape
@@ -426,7 +426,7 @@ class CLIAgentSetupMixin:
             self.agent._print_fn = _cprint
             # Hydrate credits notices at session OPEN (parity with the TUI), so a
             # depletion / usage-band warning shows before the first message. The
-            # notice_callback is bound above â†’ _on_notice renders the line. Idempotent
+            # notice_callback is bound above → _on_notice renders the line. Idempotent
             # + fail-open inside the helper; harmless for non-Nous providers.
             try:
                 from agent.credits_tracker import seed_credits_at_session_start
@@ -452,7 +452,7 @@ class CLIAgentSetupMixin:
                         self._session_db.set_session_title(self.session_id, self._pending_title)
                         _cprint(f"  Session title applied: {self._pending_title}")
                         self._pending_title = None
-                    # else: row creation failed transiently â€” keep _pending_title for retry
+                    # else: row creation failed transiently — keep _pending_title for retry
                 except (ValueError, Exception) as e:
                     _cprint(f"  Could not apply pending title: {e}")
                     # Keep _pending_title so it can be retried after row creation succeeds
@@ -523,7 +523,7 @@ class CLIAgentSetupMixin:
                 title_part = f' "{session_meta["title"]}"'
             accent_color = _accent_hex()
             self._console_print(
-                f"[{accent_color}]â†» Resumed session [bold]{self.session_id}[/bold]"
+                f"[{accent_color}]↻ Resumed session [bold]{self.session_id}[/bold]"
                 f"{title_part} "
                 f"({msg_count} user message{'s' if msg_count != 1 else ''}, "
                 f"{len(restored)} total messages)[/]"
@@ -702,9 +702,9 @@ class CLIAgentSetupMixin:
 
         for i, (role, text) in enumerate(entries):
             if role == "event":
-                lines.append(f"  â—ˆ {text}\n", style="dim italic")
+                lines.append(f"  ◈ {text}\n", style="dim italic")
             elif role == "user":
-                lines.append("  â— You: ", style=f"dim bold {_session_label_c}")
+                lines.append("  ● You: ", style=f"dim bold {_session_label_c}")
                 # Show first line inline, indent rest
                 msg_lines = text.splitlines()
                 lines.append(msg_lines[0] + "\n", style="dim")
@@ -712,13 +712,13 @@ class CLIAgentSetupMixin:
                     lines.append(f"         {ml}\n", style="dim")
             elif role == "assistant_last":
                 # Last assistant response shown in full, non-dim
-                lines.append("  â—† Kova: ", style=f"bold {_assistant_label_c}")
+                lines.append("  ◆ Kova: ", style=f"bold {_assistant_label_c}")
                 msg_lines = text.splitlines()
                 lines.append(msg_lines[0] + "\n", style="")
                 for ml in msg_lines[1:]:
                     lines.append(f"            {ml}\n", style="")
             else:
-                lines.append("  â—† Kova: ", style=f"dim bold {_assistant_label_c}")
+                lines.append("  ◆ Kova: ", style=f"dim bold {_assistant_label_c}")
                 msg_lines = text.splitlines()
                 lines.append(msg_lines[0] + "\n", style="dim")
                 for ml in msg_lines[1:]:

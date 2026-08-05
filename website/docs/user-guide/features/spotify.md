@@ -1,6 +1,6 @@
 # Spotify
 
-Kova can control Spotify directly — playback, queue, search, playlists, saved tracks/albums, and listening history — using Spotify's official Web API with PKCE OAuth. Tokens are stored in `~/.hermes/auth.json` and refreshed automatically on 401; you only log in once per machine (refresh tokens expire after ~6 months; re-run `hermes auth spotify` when they do).
+Kova can control Spotify directly — playback, queue, search, playlists, saved tracks/albums, and listening history — using Spotify's official Web API with PKCE OAuth. Tokens are stored in `~/.hermes/auth.json` and refreshed automatically on 401; you only log in once per machine (refresh tokens expire after ~6 months; re-run `kova auth spotify` when they do).
 
 Unlike Kova' built-in OAuth integrations (Google, GitHub Copilot, Codex), Spotify requires every user to register their own lightweight developer app. Spotify does not let third parties ship a public OAuth app that anyone can use. It takes about two minutes and `kova auth spotify` walks you through it.
 
@@ -44,7 +44,7 @@ kova auth spotify
 
 The 7 Spotify tools only appear in the agent's toolset after step 1 — they're off by default so users who don't want them don't ship extra tool schemas on every API call.
 
-If no `HERMES_SPOTIFY_CLIENT_ID` is set, Kova walks you through the app registration inline:
+If no `KOVA_SPOTIFY_CLIENT_ID` is set, Kova walks you through the app registration inline:
 
 1. Opens `https://developer.spotify.com/dashboard` in your browser
 2. Prints the exact values to paste into Spotify's "Create app" form
@@ -60,7 +60,7 @@ When the dashboard opens, click **Create app** and fill in:
 
 | Field | Value |
 |-------|-------|
-| App name | anything (e.g. `hermes-agent`) |
+| App name | anything (e.g. `kova-agent`) |
 | App description | anything (e.g. `personal Kova integration`) |
 | Website | leave blank |
 | Redirect URI | `http://127.0.0.1:43827/spotify/callback` |
@@ -225,7 +225,7 @@ Full cron reference: [Cron Jobs](./cron).
 kova auth logout spotify
 ```
 
-Removes tokens from `~/.hermes/auth.json`. To also clear the app config, delete `HERMES_SPOTIFY_CLIENT_ID` (and `HERMES_SPOTIFY_REDIRECT_URI` if you set it) from `~/.hermes/.env`, or run the wizard again.
+Removes tokens from `~/.hermes/auth.json`. To also clear the app config, delete `KOVA_SPOTIFY_CLIENT_ID` (and `KOVA_SPOTIFY_REDIRECT_URI` if you set it) from `~/.hermes/.env`, or run the wizard again.
 
 To revoke the app on Spotify's side, visit [Apps connected to your account](https://www.spotify.com/account/apps/) and click **REMOVE ACCESS**.
 
@@ -237,7 +237,7 @@ To revoke the app on Spotify's side, visit [Apps connected to your account](http
 
 **`204 No Content` on `get_currently_playing`** — nothing is currently playing on any device. This is Spotify's normal response, not an error; Kova surfaces it as an explanatory empty result (`is_playing: false`).
 
-**`INVALID_CLIENT: Invalid redirect URI`** — the redirect URI in your Spotify app settings doesn't match what Kova is using. The default is `http://127.0.0.1:43827/spotify/callback`. Either add that to your app's allowed redirect URIs, or set `HERMES_SPOTIFY_REDIRECT_URI` in `~/.hermes/.env` to whatever you registered.
+**`INVALID_CLIENT: Invalid redirect URI`** — the redirect URI in your Spotify app settings doesn't match what Kova is using. The default is `http://127.0.0.1:43827/spotify/callback`. Either add that to your app's allowed redirect URIs, or set `KOVA_SPOTIFY_REDIRECT_URI` in `~/.hermes/.env` to whatever you registered.
 
 **`429 Too Many Requests`** — Spotify's rate limit. Kova returns a friendly error; wait a minute and retry. If this persists, you're probably running a tight loop in a script — Spotify's quota resets roughly every 30 seconds.
 
@@ -264,8 +264,8 @@ kova auth spotify --client-id <id> --redirect-uri http://localhost:3000/callback
 Or set them permanently in `~/.hermes/.env`:
 
 ```
-HERMES_SPOTIFY_CLIENT_ID=<your_id>
-HERMES_SPOTIFY_REDIRECT_URI=http://localhost:3000/callback
+KOVA_SPOTIFY_CLIENT_ID=<your_id>
+KOVA_SPOTIFY_REDIRECT_URI=http://localhost:3000/callback
 ```
 
 The redirect URI must be allow-listed in your Spotify app's settings. The default works for almost everyone — only change it if port 43827 is taken.
@@ -275,5 +275,5 @@ The redirect URI must be allow-listed in your Spotify app's settings. The defaul
 | File | Contents |
 |------|----------|
 | `~/.hermes/auth.json` → `providers.spotify` | access token, refresh token, expiry, scope, redirect URI |
-| `~/.hermes/.env` | `HERMES_SPOTIFY_CLIENT_ID`, optional `HERMES_SPOTIFY_REDIRECT_URI` |
+| `~/.hermes/.env` | `KOVA_SPOTIFY_CLIENT_ID`, optional `KOVA_SPOTIFY_REDIRECT_URI` |
 | Spotify app | owned by you at [developer.spotify.com/dashboard](https://developer.spotify.com/dashboard); contains the Client ID and the redirect URI allow-list |

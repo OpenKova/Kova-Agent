@@ -269,13 +269,13 @@ def _lock_api_is_absent_on_session_db(lock_db: Any) -> bool:
     """Whether the live in-memory SessionDB class structurally predates locks.
 
     In the supported hot-reload skew, this module is new while the already
-    imported ``hermes_state.SessionDB`` class (and its live instances) is old.
+    imported ``kova_state.SessionDB`` class (and its live instances) is old.
     Only that exact class identity may fail open. Proxies, nominal lookalikes,
     non-callables, and descriptor failures must fail closed. Static lookup
     avoids invoking a present-but-broken descriptor.
     """
     try:
-        from hermes_state import SessionDB
+        from kova_state import SessionDB
 
         missing = object()
         return (
@@ -1187,7 +1187,8 @@ def compress_context(
     # Kova' summarizer would only rewrite a local mirror without shrinking
     # the actual thread (#36801). Route compaction to the app server's own
     # thread/compact mechanism. Behavior is controlled by
-    # ``compression.codex_app_server_auto`` (native|hermes|off).
+    # ``compression.codex_app_server_auto`` (native|kova|off; legacy "kova"
+    # value is accepted and treated as "kova").
     # The memory-provider context handoff below is intentionally Kova-only:
     # the app server does not expose its native summary prompt, so there is no
     # truthful injection point for ``on_pre_compress()`` return text here.
@@ -1891,18 +1892,18 @@ def compress_context(
 
                         set_current_session_id(agent.session_id)
                     except Exception:
-                        os.environ["HERMES_SESSION_ID"] = agent.session_id
+                        os.environ["KOVA_SESSION_ID"] = agent.session_id
                     # The gateway/tools session context (ContextVar + env) and the
                     # logging session context are SEPARATE mechanisms. The call above
                     # moves the former; the ``[session_id]`` tag on log lines comes
-                    # from ``hermes_logging._session_context`` (set once per turn in
+                    # from ``kova_logging._session_context`` (set once per turn in
                     # conversation_loop.py). Without this, post-rotation log lines in
                     # the same turn keep the STALE old id while the message/DB/gateway
                     # state carry the new one — breaking log correlation exactly at the
                     # compaction boundary (see #34089). Guarded separately so a logging
                     # failure can never regress the routing update above.
                     try:
-                        from hermes_logging import set_session_context
+                        from kova_logging import set_session_context
 
                         set_session_context(agent.session_id)
                     except Exception:
@@ -1911,7 +1912,7 @@ def compress_context(
                     try:
                         agent._session_db.create_session(
                             session_id=agent.session_id,
-                            source=agent.platform or os.environ.get("HERMES_SESSION_SOURCE", "cli"),
+                            source=agent.platform or os.environ.get("KOVA_SESSION_SOURCE", "cli"),
                             model=agent.model,
                             model_config=agent._session_init_model_config,
                             parent_session_id=old_session_id,
@@ -1936,9 +1937,9 @@ def compress_context(
                             from gateway.session_context import set_current_session_id
                             set_current_session_id(agent.session_id)
                         except Exception:
-                            os.environ["HERMES_SESSION_ID"] = agent.session_id
+                            os.environ["KOVA_SESSION_ID"] = agent.session_id
                         try:
-                            from hermes_logging import set_session_context
+                            from kova_logging import set_session_context
                             set_session_context(agent.session_id)
                         except Exception:
                             pass
@@ -1961,7 +1962,7 @@ def compress_context(
                     # per-session lookup with no parent walk, so without this an
                     # active goal silently dies at the boundary (#33618).
                     try:
-                        from hermes_cli.goals import migrate_goal_to_session
+                        from kova_cli.goals import migrate_goal_to_session
                         migrate_goal_to_session(old_session_id, agent.session_id, reason="compression")
                     except Exception as _goal_err:
                         logger.debug("Could not migrate goal on compression: %s", _goal_err)
@@ -2020,9 +2021,9 @@ def compress_context(
         _boundary_parent = _old_sid or agent.session_id or ""
 
         # Notify the context engine that a compaction boundary occurred. Plugin
-        # engines (e.g. hermes-lcm) use boundary_reason="compression" to preserve
+        # engines (e.g. kova-lcm) use boundary_reason="compression" to preserve
         # DAG lineage / checkpoint per-session state across the boundary instead of
-        # re-initializing fresh. See hermes-lcm#68. Built-in ContextCompressor
+        # re-initializing fresh. See kova-lcm#68. Built-in ContextCompressor
         # ignores kwargs. Fires in BOTH modes: rotation passes old→new ids; in-place
         # passes the SAME id (the boundary is real even though the id didn't move).
         if _context_engine_boundary_committed:
@@ -2183,9 +2184,13 @@ def _compress_context_via_codex_app_server(
     auto_mode = str(
         getattr(agent, "codex_app_server_auto_compaction", "native") or "native"
     ).lower()
-    if auto_mode not in {"native", "hermes", "off"}:
+    # Legacy "kova" value from pre-rename configs is accepted and treated
+    # identically to "kova".
+    if auto_mode == "kova":
+        auto_mode = "kova"
+    if auto_mode not in {"native", "kova", "off"}:
         auto_mode = "native"
-    if not force and auto_mode != "hermes":
+    if not force and auto_mode != "kova":
         logger.info(
             "codex app-server compaction skipped: mode=%s force=false "
             "(session=%s messages=%d tokens=~%s)",
@@ -2426,7 +2431,7 @@ def try_shrink_image_parts_in_messages(
                 "image/jpeg": ".jpg", "image/jpg": ".jpg", "image/bmp": ".bmp",
             }.get(mime, ".jpg")
             tmp = tempfile.NamedTemporaryFile(
-                prefix="hermes_shrink_", suffix=suffix, delete=False,
+                prefix="kova_shrink_", suffix=suffix, delete=False,
             )
             try:
                 tmp.write(raw)

@@ -77,7 +77,7 @@ Two halves, in this order: the editor side must be up before Kova connects.
 
 ### One-time, Kova side
 
-    hermes mcp install unreal-engine
+    kova mcp install unreal-engine
 
 This writes the `mcp_servers.unreal-engine` HTTP entry pointing at
 `http://127.0.0.1:8000/mcp` and probes the live server for its tools. Run it

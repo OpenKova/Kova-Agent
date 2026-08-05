@@ -119,9 +119,9 @@ class TestCreatePairing:
         mock_resp.json.return_value = {
             "pairing_id": "abcdefghijklmnop",
             "poll_token": "secret-token",
-            "suggested_username": "hermes_abcdefghijklmnop_bot",
-            "deep_link": "https://t.me/newbot/HermesSetupBot/hermes_abcdefghijklmnop_bot?name=Kova+Agent",
-            "qr_payload": "https://t.me/newbot/HermesSetupBot/hermes_abcdefghijklmnop_bot?name=Kova+Agent",
+            "suggested_username": "kova_abcdefghijklmnop_bot",
+            "deep_link": "https://t.me/newbot/KovaSetupBot/kova_abcdefghijklmnop_bot?name=Kova+Agent",
+            "qr_payload": "https://t.me/newbot/KovaSetupBot/kova_abcdefghijklmnop_bot?name=Kova+Agent",
             "expires_at": "2026-05-18T00:00:00.000Z",
         }
 
@@ -133,9 +133,9 @@ class TestCreatePairing:
         assert pairing == TelegramPairing(
             pairing_id="abcdefghijklmnop",
             poll_token="secret-token",
-            suggested_username="hermes_abcdefghijklmnop_bot",
-            deep_link="https://t.me/newbot/HermesSetupBot/hermes_abcdefghijklmnop_bot?name=Kova+Agent",
-            qr_payload="https://t.me/newbot/HermesSetupBot/hermes_abcdefghijklmnop_bot?name=Kova+Agent",
+            suggested_username="kova_abcdefghijklmnop_bot",
+            deep_link="https://t.me/newbot/KovaSetupBot/kova_abcdefghijklmnop_bot?name=Kova+Agent",
+            qr_payload="https://t.me/newbot/KovaSetupBot/kova_abcdefghijklmnop_bot?name=Kova+Agent",
             expires_at="2026-05-18T00:00:00.000Z",
         )
         post.assert_called_once_with(
@@ -177,16 +177,16 @@ class TestPollForToken:
         return TelegramPairing(
             pairing_id="abcdefghijklmnop",
             poll_token="secret-token",
-            suggested_username="hermes_abcdefghijklmnop_bot",
-            deep_link="https://t.me/newbot/HermesSetupBot/hermes_abcdefghijklmnop_bot",
-            qr_payload="https://t.me/newbot/HermesSetupBot/hermes_abcdefghijklmnop_bot",
+            suggested_username="kova_abcdefghijklmnop_bot",
+            deep_link="https://t.me/newbot/KovaSetupBot/kova_abcdefghijklmnop_bot",
+            qr_payload="https://t.me/newbot/KovaSetupBot/kova_abcdefghijklmnop_bot",
         )
 
     def test_immediate_success(self):
         mock_resp = MagicMock()
         mock_resp.status_code = 200
         mock_resp.json.return_value = {
-            "bot_username": "hermes_abcdefghijklmnop_bot",
+            "bot_username": "kova_abcdefghijklmnop_bot",
             "owner_user_id": 42,
             "status": "ready",
             "token": VALID_TOKEN,
@@ -213,7 +213,7 @@ class TestPollForToken:
         mock_resp = MagicMock()
         mock_resp.status_code = 200
         mock_resp.json.return_value = {
-            "bot_username": "hermes_abcdefghijklmnop_bot",
+            "bot_username": "kova_abcdefghijklmnop_bot",
             "owner_user_id": 42,
             "status": "ready",
             "token": VALID_TOKEN,
@@ -227,7 +227,7 @@ class TestPollForToken:
 
         assert result == TelegramBotSetupResult(
             token=VALID_TOKEN,
-            bot_username="hermes_abcdefghijklmnop_bot",
+            bot_username="kova_abcdefghijklmnop_bot",
             owner_user_id=42,
         )
 
@@ -235,7 +235,7 @@ class TestPollForToken:
         mock_resp = MagicMock()
         mock_resp.status_code = 200
         mock_resp.json.return_value = {
-            "bot_username": "hermes_abcdefghijklmnop_bot",
+            "bot_username": "kova_abcdefghijklmnop_bot",
             "owner_user_id": "42",
             "status": "ready",
             "token": VALID_TOKEN,
@@ -248,7 +248,7 @@ class TestPollForToken:
 
         assert result == TelegramBotSetupResult(
             token=VALID_TOKEN,
-            bot_username="hermes_abcdefghijklmnop_bot",
+            bot_username="kova_abcdefghijklmnop_bot",
             owner_user_id=42,
         )
 
@@ -256,7 +256,7 @@ class TestPollForToken:
         mock_resp = MagicMock()
         mock_resp.status_code = 200
         mock_resp.json.return_value = {
-            "bot_username": "hermes_abcdefghijklmnop_bot",
+            "bot_username": "kova_abcdefghijklmnop_bot",
             "owner_user_id": 42,
             "status": "ready",
             "token": "not-a-real-token",
@@ -327,10 +327,10 @@ class TestSetupTelegramAuto:
         from kova_cli import setup
 
         seen = {}
-        profile_home = tmp_path / ".hermes" / "profiles" / "oracle"
+        profile_home = tmp_path / ".kova" / "profiles" / "oracle"
         profile_home.mkdir(parents=True)
 
-        monkeypatch.setattr(setup, "get_hermes_home", lambda: profile_home)
+        monkeypatch.setattr(setup, "get_kova_home", lambda: profile_home)
 
         def fake_auto_setup_telegram_bot_result(*, profile_name=None):
             seen["profile_name"] = profile_name
@@ -345,11 +345,11 @@ class TestSetupTelegramAuto:
         assert seen["profile_name"] == "oracle"
 
     def test_profile_name_from_home_path_handles_windows_separators(self):
-        from kova_cli.setup import _profile_name_from_hermes_home
+        from kova_cli.setup import _profile_name_from_kova_home
 
         assert (
-            _profile_name_from_hermes_home(
-                PureWindowsPath(r"C:\Users\test\AppData\Local\hermes\profiles\oracle")
+            _profile_name_from_kova_home(
+                PureWindowsPath(r"C:\Users\test\AppData\Local\kova\profiles\oracle")
             )
             == "oracle"
         )

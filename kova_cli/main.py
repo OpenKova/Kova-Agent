@@ -3,47 +3,47 @@
 Kova CLI - Main entry point.
 
 Usage:
-    hermes                     # Interactive chat (default)
-    hermes chat                # Interactive chat
-    kova gateway             # Run gateway in foreground
-    kova gateway start       # Start gateway as service
-    kova gateway stop        # Stop gateway service
-    kova gateway status      # Show gateway status
-    kova gateway install     # Install gateway service
-    kova gateway uninstall   # Uninstall gateway service
-    kova setup               # Interactive setup wizard
-    hermes logout              # Clear stored authentication
-    kova status              # Show status of all components
-    kova cron                # Manage cron jobs
-    kova cron list           # List cron jobs
-    kova cron status         # Check if cron scheduler is running
-    hermes doctor              # Check configuration and dependencies
-    kova honcho setup                    # Configure Honcho AI memory integration
-    kova honcho status                   # Show Honcho config and connection status
-    kova honcho sessions                 # List directory â†’ session name mappings
-    kova honcho map <name>               # Map current directory to a session name
-    kova honcho peer                     # Show peer names and dialectic settings
-    kova honcho peer --user NAME         # Set user peer name
-    kova honcho peer --ai NAME           # Set AI peer name
-    kova honcho peer --reasoning LEVEL   # Set dialectic reasoning level
-    kova honcho mode                     # Show current memory mode
+    kova                       # Interactive chat (default)
+    kova chat                  # Interactive chat
+    kova gateway               # Run gateway in foreground
+    kova gateway start         # Start gateway as service
+    kova gateway stop          # Stop gateway service
+    kova gateway status        # Show gateway status
+    kova gateway install       # Install gateway service
+    kova gateway uninstall     # Uninstall gateway service
+    kova setup                 # Interactive setup wizard
+    kova logout                # Clear stored authentication
+    kova status                # Show status of all components
+    kova cron                  # Manage cron jobs
+    kova cron list             # List cron jobs
+    kova cron status           # Check if cron scheduler is running
+    kova doctor                # Check configuration and dependencies
+    kova honcho setup          # Configure Honcho AI memory integration
+    kova honcho status         # Show Honcho config and connection status
+    kova honcho sessions       # List directory → session name mappings
+    kova honcho map <name>     # Map current directory to a session name
+    kova honcho peer           # Show peer names and dialectic settings
+    kova honcho peer --user NAME       # Set user peer name
+    kova honcho peer --ai NAME         # Set AI peer name
+    kova honcho peer --reasoning LEVEL # Set dialectic reasoning level
+    kova honcho mode           # Show current memory mode
     kova honcho mode [hybrid|honcho|local]  # Set memory mode
-    kova honcho tokens                   # Show token budget settings
-    kova honcho tokens --context N       # Set session.context() token cap
-    kova honcho tokens --dialectic N     # Set dialectic result char cap
-    kova honcho identity                 # Show AI peer identity representation
-    kova honcho identity <file>          # Seed AI peer identity from a file (SOUL.md etc.)
-    kova honcho migrate                  # Step-by-step migration guide: OpenClaw native â†’ Kova + Honcho
-    hermes version             Show version
-    kova update              Update to latest version
-    hermes uninstall           Uninstall Kova Agent
-    kova acp                 Run as an ACP server for editor integration
-    kova sessions browse     Interactive session picker with search
+    kova honcho tokens         # Show token budget settings
+    kova honcho tokens --context N     # Set session.context() token cap
+    kova honcho tokens --dialectic N   # Set dialectic result char cap
+    kova honcho identity       # Show AI peer identity representation
+    kova honcho identity <file> # Seed AI peer identity from a file (SOUL.md etc.)
+    kova honcho migrate        # Step-by-step migration guide: OpenClaw native → Kova + Honcho
+    kova version               Show version
+    kova update                Update to latest version
+    kova uninstall             Uninstall Kova Agent
+    kova acp                   Run as an ACP server for editor integration
+    kova sessions browse       Interactive session picker with search
 
-    hermes claw migrate --dry-run  # Preview migration without changes
+    kova claw migrate --dry-run  # Preview migration without changes
 """
 
-# IMPORTANT: kova_bootstrap must be the very first import â€” it sets up
+# IMPORTANT: kova_bootstrap must be the very first import — it sets up
 # UTF-8 stdio on Windows so print()/subprocess children don't hit
 # UnicodeEncodeError with non-ASCII characters.  No-op on POSIX.
 #
@@ -53,16 +53,16 @@ Usage:
 # crashes between ``git reset --hard`` and ``uv pip install -e .``), the
 # new code references ``kova_bootstrap`` but the editable install's
 # ``.pth`` file still points at the old set of top-level modules.  Without
-# this guard, hermes crashes on import and the user can't run
+# this guard, kova crashes on import and the user can't run
 # ``kova update`` to recover.  Missing the bootstrap means UTF-8 stdio
-# setup is skipped on Windows â€” degraded, not broken.  POSIX is unaffected.
+# setup is skipped on Windows — degraded, not broken.  POSIX is unaffected.
 try:
     import kova_bootstrap  # noqa: F401
 except ModuleNotFoundError:
     pass
 
 # Windows: neutralize CPython's ``platform._syscmd_ver`` before anything else
-# imports â€” it shells out ``cmd /c ver`` (shell=True, no CREATE_NO_WINDOW), so
+# imports — it shells out ``cmd /c ver`` (shell=True, no CREATE_NO_WINDOW), so
 # any dependency touching ``platform.uname()`` at import time flashes a
 # visible console when this process is windowless (pythonw gateway + every
 # kanban worker).  No-op on POSIX; never raises.
@@ -73,9 +73,9 @@ suppress_platform_ver_console()
 import os
 import sys
 
-# Early venv self-heal â€” MUST run before any third-party import below.  When
+# Early venv self-heal — MUST run before any third-party import below.  When
 # a prior ``kova update`` left a recovery marker and a core package's import
-# files were wiped (#57828 â€” failed lazy backend refresh), the module-level
+# files were wiped (#57828 — failed lazy backend refresh), the module-level
 # ``from kova_cli.env_loader import ...`` / ``from kova_cli.config import
 # ...`` imports further down would crash before ``main()`` ever reaches
 # ``_recover_from_interrupted_install()``.  ``_early_recovery`` is stdlib-only
@@ -100,7 +100,7 @@ def _exit_after_oneshot(rc: object) -> None:
     native-extension finalizer during CPython's ``Py_FinalizeEx``, *after*
     the response has printed. Flush streams, shut down file logging, then
     ``os._exit`` past interpreter finalization. The ``atexit`` chain is
-    deliberately skipped â€” several handlers re-enter native code that may
+    deliberately skipped — several handlers re-enter native code that may
     be the abort source. Stateful cleanup is handled in ``_run_agent`` and
     ``_cleanup_oneshot_runtime``.
     """
@@ -129,7 +129,7 @@ def _cleanup_oneshot_runtime() -> None:
     """Best-effort process-global cleanup before one-shot hard exit.
 
     ``run_oneshot`` owns the agent-local cleanup (memory provider, agent.close,
-    session_db.close â€” all in ``_run_agent``'s finally block). This mirrors the
+    session_db.close — all in ``_run_agent``'s finally block). This mirrors the
     process-global pieces from ``cli.py:_run_cleanup()`` that would otherwise
     be skipped by ``os._exit``.
     """
@@ -194,7 +194,7 @@ def _run_and_exit_oneshot(
         # Defense-in-depth. ``run_oneshot`` already converts agent failures
         # into an int return code and only re-raises KeyboardInterrupt /
         # SystemExit (handled above). Anything still escaping here means
-        # ``run_oneshot`` itself malfunctioned â€” surface it on stderr but never
+        # ``run_oneshot`` itself malfunctioned — surface it on stderr but never
         # fall through to normal interpreter teardown, which is the exact path
         # that aborts with SIGABRT on AL2023 (the bug this routine fixes).
         import traceback
@@ -213,24 +213,24 @@ def _run_and_exit_oneshot(
 
 
 def _set_process_title() -> None:
-    """Set the process title to 'hermes' so tools like 'ps', 'top', and
+    """Set the process title to 'kova' so tools like 'ps', 'top', and
     'htop' show the app name instead of 'python3.xx'.
 
-    Purely cosmetic â€” non-fatal on any platform.
+    Purely cosmetic — non-fatal on any platform.
 
     Strategy (try in order):
-      1. ``setproctitle`` (opt-in dep â€” installed via ``kova tools`` or
+      1. ``setproctitle`` (opt-in dep — installed via ``kova tools`` or
          ``pip install setproctitle``, or bundled in a future release).
       2. ctypes ``prctl(PR_SET_NAME)`` (Linux only, 15-char limit).
-      3. ctypes ``pthread_setname_np`` (macOS only, kernel thread name â€”
+      3. ctypes ``pthread_setname_np`` (macOS only, kernel thread name —
          changes lldb/top but not ``ps aux``).
-      4. No-op on Windows (the .exe name is already ``hermes.exe``).
+      4. No-op on Windows (the .exe name is already ``kova.exe``).
     """
-    # Strategy 1: setproctitle (best â€” works on macOS, Linux, BSD)
+    # Strategy 1: setproctitle (best — works on macOS, Linux, BSD)
     try:
         import setproctitle  # type: ignore[import-untyped]
 
-        setproctitle.setproctitle("hermes")
+        setproctitle.setproctitle("kova")
         return
     except ImportError:
         pass
@@ -243,11 +243,11 @@ def _set_process_title() -> None:
         system = platform.system()
         if system == "Linux":
             libc = ctypes.CDLL("libc.so.6", use_errno=True)
-            libc.prctl(15, b"hermes", 0, 0, 0)  # PR_SET_NAME = 15
+            libc.prctl(15, b"kova", 0, 0, 0)  # PR_SET_NAME = 15
         elif system == "Darwin":
             libc = ctypes.CDLL("libc.dylib", use_errno=True)
-            libc.pthread_setname_np(b"hermes")
-        # Windows: the .exe name is already ``hermes.exe`` â€” nothing to do.
+            libc.pthread_setname_np(b"kova")
+        # Windows: the .exe name is already ``kova.exe`` — nothing to do.
     except Exception:
         pass
 
@@ -286,7 +286,7 @@ def _config_default_interface_early() -> str:
                 if isinstance(iface, str) and iface.strip().lower() == "tui":
                     value = "tui"
     except Exception:
-        value = "cli"  # best-effort â€” default to classic REPL on any error
+        value = "cli"  # best-effort — default to classic REPL on any error
     _EARLY_INTERFACE_CACHE = [value]
     return value
 
@@ -295,23 +295,23 @@ def _wants_tui_early(argv: "list[str] | None" = None) -> bool:
     """Earliest TUI decision, usable before argparse/config imports.
 
     Precedence: explicit ``--cli`` wins (forces classic REPL), then
-    explicit ``--tui``/``HERMES_TUI=1``, then a real-TTY gate (a
+    explicit ``--tui``/``KOVA_TUI=1``, then a real-TTY gate (a
     non-interactive stdio can't host the Ink UI, so ambient config never
     boots it there), then ``display.interface`` in config.
 
-    The TTY gate is load-bearing for headless spawners â€” kanban workers,
-    cron jobs, pipes run ``kova â€¦ chat -q`` with stdio on a pipe. This
+    The TTY gate is load-bearing for headless spawners — kanban workers,
+    cron jobs, pipes run ``kova … chat -q`` with stdio on a pipe. This
     is the earliest launch decision (it runs before ``cmd_chat`` /
     ``_resolve_use_tui``), so a ``display.interface: tui`` default used to
-    boot the TUI here â€” whose no-TTY bail-out exits 0 without doing the
-    task â†’ "protocol violation" on every attempt. An explicit ``--tui``
+    boot the TUI here — whose no-TTY bail-out exits 0 without doing the
+    task → "protocol violation" on every attempt. An explicit ``--tui``
     still reaches the informative bail-out.
     """
     if argv is None:
         argv = sys.argv[1:]
     if "--cli" in argv:
         return False
-    if os.environ.get("HERMES_TUI") == "1" or "--tui" in argv:
+    if os.environ.get("KOVA_TUI") == "1" or "--tui" in argv:
         return True
     try:
         if not (sys.stdin.isatty() and sys.stdout.isatty()):
@@ -321,21 +321,21 @@ def _wants_tui_early(argv: "list[str] | None" = None) -> bool:
     return _config_default_interface_early() == "tui"
 
 
-# Mouse-tracking residue suppression â€” runs BEFORE every other import on the
+# Mouse-tracking residue suppression — runs BEFORE every other import on the
 # TUI hot path so the terminal stops emitting SGR/X10 mouse reports while the
-# Python launcher is still doing imports (â‰ˆ100â€“300ms in cooked + echo mode,
+# Python launcher is still doing imports (≈100–300ms in cooked + echo mode,
 # before the Node TUI takes stdin into raw mode). During that window any
 # incoming bytes are echoed straight back to the user's shell scrollback as
-# ``^[[<â€¦M`` text. The TUI itself runs `resetTerminalModes()` again in
-# `entry.tsx`; this is just the earlier cousin. ``HERMES_TUI_NO_EARLY_DISABLE``
+# ``^[[<…M`` text. The TUI itself runs `resetTerminalModes()` again in
+# `entry.tsx`; this is just the earlier cousin. ``KOVA_TUI_NO_EARLY_DISABLE``
 # escapes the behaviour for diagnostics.
 def _suppress_mouse_residue_early() -> None:
-    if os.environ.get("HERMES_TUI_NO_EARLY_DISABLE") == "1":
+    if os.environ.get("KOVA_TUI_NO_EARLY_DISABLE") == "1":
         return
     if not _wants_tui_early():
         return
     try:
-        # Skip when stdout is redirected (`kova --tui â€¦ >log`, CI capture):
+        # Skip when stdout is redirected (`kova --tui … >log`, CI capture):
         # the bytes can't reach the terminal anyway and would just pollute
         # the log with raw CSI.
         if not os.isatty(1):
@@ -402,7 +402,7 @@ def _print_fast_version_info() -> None:
 
 def _try_termux_ultrafast_version() -> bool:
     """Handle ``kova --version`` before config/logging imports on Termux."""
-    if os.environ.get("HERMES_TERMUX_DISABLE_FAST_CLI") == "1":
+    if os.environ.get("KOVA_TERMUX_DISABLE_FAST_CLI") == "1":
         return False
     if not _is_termux_startup_environment_fast():
         return False
@@ -493,7 +493,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 
 # ---------------------------------------------------------------------------
-# Profile override â€” MUST happen before any hermes module import.
+# Profile override — MUST happen before any kova module import.
 #
 # Many modules cache HERMES_HOME at import time (module-level constants).
 # We intercept --profile/-p from sys.argv here and set the env var so that
@@ -611,33 +611,33 @@ def _apply_profile_override() -> None:
     # only when it already points to a specific profile directory.  The
     # distinguishing heuristic: a profile path has "profiles" as its immediate
     # parent directory name (e.g. ~/.hermes/profiles/coder or
-    # /opt/data/profiles/coder).  If HERMES_HOME points to the hermes root
-    # instead (e.g. systemd hardcodes HERMES_HOME=/root/.hermes), we must
-    # still read active_profile â€” the user may have switched profiles via
+    # /opt/data/profiles/coder).  If HERMES_HOME points to the kova root
+    # instead (e.g. systemd hardcodes HERMES_HOME=/root/.kova), we must
+    # still read active_profile — the user may have switched profiles via
     # `kova profile use` and the gateway should honour that choice.
     # See issue #22502.
-    hermes_home_env = os.environ.get("HERMES_HOME", "")
-    if profile_name is None and hermes_home_env:
-        if Path(hermes_home_env).parent.name == "profiles":
+    kova_home_env = os.environ.get("HERMES_HOME", "")
+    if profile_name is None and kova_home_env:
+        if Path(kova_home_env).parent.name == "profiles":
             return
 
-    # 2. If no flag, check active_profile in the hermes root.
+    # 2. If no flag, check active_profile in the kova root.
     #
     # EXCEPTION: a supervised s6 gateway child (exported by the container
-    # run-script as HERMES_S6_SUPERVISED_CHILD=1) must NOT follow the sticky
+    # run-script as KOVA_S6_SUPERVISED_CHILD=1) must NOT follow the sticky
     # active_profile. Each supervised slot has a fixed profile identity: named
     # slots pass ``-p <name>`` explicitly (handled in step 1 above), and the
     # reserved ``gateway-default`` slot runs bare ``kova gateway run`` to mean
     # "the root HERMES_HOME profile". If the reserved default child read
     # active_profile here, switching the active profile (e.g. via the dashboard)
-    # would silently redirect the default gateway into that profile â€” yielding a
+    # would silently redirect the default gateway into that profile — yielding a
     # duplicate gateway for the active profile and no real default gateway. See
     # the "Docker & Profiles & Dashboard" report.
-    if profile_name is None and not os.environ.get("HERMES_S6_SUPERVISED_CHILD"):
+    if profile_name is None and not os.environ.get("KOVA_S6_SUPERVISED_CHILD"):
         try:
-            from kova_constants import get_default_hermes_root
+            from kova_constants import get_default_kova_root
 
-            active_path = get_default_hermes_root() / "active_profile"
+            active_path = get_default_kova_root() / "active_profile"
             if active_path.exists():
                 name = active_path.read_text().strip()
                 if name and name != "default":
@@ -651,23 +651,23 @@ def _apply_profile_override() -> None:
         try:
             from kova_cli.profiles import resolve_profile_env
 
-            hermes_home = resolve_profile_env(profile_name)
+            kova_home = resolve_profile_env(profile_name)
         except FileNotFoundError as exc:
-            hermes_home = _resolve_sudo_user_profile_env(profile_name)
-            if not hermes_home:
+            kova_home = _resolve_sudo_user_profile_env(profile_name)
+            if not kova_home:
                 print(f"Error: {exc}", file=sys.stderr)
                 sys.exit(1)
         except ValueError as exc:
             print(f"Error: {exc}", file=sys.stderr)
             sys.exit(1)
         except Exception as exc:
-            # A bug in profiles.py must NEVER prevent hermes from starting
+            # A bug in profiles.py must NEVER prevent kova from starting
             print(
                 f"Warning: profile override failed ({exc}), using default",
                 file=sys.stderr,
             )
             return
-        os.environ["HERMES_HOME"] = hermes_home
+        os.environ["HERMES_HOME"] = kova_home
         # Strip the flag from argv so argparse doesn't choke
         if consume > 0 and profile_index is not None:
             start = profile_index + 1  # +1 because argv is sys.argv[1:]
@@ -678,25 +678,25 @@ _apply_profile_override()
 
 # Load .env from ~/.hermes/.env first, then project root as dev fallback.
 # User-managed env files should override stale shell exports on restart.
-from kova_cli.config import get_hermes_home
-from kova_cli.env_loader import load_hermes_dotenv
+from kova_cli.config import get_kova_home
+from kova_cli.env_loader import load_kova_dotenv
 
-load_hermes_dotenv(project_env=PROJECT_ROOT / ".env")
+load_kova_dotenv(project_env=PROJECT_ROOT / ".env")
 
-# Bridge security.redact_secrets from config.yaml â†’ HERMES_REDACT_SECRETS env
+# Bridge security.redact_secrets from config.yaml → KOVA_REDACT_SECRETS env
 # var BEFORE kova_logging imports agent.redact (which snapshots the flag at
 # module-import time). Without this, config.yaml's toggle is ignored because
 # the setup_logging() call below imports agent.redact, which reads the env var
-# exactly once. Env var in .env still wins â€” this is config.yaml fallback only.
+# exactly once. Env var in .env still wins — this is config.yaml fallback only.
 #
 # We also read network.force_ipv4 from the same yaml load to avoid two
-# separate config.yaml reads (saves ~17ms on every CLI startup â€” the second
+# separate config.yaml reads (saves ~17ms on every CLI startup — the second
 # `load_config()` was doing a full deep-merge for one boolean lookup).
 _FORCE_IPV4_EARLY = False
 try:
     import yaml as _yaml_early
 
-    _cfg_path = get_hermes_home() / "config.yaml"
+    _cfg_path = get_kova_home() / "config.yaml"
     if _cfg_path.exists():
         with open(_cfg_path, encoding="utf-8") as _f:
             _early_cfg_raw = _yaml_early.load(
@@ -712,21 +712,21 @@ try:
             _early_cfg_raw = managed_scope.apply_managed_overlay(_early_cfg_raw)
         except Exception:
             pass
-        if "HERMES_REDACT_SECRETS" not in os.environ:
+        if "KOVA_REDACT_SECRETS" not in os.environ:
             _early_sec_cfg = _early_cfg_raw.get("security", {})
             if isinstance(_early_sec_cfg, dict):
                 _early_redact = _early_sec_cfg.get("redact_secrets")
                 if _early_redact is not None:
-                    os.environ["HERMES_REDACT_SECRETS"] = str(_early_redact).lower()
+                    os.environ["KOVA_REDACT_SECRETS"] = str(_early_redact).lower()
         _early_net_cfg = _early_cfg_raw.get("network", {})
         if isinstance(_early_net_cfg, dict) and _early_net_cfg.get("force_ipv4"):
             _FORCE_IPV4_EARLY = True
         del _early_cfg_raw
     del _cfg_path
 except Exception:
-    pass  # best-effort â€” redaction stays at default (enabled) on config errors
+    pass  # best-effort — redaction stays at default (enabled) on config errors
 
-# Initialize centralized file logging early â€” all `kova` subcommands
+# Initialize centralized file logging early — all `kova` subcommands
 # (chat, setup, gateway, config, etc.) write to agent.log + errors.log.
 # Dashboard entrypoints bootstrap with GUI mode so gui.log is always present
 # during GUI testing, including pre-dispatch startup failures.
@@ -742,10 +742,10 @@ try:
         )
     )
 except Exception:
-    pass  # best-effort â€” don't crash the CLI if logging setup fails
+    pass  # best-effort — don't crash the CLI if logging setup fails
 
 # Apply IPv4 preference early, before any HTTP clients are created.
-# We already determined whether to force IPv4 from the raw yaml read above â€”
+# We already determined whether to force IPv4 from the raw yaml read above —
 # this just calls the toggle without a redundant load_config() round trip.
 if _FORCE_IPV4_EARLY:
     try:
@@ -753,7 +753,7 @@ if _FORCE_IPV4_EARLY:
 
         _apply_ipv4(force=True)
     except Exception:
-        pass  # best-effort â€” don't crash if kova_constants not importable yet
+        pass  # best-effort — don't crash if kova_constants not importable yet
 
 import logging
 import threading
@@ -856,7 +856,7 @@ def _read_git_revision_fingerprint(repo_root: Path) -> str | None:
             packed_sha = _read_packed_ref(common_dir, ref)
             if packed_sha:
                 return f"git:{ref}:{packed_sha}"
-            # Ref name is known but unresolved â€” still stable across launches,
+            # Ref name is known but unresolved — still stable across launches,
             # and the version/release fallback in the caller will invalidate
             # after `kova update`.
             return f"git:{ref}:unresolved"
@@ -879,13 +879,13 @@ def _termux_bundled_skills_fingerprint() -> str:
 
 
 def _termux_bundled_skills_stamp_path() -> Path:
-    return get_hermes_home() / "skills" / ".termux_bundled_sync_stamp"
+    return get_kova_home() / "skills" / ".termux_bundled_sync_stamp"
 
 
 def _termux_bundled_skills_sync_needed() -> bool:
     if not _is_termux_startup_environment():
         return True
-    if os.environ.get("HERMES_TERMUX_FORCE_SKILLS_SYNC") == "1":
+    if os.environ.get("KOVA_TERMUX_FORCE_SKILLS_SYNC") == "1":
         return True
     try:
         stamp = _termux_bundled_skills_stamp_path()
@@ -925,7 +925,7 @@ def _sync_bundled_skills_for_startup() -> bool:
 def _termux_should_prefetch_update_check() -> bool:
     if not _is_termux_startup_environment():
         return True
-    return os.environ.get("HERMES_TERMUX_PREFETCH_UPDATES") == "1"
+    return os.environ.get("KOVA_TERMUX_PREFETCH_UPDATES") == "1"
 
 
 def _relative_time(ts) -> str:
@@ -948,7 +948,7 @@ def _relative_time(ts) -> str:
 
 def _has_any_provider_configured() -> bool:
     """Check if at least one inference provider is usable."""
-    from kova_cli.config import get_env_path, get_hermes_home, load_config
+    from kova_cli.config import get_env_path, get_kova_home, load_config
     from kova_cli.auth import get_auth_status
 
     # Determine whether Kova itself has been explicitly configured (model
@@ -966,10 +966,10 @@ def _has_any_provider_configured() -> bool:
         _model_name = model_cfg.strip()
     else:
         _model_name = ""
-    _has_hermes_config = _model_name and _model_name != _DEFAULT_MODEL
+    _has_kova_config = _model_name and _model_name != _DEFAULT_MODEL
 
     # Check env vars (may be set by .env or shell).
-    # OPENAI_BASE_URL alone counts â€” local models (vLLM, llama.cpp, etc.)
+    # OPENAI_BASE_URL alone counts — local models (vLLM, llama.cpp, etc.)
     # often don't require an API key.
     from kova_cli.auth import PROVIDER_REGISTRY
 
@@ -1016,7 +1016,7 @@ def _has_any_provider_configured() -> bool:
         pass
 
     # Check for Nous Portal OAuth credentials
-    auth_file = get_hermes_home() / "auth.json"
+    auth_file = get_kova_home() / "auth.json"
     if auth_file.exists():
         try:
             import json
@@ -1030,7 +1030,7 @@ def _has_any_provider_configured() -> bool:
         except Exception:
             pass
 
-    # Check config.yaml â€” if model is a dict with an explicit provider set,
+    # Check config.yaml — if model is a dict with an explicit provider set,
     # the user has gone through setup (fresh installs have model as a plain
     # string).  Also covers custom endpoints that store api_key/base_url in
     # config rather than .env.
@@ -1042,9 +1042,9 @@ def _has_any_provider_configured() -> bool:
             return True
 
     # Check for Claude Code OAuth credentials (~/.claude/.credentials.json)
-    # Only count these if Kova has been explicitly configured â€” Claude Code
+    # Only count these if Kova has been explicitly configured — Claude Code
     # being installed doesn't mean the user wants Kova to use their tokens.
-    if _has_hermes_config:
+    if _has_kova_config:
         try:
             from agent.anthropic_adapter import (
                 read_claude_code_credentials,
@@ -1141,12 +1141,12 @@ def _session_browse_picker(sessions: list) -> Optional[str]:
 
                 # Header line
                 if search_text:
-                    header = f"  Browse sessions â€” filter: {search_text}â–ˆ"
+                    header = f"  Browse sessions — filter: {search_text}█"
                     header_attr = curses.A_BOLD
                     if curses.has_colors():
                         header_attr |= curses.color_pair(3)
                 else:
-                    header = "  Browse sessions â€” â†‘â†“ navigate  Enter select  Type to filter  Esc quit"
+                    header = "  Browse sessions — ↑↓ navigate  Enter select  Type to filter  Esc quit"
                     header_attr = curses.A_BOLD
                     if curses.has_colors():
                         header_attr |= curses.color_pair(2)
@@ -1197,7 +1197,7 @@ def _session_browse_picker(sessions: list) -> Optional[str]:
                         if y >= max_y - 1:
                             break
                         s = filtered[i]
-                        arrow = " â†’ " if i == cursor else "   "
+                        arrow = " → " if i == cursor else "   "
                         row = arrow + _format_row(s, max_x - 3)
                         attr = curses.A_NORMAL
                         if i == cursor:
@@ -1263,7 +1263,7 @@ def _session_browse_picker(sessions: list) -> Optional[str]:
                 elif key == ord("q") and not search_text:
                     return
                 elif 32 <= key <= 126:
-                    # Printable character â†’ add to search filter
+                    # Printable character → add to search filter
                     search_text += chr(key)
                     filtered = [s for s in sessions if _match(s, search_text)]
                     cursor = 0
@@ -1350,14 +1350,14 @@ def _exec_in_container(container_info: dict, cli_args: list):
     On failure, OSError propagates naturally.
 
     Args:
-        container_info: dict with backend, container_name, exec_user, hermes_bin
-        cli_args: the original CLI arguments (everything after 'hermes')
+        container_info: dict with backend, container_name, exec_user, kova_bin
+        cli_args: the original CLI arguments (everything after 'kova')
     """
 
     backend = container_info["backend"]
     container_name = container_info["container_name"]
     exec_user = container_info["exec_user"]
-    hermes_bin = container_info["hermes_bin"]
+    kova_bin = container_info["kova_bin"]
 
     runtime = shutil.which(backend)
     if not runtime:
@@ -1368,7 +1368,7 @@ def _exec_in_container(container_info: dict, cli_args: list):
         sys.exit(1)
 
     # Rootful containers (NixOS systemd service) are invisible to unprivileged
-    # users â€” Podman uses per-user namespaces, Docker needs group access.
+    # users — Podman uses per-user namespaces, Docker needs group access.
     # Probe whether the runtime can see the container; if not, try via sudo.
     sudo_path = None
     probe = _probe_container(
@@ -1389,7 +1389,7 @@ def _exec_in_container(container_info: dict, cli_args: list):
                     f"\n"
                     f"The container is likely running as root. Your user cannot see it\n"
                     f"because {backend} uses per-user namespaces. Grant passwordless\n"
-                    f"sudo for {backend} â€” the -n (non-interactive) flag is required\n"
+                    f"sudo for {backend} — the -n (non-interactive) flag is required\n"
                     f"because a password prompt would hang or break piped commands.\n"
                     f"\n"
                     f"On NixOS:\n"
@@ -1399,14 +1399,14 @@ def _exec_in_container(container_info: dict, cli_args: list):
                     f'    commands = [{{ command = "{runtime}"; options = [ "NOPASSWD" ]; }}];\n'
                     f"  }}];\n"
                     f"\n"
-                    f"Or run: sudo hermes {' '.join(cli_args)}",
+                    f"Or run: sudo kova {' '.join(cli_args)}",
                     file=sys.stderr,
                 )
                 sys.exit(1)
         else:
             print(
                 f"Error: container '{container_name}' not found via {backend}.\n"
-                f"The container may be running under root. Try: sudo hermes {' '.join(cli_args)}",
+                f"The container may be running under root. Try: sudo kova {' '.join(cli_args)}",
                 file=sys.stderr,
             )
             sys.exit(1)
@@ -1427,7 +1427,7 @@ def _exec_in_container(container_info: dict, cli_args: list):
         + tty_flags
         + ["-u", exec_user]
         + env_flags
-        + [container_name, hermes_bin]
+        + [container_name, kova_bin]
         + cli_args
     )
 
@@ -1509,7 +1509,7 @@ def _print_tui_exit_summary(
         title = db.get_session_title(target)
         message_count = int(session.get("message_count") or 0)
         if message_count == 0:
-            return  # No real conversation â€” don't show resume info
+            return  # No real conversation — don't show resume info
         input_tokens = int(session.get("input_tokens") or 0)
         output_tokens = int(session.get("output_tokens") or 0)
         cache_read_tokens = int(session.get("cache_read_tokens") or 0)
@@ -1550,7 +1550,7 @@ _NPM_LOCK_RUNTIME_KEYS = frozenset({"ideallyInert", "peer"})
 
 ``ideallyInert`` is npm's runtime annotation for packages it skipped installing
 (per-platform opt-outs).  ``peer`` is dropped from the hidden ``.package-lock.json``
-on dev-dependencies that are *also* declared as peers â€” the canonical
+on dev-dependencies that are *also* declared as peers — the canonical
 ``package-lock.json`` records the dual role, but npm 9's actualized tree strips
 it.  Neither key represents a real skew between what was declared and what was
 installed, so we exclude them from the comparison in :func:`_tui_need_npm_install`
@@ -1571,7 +1571,7 @@ def _workspace_root(dir: Path) -> Path:
 
     Used by ``_tui_need_npm_install``, ``_make_tui_argv``, and
     ``_build_web_ui`` so that lockfile/node_modules resolution and
-    ``npm install`` cwd stay consistent â€” a single helper prevents
+    ``npm install`` cwd stay consistent — a single helper prevents
     the checks from diverging if someone accidentally creates a
     sub-package lockfile (e.g. running ``npm install`` in the wrong
     directory).
@@ -1612,11 +1612,11 @@ def _termux_workspace_install_context(
 
 
 def _tui_need_npm_install(root: Path) -> bool:
-    """True when @hermes/ink is missing or node_modules is behind package-lock.json.
+    """True when @kova/ink is missing or node_modules is behind package-lock.json.
 
     Prebuilt bundle mode: when ``dist/entry.js`` exists and there is no
     ``package-lock.json`` (nix install layout only ships ``dist/`` +
-    ``package.json``), skip reinstall entirely â€” the bundle is self-contained
+    ``package.json``), skip reinstall entirely — the bundle is self-contained
     and there is nothing to install.
 
     With npm workspaces the single ``package-lock.json`` and the hoisted
@@ -1632,12 +1632,12 @@ def _tui_need_npm_install(root: Path) -> bool:
     dependencies" on every launch.
 
     For each entry in the root lock's ``packages`` map:
-      - missing from hidden lock â†’ reinstall (unless the entry is marked
+      - missing from hidden lock → reinstall (unless the entry is marked
         ``optional`` or ``peer``, which npm may intentionally skip per platform)
       - present but with differing fields (excluding npm-written runtime
-        annotations like ``ideallyInert``) â†’ reinstall
+        annotations like ``ideallyInert``) → reinstall
 
-    Extra entries that exist only in the hidden lock are ignored â€” stale
+    Extra entries that exist only in the hidden lock are ignored — stale
     transitives left over from a removed dependency don't break runtime and
     we'd rather not force a reinstall for them. Falls back to mtime
     comparison if either lockfile is unparseable.
@@ -1651,7 +1651,7 @@ def _tui_need_npm_install(root: Path) -> bool:
     if entry.is_file() and not lock.is_file():
         return False
 
-    ink = ws_root / "node_modules" / "@hermes" / "ink" / "package.json"
+    ink = ws_root / "node_modules" / "@kova" / "ink" / "package.json"
     if not ink.is_file():
         return True
     if not lock.is_file():
@@ -1694,7 +1694,7 @@ def _tui_need_npm_install(root: Path) -> bool:
 
 _TUI_BUILD_INPUT_DIRS = (
     "src",
-    "packages/hermes-ink/src",
+    "packages/kova-ink/src",
 )
 
 _TUI_BUILD_INPUT_FILES = (
@@ -1704,9 +1704,9 @@ _TUI_BUILD_INPUT_FILES = (
     "tsconfig.build.json",
     "babel.compiler.config.cjs",
     "scripts/build.mjs",
-    "packages/hermes-ink/package.json",
-    "packages/hermes-ink/index.js",
-    "packages/hermes-ink/text-input.js",
+    "packages/kova-ink/package.json",
+    "packages/kova-ink/index.js",
+    "packages/kova-ink/text-input.js",
 )
 
 _TUI_BUILD_INPUT_SUFFIXES = frozenset(
@@ -1736,9 +1736,9 @@ def _tui_need_rebuild(root: Path) -> bool:
     The TUI bundle is self-contained. Rebuilding it on every launch adds a
     visible cold-start tax on slow Termux CPUs, while a simple mtime freshness
     check still rebuilds immediately after source updates, dependency updates,
-    or local edits. Set ``HERMES_TUI_FORCE_BUILD=1`` to force the old behaviour.
+    or local edits. Set ``KOVA_TUI_FORCE_BUILD=1`` to force the old behaviour.
     """
-    force = (os.environ.get("HERMES_TUI_FORCE_BUILD") or "").strip().lower()
+    force = (os.environ.get("KOVA_TUI_FORCE_BUILD") or "").strip().lower()
     if force in {"1", "true", "yes", "on"}:
         return True
 
@@ -1764,22 +1764,22 @@ def _ensure_tui_node() -> None:
     it and call `ensure_node` (fnm/nvm/proto/brew/bundled cascade). After
     install, capture the resolved node binary path from the bash subprocess
     and prepend its directory to os.environ["PATH"] so shutil.which finds the
-    new binaries in this Python process â€” regardless of which version manager
+    new binaries in this Python process — regardless of which version manager
     was used (nvm, fnm, proto, brew, or the bundled fallback).
 
     Idempotent no-op when node+npm are already discoverable. Set
-    ``HERMES_SKIP_NODE_BOOTSTRAP=1`` to disable auto-install.
+    ``KOVA_SKIP_NODE_BOOTSTRAP=1`` to disable auto-install.
     """
     if shutil.which("node") and shutil.which("npm"):
         return
-    if os.environ.get("HERMES_SKIP_NODE_BOOTSTRAP"):
+    if os.environ.get("KOVA_SKIP_NODE_BOOTSTRAP"):
         return
 
     helper = PROJECT_ROOT / "scripts" / "lib" / "node-bootstrap.sh"
     if not helper.is_file():
         return
 
-    hermes_home = os.environ.get("HERMES_HOME") or str(Path.home() / ".kova")
+    kova_home = os.environ.get("HERMES_HOME") or str(Path.home() / ".kova")
     try:
         # Helper writes logs to stderr; we ask bash to print `command -v node`
         # on stdout once ensure_node succeeds. Subshell PATH edits don't leak
@@ -1790,7 +1790,7 @@ def _ensure_tui_node() -> None:
                 "-c",
                 f'source "{helper}" >&2 && ensure_node >&2 && command -v node',
             ],
-            env={**os.environ, "HERMES_HOME": hermes_home},
+            env={**os.environ, "HERMES_HOME": kova_home},
             capture_output=True,
             text=True,
             encoding="utf-8",
@@ -1807,7 +1807,7 @@ def _ensure_tui_node() -> None:
     if resolved:
         extras.append(Path(resolved).resolve().parent)
 
-    extras.extend([Path(hermes_home) / "node" / "bin", Path.home() / ".local" / "bin"])
+    extras.extend([Path(kova_home) / "node" / "bin", Path.home() / ".local" / "bin"])
 
     for extra in extras:
         s = str(extra)
@@ -1829,10 +1829,10 @@ def _restore_tui_workspace(tui_dir: Path) -> bool:
 
     On Windows an antivirus / NTFS filter driver can leave tracked ``ui-tui/``
     files deleted in the working tree after ``kova update`` (HEAD stays
-    intact; the files just vanish â€” see issue #49145). Those files are tracked,
+    intact; the files just vanish — see issue #49145). Those files are tracked,
     so ``git restore`` puts them back deterministically. Best-effort: returns
     False (rather than raising) when git is unavailable, this isn't a checkout,
-    or the restore leaves the directory still missing â€” the caller then prints
+    or the restore leaves the directory still missing — the caller then prints
     the manual-recovery message.
     """
     git = shutil.which("git")
@@ -1864,7 +1864,7 @@ def _ensure_tui_workspace(tui_dir: Path) -> None:
         return
 
     if _restore_tui_workspace(tui_dir):
-        if not os.environ.get("HERMES_QUIET"):
+        if not os.environ.get("KOVA_QUIET"):
             print(f"Restored missing TUI workspace: {tui_dir}")
         return
 
@@ -1883,12 +1883,12 @@ def _ensure_tui_workspace(tui_dir: Path) -> None:
 
 
 def _make_tui_argv(tui_dir: Path, tui_dev: bool) -> tuple[list[str], Path]:
-    """TUI: --dev â†’ tsx src; else node dist (HERMES_TUI_DIR prebuilt or esbuild)."""
+    """TUI: --dev → tsx src; else node dist (KOVA_TUI_DIR prebuilt or esbuild)."""
     _ensure_tui_node()
 
     def _node_bin(bin: str) -> str:
         if bin == "node":
-            env_node = os.environ.get("HERMES_NODE")
+            env_node = os.environ.get("KOVA_NODE")
             if env_node and os.path.isfile(env_node) and os.access(env_node, os.X_OK):
                 return env_node
         path = shutil.which(bin)
@@ -1900,17 +1900,17 @@ def _make_tui_argv(tui_dir: Path, tui_dev: bool) -> tuple[list[str], Path]:
             except Exception:
                 pass
         if not path:
-            print(f"{bin} not found â€” install Node.js to use the TUI.")
+            print(f"{bin} not found — install Node.js to use the TUI.")
             sys.exit(1)
         return path
 
     # Footgun: --dev against a prebuilt bundle that has no source/node_modules.
-    ext_dir = os.environ.get("HERMES_TUI_DIR")
+    ext_dir = os.environ.get("KOVA_TUI_DIR")
     if tui_dev and ext_dir:
         print(
-            f"Error: --dev is incompatible with HERMES_TUI_DIR={ext_dir}\n"
+            f"Error: --dev is incompatible with KOVA_TUI_DIR={ext_dir}\n"
             f"The prebuilt TUI has no source code to hot-reload.\n"
-            f"Unset HERMES_TUI_DIR (e.g. `unset HERMES_TUI_DIR`) to use --dev from a checkout.",
+            f"Unset KOVA_TUI_DIR (e.g. `unset KOVA_TUI_DIR`) to use --dev from a checkout.",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -1920,7 +1920,7 @@ def _make_tui_argv(tui_dir: Path, tui_dev: bool) -> tuple[list[str], Path]:
     # This must run BEFORE _ensure_tui_workspace() below. A prebuilt install
     # (Docker image, Nix build, or prior `npm run build`) ships
     # kova_cli/tui_dist/entry.js but never ships ui-tui/ at all (that
-    # directory only exists in a git checkout) â€” so requiring the workspace
+    # directory only exists in a git checkout) — so requiring the workspace
     # to exist first made every prebuilt dashboard Chat tab connection
     # hard-exit before it ever got a chance to try the bundled entry.js it
     # already has. See #56665.
@@ -1937,7 +1937,7 @@ def _make_tui_argv(tui_dir: Path, tui_dev: bool) -> tuple[list[str], Path]:
             node = _node_bin("node")
             return [node, "--expose-gc", str(bundled)], bundled.parent
 
-    # No prebuilt bundle available (or --dev, which never uses one) â€” we're
+    # No prebuilt bundle available (or --dev, which never uses one) — we're
     # about to npm install/build from source, so the workspace must exist.
     if not ext_dir:
         _ensure_tui_workspace(tui_dir)
@@ -1961,8 +1961,8 @@ def _make_tui_argv(tui_dir: Path, tui_dev: bool) -> tuple[list[str], Path]:
         and _tui_need_npm_install(tui_dir)
     ):
         npm = _node_bin("npm")
-        if not os.environ.get("HERMES_QUIET"):
-            print("Installing TUI dependenciesâ€¦")
+        if not os.environ.get("KOVA_QUIET"):
+            print("Installing TUI dependencies…")
         npm_cwd = _workspace_root(tui_dir)
         # --workspace ui-tui avoids resolving apps/desktop (Electron + node-pty).
         # See #38772.
@@ -2010,13 +2010,13 @@ def _make_tui_argv(tui_dir: Path, tui_dev: bool) -> tuple[list[str], Path]:
         did_install = True
 
     if tui_dev:
-        # Keep the local @hermes/ink package exports in sync with source.
-        # --dev runs src/entry.tsx directly, but @hermes/ink resolves through
-        # packages/hermes-ink/dist/entry-exports.js. If that dist bundle is
+        # Keep the local @kova/ink package exports in sync with source.
+        # --dev runs src/entry.tsx directly, but @kova/ink resolves through
+        # packages/kova-ink/dist/entry-exports.js. If that dist bundle is
         # stale after a pull, newer hooks/components can exist in src while
         # being missing at runtime (e.g. useCursorAdvance). Prebuild it here.
         npm = _node_bin("npm")
-        ink_dir = tui_dir / "packages" / "hermes-ink"
+        ink_dir = tui_dir / "packages" / "kova-ink"
         result = subprocess.run(
             [npm, "run", "build"],
             cwd=str(ink_dir),
@@ -2097,7 +2097,7 @@ def _read_cgroup_memory_limit() -> Optional[int]:
     Node's V8 heap is NOT cgroup-aware: with a flat ``--max-old-space-size=8192``
     it happily grows the heap toward 8GB regardless of the container's real
     memory limit.  In a Docker/k8s container capped below ~9-10GB, the cgroup
-    OOM-killer SIGKILLs Node before V8's own heap monitor ever fires â€” which
+    OOM-killer SIGKILLs Node before V8's own heap monitor ever fires — which
     runs no JS handler, writes no ``[tui-parent]`` breadcrumb, and the user
     sees only a bare gateway ``stdin EOF``.  Reading the real cgroup limit lets
     us size the heap cap below it so V8 GCs/exits gracefully instead of being
@@ -2130,8 +2130,8 @@ def _read_cgroup_memory_limit() -> Optional[int]:
         if limit <= 0:
             continue
         # cgroup v1 reports "unlimited" as a huge value (often
-        # 0x7FFFFFFFFFFFF000 â‰ˆ 9.2 EB, sometimes PAGE_COUNTER_MAX). Anything
-        # at/above ~1 PB is effectively unconstrained â€” treat as no limit.
+        # 0x7FFFFFFFFFFFF000 ≈ 9.2 EB, sometimes PAGE_COUNTER_MAX). Anything
+        # at/above ~1 PB is effectively unconstrained — treat as no limit.
         if limit >= (1 << 50):
             return None
         return limit
@@ -2144,7 +2144,7 @@ def _resolve_tui_heap_mb(default_mb: int = 8192) -> int:
     Returns ``default_mb`` (8192) when unconstrained or when the box is large
     enough that 8GB fits.  In a memory-limited container, returns ~75% of the
     cgroup limit so the heap + non-heap RSS stays under the cgroup ceiling,
-    clamped to a sane floor (1536MB â€” below this V8 GC-thrashes and the TUI
+    clamped to a sane floor (1536MB — below this V8 GC-thrashes and the TUI
     is barely usable).  Never exceeds ``default_mb``.
     """
     limit = _read_cgroup_memory_limit()
@@ -2175,24 +2175,24 @@ def _safe_tui_cwd(env: Optional[dict] = None) -> str:
 
 def _apply_tui_python_env(env: dict) -> None:
     """Seed/repair Python-related env vars shared by CLI and dashboard TUI launches."""
-    src_root = str(env.get("HERMES_PYTHON_SRC_ROOT") or "").strip()
+    src_root = str(env.get("KOVA_PYTHON_SRC_ROOT") or "").strip()
     if not src_root or not Path(src_root).is_dir():
-        env["HERMES_PYTHON_SRC_ROOT"] = str(PROJECT_ROOT)
+        env["KOVA_PYTHON_SRC_ROOT"] = str(PROJECT_ROOT)
 
-    cwd = str(env.get("HERMES_CWD") or "").strip()
+    cwd = str(env.get("KOVA_CWD") or "").strip()
     if not cwd or not Path(cwd).is_dir():
-        env["HERMES_CWD"] = _safe_tui_cwd(env)
+        env["KOVA_CWD"] = _safe_tui_cwd(env)
 
-    python = str(env.get("HERMES_PYTHON") or "").strip()
+    python = str(env.get("KOVA_PYTHON") or "").strip()
     if os.path.dirname(python):
         python_path = Path(python)
         if not python_path.is_absolute():
-            python_path = Path(env["HERMES_CWD"]) / python_path
+            python_path = Path(env["KOVA_CWD"]) / python_path
         python_is_executable = python_path.is_file() and os.access(python_path, os.X_OK)
     else:
         python_is_executable = bool(shutil.which(python, path=env.get("PATH")))
     if not python_is_executable:
-        env["HERMES_PYTHON"] = sys.executable
+        env["KOVA_PYTHON"] = sys.executable
 
 
 def _launch_tui(
@@ -2224,10 +2224,10 @@ def _launch_tui(
     except Exception:
         logger.debug("Failed to apply terminal config bridge for TUI launch", exc_info=True)
     active_session_fd, active_session_file = tempfile.mkstemp(
-        prefix="hermes-tui-active-session-", suffix=".json"
+        prefix="kova-tui-active-session-", suffix=".json"
     )
     os.close(active_session_fd)
-    env["HERMES_TUI_ACTIVE_SESSION_FILE"] = active_session_file
+    env["KOVA_TUI_ACTIVE_SESSION_FILE"] = active_session_file
     env.setdefault("NODE_ENV", "development" if tui_dev else "production")
 
     wt_info = None
@@ -2245,24 +2245,24 @@ def _launch_tui(
                 _prune_stale_worktrees(repo)
             wt_info = _setup_worktree()
         except Exception as exc:
-            print(f"âœ— Failed to create TUI worktree: {exc}", file=sys.stderr)
+            print(f"✗ Failed to create TUI worktree: {exc}", file=sys.stderr)
             wt_info = None
         if not wt_info:
             sys.exit(1)
-        env["HERMES_CWD"] = wt_info["path"]
+        env["KOVA_CWD"] = wt_info["path"]
         env["TERMINAL_CWD"] = wt_info["path"]
 
     _apply_tui_python_env(env)
 
     if model:
-        env["HERMES_MODEL"] = model
-        env["HERMES_INFERENCE_MODEL"] = model
+        env["KOVA_MODEL"] = model
+        env["KOVA_INFERENCE_MODEL"] = model
     if provider:
-        env["HERMES_TUI_PROVIDER"] = provider
-        env["HERMES_INFERENCE_PROVIDER"] = provider
+        env["KOVA_TUI_PROVIDER"] = provider
+        env["KOVA_INFERENCE_PROVIDER"] = provider
     tui_toolsets = _normalize_tui_toolsets(toolsets)
     if tui_toolsets:
-        env["HERMES_TUI_TOOLSETS"] = ",".join(tui_toolsets)
+        env["KOVA_TUI_TOOLSETS"] = ",".join(tui_toolsets)
     if skills:
         if isinstance(skills, (list, tuple)):
             flattened = []
@@ -2271,33 +2271,33 @@ def _launch_tui(
                     part.strip() for part in str(item).split(",") if part.strip()
                 )
             if flattened:
-                env["HERMES_TUI_SKILLS"] = ",".join(flattened)
+                env["KOVA_TUI_SKILLS"] = ",".join(flattened)
         else:
             value = str(skills).strip()
             if value:
-                env["HERMES_TUI_SKILLS"] = value
+                env["KOVA_TUI_SKILLS"] = value
     if query:
-        env["HERMES_TUI_QUERY"] = query
+        env["KOVA_TUI_QUERY"] = query
     if image:
-        env["HERMES_TUI_IMAGE"] = image
+        env["KOVA_TUI_IMAGE"] = image
     if checkpoints:
-        env["HERMES_TUI_CHECKPOINTS"] = "1"
+        env["KOVA_TUI_CHECKPOINTS"] = "1"
     if pass_session_id:
-        env["HERMES_TUI_PASS_SESSION_ID"] = "1"
+        env["KOVA_TUI_PASS_SESSION_ID"] = "1"
     if max_turns is not None:
-        env["HERMES_TUI_MAX_TURNS"] = str(max_turns)
+        env["KOVA_TUI_MAX_TURNS"] = str(max_turns)
     if verbose:
-        env["HERMES_TUI_TOOL_PROGRESS"] = "verbose"
+        env["KOVA_TUI_TOOL_PROGRESS"] = "verbose"
     elif quiet:
-        env["HERMES_TUI_TOOL_PROGRESS"] = "off"
+        env["KOVA_TUI_TOOL_PROGRESS"] = "off"
     if accept_hooks:
-        env["HERMES_ACCEPT_HOOKS"] = "1"
-    # Guarantee a generous V8 heap for the TUI. Default node cap is ~1.5â€“4GB
+        env["KOVA_ACCEPT_HOOKS"] = "1"
+    # Guarantee a generous V8 heap for the TUI. Default node cap is ~1.5–4GB
     # depending on version and can fatal-OOM on long sessions with large
     # transcripts / reasoning blobs. We target 8GB on an unconstrained host,
     # but V8 is NOT cgroup-aware: in a memory-limited Docker/k8s container a
     # flat 8GB heap grows past the container limit and the cgroup OOM-killer
-    # SIGKILLs Node â€” running no JS handler, writing no breadcrumb, leaving the
+    # SIGKILLs Node — running no JS handler, writing no breadcrumb, leaving the
     # user with only a bare gateway `stdin EOF`. _resolve_tui_heap_mb() reads
     # the real cgroup limit and sizes the cap below it so V8 GCs/exits
     # gracefully (and the memory monitor's onCritical breadcrumb can fire)
@@ -2310,16 +2310,16 @@ def _launch_tui(
     if not any(t.startswith("--max-old-space-size=") for t in _tokens):
         _tokens.append(f"--max-old-space-size={_resolve_tui_heap_mb()}")
     env["NODE_OPTIONS"] = " ".join(_tokens)
-    # HERMES_TUI_RESUME is an internal hand-off from the Python wrapper to the
+    # KOVA_TUI_RESUME is an internal hand-off from the Python wrapper to the
     # Ink app.  Because we start from os.environ.copy(), an exported/stale value
     # in the user's shell would otherwise make a plain `kova --tui` try to
     # resume a non-existent session and leave the UI at "error: session not
     # found" with no live session.  Only forward a resume id that argparse
     # resolved for this invocation; direct `node ui-tui/dist/entry.js` users can
-    # still set HERMES_TUI_RESUME themselves.
-    env.pop("HERMES_TUI_RESUME", None)
+    # still set KOVA_TUI_RESUME themselves.
+    env.pop("KOVA_TUI_RESUME", None)
     if resume_session_id:
-        env["HERMES_TUI_RESUME"] = resume_session_id
+        env["KOVA_TUI_RESUME"] = resume_session_id
 
     argv, cwd = _make_tui_argv(tui_dir, tui_dev)
     code: Optional[int] = None
@@ -2350,7 +2350,7 @@ def _launch_tui(
         from kova_cli.relaunch import relaunch
 
         print()
-        print("âš• Launching update...")
+        print("⚕ Launching update...")
         print()
         relaunch(["update"], preserve_inherited=False)
 
@@ -2358,22 +2358,22 @@ def _launch_tui(
 
 
 def _pin_kanban_board_env() -> None:
-    """Pin the active kanban board into ``HERMES_KANBAN_BOARD`` for the chat session.
+    """Pin the active kanban board into ``KOVA_KANBAN_BOARD`` for the chat session.
 
     Without this, in-process tools (``kanban_*``) and shelled-out CLI calls
-    (``kova kanban â€¦``) resolve the board on different paths: the env-pin if
+    (``kova kanban …``) resolve the board on different paths: the env-pin if
     set, otherwise the global ``<root>/kanban/current`` file. A concurrent
     ``kova kanban boards switch`` from another session can flip the file
     mid-turn, so the same chat sees its tool calls hit board A while its shell
     calls hit board B (#20074). Pinning at chat boot mirrors what the
     dispatcher already does for spawned workers.
     """
-    if os.environ.get("HERMES_KANBAN_BOARD"):
+    if os.environ.get("KOVA_KANBAN_BOARD"):
         return
     try:
         from kova_cli.kanban_db import get_current_board
 
-        os.environ["HERMES_KANBAN_BOARD"] = get_current_board()
+        os.environ["KOVA_KANBAN_BOARD"] = get_current_board()
     except Exception:
         pass
 
@@ -2382,7 +2382,7 @@ def _sync_bundled_skills_quietly() -> None:
     """Seed ``~/.hermes/skills/`` with the bundled skill library on first launch.
 
     Called from any CLI entrypoint that the user might use as their first
-    interaction with Kova â€” chat, dashboard (the desktop GUI's backend),
+    interaction with Kova — chat, dashboard (the desktop GUI's backend),
     and gateway. The skills_sync module is manifest-based and idempotent:
     skipped skills cost ~milliseconds, so calling this repeatedly is fine.
 
@@ -2402,22 +2402,22 @@ def _resolve_use_tui(args) -> bool:
     """Decide whether to launch the TUI for a chat/bare invocation.
 
     Precedence (highest first):
-      1. ``--cli`` flag         â†’ always classic REPL
-      2. ``--tui`` flag         â†’ always TUI (explicit ask)
-      3. no TTY                 â†’ always classic (ambient prefs don't apply)
-      4. ``HERMES_TUI=1`` env   â†’ TUI
+      1. ``--cli`` flag         → always classic REPL
+      2. ``--tui`` flag         → always TUI (explicit ask)
+      3. no TTY                 → always classic (ambient prefs don't apply)
+      4. ``KOVA_TUI=1`` env   → TUI
       5. ``display.interface`` config value ("cli" | "tui")
-      6. default â†’ classic REPL
+      6. default → classic REPL
 
     Explicit flags always win over config so muscle memory and scripts keep
     working regardless of the configured default.
 
     The TTY gate (3) is load-bearing: ambient TUI preferences (env var or
     config default) must never hijack a NON-interactive invocation. Kanban
-    workers, cron jobs, and pipelines run ``kova â€¦ chat -q`` with stdout
+    workers, cron jobs, and pipelines run ``kova … chat -q`` with stdout
     on a pipe; booting the Ink TUI there hits its no-TTY bail-out, which
-    prints a resume hint and exits 0 â€” a kanban worker then dies with
-    "exited cleanly without calling kanban_complete â€” protocol violation"
+    prints a resume hint and exits 0 — a kanban worker then dies with
+    "exited cleanly without calling kanban_complete — protocol violation"
     on every attempt (found dogfooding the desktop kanban board). A user
     who *explicitly* passes ``--tui`` still gets the informative bail-out.
     """
@@ -2430,7 +2430,7 @@ def _resolve_use_tui(args) -> bool:
             return False
     except Exception:
         return False
-    if os.environ.get("HERMES_TUI") == "1":
+    if os.environ.get("KOVA_TUI") == "1":
         return True
     try:
         from kova_cli.config import load_config
@@ -2451,7 +2451,7 @@ def cmd_chat(args):
     continue_val = getattr(args, "continue_last", None)
     if continue_val and not getattr(args, "resume", None):
         if isinstance(continue_val, str):
-            # -c "session name" â€” resolve by title or ID
+            # -c "session name" — resolve by title or ID
             resolved = _resolve_session_by_name_or_id(continue_val)
             if resolved:
                 args.resume = resolved
@@ -2460,7 +2460,7 @@ def cmd_chat(args):
                 print("Use 'kova sessions list' to see available sessions.")
                 sys.exit(1)
         else:
-            # -c with no argument â€” continue the most recent session
+            # -c with no argument — continue the most recent session
             source = "tui" if use_tui else "cli"
             last_id = _resolve_last_session(source=source)
             if not last_id and source == "tui":
@@ -2478,12 +2478,12 @@ def cmd_chat(args):
         resolved = _resolve_session_by_name_or_id(resume_val)
         if resolved:
             args.resume = resolved
-        # If resolution fails, keep the original value â€” _init_agent will
+        # If resolution fails, keep the original value — _init_agent will
         # report "Session not found" with the original input
 
     # Session<->workspace binding: cd back into a resumed session's recorded cwd
     # so it resumes in the repo it belonged to. Opt out with --no-restore-cwd;
-    # skipped under --worktree (that path owns its own dir). Best-effort â€” a
+    # skipped under --worktree (that path owns its own dir). Best-effort — a
     # missing dir warns and stays put rather than failing the resume.
     if (
         getattr(args, "resume", None)
@@ -2495,14 +2495,14 @@ def cmd_chat(args):
 
             _saved_cwd = ((SessionDB().get_session(args.resume) or {}).get("cwd") or "").strip()
             if _saved_cwd and not os.path.isdir(_saved_cwd):
-                print(f"âš  session's recorded dir is gone ({_saved_cwd}); staying in {os.getcwd()}")
+                print(f"⚠ session's recorded dir is gone ({_saved_cwd}); staying in {os.getcwd()}")
             elif _saved_cwd and os.path.realpath(_saved_cwd) != os.path.realpath(os.getcwd()):
                 os.chdir(_saved_cwd)
-                print(f"â†ª restored workspace dir: {_saved_cwd}")
+                print(f"↪ restored workspace dir: {_saved_cwd}")
         except Exception:
             pass  # never let cwd-restore break a resume
 
-    # xAI retirement warning â€” one-shot, non-blocking, never fails startup
+    # xAI retirement warning — one-shot, non-blocking, never fails startup
     try:
         from kova_cli.xai_retirement import (
             MIGRATION_GUIDE_URL,
@@ -2515,11 +2515,11 @@ def cmd_chat(args):
         _retired_xai_refs = find_retired_xai_refs(_load_config_for_xai_check())
         if _retired_xai_refs:
             sys.stderr.write(
-                f"\033[33mâš  xAI retires {len(_retired_xai_refs)} model(s) "
+                f"\033[33m⚠ xAI retires {len(_retired_xai_refs)} model(s) "
                 f"in your config on {RETIREMENT_DATE}:\033[0m\n"
             )
             for _ref in _retired_xai_refs:
-                sys.stderr.write(f"  \033[33mâš \033[0m {format_issue(_ref)}\n")
+                sys.stderr.write(f"  \033[33m⚠\033[0m {format_issue(_ref)}\n")
             sys.stderr.write(f"  \033[2mMigration guide: {MIGRATION_GUIDE_URL}\033[0m\n")
             sys.stderr.write("  \033[2mRun 'kova doctor' for details.\033[0m\n\n")
     except Exception:
@@ -2575,30 +2575,30 @@ def cmd_chat(args):
         pass
 
     # --yolo: bypass all dangerous command approvals.
-    # Also set in main() before _prepare_agent_startup() â€” that is the
+    # Also set in main() before _prepare_agent_startup() — that is the
     # authoritative site because it runs before tool imports freeze
     # _YOLO_MODE_FROZEN.  This redundant set is a safety net for callers
     # that invoke cmd_chat directly (e.g. subcommand dispatch).
     if getattr(args, "yolo", False):
-        os.environ["HERMES_YOLO_MODE"] = "1"
+        os.environ["KOVA_YOLO_MODE"] = "1"
 
     # --ignore-user-config: make load_cli_config() / load_config() skip the
     # user's ~/.hermes/config.yaml and return built-in defaults. Set BEFORE
     # importing cli (which runs `CLI_CONFIG = load_cli_config()` at module
-    # import time). Credentials in .env are still loaded â€” this flag only
+    # import time). Credentials in .env are still loaded — this flag only
     # ignores behavioral/config settings.
     if getattr(args, "ignore_user_config", False):
-        os.environ["HERMES_IGNORE_USER_CONFIG"] = "1"
+        os.environ["KOVA_IGNORE_USER_CONFIG"] = "1"
 
     # --ignore-rules: skip auto-injection of AGENTS.md/SOUL.md/.cursorrules
     # (rules), memory entries, and any preloaded skills coming from user config.
     # Maps to AIAgent(skip_context_files=True, skip_memory=True).
     if getattr(args, "ignore_rules", False):
-        os.environ["HERMES_IGNORE_RULES"] = "1"
+        os.environ["KOVA_IGNORE_RULES"] = "1"
 
     # --source: tag session source for filtering (e.g. 'tool' for third-party integrations)
     if getattr(args, "source", None):
-        os.environ["HERMES_SESSION_SOURCE"] = args.source
+        os.environ["KOVA_SESSION_SOURCE"] = args.source
 
     _pin_kanban_board_env()
 
@@ -2664,7 +2664,7 @@ def cmd_gateway(args):
 
 def cmd_proxy(args):
     """Local OpenAI-compatible proxy to OAuth providers."""
-    # Lazy import â€” pulls in aiohttp, which is gated behind an extras install
+    # Lazy import — pulls in aiohttp, which is gated behind an extras install
     # for users who don't run the proxy or the messaging gateway.
     from kova_cli.proxy.cli import cmd_proxy as _cmd_proxy
 
@@ -2677,20 +2677,20 @@ def cmd_whatsapp(args):
     """Set up WhatsApp: choose mode, configure, install bridge, pair via QR."""
     _require_tty("whatsapp")
     from kova_cli.config import get_env_value, save_env_value
-    from kova_constants import find_node_executable, with_hermes_node_path
+    from kova_constants import find_node_executable, with_kova_node_path
 
     print()
-    print("âš• WhatsApp Setup")
+    print("⚕ WhatsApp Setup")
     print("=" * 50)
 
-    # â”€â”€ Step 1: Choose mode â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Step 1: Choose mode ──────────────────────────────────────────────
     current_mode = get_env_value("WHATSAPP_MODE") or ""
     if not current_mode:
         print()
         print("How will you use WhatsApp with Kova?")
         print()
         print("  1. Separate bot number (recommended)")
-        print("     People message the bot's number directly â€” cleanest experience.")
+        print("     People message the bot's number directly — cleanest experience.")
         print(
             "     Requires a second phone number with WhatsApp installed on a device."
         )
@@ -2710,18 +2710,18 @@ def cmd_whatsapp(args):
             wa_mode = "bot"
             print("  ✓ Mode: separate bot number")
             print()
-            print("  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”")
-            print("  â”‚  Getting a second number for the bot:           â”‚")
-            print("  â”‚                                                 â”‚")
-            print("  â”‚  Easiest: Install WhatsApp Business (free app)  â”‚")
-            print("  â”‚  on your phone with a second number:            â”‚")
-            print("  â”‚    â€¢ Dual-SIM: use your 2nd SIM slot            â”‚")
-            print("  â”‚    â€¢ Google Voice: free US number (voice.google) â”‚")
-            print("  â”‚    â€¢ Prepaid SIM: $3-10, verify once            â”‚")
-            print("  â”‚                                                 â”‚")
-            print("  â”‚  WhatsApp Business runs alongside your personal â”‚")
-            print("  â”‚  WhatsApp â€” no second phone needed.             â”‚")
-            print("  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜")
+            print("  ┌─────────────────────────────────────────────────┐")
+            print("  │  Getting a second number for the bot:           │")
+            print("  │                                                 │")
+            print("  │  Easiest: Install WhatsApp Business (free app)  │")
+            print("  │  on your phone with a second number:            │")
+            print("  │    • Dual-SIM: use your 2nd SIM slot            │")
+            print("  │    • Google Voice: free US number (voice.google) │")
+            print("  │    • Prepaid SIM: $3-10, verify once            │")
+            print("  │                                                 │")
+            print("  │  WhatsApp Business runs alongside your personal │")
+            print("  │  WhatsApp — no second phone needed.             │")
+            print("  └─────────────────────────────────────────────────┘")
         else:
             save_env_value("WHATSAPP_MODE", "self-chat")
             wa_mode = "self-chat"
@@ -2733,20 +2733,20 @@ def cmd_whatsapp(args):
         )
         print(f"\n✓ Mode: {mode_label}")
 
-    # â”€â”€ Step 2: Mode is selected, will enable WhatsApp only after pairing â”€â”€
+    # ── Step 2: Mode is selected, will enable WhatsApp only after pairing ──
     # We intentionally don't write WHATSAPP_ENABLED=true here.  If the user
     # aborts the wizard later (Ctrl+C, failed npm install, missed QR scan),
     # we'd otherwise leave .env claiming WhatsApp is ready when the bridge
     # has no creds.json.  Every subsequent `kova gateway` then paid a 30s
     # bridge-bootstrap timeout and queued WhatsApp for indefinite retries.
-    # Now: aborted setup leaves WHATSAPP_ENABLED unset â†’ gateway skips it.
+    # Now: aborted setup leaves WHATSAPP_ENABLED unset → gateway skips it.
     # Re-runs that already have WHATSAPP_ENABLED=true (from a prior
-    # successful pairing) stay enabled â€” we just don't write it pre-emptively.
+    # successful pairing) stay enabled — we just don't write it pre-emptively.
     print()
     if (get_env_value("WHATSAPP_ENABLED") or "").lower() == "true":
         print("✓ WhatsApp is already enabled")
 
-    # â”€â”€ Step 3: Allowed users â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Step 3: Allowed users ────────────────────────────────────────────
     current_users = get_env_value("WHATSAPP_ALLOWED_USERS") or ""
     if current_users:
         print(f"✓ Allowed users: {current_users}")
@@ -2777,24 +2777,24 @@ def cmd_whatsapp(args):
             save_env_value("WHATSAPP_ALLOWED_USERS", phone.replace(" ", ""))
             print(f"  ✓ Allowed users set: {phone}")
         else:
-            print("  âš  No allowlist â€” the agent will respond to ALL incoming messages")
+            print("  ⚠ No allowlist — the agent will respond to ALL incoming messages")
 
-    # â”€â”€ Step 4: Install bridge dependencies â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Step 4: Install bridge dependencies ──────────────────────────────
     from gateway.platforms.whatsapp_common import resolve_whatsapp_bridge_dir
     bridge_dir = resolve_whatsapp_bridge_dir()
     bridge_script = bridge_dir / "bridge.js"
 
     if not bridge_script.exists():
-        print(f"\nâœ— Bridge script not found at {bridge_script}")
+        print(f"\n✗ Bridge script not found at {bridge_script}")
         return
 
     if not (bridge_dir / "node_modules").exists():
         print(
-            "\nâ†’ Installing WhatsApp bridge dependencies (this can take a few minutes)..."
+            "\n→ Installing WhatsApp bridge dependencies (this can take a few minutes)..."
         )
         npm = find_node_executable("npm")
         if not npm:
-            print("  âœ— npm not found on PATH â€” install Node.js first")
+            print("  ✗ npm not found on PATH — install Node.js first")
             return
         try:
             result = subprocess.run(
@@ -2805,23 +2805,23 @@ def cmd_whatsapp(args):
                 text=True,
                 encoding="utf-8",
                 errors="replace",
-                env=with_hermes_node_path(),
+                env=with_kova_node_path(),
             )
         except KeyboardInterrupt:
-            print("\n  âœ— Install cancelled")
+            print("\n  ✗ Install cancelled")
             return
         if result.returncode != 0:
             err = (result.stderr or "").strip()
             preview = "\n".join(err.splitlines()[-30:]) if err else "(no output)"
-            print("  âœ— npm install failed:")
+            print("  ✗ npm install failed:")
             print(preview)
             return
         print("  ✓ Dependencies installed")
     else:
         print("✓ Bridge dependencies already installed")
 
-    # â”€â”€ Step 5: Check for existing session â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    session_dir = get_hermes_home() / "whatsapp" / "session"
+    # ── Step 5: Check for existing session ───────────────────────────────
+    session_dir = get_kova_home() / "whatsapp" / "session"
     session_dir.mkdir(parents=True, exist_ok=True)
 
     if (session_dir / "creds.json").exists():
@@ -2837,7 +2837,7 @@ def cmd_whatsapp(args):
             session_dir.mkdir(parents=True, exist_ok=True)
             print("  ✓ Session cleared")
         else:
-            # Existing pairing â€” ensure WHATSAPP_ENABLED reflects that.
+            # Existing pairing — ensure WHATSAPP_ENABLED reflects that.
             # (Older installs may have lost the env var; covers re-runs
             # where the user picked "no, keep my session" but the var
             # was never set or got removed.)
@@ -2847,17 +2847,17 @@ def cmd_whatsapp(args):
             print("  Start the gateway with: kova gateway")
             return
 
-    # â”€â”€ Step 6: QR code pairing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Step 6: QR code pairing ──────────────────────────────────────────
     print()
-    print("â”€" * 50)
+    print("─" * 50)
     if wa_mode == "bot":
-        print("ðŸ“± Open WhatsApp (or WhatsApp Business) on the")
+        print("📱 Open WhatsApp (or WhatsApp Business) on the")
         print("   phone with the BOT's number, then scan:")
     else:
-        print("ðŸ“± Open WhatsApp on your phone, then scan:")
+        print("📱 Open WhatsApp on your phone, then scan:")
     print()
-    print("   Settings â†’ Linked Devices â†’ Link a Device")
-    print("â”€" * 50)
+    print("   Settings → Linked Devices → Link a Device")
+    print("─" * 50)
     print()
 
     try:
@@ -2870,12 +2870,12 @@ def cmd_whatsapp(args):
                 str(session_dir),
             ],
             cwd=str(bridge_dir),
-            env=with_hermes_node_path(),
+            env=with_kova_node_path(),
         )
     except KeyboardInterrupt:
         pass
 
-    # â”€â”€ Step 7: Post-pairing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Step 7: Post-pairing ─────────────────────────────────────────────
     print()
     if (session_dir / "creds.json").exists():
         # Only enable WhatsApp now that pairing actually succeeded.  If the
@@ -2891,19 +2891,19 @@ def cmd_whatsapp(args):
             print("    2. Send a message to the bot's WhatsApp number")
             print("    3. The agent will reply automatically")
             print()
-            print("  Tip: Agent responses are prefixed with 'âš• Kova Agent'")
+            print("  Tip: Agent responses are prefixed with '⚕ Kova Agent'")
         else:
             print("  Next steps:")
             print("    1. Start the gateway:  kova gateway")
-            print("    2. Open WhatsApp â†’ Message Yourself")
-            print("    3. Type a message â€” the agent will reply")
+            print("    2. Open WhatsApp → Message Yourself")
+            print("    3. Type a message — the agent will reply")
             print()
-            print("  Tip: Agent responses are prefixed with 'âš• Kova Agent'")
+            print("  Tip: Agent responses are prefixed with '⚕ Kova Agent'")
             print("  so you can tell them apart from your own messages.")
         print()
         print("  Or install as a service: kova gateway install")
     else:
-        print("âš  Pairing may not have completed. Run 'kova whatsapp' to try again.")
+        print("⚠ Pairing may not have completed. Run 'kova whatsapp' to try again.")
 
 
 def cmd_whatsapp_cloud(args):
@@ -2915,7 +2915,7 @@ def cmd_whatsapp_cloud(args):
     common setup mistakes (e.g. pasting a phone number into the Phone
     Number ID field).
 
-    Distinct from ``kova whatsapp`` (the Baileys bridge wizard) â€” the
+    Distinct from ``kova whatsapp`` (the Baileys bridge wizard) — the
     two adapters are complementary, not alternatives. See
     ``kova_cli/setup_whatsapp_cloud.py``.
     """
@@ -2933,7 +2933,7 @@ def cmd_setup(args):
 
 
 def cmd_model(args):
-    """Select default model â€” starts with provider selection, then model picker."""
+    """Select default model — starts with provider selection, then model picker."""
     _require_tty("model")
     if getattr(args, "refresh", False):
         try:
@@ -2994,7 +2994,7 @@ def select_provider_and_model(args=None):
         config_provider = model_cfg.get("provider")
 
     effective_provider = (
-        config_provider or os.getenv("HERMES_INFERENCE_PROVIDER") or "auto"
+        config_provider or os.getenv("KOVA_INFERENCE_PROVIDER") or "auto"
     )
     compatible_custom_providers = get_compatible_custom_providers(config)
     def _named_custom_provider_map(cfg) -> dict[str, dict[str, str]]:
@@ -3130,7 +3130,7 @@ def select_provider_and_model(args=None):
     # Add user-defined custom providers from config.yaml
     _custom_provider_map = _named_custom_provider_map(
         config
-    )  # key â†’ {name, base_url, api_key}
+    )  # key → {name, base_url, api_key}
 
     def _active_custom_key_from_base_url() -> str:
         if effective_provider != "custom" or not isinstance(model_cfg, dict):
@@ -3195,9 +3195,9 @@ def select_provider_and_model(args=None):
 
     # Step 1: Provider selection.
     #
-    # Canonical providers are folded into top-level groups (display only â€” see
+    # Canonical providers are folded into top-level groups (display only — see
     # PROVIDER_GROUPS in kova_cli/models.py). A multi-member group shows one
-    # row ("Kimi / Moonshot â–¸"); picking it opens a member sub-picker that
+    # row ("Kimi / Moonshot ▸"); picking it opens a member sub-picker that
     # resolves back to a concrete slug, so the dispatch chain below is
     # unchanged. Custom providers and the trailing actions stay flat.
     canonical_descs = {p.slug: p.tui_desc for p in CANONICAL_PROVIDERS}
@@ -3205,7 +3205,7 @@ def select_provider_and_model(args=None):
     # picker hides the same providers the gateway/TUI pickers do. A canonical
     # provider is hidden if its slug OR any of its aliases appears in the
     # exclusion list (case-insensitive), matching list_authenticated_providers'
-    # matching against hermes_id / alias / canonical slug.
+    # matching against kova_id / alias / canonical slug.
     _cli_excluded = {
         str(p).strip().lower()
         for p in (config.get("model_catalog", {}) or {}).get("excluded_providers") or []
@@ -3231,15 +3231,15 @@ def select_provider_and_model(args=None):
     active_group = provider_group_for_slug(active) if active else ""
 
     # ordered entries: (key, label, members)
-    #   members == [] â†’ leaf row, key is a provider slug / action
-    #   members != [] â†’ group row, key is "group:<gid>"
+    #   members == [] → leaf row, key is a provider slug / action
+    #   members != [] → group row, key is "group:<gid>"
     ordered: list[tuple[str, str, list[str]]] = []
     default_idx = 0
     for row in grouped_rows:
         if row["kind"] == "group":
             gid = row["group_id"]
             group_desc = row.get("description", "")
-            label = f"{row['label']} â–¸ ({group_desc})" if group_desc else f"{row['label']} â–¸"
+            label = f"{row['label']} ▸ ({group_desc})" if group_desc else f"{row['label']} ▸"
             key = f"group:{gid}"
             is_active = bool(active_group) and gid == active_group
             members = row["members"]
@@ -3250,7 +3250,7 @@ def select_provider_and_model(args=None):
             is_active = bool(active) and slug == active
             members = []
         if is_active:
-            ordered.append((key, f"{label}  â† currently active", members))
+            ordered.append((key, f"{label}  ← currently active", members))
             default_idx = len(ordered) - 1
         else:
             ordered.append((key, label, members))
@@ -3260,10 +3260,10 @@ def select_provider_and_model(args=None):
         base_url = provider_info["base_url"]
         short_url = base_url.replace("https://", "").replace("http://", "").rstrip("/")
         saved_model = provider_info.get("model", "")
-        model_hint = f" â€” {saved_model}" if saved_model else ""
+        model_hint = f" — {saved_model}" if saved_model else ""
         label = f"{name} ({short_url}){model_hint}"
         if active and key == active:
-            ordered.append((key, f"{label}  â† currently active", []))
+            ordered.append((key, f"{label}  ← currently active", []))
             default_idx = len(ordered) - 1
         else:
             ordered.append((key, label, []))
@@ -3288,7 +3288,7 @@ def select_provider_and_model(args=None):
     selected_key = ordered[provider_idx][0]
     selected_members = ordered[provider_idx][2]
 
-    # Group row â†’ drill into a member sub-picker. Default to the active member
+    # Group row → drill into a member sub-picker. Default to the active member
     # if the active provider lives in this group. The descriptive text lives on
     # the group row itself, so member rows show only their short label here.
     if selected_members:
@@ -3298,7 +3298,7 @@ def select_provider_and_model(args=None):
         member_labels = [
             provider_labels.get(m, m) for m in selected_members
         ]
-        group_label = ordered[provider_idx][1].split(" â–¸", 1)[0]
+        group_label = ordered[provider_idx][1].split(" ▸", 1)[0]
         member_idx = _prompt_provider_choice(
             member_labels,
             default=member_default,
@@ -3386,7 +3386,7 @@ def select_provider_and_model(args=None):
     } or _is_profile_api_key_provider(selected_provider):
         _model_flow_api_key_provider(config, selected_provider, current_model)
 
-    # â”€â”€ Post-switch cleanup: clear stale OPENAI_BASE_URL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Post-switch cleanup: clear stale OPENAI_BASE_URL ──────────────
     # When the user switches to a named provider (anything except "custom"),
     # a leftover OPENAI_BASE_URL in ~/.hermes/.env can poison auxiliary
     # clients that use provider:auto. Clear it proactively.  (#5161)
@@ -3428,7 +3428,7 @@ def _clear_stale_openai_base_url():
         )
 
 
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 # Auxiliary model configuration
 #
 # Kova uses lightweight "auxiliary" models for side tasks (vision analysis,
@@ -3436,10 +3436,10 @@ def _clear_stale_openai_base_url():
 # its own provider+model pair in config.yaml under `auxiliary.<task>`.
 #
 # The UI lives behind "Configure auxiliary models..." at the bottom of the
-# `kova model` provider picker. It does NOT re-run credential setup â€” it
+# `kova model` provider picker. It does NOT re-run credential setup — it
 # only routes already-authenticated providers to specific aux tasks. Users
 # configure new providers through the normal `kova model` flow first.
-# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# ─────────────────────────────────────────────────────────────────────────────
 
 # (task_key, display_name, short_description)
 _AUX_TASKS: list[tuple[str, str, str]] = [
@@ -3507,7 +3507,7 @@ def _save_aux_choice(
 ) -> None:
     """Persist an auxiliary task's provider/model to config.yaml.
 
-    Only writes the four routing fields â€” timeout, download_timeout, and any
+    Only writes the four routing fields — timeout, download_timeout, and any
     other task-specific settings are preserved untouched. The main model
     config (``model.default``/``model.provider``) is never modified.
     """
@@ -3556,7 +3556,7 @@ def _reset_aux_to_auto() -> int:
             if entry.get(field):
                 entry[field] = ""
                 changed = True
-        # Preserve timeout/download_timeout â€” those are user-tuned, not routing
+        # Preserve timeout/download_timeout — those are user-tuned, not routing
         if changed:
             count += 1
     save_config(cfg)
@@ -3564,7 +3564,7 @@ def _reset_aux_to_auto() -> int:
 
 
 def _aux_config_menu() -> None:
-    """Top-level auxiliary-model picker â€” choose a task to configure.
+    """Top-level auxiliary-model picker — choose a task to configure.
 
     Loops until the user picks "Back" so multiple tasks can be configured
     without returning to the main provider menu.
@@ -3576,10 +3576,10 @@ def _aux_config_menu() -> None:
         aux = cfg.get("auxiliary", {}) if isinstance(cfg.get("auxiliary"), dict) else {}
 
         print()
-        print("  Auxiliary models â€” side-task routing")
+        print("  Auxiliary models — side-task routing")
         print()
         print("  Side tasks (vision, compression, web extraction, etc.) default")
-        print('  to your main chat model.  "auto" means "use my main model" â€”')
+        print('  to your main chat model.  "auto" means "use my main model" —')
         print("  Kova only falls back to a lightweight backend (OpenRouter,")
         print("  Nous Portal) if the main model is unavailable.  Override a")
         print("  task below if you want it pinned to a specific provider/model.")
@@ -3628,7 +3628,7 @@ def _aux_select_for_task(task: str) -> None:
 
     Uses ``list_authenticated_providers()`` to only show providers the user
     has already configured. This avoids re-running OAuth/credential flows
-    inside the aux picker â€” users set up new providers through the normal
+    inside the aux picker — users set up new providers through the normal
     ``kova model`` flow, then route aux tasks to them here.
     """
     from kova_cli.config import load_config
@@ -3657,7 +3657,7 @@ def _aux_select_for_task(task: str) -> None:
     entries: list[tuple[str, str, list[str]]] = []  # (slug, label, models)
     # "auto" always first
     auto_marker = (
-        "  â† current" if current_provider == "auto" and not current_base_url else ""
+        "  ← current" if current_provider == "auto" and not current_base_url else ""
     )
     entries.append(("__auto__", f"auto (recommended){auto_marker}", []))
 
@@ -3666,19 +3666,19 @@ def _aux_select_for_task(task: str) -> None:
         name = p.get("name") or slug
         total = p.get("total_models", 0)
         models = p.get("models") or []
-        model_hint = f" â€” {total} models" if total else ""
+        model_hint = f" — {total} models" if total else ""
         marker = (
-            "  â† current" if slug == current_provider and not current_base_url else ""
+            "  ← current" if slug == current_provider and not current_base_url else ""
         )
         entries.append((slug, f"{name}{model_hint}{marker}", list(models)))
 
     # Custom endpoint (raw base_url)
-    custom_marker = "  â† current" if current_base_url else ""
+    custom_marker = "  ← current" if current_base_url else ""
     entries.append(("__custom__", f"Custom endpoint (direct URL){custom_marker}", []))
     entries.append(("__back__", "Back", []))
 
     print()
-    print(f"  Configure {display_name} â€” current: {_format_aux_current(task_cfg)}")
+    print(f"  Configure {display_name} — current: {_format_aux_current(task_cfg)}")
     print()
 
     idx = _prompt_provider_choice([label for _, label, _ in entries], default=0)
@@ -3698,7 +3698,7 @@ def _aux_select_for_task(task: str) -> None:
         _aux_flow_custom_endpoint(task, task_cfg)
         return
 
-    # Regular provider â€” pick a model from its curated list
+    # Regular provider — pick a model from its curated list
     _aux_flow_provider_model(task, slug, models, current_model)
 
 
@@ -3829,7 +3829,7 @@ def _prompt_provider_choice(choices, *, default=0, title="Select provider:"):
     # Fallback: numbered list
     print(title)
     for i, c in enumerate(choices, 1):
-        marker = "â†’" if i - 1 == default else " "
+        marker = "→" if i - 1 == default else " "
         print(f"  {marker} {i}. {c}")
     print()
     while True:
@@ -3979,7 +3979,7 @@ def _save_custom_provider(
 ):
     """Save a custom endpoint to custom_providers in config.yaml.
 
-    Deduplicates by base_url â€” if the URL already exists, updates the
+    Deduplicates by base_url — if the URL already exists, updates the
     model name, context_length, and api_mode but doesn't add a duplicate entry.
     Uses *name* when provided, otherwise auto-generates from the URL.
     """
@@ -3990,7 +3990,7 @@ def _save_custom_provider(
     if not isinstance(providers, list):
         providers = []
 
-    # Check if this URL is already saved â€” update model/context_length if so
+    # Check if this URL is already saved — update model/context_length if so
     for entry in providers:
         if isinstance(entry, dict) and entry.get("base_url", "").rstrip(
             "/"
@@ -4035,7 +4035,7 @@ def _save_custom_provider(
     providers.append(entry)
     cfg["custom_providers"] = providers
     save_config(cfg)
-    print(f'  ðŸ’¾ Saved to custom providers as "{name}" (edit in config.yaml)')
+    print(f'  💾 Saved to custom providers as "{name}" (edit in config.yaml)')
 
 
 
@@ -4095,7 +4095,7 @@ def _remove_custom_provider(config):
     removed_name = (
         removed.get("name", "unnamed") if isinstance(removed, dict) else str(removed)
     )
-    print(f'âœ… Removed "{removed_name}" from custom providers.')
+    print(f'✅ Removed "{removed_name}" from custom providers.')
 
 
 
@@ -4103,7 +4103,7 @@ def _remove_custom_provider(config):
 # Lazy-export the model catalog at module level. Tests and a handful of
 # downstream call sites read `kova_cli.main._PROVIDER_MODELS` directly,
 # so the symbol needs to be reachable as a module attribute. But importing
-# the catalog eagerly costs ~55ms on every `kova` invocation â€” including
+# the catalog eagerly costs ~55ms on every `kova` invocation — including
 # fast paths like `kova --version` and slash-command dispatch that never
 # touch the catalog. PEP 562 module-level __getattr__ defers the import
 # until first attribute access, so the cost is only paid by callers that
@@ -4153,7 +4153,7 @@ def _prompt_reasoning_effort_selection(efforts, current_effort=""):
 
     def _label(effort):
         if effort == current_effort:
-            return f"{effort}  â† currently in use"
+            return f"{effort}  ← currently in use"
         return effort
 
     disable_label = "Disable reasoning"
@@ -4230,7 +4230,7 @@ def _prompt_api_key(pconfig, existing_key: str, provider_id: str = "") -> tuple:
     recover from a malformed paste without editing ``~/.hermes/.env`` by hand.
 
     Returns ``(resolved_key, abort)``.  ``abort=True`` means the caller should
-    ``return`` immediately â€” the user cancelled entry, declined to replace, or
+    ``return`` immediately — the user cancelled entry, declined to replace, or
     cleared the key and is now unconfigured.
     """
     from kova_cli.auth import LMSTUDIO_NOAUTH_PLACEHOLDER
@@ -4253,7 +4253,7 @@ def _prompt_api_key(pconfig, existing_key: str, provider_id: str = "") -> tuple:
             return LMSTUDIO_NOAUTH_PLACEHOLDER
         return entered
 
-    # First-time entry â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # First-time entry ────────────────────────────────────────────────────
     if not existing_key:
         print(f"No {pconfig.name} API key configured.")
         if not key_env:
@@ -4267,7 +4267,7 @@ def _prompt_api_key(pconfig, existing_key: str, provider_id: str = "") -> tuple:
         print()
         return new_key, False
 
-    # Already configured â€” offer K / R / C â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # Already configured — offer K / R / C ────────────────────────────────
     from kova_cli.env_loader import format_secret_source_suffix
 
     source_suffix = format_secret_source_suffix(key_env) if key_env else ""
@@ -4358,7 +4358,7 @@ def _run_anthropic_oauth_flow(save_env_value):
         ):
             use_anthropic_claude_code_credentials(save_fn=save_env_value)
             print("  ✓ Claude Code credentials linked.")
-            from kova_constants import display_hermes_home as _dhh_fn
+            from kova_constants import display_kova_home as _dhh_fn
 
             print(
                 f"    Kova will use Claude's credential store directly instead of copying a setup-token into {_dhh_fn()}/.env."
@@ -4368,7 +4368,7 @@ def _run_anthropic_oauth_flow(save_env_value):
 
     try:
         print()
-        print("  Running 'claude setup-token' â€” follow the prompts below.")
+        print("  Running 'claude setup-token' — follow the prompts below.")
         print("  A browser window will open for you to authorize access.")
         print()
         token = run_oauth_setup_token()
@@ -4379,7 +4379,7 @@ def _run_anthropic_oauth_flow(save_env_value):
             print("  ✓ OAuth credentials saved.")
             return True
 
-        # Subprocess completed but no token auto-detected â€” ask user to paste
+        # Subprocess completed but no token auto-detected — ask user to paste
         print()
         print("  If the setup-token was displayed above, paste it here:")
         print()
@@ -4397,11 +4397,11 @@ def _run_anthropic_oauth_flow(save_env_value):
             print("  ✓ Setup-token saved.")
             return True
 
-        print("  âš  Could not detect saved credentials.")
+        print("  ⚠ Could not detect saved credentials.")
         return False
 
     except FileNotFoundError:
-        # Claude CLI not installed â€” guide user through manual setup
+        # Claude CLI not installed — guide user through manual setup
         print()
         print("  The 'claude' CLI is required for OAuth login.")
         print()
@@ -4425,7 +4425,7 @@ def _run_anthropic_oauth_flow(save_env_value):
             save_anthropic_oauth_token(token, save_fn=save_env_value)
             print("  ✓ Setup-token saved.")
             return True
-        print("  Cancelled â€” install Claude Code and try again.")
+        print("  Cancelled — install Claude Code and try again.")
         return False
 
 
@@ -4477,14 +4477,14 @@ def cmd_slack(args):
     """Slack integration helpers.
 
     Dispatches ``kova slack <subcommand>``. Currently supports:
-      manifest â€” print or write a Slack app manifest with every gateway
+      manifest — print or write a Slack app manifest with every gateway
                  command registered as a first-class slash.
     """
     sub = getattr(args, "slack_command", None)
     if sub in {None, ""}:
-        # No subcommand â€” print usage hint.
+        # No subcommand — print usage hint.
         print(
-            "usage: hermes slack <subcommand>\n"
+            "usage: kova slack <subcommand>\n"
             "\n"
             "subcommands:\n"
             "  manifest   Generate a Slack app manifest with every gateway\n"
@@ -4607,7 +4607,7 @@ def _print_version_info(*, check_updates: bool = True) -> None:
     print(f"Python: {sys.version.split()[0]}")
 
     # Check for key dependencies.  Use importlib.metadata rather than
-    # ``import openai`` â€” the SDK drags in ~800ms of pydantic-backed type
+    # ``import openai`` — the SDK drags in ~800ms of pydantic-backed type
     # modules just to expose ``__version__``.  Metadata lookup is ~2ms.
     try:
         from importlib.metadata import version as _pkg_version, PackageNotFoundError
@@ -4622,7 +4622,7 @@ def _print_version_info(*, check_updates: bool = True) -> None:
     if not check_updates:
         return
 
-    # Show update status (synchronous â€” acceptable since user asked for version info)
+    # Show update status (synchronous — acceptable since user asked for version info)
     try:
         from kova_cli.banner import check_for_updates
         from kova_cli.config import recommended_update_command
@@ -4631,7 +4631,7 @@ def _print_version_info(*, check_updates: bool = True) -> None:
         if behind and behind > 0:
             commits_word = "commit" if behind == 1 else "commits"
             print(
-                f"Update available: {behind} {commits_word} behind â€” "
+                f"Update available: {behind} {commits_word} behind — "
                 f"run '{recommended_update_command()}'"
             )
         elif behind == 0:
@@ -4648,7 +4648,7 @@ def cmd_version(args):
 def cmd_uninstall(args):
     """Uninstall Kova Agent (or just the Chat GUI with --gui)."""
     # Machine-readable install snapshot for the desktop app's uninstall UI.
-    # Must run before any TTY gate â€” it's called from a non-interactive child.
+    # Must run before any TTY gate — it's called from a non-interactive child.
     if getattr(args, "gui_summary", False):
         from kova_cli.gui_uninstall import gui_install_summary
 
@@ -4750,7 +4750,7 @@ def _validate_critical_files_syntax(root) -> tuple[bool, str | None, str | None]
     source tree's ``__pycache__/`` so we don't race with concurrent test
     workers that walk the same dir, and so we don't leave a stale pyc
     behind in production if the next interpreter run picks a different
-    Python version. The pyc is discarded on function return either way â€”
+    Python version. The pyc is discarded on function return either way —
     we only care about the compile-or-not signal.
 
     Returns ``(ok, failing_path, error_message)``. ``ok=True`` means every
@@ -4760,11 +4760,11 @@ def _validate_critical_files_syntax(root) -> tuple[bool, str | None, str | None]
     import tempfile
 
     root = Path(root)
-    with tempfile.TemporaryDirectory(prefix="hermes-syntax-check-") as tmpdir:
+    with tempfile.TemporaryDirectory(prefix="kova-syntax-check-") as tmpdir:
         for relpath in _UPDATE_CRITICAL_FILES:
             path = root / relpath
             if not path.exists():
-                # Missing file is suspicious but not necessarily fatal â€” a future
+                # Missing file is suspicious but not necessarily fatal — a future
                 # refactor may legitimately remove one of these. Skip and move on.
                 continue
             # Mirror the relative path under the tmpdir so two different
@@ -4791,9 +4791,9 @@ def _gateway_prompt(prompt_text: str, default: str = "", timeout: float = 300.0)
     """
     import json as _json
     import uuid as _uuid
-    from kova_constants import get_hermes_home
+    from kova_constants import get_kova_home
 
-    home = get_hermes_home()
+    home = get_kova_home()
     prompt_path = home / ".update_prompt.json"
     response_path = home / ".update_response"
 
@@ -4822,7 +4822,7 @@ def _gateway_prompt(prompt_text: str, default: str = "", timeout: float = 300.0)
                 pass
         _time.sleep(0.5)
 
-    # Timeout â€” clean up and use default
+    # Timeout — clean up and use default
     prompt_path.unlink(missing_ok=True)
     response_path.unlink(missing_ok=True)
     print(f"  (no response after {int(timeout)}s, using default: {default!r})")
@@ -4925,8 +4925,8 @@ def _compute_web_ui_content_hash(project_root: Path, web_dir: Path) -> str:
 
 def _web_ui_stamp_path() -> Path:
     """Return the path to the web UI build stamp file under $HERMES_HOME."""
-    from kova_constants import get_hermes_home
-    return get_hermes_home() / "web-ui-build-stamp.json"
+    from kova_constants import get_kova_home
+    return get_kova_home() / "web-ui-build-stamp.json"
 
 
 def _write_web_ui_build_stamp(project_root: Path, web_dir: Path) -> None:
@@ -4959,7 +4959,7 @@ def _run_with_idle_timeout(
     ``capture_output=True`` and no timeout. On low-memory hosts (notably
     WSL2 with the default 4 GB cap) the build can stall or sit silent for
     minutes; users see a frozen terminal, assume the update is hung, and
-    reboot â€” leaving the editable install in a half-state with the
+    reboot — leaving the editable install in a half-state with the
     ``kova`` launcher present but ``kova_cli`` not importable.
 
     This helper fixes both halves: stdout is streamed (so the user sees
@@ -4969,7 +4969,7 @@ def _run_with_idle_timeout(
     stale-dist fallback (#23817) takes over from there.
 
     Returns a ``CompletedProcess`` with merged stdout (text), empty
-    stderr, and an integer returncode. Never raises on idle timeout â€”
+    stderr, and an integer returncode. Never raises on idle timeout —
     propagation of failure is via the returncode.
     """
     merged_chunks: list[str] = []
@@ -4999,7 +4999,7 @@ def _run_with_idle_timeout(
             try:
                 print(f"{indent}{line.rstrip()}", flush=True)
             except UnicodeEncodeError:
-                # Windows cp1252 fallback â€” same pattern as _say().
+                # Windows cp1252 fallback — same pattern as _say().
                 enc = getattr(sys.stdout, "encoding", None) or "ascii"
                 safe = line.rstrip().encode(enc, errors="replace").decode(enc, errors="replace")
                 print(f"{indent}{safe}", flush=True)
@@ -5034,7 +5034,7 @@ def _run_with_idle_timeout(
     combined = "".join(merged_chunks)
     if idle_killed:
         msg = (
-            f"\n  âš  Build produced no output for {idle_timeout_seconds}s â€” terminated.\n"
+            f"\n  ⚠ Build produced no output for {idle_timeout_seconds}s — terminated.\n"
             "    Common causes: out-of-memory on a low-RAM host (WSL/container),\n"
             "    a stuck Node process, or an antivirus scan stalling I/O.\n"
         )
@@ -5052,11 +5052,11 @@ def _nixos_build_env() -> dict[str, str] | None:
     the Nix store and only enters PATH inside a nix-shell or when
     explicitly installed as a system package).  node-gyp uses Python to
     compile native addons like ``node-pty`` and its ``find-python.js``
-    does a bare ``PATH`` lookup â€” which fails on NixOS.
+    does a bare ``PATH`` lookup — which fails on NixOS.
 
     Two-tier resolution:
-    1. Fast path â€” the hermes venv's python3 (present in managed installs)
-    2. Fallback â€” resolves the absolute python3 path via ``nix-shell``
+    1. Fast path — the kova venv's python3 (present in managed installs)
+    2. Fallback — resolves the absolute python3 path via ``nix-shell``
 
     Returns an env dict suitable for ``subprocess.run(env=...)`` or
     ``None`` when we are not on NixOS or python3 is already on PATH.
@@ -5070,19 +5070,19 @@ def _nixos_build_env() -> dict[str, str] | None:
     if not re.search(r"^ID=nixos$", os_release, re.M):
         return None
 
-    # python3 already on PATH â€” nothing to do
+    # python3 already on PATH — nothing to do
     if shutil.which("python3"):
         return None
 
-    # Tier 1: fast path â€” hermes venv python3, no nix-shell overhead
+    # Tier 1: fast path — kova venv python3, no nix-shell overhead
     for venv_name in ("venv", ".venv"):
         venv_python = PROJECT_ROOT / venv_name / "bin" / "python3"
         if venv_python.exists():
             return {**os.environ, "PYTHON": str(venv_python)}
 
-    # Tier 2: nix-shell fallback â€” resolves the absolute python3 path once.
-    # Slower (~2â€“5 s for the nix-shell eval) but always works, even without
-    # a hermes venv (pip / non-managed / bare-git installs).  The resolved
+    # Tier 2: nix-shell fallback — resolves the absolute python3 path once.
+    # Slower (~2–5 s for the nix-shell eval) but always works, even without
+    # a kova venv (pip / non-managed / bare-git installs).  The resolved
     # path is a self-contained Nix store binary (all deps via RPATH) so it
     # stays valid even after the nix-shell exits.
     try:
@@ -5095,7 +5095,7 @@ def _nixos_build_env() -> dict[str, str] | None:
             if python3_path and Path(python3_path).exists():
                 return {**os.environ, "PYTHON": python3_path}
     except Exception:
-        pass  # nix-shell not available â€” caller will get None
+        pass  # nix-shell not available — caller will get None
 
     return None
 def _run_npm_install_deterministic(
@@ -5110,18 +5110,18 @@ def _run_npm_install_deterministic(
 
     Prefers ``npm ci`` (strict, lockfile-preserving) when a lockfile is present;
     falls back to ``npm install`` only if ``npm ci`` fails (e.g. lockfile out of
-    sync on a WIP checkout).  Without this, ``npm install`` on npm â‰¥ 10 silently
+    sync on a WIP checkout).  Without this, ``npm install`` on npm ≥ 10 silently
     rewrites committed lockfiles (stripping ``"peer": true`` etc.), which leaves
     the working tree dirty and causes the next ``kova update`` to stash the
-    lockfile â€” repeatedly.
+    lockfile — repeatedly.
 
     ``--include=dev`` is forced on every invocation: the callers are frontend
     builds (web UI / TUI / desktop workspaces), and those builds need the dev
-    toolchain (``tsc``, ``vite``, ``electron-builder`` â€” all
+    toolchain (``tsc``, ``vite``, ``electron-builder`` — all
     ``devDependencies``).  If the caller's environment has
-    ``NODE_ENV=production`` (or npm config ``omit=dev``) â€” which leaks in from
+    ``NODE_ENV=production`` (or npm config ``omit=dev``) — which leaks in from
     a shell profile, a container image, or the bundled TUI launcher that sets
-    ``NODE_ENV=production`` on its subprocess env â€” npm silently omits
+    ``NODE_ENV=production`` on its subprocess env — npm silently omits
     devDependencies (exit 0, no error), so the build toolchain never installs
     and the subsequent build dies with ``tsc: command not found`` (exit 127).
     The flag overrides both the env var and npm config, unlike scrubbing
@@ -5130,12 +5130,12 @@ def _run_npm_install_deterministic(
     ``--no-save`` on the ``npm install`` fallback keeps it true to this
     function's contract: never mutate ``package-lock.json``.  Without it, an
     out-of-sync lockfile gets rewritten by the fallback, which drifts the
-    committed lockfile and makes every future ``npm ci`` fail â€” a
+    committed lockfile and makes every future ``npm ci`` fail — a
     self-reinforcing cycle where web devDeps never install and a stale dist
     is served on every update (PR #65595).
     """
     # unicode-animations' postinstall animates to /dev/tty (bypasses
-    # --silent/capture_output). It no-ops when CI is set â€” same as the TUI
+    # --silent/capture_output). It no-ops when CI is set — same as the TUI
     # install path and nix/lib.nix npm ci hooks.
     run_env = {**os.environ, **(env or {}), "CI": "1"}
 
@@ -5154,7 +5154,7 @@ def _run_npm_install_deterministic(
         )
         if ci_result.returncode == 0:
             return ci_result
-        # Fall through to `npm install` â€” lockfile may be out of sync on a
+        # Fall through to `npm install` — lockfile may be out of sync on a
         # WIP fork/branch, or `npm ci` may not be available on very old npm.
     install_cmd = [npm, "install", "--no-save", "--include=dev", *extra_args]
     return subprocess.run(
@@ -5181,7 +5181,7 @@ def _build_web_ui(web_dir: Path, *, fatal: bool = False) -> bool:
     no dist exists yet, block until the builder finishes.
 
     Staleness is checked once, inside :func:`_do_build_web_ui`, after the
-    lock is held â€” so a process that queued behind the builder skips the
+    lock is held — so a process that queued behind the builder skips the
     rebuild, and the (os.walk-based) check runs at most once per boot.
     """
     if not (web_dir / "package.json").exists():
@@ -5189,7 +5189,7 @@ def _build_web_ui(web_dir: Path, *, fatal: bool = False) -> bool:
     try:
         import fcntl
     except ImportError:
-        # Windows: no flock â€” fall through to the unserialized build.
+        # Windows: no flock — fall through to the unserialized build.
         return _do_build_web_ui(web_dir, fatal=fatal)
     project_root = web_dir.parent.parent if web_dir.parent.name == "apps" else web_dir.parent
     dist_index = project_root / "kova_cli" / "web_dist" / "index.html"
@@ -5202,7 +5202,7 @@ def _build_web_ui(web_dir: Path, *, fatal: bool = False) -> bool:
             fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
         except OSError:
             if dist_index.exists():
-                # Another process is already building â€” serve the current
+                # Another process is already building — serve the current
                 # dist instead of piling a second build onto the same tree.
                 return True
             # No dist at all (first-ever build): wait for the builder.
@@ -5240,7 +5240,7 @@ def _do_build_web_ui(web_dir: Path, *, fatal: bool = False) -> bool:
             encoding = getattr(sys.stdout, "encoding", None) or "ascii"
             print(text.encode(encoding, errors="replace").decode(encoding, errors="replace"))
 
-    from kova_constants import with_hermes_node_path
+    from kova_constants import with_kova_node_path
 
     npm = _resolve_node_runtime_npm()
     if not npm:
@@ -5248,8 +5248,8 @@ def _do_build_web_ui(web_dir: Path, *, fatal: bool = False) -> bool:
             _say("Web UI frontend not built and npm is not available.")
             _say("Install Node.js, then run:  cd web && npm install && npm run build")
         return not fatal
-    build_env = with_hermes_node_path()
-    _say("â†’ Building web UI...")
+    build_env = with_kova_node_path()
+    _say("→ Building web UI...")
 
     def _relay(result: "subprocess.CompletedProcess") -> None:
         """Print captured npm output so users can see *why* a step failed.
@@ -5284,21 +5284,21 @@ def _do_build_web_ui(web_dir: Path, *, fatal: bool = False) -> bool:
     )
     if r1.returncode != 0:
         _say(
-            f"  {'âœ—' if fatal else 'âš '} Web UI npm install failed"
-            + ("" if fatal else " (hermes web will not be available)")
+            f"  {'✗' if fatal else '⚠'} Web UI npm install failed"
+            + ("" if fatal else " (kova web will not be available)")
         )
         _relay(r1)
         if fatal:
             _say("  Run manually:  npm install --workspace web && npm run build -w web")
         return False
-    # First attempt â€” stream output via idle-timeout helper (issue #33788).
+    # First attempt — stream output via idle-timeout helper (issue #33788).
     # capture_output=True on a long Vite build looks identical to a hang;
     # users react by rebooting, which leaves the editable install in a
     # half-state. Streaming + idle-kill makes failures observable AND
     # recoverable (the stale-dist fallback below handles the kill path).
     r2 = _run_with_idle_timeout([npm, "run", "build"], cwd=web_dir, env=build_env)
     if r2.returncode != 0:
-        # Retry once after a short delay â€” covers boot-time races on Windows
+        # Retry once after a short delay — covers boot-time races on Windows
         # (antivirus scanning Node.js binaries, npm cache not ready, transient
         # I/O when launched via Scheduled Task at logon). See issue #23817.
         _time.sleep(3)
@@ -5318,16 +5318,16 @@ def _do_build_web_ui(web_dir: Path, *, fatal: bool = False) -> bool:
 
         # If a stale dist exists, serve it as a fallback instead of failing.
         # A stale UI is far better than no UI for non-interactive callers
-        # (Windows Scheduled Tasks, CI) â€” issue #23817.
+        # (Windows Scheduled Tasks, CI) — issue #23817.
         if dist_index.exists():
-            _say("  âš  Web UI build failed â€” serving stale dist as fallback")
+            _say("  ⚠ Web UI build failed — serving stale dist as fallback")
             if stderr_tail:
                 _say(f"  Build error:\n  {stderr_tail}")
             return True
 
         _say(
-            f"  {'âœ—' if fatal else 'âš '} Web UI build failed"
-            + ("" if fatal else " (hermes web will not be available)")
+            f"  {'✗' if fatal else '⚠'} Web UI build failed"
+            + ("" if fatal else " (kova web will not be available)")
         )
         _relay(r2)
         if fatal:
@@ -5345,7 +5345,7 @@ def _desktop_dist_exists(desktop_dir: Path) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Desktop build stamp â€” content-hash based skip logic
+# Desktop build stamp — content-hash based skip logic
 # ---------------------------------------------------------------------------
 # The desktop Electron build is expensive.
 # Unlike the web UI (which uses mtime comparison), the desktop uses a
@@ -5407,7 +5407,7 @@ def _compute_desktop_content_hash(project_root: Path) -> str:
             if not spec.match_file(rel):
                 _hash_file(p)
 
-    # Walk apps/desktop/ â€” prune ignored directories in-place
+    # Walk apps/desktop/ — prune ignored directories in-place
     desktop_dir = project_root / "apps" / "desktop"
     for dirpath, dirnames, filenames in os.walk(desktop_dir, topdown=True):
         # Prune ignored directories so we never descend into them
@@ -5427,8 +5427,8 @@ def _compute_desktop_content_hash(project_root: Path) -> str:
 
 def _desktop_stamp_path() -> Path:
     """Return the path to the desktop build stamp file under $HERMES_HOME."""
-    from kova_constants import get_hermes_home
-    return get_hermes_home() / "desktop-build-stamp.json"
+    from kova_constants import get_kova_home
+    return get_kova_home() / "desktop-build-stamp.json"
 
 
 def _desktop_build_needed(desktop_dir: Path, project_root: Path, *, source_mode: bool) -> bool:
@@ -5515,7 +5515,7 @@ def _electron_download_cache_dirs() -> list[Path]:
 
     electron-builder's ``app-builder unpack-electron`` extracts the Electron
     distribution from a zip stored in this cache (NOT from node_modules), so a
-    corrupt zip here â€” not a bad workspace install â€” is what poisons the build.
+    corrupt zip here — not a bad workspace install — is what poisons the build.
     Honors the ``electron_config_cache`` / ``ELECTRON_CACHE`` overrides that
     ``@electron/get`` respects, then falls back to the platform defaults.
     """
@@ -5551,8 +5551,8 @@ def _purge_electron_build_cache(desktop_dir: Path) -> list[Path]:
     """Clear the cached Electron download + half-written unpacked dir so the
     next ``pack`` re-downloads and re-stages from scratch.
 
-    Root cause of the ``ENOENT â€¦ rename 'â€¦/linux-unpacked/electron' ->
-    'â€¦/linux-unpacked/Kova'`` desktop build failure: a corrupt zip in the
+    Root cause of the ``ENOENT … rename '…/linux-unpacked/electron' ->
+    '…/linux-unpacked/Kova'`` desktop build failure: a corrupt zip in the
     per-user Electron download cache (a partial download resumed into the same
     file leaves prepended/concatenated junk, or an interrupted write truncates
     it). electron-builder's ``app-builder unpack-electron`` extracts the
@@ -5562,7 +5562,7 @@ def _purge_electron_build_cache(desktop_dir: Path) -> list[Path]:
 
     We deliberately do NOT try to detect corruption ourselves. stdlib
     ``zipfile`` silently tolerates the prepended/concatenated junk that is the
-    most common corruption here â€” it reads from the end-of-central-directory
+    most common corruption here — it reads from the end-of-central-directory
     backward, so ``testzip()`` returns clean on exactly the zips ``unzip -t``
     and ``@electron/get`` reject. Gating the purge on a self-rolled validator
     would therefore skip the real-world case and never self-heal. Instead, on a
@@ -5573,7 +5573,7 @@ def _purge_electron_build_cache(desktop_dir: Path) -> list[Path]:
     unrelated, a clean re-download is harmless and the retry fails the same way.
 
     Best-effort: never raises. Returns the paths removed so the caller can log
-    them and decide whether a retry is worthwhile (empty list â‡’ nothing to
+    them and decide whether a retry is worthwhile (empty list ⇒ nothing to
     clear, so no point retrying).
     """
     removed: list[Path] = []
@@ -5660,7 +5660,7 @@ def _electron_dist_ok(project_root: Path) -> bool:
 
 
 def _electron_pkg_staged_missing_dist(project_root: Path) -> bool:
-    """electron staged (package.json + install.js) but dist missing â€” blocked postinstall."""
+    """electron staged (package.json + install.js) but dist missing — blocked postinstall."""
     electron_dir = _electron_dir(project_root)
     return (
         (electron_dir / "package.json").is_file()
@@ -5683,7 +5683,7 @@ def _redownload_electron_dist(
     installer = electron_dir / "install.js"
     if not installer.is_file():
         return False
-    from kova_constants import find_node_executable, with_hermes_node_path
+    from kova_constants import find_node_executable, with_kova_node_path
 
     node = find_node_executable("node")
     if not node:
@@ -5696,7 +5696,7 @@ def _redownload_electron_dist(
     except OSError:
         pass
 
-    dl_env = with_hermes_node_path(env)
+    dl_env = with_kova_node_path(env)
     if mirror:
         dl_env["ELECTRON_MIRROR"] = mirror
     try:
@@ -5721,14 +5721,14 @@ def _stop_desktop_processes_locking_build(desktop_dir: Path) -> list[int]:
 
     On Windows a running ``Kova.exe`` keeps an exclusive lock on
     ``release/win-unpacked/Kova.exe``. electron-builder's pack then can't
-    delete the stale binary and dies with ``remove â€¦\\Kova.exe: Access is
+    delete the stale binary and dies with ``remove …\\Kova.exe: Access is
     denied`` / ``ERR_ELECTRON_BUILDER_CANNOT_EXECUTE`` (before-pack hits the same
     EPERM cleaning the dir). The retry path repeats the failure because the lock
     is still held. POSIX lets you unlink a running binary, so this is a no-op
     off-Windows.
 
     Scope is deliberately narrow: only processes whose executable lives *inside*
-    this desktop's ``release`` tree are stopped â€” a packaged install elsewhere or
+    this desktop's ``release`` tree are stopped — a packaged install elsewhere or
     an unrelated "Kova" process is never touched. Best-effort: never raises.
     Returns the PIDs we asked to stop.
     """
@@ -5829,10 +5829,10 @@ def _force_adhoc_macos_signing(env: dict, *, source_mode: bool) -> bool:
     """Stop electron-builder grabbing a random keychain identity on self-update.
 
     The desktop self-updater rebuilds *and re-signs the .app on the end user's
-    machine* (``kova desktop --build-only`` â†’ electron-builder ``--dir``).
+    machine* (``kova desktop --build-only`` → electron-builder ``--dir``).
     With ``CSC_IDENTITY_AUTO_DISCOVERY`` on (its default), electron-builder
     signs the ``type=distribution``, hardened-runtime bundle with whatever it
-    finds in that user's keychain â€” typically a personal "Apple Development"
+    finds in that user's keychain — typically a personal "Apple Development"
     cert. That stalls/fails the sign step (no Developer ID + no provisioning
     profile) or clobbers your real notarized signature with an unusable one, so
     every post-update launch trips Gatekeeper.
@@ -5900,19 +5900,19 @@ def _desktop_linux_sandbox_fixup(packaged_executable: Path) -> bool:
 
     sandbox = packaged_executable.parent / "chrome-sandbox"
     if not sandbox.exists():
-        print(f"âœ— Kova Desktop is missing Electron's Linux sandbox helper: {sandbox}")
+        print(f"✗ Kova Desktop is missing Electron's Linux sandbox helper: {sandbox}")
         return False
 
-    # Reject symlinks â€” chown/chmod must not follow an attacker-controlled
+    # Reject symlinks — chown/chmod must not follow an attacker-controlled
     # link to an arbitrary path.  Use lstat() so we inspect the link itself
     # rather than the target, and require a regular file.
     try:
         sandbox_lstat = sandbox.lstat()
     except OSError:
-        print(f"âœ— Cannot stat Electron's Linux sandbox helper: {sandbox}")
+        print(f"✗ Cannot stat Electron's Linux sandbox helper: {sandbox}")
         return False
     if not stat.S_ISREG(sandbox_lstat.st_mode):
-        print(f"âœ— Electron's Linux sandbox helper is not a regular file: {sandbox}")
+        print(f"✗ Electron's Linux sandbox helper is not a regular file: {sandbox}")
         return False
 
     if sandbox_lstat.st_uid == 0 and stat.S_IMODE(sandbox_lstat.st_mode) == 0o4755:
@@ -5920,13 +5920,13 @@ def _desktop_linux_sandbox_fixup(packaged_executable: Path) -> bool:
 
     sudo = shutil.which("sudo")
     if not sudo:
-        print("âœ— Kova Desktop requires sudo to configure Electron's Linux sandbox helper.")
+        print("✗ Kova Desktop requires sudo to configure Electron's Linux sandbox helper.")
         return False
 
-    print("â†’ Configuring Electron Linux sandbox helper (sudo required)...")
+    print("→ Configuring Electron Linux sandbox helper (sudo required)...")
     for command in ([sudo, "chown", "root:root", str(sandbox)], [sudo, "chmod", "4755", str(sandbox)]):
         if subprocess.run(command, check=False).returncode != 0:
-            print(f"âœ— Failed to configure Electron's Linux sandbox helper: {sandbox}")
+            print(f"✗ Failed to configure Electron's Linux sandbox helper: {sandbox}")
             return False
     return True
 
@@ -5936,7 +5936,7 @@ def _desktop_launch_options() -> tuple[list[str], str]:
 
     Returns ``(electron_flags, disable_gpu)`` where ``electron_flags`` is a list
     of extra Electron CLI flags and ``disable_gpu`` is one of "auto"/"1"/"0"
-    (normalized for the HERMES_DESKTOP_DISABLE_GPU env var the Electron app
+    (normalized for the KOVA_DESKTOP_DISABLE_GPU env var the Electron app
     reads). Best-effort: any config error yields the safe defaults
     ``([], "auto")`` so a malformed config never blocks the launch.
     """
@@ -5982,28 +5982,28 @@ def cmd_gui(args: argparse.Namespace):
     except Exception:
         pass
 
-    from kova_constants import with_hermes_node_path
+    from kova_constants import with_kova_node_path
 
-    # with_hermes_node_path() copies os.environ when called with no arg.
-    env = with_hermes_node_path()
+    # with_kova_node_path() copies os.environ when called with no arg.
+    env = with_kova_node_path()
     if getattr(args, "fake_boot", False):
-        env["HERMES_DESKTOP_BOOT_FAKE"] = "1"
+        env["KOVA_DESKTOP_BOOT_FAKE"] = "1"
     if getattr(args, "ignore_existing", False):
-        env["HERMES_DESKTOP_IGNORE_EXISTING"] = "1"
-    if getattr(args, "hermes_root", None):
-        env["HERMES_DESKTOP_HERMES_ROOT"] = str(Path(args.hermes_root).expanduser().resolve())
+        env["KOVA_DESKTOP_IGNORE_EXISTING"] = "1"
+    if getattr(args, "kova_root", None):
+        env["KOVA_DESKTOP_KOVA_ROOT"] = str(Path(args.kova_root).expanduser().resolve())
     if getattr(args, "cwd", None):
-        env["HERMES_DESKTOP_CWD"] = str(Path(args.cwd).expanduser().resolve())
+        env["KOVA_DESKTOP_CWD"] = str(Path(args.cwd).expanduser().resolve())
     else:
-        env["HERMES_DESKTOP_CWD"] = os.getcwd()
+        env["KOVA_DESKTOP_CWD"] = os.getcwd()
 
     # Desktop launch options from config.yaml (`desktop.electron_flags`,
     # `desktop.disable_gpu`). The GPU policy is bridged to the env var the
     # Electron app already reads; an explicit env var still wins over config so
-    # `HERMES_DESKTOP_DISABLE_GPU=... kova desktop` keeps working.
+    # `KOVA_DESKTOP_DISABLE_GPU=... kova desktop` keeps working.
     config_electron_flags, config_disable_gpu = _desktop_launch_options()
-    if config_disable_gpu != "auto" and "HERMES_DESKTOP_DISABLE_GPU" not in os.environ:
-        env["HERMES_DESKTOP_DISABLE_GPU"] = config_disable_gpu
+    if config_disable_gpu != "auto" and "KOVA_DESKTOP_DISABLE_GPU" not in os.environ:
+        env["KOVA_DESKTOP_DISABLE_GPU"] = config_disable_gpu
 
     source_mode = getattr(args, "source", False)
     skip_build = getattr(args, "skip_build", False)
@@ -6023,23 +6023,23 @@ def cmd_gui(args: argparse.Namespace):
     if skip_build:
         if source_mode:
             if not _desktop_dist_exists(desktop_dir):
-                print(f"âœ— --skip-build --source was passed but no desktop dist found at: {desktop_dir / 'dist'}")
+                print(f"✗ --skip-build --source was passed but no desktop dist found at: {desktop_dir / 'dist'}")
                 print("  Pre-build first:  cd apps/desktop && npm run build")
                 print("  Or drop --skip-build to install dependencies and build automatically.")
                 sys.exit(1)
             if not (_electron_dir(PROJECT_ROOT) / "package.json").exists():
-                print("âœ— --skip-build --source requires existing desktop workspace dependencies.")
+                print("✗ --skip-build --source requires existing desktop workspace dependencies.")
                 print(f"  Install first:  cd {PROJECT_ROOT} && npm ci")
                 print("  Or drop --skip-build to install dependencies and build automatically.")
                 sys.exit(1)
-            print(f"â†’ Skipping desktop source build (--skip-build --source); using dist at {desktop_dir / 'dist'}")
+            print(f"→ Skipping desktop source build (--skip-build --source); using dist at {desktop_dir / 'dist'}")
         elif packaged_executable is None:
-            print(f"âœ— --skip-build was passed but no packaged desktop app was found at: {desktop_dir / 'release'}")
+            print(f"✗ --skip-build was passed but no packaged desktop app was found at: {desktop_dir / 'release'}")
             print("  Pre-build first:  cd apps/desktop && npm run pack")
             print("  Or drop --skip-build to package automatically.")
             sys.exit(1)
         else:
-            print(f"â†’ Skipping desktop package build (--skip-build); using {packaged_executable}")
+            print(f"→ Skipping desktop package build (--skip-build); using {packaged_executable}")
     else:
         # Check the content-hash stamp before doing any build work.
         # If the source tree hasn't changed since the last successful build,
@@ -6052,59 +6052,59 @@ def cmd_gui(args: argparse.Namespace):
             build_label = "source build" if source_mode else "packaged app"
             print(f"✓ Desktop {build_label} is up to date (content stamp matches)")
         else:
-            print("â†’ Installing desktop workspace dependencies...")
+            print("→ Installing desktop workspace dependencies...")
             # Put the Kova-managed Node on PATH so npm's child scripts (which
             # shell out to bare `node`, e.g. electron-winstaller's
             # select-7z-arch.js) resolve it even when the parent PATH is
-            # stripped â€” the desktop updater chain (Desktop â†’ hermes-setup â†’
+            # stripped — the desktop updater chain (Desktop → kova-setup →
             # kova update) loses shell PATH customizations. Wrapping the
             # NixOS build env keeps its PYTHON hint while restoring managed Node
             # ahead of a bare PATH (same idiom as the `kova update` path).
-            nixos_env = with_hermes_node_path(_nixos_build_env())
+            nixos_env = with_kova_node_path(_nixos_build_env())
             install_result = _run_npm_install_deterministic(npm, PROJECT_ROOT, capture_output=False, env=nixos_env)
             if install_result.returncode != 0:
                 if not _electron_pkg_staged_missing_dist(PROJECT_ROOT):
-                    print("âœ— Desktop dependency install failed")
+                    print("✗ Desktop dependency install failed")
                     print(f"  Run manually:  cd {PROJECT_ROOT} && npm ci")
                     sys.exit(install_result.returncode or 1)
                 repaired = _try_redownload_electron_dist(PROJECT_ROOT, env)
                 if repaired:
-                    print("  âš  Dependency install failed with a missing Electron dist; "
+                    print("  ⚠ Dependency install failed with a missing Electron dist; "
                           "repopulated it and continuing.")
                 else:
-                    print("  âš  Dependency install failed with a missing Electron dist; "
+                    print("  ⚠ Dependency install failed with a missing Electron dist; "
                           "continuing to the build so electron-builder can attempt "
                           "the Electron fetch itself.")
 
             build_label = "source build" if source_mode else "packaged app"
-            print(f"â†’ Building desktop {build_label}...")
+            print(f"→ Building desktop {build_label}...")
             build_script = "build" if source_mode else "pack"
             if _force_adhoc_macos_signing(env, source_mode=source_mode):
-                print("  â†’ No Developer ID configured; ad-hoc signing this local rebuild "
+                print("  → No Developer ID configured; ad-hoc signing this local rebuild "
                       "(CSC_IDENTITY_AUTO_DISCOVERY=false)")
             if not source_mode:
                 # A running desktop instance launched from release/win-unpacked
                 # holds Kova.exe locked on Windows, so the pack can't replace
                 # it ("Access is denied" / ERR_ELECTRON_BUILDER_CANNOT_EXECUTE).
-                # Stop it first so the rebuild â€” including the installer's
-                # headless --update rebuild â€” succeeds instead of failing cryptically.
+                # Stop it first so the rebuild — including the installer's
+                # headless --update rebuild — succeeds instead of failing cryptically.
                 stopped = _stop_desktop_processes_locking_build(desktop_dir)
                 if stopped:
-                    print(f"  âš  Stopped running desktop app to free the build output (pid {', '.join(map(str, stopped))})")
+                    print(f"  ⚠ Stopped running desktop app to free the build output (pid {', '.join(map(str, stopped))})")
             build_result = subprocess.run([npm, "run", build_script], cwd=desktop_dir, env=env, check=False)
             if (
                 build_result.returncode != 0
                 and not source_mode
                 and _desktop_packaged_executable(desktop_dir) is None
             ):
-                # Corrupt cached Electron zip â†’ partial unpack â†’ ENOENT on rename.
+                # Corrupt cached Electron zip → partial unpack → ENOENT on rename.
                 # stdlib zipfile won't catch the common concat-junk case, so purge
                 # and retry once; @electron/get SHASUM is the real gate.
                 #
                 # Gate on a MISSING packaged executable: that is the signature of
                 # the corrupt-download class this recovery exists for. A late
                 # failure such as macOS code signing leaves the executable in
-                # place â€” redownloading Electron can't repair it, so the purge +
+                # place — redownloading Electron can't repair it, so the purge +
                 # retry would only add another slow, identical failure (#40187).
                 purged: list[Path] = []
                 restored = False
@@ -6112,7 +6112,7 @@ def cmd_gui(args: argparse.Namespace):
                     purged = _purge_electron_build_cache(desktop_dir)
                     restored = _redownload_electron_dist(PROJECT_ROOT, env)
                 if restored:
-                    print("  âš  Desktop build failed; refreshed the Electron download and retrying once...")
+                    print("  ⚠ Desktop build failed; refreshed the Electron download and retrying once...")
                     for p in purged:
                         print(f"    - {p}")
                     # The purge can't remove a win-unpacked tree whose Kova.exe
@@ -6125,7 +6125,7 @@ def cmd_gui(args: argparse.Namespace):
                 and not env.get("ELECTRON_MIRROR")
                 and _desktop_packaged_executable(desktop_dir) is None
             ):
-                print("  âš  Desktop build still failing; the Electron download from "
+                print("  ⚠ Desktop build still failing; the Electron download from "
                       "GitHub looks blocked. Re-downloading via a public mirror "
                       "(npmmirror.com)... (set ELECTRON_MIRROR to use another mirror)")
                 mirror = _ELECTRON_FALLBACK_MIRROR
@@ -6136,7 +6136,7 @@ def cmd_gui(args: argparse.Namespace):
                 _stop_desktop_processes_locking_build(desktop_dir)
                 build_result = subprocess.run([npm, "run", build_script], cwd=desktop_dir, env=mirror_env, check=False)
             if build_result.returncode != 0:
-                print("âœ— Desktop GUI build failed")
+                print("✗ Desktop GUI build failed")
                 print(f"  Run manually:  cd apps/desktop && npm run {build_script}")
                 if sys.platform == "win32":
                     print("  If this says \"Access is denied\" on Kova.exe, close any")
@@ -6151,23 +6151,23 @@ def cmd_gui(args: argparse.Namespace):
                 # damaged"). No-op on non-macOS and on real-identity builds.
                 _desktop_macos_relaunchable_fixup(desktop_dir)
 
-            # Build succeeded â€” write the stamp so next run can skip
+            # Build succeeded — write the stamp so next run can skip
             _write_desktop_build_stamp(PROJECT_ROOT, source_mode=source_mode)
 
     # --build-only: produce the artifact but do NOT launch. The installer's
     # --update flow drives the rebuild headlessly and then launches the desktop
     # itself (detached, after the old exe has exited), so the launch must NOT
-    # happen here â€” it would block the installer and, on Windows, the old exe
+    # happen here — it would block the installer and, on Windows, the old exe
     # is still being replaced. Verify the expected artifact exists so a silent
     # "built nothing" can't slip past, then return success.
     if getattr(args, "build_only", False):
         if source_mode:
             if not _desktop_dist_exists(desktop_dir):
-                print(f"âœ— --build-only --source produced no dist at: {desktop_dir / 'dist'}")
+                print(f"✗ --build-only --source produced no dist at: {desktop_dir / 'dist'}")
                 sys.exit(1)
             print(f"✓ Desktop source build ready at {desktop_dir / 'dist'} (not launching; --build-only)")
         elif packaged_executable is None:
-            print(f"âœ— --build-only produced no launchable app at: {desktop_dir / 'release'}")
+            print(f"✗ --build-only produced no launchable app at: {desktop_dir / 'release'}")
             print("  Expected an unpacked Electron app for the current OS.")
             sys.exit(1)
         else:
@@ -6175,25 +6175,25 @@ def cmd_gui(args: argparse.Namespace):
         return
 
     if source_mode:
-        print("â†’ Launching Kova Desktop from source build...")
+        print("→ Launching Kova Desktop from source build...")
         launch_result = subprocess.run([npm, "exec", "--", "electron", "."], cwd=desktop_dir, env=env, check=False)
         sys.exit(launch_result.returncode)
 
     if packaged_executable is None:
-        print(f"âœ— Desktop package build completed but no launchable app was found at: {desktop_dir / 'release'}")
+        print(f"✗ Desktop package build completed but no launchable app was found at: {desktop_dir / 'release'}")
         print("  Expected an unpacked Electron app for the current OS.")
         sys.exit(1)
 
     launch_command = [str(packaged_executable)]
     if not _desktop_linux_sandbox_fixup(packaged_executable):
         if _desktop_linux_needs_no_sandbox() and _desktop_linux_sandbox_helper_is_regular_file(packaged_executable):
-            print("âš  Falling back to --no-sandbox because this Linux host restricts unprivileged user namespaces and the Electron sandbox helper could not be configured.")
+            print("⚠ Falling back to --no-sandbox because this Linux host restricts unprivileged user namespaces and the Electron sandbox helper could not be configured.")
             launch_command.append("--no-sandbox")
         else:
             sys.exit(1)
 
     launch_command.extend(config_electron_flags)
-    print(f"â†’ Launching packaged Kova Desktop: {' '.join(launch_command)}")
+    print(f"→ Launching packaged Kova Desktop: {' '.join(launch_command)}")
     launch_result = subprocess.run(launch_command, cwd=desktop_dir, env=env, check=False)
     sys.exit(launch_result.returncode)
 
@@ -6208,10 +6208,10 @@ def _find_stale_dashboard_pids(
     forgotten.  When ``kova update`` replaces files on disk, the running
     process keeps the old Python backend in memory while the JS bundle on
     disk is updated, causing a silent frontend/backend mismatch (e.g. new
-    auth headers the old backend doesn't recognise â†’ every API call 401s).
+    auth headers the old backend doesn't recognise → every API call 401s).
 
     The dashboard may be manually started or managed by the optional
-    ``hermes-dashboard.service`` systemd unit.  Managed units are restarted
+    ``kova-dashboard.service`` systemd unit.  Managed units are restarted
     through their owning systemd scope; only manually-started processes use
     the kill path because we can't know their original launch args.
 
@@ -6220,7 +6220,7 @@ def _find_stale_dashboard_pids(
     backend child process: when the desktop spawns ``kova serve`` as
     a backend and triggers an auto-update, the update must not kill the
     backend that the desktop itself manages.  The desktop sets the
-    environment variable ``HERMES_DESKTOP_CHILD_PID`` on the spawned
+    environment variable ``KOVA_DESKTOP_CHILD_PID`` on the spawned
     backend process; ``_kill_stale_dashboard_processes`` reads it and
     passes it here.  (#37532)
 
@@ -6230,9 +6230,16 @@ def _find_stale_dashboard_pids(
         "kova dashboard",
         "kova_cli.main dashboard",
         "kova_cli/main.py dashboard",
-        # The headless backend (`kova serve`) is the same long-lived server
-        # under a different command name â€” the desktop app spawns it. Reap it
-        # on update for the same frontend/backend-mismatch reason.
+        "kova dashboard",
+        "kova_cli.main dashboard",
+        "kova_cli/main.py dashboard",
+        # The headless backend (`kova serve` / `kova serve`) is the same
+        # long-lived server under a different command name — the desktop app
+        # spawns it. Reap it on update for the same frontend/backend-mismatch
+        # reason.
+        "kova serve",
+        "kova_cli.main serve",
+        "kova_cli/main.py serve",
         "kova serve",
         "kova_cli.main serve",
         "kova_cli/main.py serve",
@@ -6283,7 +6290,7 @@ def _find_stale_dashboard_pids(
         else:
             # Linux / macOS: scan the process table via ps and match against
             # the same explicit patterns list used on Windows.  Using ps
-            # (rather than `pgrep -f "hermes.*dashboard"`) keeps us consistent
+            # (rather than `pgrep -f "kova.*dashboard"`) keeps us consistent
             # with `kova_cli.gateway._scan_gateway_pids` and avoids the
             # greedy regex matching unrelated cmdlines that merely contain
             # both words (e.g. a chat session discussing "dashboard").
@@ -6336,7 +6343,7 @@ def _print_curator_first_run_notice() -> None:
     except Exception:
         return
     if state.get("last_run_at"):
-        # Curator has run before (real or already seeded) â€” no notice needed.
+        # Curator has run before (real or already seeded) — no notice needed.
         return
     try:
         hours = curator.get_interval_hours()
@@ -6344,7 +6351,7 @@ def _print_curator_first_run_notice() -> None:
         hours = 24 * 7
     days = max(1, hours // 24)
     print()
-    print("â„¹ Skill curator")
+    print("ℹ Skill curator")
     print(
         f"  Background skill maintenance is enabled. First pass is deferred "
         f"~{days}d after installation; only agent-created skills are in "
@@ -6382,18 +6389,18 @@ def _print_fts_optimize_available_notice() -> None:
         return
 
     try:
-        from kova_constants import get_hermes_home
+        from kova_constants import get_kova_home
         from kova_state import SessionDB
     except Exception:
         return
-    db_path = get_hermes_home() / "state.db"
+    db_path = get_kova_home() / "state.db"
     if not db_path.exists():
         return
     try:
         size_gb = db_path.stat().st_size / (1024 ** 3)
     except OSError:
         return
-    # Skip the notice for trivially small DBs â€” the win isn't worth the nag.
+    # Skip the notice for trivially small DBs — the win isn't worth the nag.
     if size_gb < 0.5:
         return
     db = None
@@ -6407,7 +6414,7 @@ def _print_fts_optimize_available_notice() -> None:
         ).fetchone()
         # An interrupted `optimize-storage` run: the table is already the
         # v23 shape, but backfill markers / demoted trash tables remain.
-        # Offer the command again â€” re-running resumes and finishes it.
+        # Offer the command again — re-running resumes and finishes it.
         interrupted = bool(
             db._conn.execute(
                 "SELECT 1 FROM state_meta "
@@ -6432,12 +6439,12 @@ def _print_fts_optimize_available_notice() -> None:
                 pass
     sql = (row[0] if row else "") or ""
     if not sql or ("tool_name" in sql and not interrupted):
-        # v23 layout already present (fresh/optimized) â€” nothing to offer.
+        # v23 layout already present (fresh/optimized) — nothing to offer.
         return
 
     if interrupted:
         print()
-        print("â—† Session database optimization incomplete")
+        print("◆ Session database optimization incomplete")
         print(
             "  A previous `kova sessions optimize-storage` run was "
             "interrupted. Search still works; re-run the command to resume "
@@ -6446,22 +6453,22 @@ def _print_fts_optimize_available_notice() -> None:
         print("    kova sessions optimize-storage")
         return
 
-    # Concrete size framing â€” lead with the savings the user cares about.
+    # Concrete size framing — lead with the savings the user cares about.
     est_reclaim = size_gb * 0.6
     print()
     if mode == "require":
-        print("â—† Session database upgrade required")
+        print("◆ Session database upgrade required")
         print(
             f"  Your search index uses the OLD storage layout and should be "
             f"upgraded. The new layout typically frees ~60% of state.db "
-            f"(â‰ˆ{est_reclaim:.1f} GB of your current {size_gb:.1f} GB) and is "
+            f"(≈{est_reclaim:.1f} GB of your current {size_gb:.1f} GB) and is "
             f"required for continued optimal operation."
         )
     else:
-        print("â—† Reclaim ~60% of your session database disk")
+        print("◆ Reclaim ~60% of your session database disk")
         print(
             f"  Your search index uses the old storage layout. Upgrading it "
-            f"typically frees ~60% of state.db â€” about {est_reclaim:.1f} GB "
+            f"typically frees ~60% of state.db — about {est_reclaim:.1f} GB "
             f"of your current {size_gb:.1f} GB."
         )
     print("  Run when convenient:  kova sessions optimize-storage")
@@ -6476,7 +6483,7 @@ def _print_curator_recent_run_notice() -> None:
 
     The curator runs in the background (gateway tick + CLI session start),
     so users learn about skill consolidations only by stumbling into a
-    rename. ``kova update`` is a high-attention surface â€” surface the
+    rename. ``kova update`` is a high-attention surface — surface the
     most recent run's rename map here, once.
 
     Show-once: state stamps ``last_run_summary_shown_at`` after printing.
@@ -6496,7 +6503,7 @@ def _print_curator_recent_run_notice() -> None:
 
     last_run_at = state.get("last_run_at")
     if not last_run_at:
-        return  # no curator run yet â€” first-run notice handles this case
+        return  # no curator run yet — first-run notice handles this case
 
     if state.get("last_run_summary_shown_at") == last_run_at:
         return  # already shown for this run
@@ -6505,7 +6512,7 @@ def _print_curator_recent_run_notice() -> None:
     if not summary:
         return
 
-    # Only print when there's something interesting to show â€” i.e. the
+    # Only print when there's something interesting to show — i.e. the
     # rename map block was appended (multi-line summary). A bare "auto:
     # no changes; llm: no change" doesn't warrant interrupting the
     # update flow.
@@ -6521,12 +6528,12 @@ def _print_curator_recent_run_notice() -> None:
     # Format the timestamp as "Xh ago" for readability.
     when = _format_time_ago(last_run_at)
     print()
-    print(f"â„¹ Skill curator â€” last run {when}")
+    print(f"ℹ Skill curator — last run {when}")
     for line in summary.splitlines():
         print(f"  {line}")
     print(
         "  (This message shows once per curator run. "
-        "View anytime: hermes curator status)"
+        "View anytime: kova curator status)"
     )
 
     # Stamp shown so we don't repeat on the next update.
@@ -6586,7 +6593,7 @@ def _restart_managed_dashboard_service(
     # Probe the user manager first: Kova installs Linux services in the
     # user's systemd scope by default.  Only fall back to the system manager
     # when the unit is not present there, preserving root/system deployments.
-    # Crucially, keep the selected scope for *all* probes and the restart â€” a
+    # Crucially, keep the selected scope for *all* probes and the restart — a
     # user unit must never be restarted through the system manager (or raw-killed).
     scope: tuple[str, ...] | None = None
     listed: subprocess.CompletedProcess | None = None
@@ -6627,7 +6634,7 @@ def _restart_managed_dashboard_service(
         return False
 
     print()
-    print(f"âŸ² Restarting managed dashboard service ({reason})")
+    print(f"⟲ Restarting managed dashboard service ({reason})")
 
     scope_label = "systemctl --user" if scope else "sudo systemctl"
     restart = ("systemctl", *scope, "restart", unit)
@@ -6656,7 +6663,7 @@ def _restart_managed_dashboard_service(
             f"{' '.join(command)}: {(result.stderr or result.stdout or '').strip()}"
         )
 
-    print(f"    âœ— failed to restart {unit}")
+    print(f"    ✗ failed to restart {unit}")
     for err in errors:
         if err.strip():
             print(f"      {err}")
@@ -6681,7 +6688,7 @@ def _kill_stale_dashboard_processes(
     process is guaranteed to be serving stale Python against a
     freshly-updated JS bundle.  Leaving it alive produces silent
     frontend/backend mismatches (new auth headers the old backend doesn't
-    recognise â†’ every API call 401s).
+    recognise → every API call 401s).
 
     POSIX: SIGTERM, wait up to ~3s for graceful exit, SIGKILL any survivors.
     Windows: ``taskkill /PID <pid> /F`` since there's no clean SIGTERM
@@ -6690,17 +6697,17 @@ def _kill_stale_dashboard_processes(
     Manually-started dashboards are not auto-restarted because we don't know
     the original launch args (--host, --port, --insecure, --tui, --no-open).
     When ``restart_managed`` is true (the ``kova update`` path), a detected
-    ``hermes-dashboard.service`` is restarted through systemd instead of
+    ``kova-dashboard.service`` is restarted through systemd instead of
     raw-killing its main PID.
     """
     if restart_managed and _restart_managed_dashboard_service(reason):
         return
 
     # When the Kova Desktop Electron app spawns this dashboard as a
-    # backend child, it sets HERMES_DESKTOP_CHILD_PID so that the update
+    # backend child, it sets KOVA_DESKTOP_CHILD_PID so that the update
     # path can skip killing the desktop-managed process.  (#37532)
     exclude: set[int] | None = None
-    raw_pid = os.environ.get("HERMES_DESKTOP_CHILD_PID")
+    raw_pid = os.environ.get("KOVA_DESKTOP_CHILD_PID")
     if raw_pid:
         # The desktop may manage several backends (one per active profile) and
         # passes them comma-separated; a lone int still parses for back-compat.
@@ -6721,7 +6728,7 @@ def _kill_stale_dashboard_processes(
         return
 
     print()
-    print(f"âŸ² Stopping {len(pids)} dashboard process(es) ({reason})")
+    print(f"⟲ Stopping {len(pids)} dashboard process(es) ({reason})")
 
     killed: list[int] = []
     failed: list[tuple[int, str]] = []
@@ -6745,13 +6752,13 @@ def _kill_stale_dashboard_processes(
         import signal as _signal
         import time as _time
 
-        # SIGTERM first â€” give each process a chance to shut down cleanly
+        # SIGTERM first — give each process a chance to shut down cleanly
         # (uvicorn closes its socket, flushes logs, etc.).
         for pid in pids:
             try:
                 os.kill(pid, _signal.SIGTERM)
             except ProcessLookupError:
-                # Already gone â€” count as killed.
+                # Already gone — count as killed.
                 killed.append(pid)
             except (PermissionError, OSError) as e:
                 failed.append((pid, str(e)))
@@ -6805,17 +6812,17 @@ def _atomic_replace_dir(src: str, dst: str) -> None:
     The naive ``rmtree(dst); copytree(src, dst)`` has a destructive window: if
     the copy fails partway (common on the Windows ZIP-update path, which only
     runs because file I/O is already flaky on that machine), the old directory
-    is already gone and nothing replaced it â€” the install is left with a
+    is already gone and nothing replaced it — the install is left with a
     deleted tree (issue #49145, where ``ui-tui/`` vanished and broke the TUI).
 
     Instead, stage the new copy into a sibling temp dir first; only once that
     fully succeeds do we swap it in. A failure during staging raises with the
     original *dst* still intact.
     """
-    staging = f"{dst}.hermes-update-staging"
-    backup = f"{dst}.hermes-update-old"
+    staging = f"{dst}.kova-update-staging"
+    backup = f"{dst}.kova-update-old"
     # Clear any leftovers from a previously-interrupted update.
-    for leftover in (staging, backup):
+    for leftover in (staging, backup, f"{dst}.kova-update-staging", f"{dst}.kova-update-old"):
         if os.path.exists(leftover):
             shutil.rmtree(leftover, ignore_errors=True)
 
@@ -6831,7 +6838,7 @@ def _atomic_replace_dir(src: str, dst: str) -> None:
         if os.path.exists(backup) and not os.path.exists(dst):
             os.rename(backup, dst)  # roll back to the original
         raise
-    # 3. New dir is in place; drop the old one (best-effort â€” never fatal).
+    # 3. New dir is in place; drop the old one (best-effort — never fatal).
     if os.path.exists(backup):
         shutil.rmtree(backup, ignore_errors=True)
 
@@ -6849,13 +6856,13 @@ def _update_via_zip(args):
     # The ZIP fallback exists for Windows git-file-I/O breakage. It pulls a
     # static archive from GitHub, which is fine for the default "main"
     # channel but would silently ignore --branch and update from main even
-    # if the user asked for something else â€” exactly the silent-divergence
+    # if the user asked for something else — exactly the silent-divergence
     # bug --branch was added to prevent. Refuse to proceed in that case
     # rather than lie.
     branch = _resolve_update_branch(args)
     if branch != "main":
         print(
-            f"âœ— --branch={branch} is not supported on the Windows ZIP-fallback "
+            f"✗ --branch={branch} is not supported on the Windows ZIP-fallback "
             "update path."
         )
         print(
@@ -6869,18 +6876,18 @@ def _update_via_zip(args):
         f"https://github.com/OpenKova/Kova-Agent/archive/refs/heads/{branch}.zip"
     )
 
-    print("â†’ Downloading latest version...")
-    tmp_dir = tempfile.mkdtemp(prefix="hermes-update-")
+    print("→ Downloading latest version...")
+    tmp_dir = tempfile.mkdtemp(prefix="kova-update-")
     try:
         zip_path = os.path.join(tmp_dir, f"kova-agent-{branch}.zip")
         urlretrieve(zip_url, zip_path)
 
-        print("â†’ Extracting...")
+        print("→ Extracting...")
         import stat as _stat
         with zipfile.ZipFile(zip_path, "r") as zf:
             # Validate paths to prevent zip-slip (path traversal) AND reject
             # symlink members. A GitHub source ZIP for kova-agent itself
-            # should never contain symlinks â€” they'd point outside the
+            # should never contain symlinks — they'd point outside the
             # extracted tree and let an attacker who can compromise the
             # update mirror plant arbitrary files via the update path.
             tmp_dir_real = os.path.realpath(tmp_dir)
@@ -6931,7 +6938,7 @@ def _update_via_zip(args):
         print(f"✓ Updated {update_count} items from ZIP")
 
     except Exception as e:
-        print(f"âœ— ZIP update failed: {e}")
+        print(f"✗ ZIP update failed: {e}")
         sys.exit(1)
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
@@ -6946,11 +6953,11 @@ def _update_via_zip(args):
     # Reinstall Python dependencies. Prefer .[all], but if one optional extra
     # breaks on this machine, keep base deps and reinstall the remaining extras
     # individually so update does not silently strip working capabilities.
-    print("â†’ Updating Python dependencies...")
+    print("→ Updating Python dependencies...")
 
     from kova_cli.managed_uv import ensure_uv, update_managed_uv
 
-    # Keep managed uv current â€” runs `uv self update` if we already have one.
+    # Keep managed uv current — runs `uv self update` if we already have one.
     update_managed_uv()
 
     uv_bin = ensure_uv()
@@ -6991,22 +6998,22 @@ def _update_via_zip(args):
     try:
         from tools.skills_sync import sync_skills
 
-        print("â†’ Syncing bundled skills...")
+        print("→ Syncing bundled skills...")
         result = sync_skills(quiet=True)
         if result["copied"]:
             print(f"  + {len(result['copied'])} new: {', '.join(result['copied'])}")
         if result.get("updated"):
             print(
-                f"  â†‘ {len(result['updated'])} updated: {', '.join(result['updated'])}"
+                f"  ↑ {len(result['updated'])} updated: {', '.join(result['updated'])}"
             )
         if result.get("user_modified"):
             print(f"  ~ {len(result['user_modified'])} user-modified (kept)")
             print(
-                "    â†’ see them: kova skills list-modified  "
+                "    → see them: kova skills list-modified  "
                 "(diff/reset to resume updates)"
             )
         if result.get("cleaned"):
-            print(f"  âˆ’ {len(result['cleaned'])} removed from manifest")
+            print(f"  − {len(result['cleaned'])} removed from manifest")
         if not result["copied"] and not result.get("updated"):
             print("  ✓ Skills are up to date")
     except Exception:
@@ -7025,7 +7032,7 @@ def _update_via_zip(args):
     print()
     if node_failures:
         print(
-            "âš  Update partially complete â€” Node.js dependencies for "
+            "⚠ Update partially complete — Node.js dependencies for "
             f"{', '.join(node_failures)} did not refresh."
         )
         print("  Code and Python deps are updated, but the dashboard/TUI may")
@@ -7040,11 +7047,11 @@ def _update_via_zip(args):
         _print_curator_recent_run_notice()
     except Exception as e:
         logger.debug("Curator recent-run notice failed: %s", e)
-    # Don't stop a working dashboard when the Node refresh failed â€” see the
+    # Don't stop a working dashboard when the Node refresh failed — see the
     # git-update path for rationale (#30271).
     if node_failures:
         print()
-        print("  â„¹ Leaving running dashboard process(es) untouched because the")
+        print("  ℹ Leaving running dashboard process(es) untouched because the")
         print("    Node.js dependency refresh did not complete.")
     else:
         _kill_stale_dashboard_processes(restart_managed=True)
@@ -7072,15 +7079,15 @@ def _stash_local_changes_if_needed(git_cmd: list[str], cwd: Path) -> Optional[st
         text=True,
     )
     if unmerged.stdout.strip():
-        print("â†’ Clearing unmerged index entries from a previous conflict...")
+        print("→ Clearing unmerged index entries from a previous conflict...")
         subprocess.run(git_cmd + ["reset"], cwd=cwd, capture_output=True)
 
     from datetime import datetime, timezone
 
     stash_name = datetime.now(timezone.utc).strftime(
-        "hermes-update-autostash-%Y%m%d-%H%M%S"
+        "kova-update-autostash-%Y%m%d-%H%M%S"
     )
-    print("â†’ Local changes detected â€” stashing before update...")
+    print("→ Local changes detected — stashing before update...")
     prev_stash = subprocess.run(
         git_cmd + ["rev-parse", "--verify", "refs/stash"],
         cwd=cwd,
@@ -7111,21 +7118,21 @@ def _stash_local_changes_if_needed(git_cmd: list[str], cwd: Path) -> Optional[st
             # git stash push exits non-zero when it saved everything but could
             # not delete some swept untracked files from the working tree
             # (e.g. a root-owned directory: "warning: failed to remove ...:
-            # Permission denied").  The stash entry is complete â€” the changes
-            # are safe â€” so this is not a failure.  Leave the undeletable
+            # Permission denied").  The stash entry is complete — the changes
+            # are safe — so this is not a failure.  Leave the undeletable
             # files in place and continue the update.
             if push.stderr.strip():
                 print(push.stderr.strip())
             print(
-                "  âš  Some untracked files could not be removed from the "
+                "  ⚠ Some untracked files could not be removed from the "
                 "working tree (permission denied)."
             )
             print(
                 "    They were still saved to the stash and were left in "
-                "place â€” the update will continue."
+                "place — the update will continue."
             )
             # A partially-failed stash push also aborts its working-tree
-            # cleanup for TRACKED modifications â€” they are saved in the stash
+            # cleanup for TRACKED modifications — they are saved in the stash
             # but still dirty the tree, which would break the checkout/pull
             # that follows. Safe to reset: everything is in the stash entry.
             subprocess.run(
@@ -7135,8 +7142,8 @@ def _stash_local_changes_if_needed(git_cmd: list[str], cwd: Path) -> Optional[st
             )
         else:
             # No stash entry was created: the changes were NOT saved.  This
-            # is a real failure â€” bail out before the update touches HEAD.
-            print("âœ— Could not stash local changes â€” update aborted.")
+            # is a real failure — bail out before the update touches HEAD.
+            print("✗ Could not stash local changes — update aborted.")
             if push.stderr.strip():
                 print(f"  {push.stderr.strip().splitlines()[0]}")
             print(
@@ -7221,7 +7228,7 @@ def _restore_stashed_changes(
 ) -> bool:
     if prompt_user:
         print()
-        print("âš  Local changes were stashed before updating.")
+        print("⚠ Local changes were stashed before updating.")
         print(
             "  Restoring them may reapply local customizations onto the updated codebase."
         )
@@ -7237,7 +7244,7 @@ def _restore_stashed_changes(
             print(f"Restore manually with: git stash apply {stash_ref}")
             return False
 
-    print("â†’ Restoring local changes...")
+    print("→ Restoring local changes...")
     restore = subprocess.run(
         git_cmd + ["stash", "apply", stash_ref],
         cwd=cwd,
@@ -7245,7 +7252,7 @@ def _restore_stashed_changes(
         text=True,
     )
 
-    # Check for unmerged (conflicted) files â€” can happen even when returncode is 0
+    # Check for unmerged (conflicted) files — can happen even when returncode is 0
     unmerged = subprocess.run(
         git_cmd + ["diff", "--name-only", "--diff-filter=U"],
         cwd=cwd,
@@ -7260,14 +7267,14 @@ def _restore_stashed_changes(
         # Permission-denied autostash tail end: the tracked changes applied
         # cleanly; the only "failure" is untracked files that never left the
         # working tree (git could not delete them at stash time, so it now
-        # refuses to overwrite them). Their content was never touched â€”
+        # refuses to overwrite them). Their content was never touched —
         # nothing is lost. Treat as restored.
         print(
-            "  âš  Some stashed untracked files already exist in the working "
+            "  ⚠ Some stashed untracked files already exist in the working "
             "tree and were kept as-is."
         )
     elif restore.returncode != 0 or has_conflicts:
-        print("âœ— Update pulled new code, but restoring local changes hit conflicts.")
+        print("✗ Update pulled new code, but restoring local changes hit conflicts.")
         if restore.stdout.strip():
             print(restore.stdout.strip())
         if restore.stderr.strip():
@@ -7278,13 +7285,13 @@ def _restore_stashed_changes(
         if conflicted_files:
             print("\nConflicted files:")
             for f in conflicted_files.splitlines():
-                print(f"  â€¢ {f}")
+                print(f"  • {f}")
 
-        print("\nYour stashed changes are preserved â€” nothing is lost.")
+        print("\nYour stashed changes are preserved — nothing is lost.")
         print(f"  Stash ref: {stash_ref}")
 
-        # Always reset to clean state â€” leaving conflict markers in source
-        # files makes hermes completely unrunnable (SyntaxError on import).
+        # Always reset to clean state — leaving conflict markers in source
+        # files makes kova completely unrunnable (SyntaxError on import).
         # The user's changes are safe in the stash for manual recovery.
         subprocess.run(
             git_cmd + ["reset", "--hard", "HEAD"],
@@ -7293,7 +7300,7 @@ def _restore_stashed_changes(
         )
         print("Working tree reset to clean state.")
         print(f"Restore your changes later with: git stash apply {stash_ref}")
-        # Don't sys.exit â€” the code update itself succeeded, only the stash
+        # Don't sys.exit — the code update itself succeeded, only the stash
         # restore had conflicts.  Let cmd_update continue with pip install,
         # skill sync, and gateway restart.
         return False
@@ -7301,7 +7308,7 @@ def _restore_stashed_changes(
     stash_selector = _resolve_stash_selector(git_cmd, cwd, stash_ref)
     if stash_selector is None:
         print(
-            "âš  Local changes were restored, but Kova couldn't find the stash entry to drop."
+            "⚠ Local changes were restored, but Kova couldn't find the stash entry to drop."
         )
         print(
             "  The stash was left in place. You can remove it manually after checking the result."
@@ -7316,7 +7323,7 @@ def _restore_stashed_changes(
         )
         if drop.returncode != 0:
             print(
-                "âš  Local changes were restored, but Kova couldn't drop the saved stash entry."
+                "⚠ Local changes were restored, but Kova couldn't drop the saved stash entry."
             )
             if drop.stdout.strip():
                 print(drop.stdout.strip())
@@ -7327,7 +7334,7 @@ def _restore_stashed_changes(
             )
             _print_stash_cleanup_guidance(stash_ref, stash_selector)
 
-    print("âš  Local changes were restored on top of the updated codebase.")
+    print("⚠ Local changes were restored on top of the updated codebase.")
     print("  Review `git diff` / `git status` if Kova behaves unexpectedly.")
     return True
 
@@ -7340,12 +7347,12 @@ def _discard_stashed_changes(
     """Throw away a stash created before an update, without applying it.
 
     Used only on a NON-interactive update when the user has set
-    ``updates.non_interactive_local_changes: discard`` â€” i.e. they've opted out
+    ``updates.non_interactive_local_changes: discard`` — i.e. they've opted out
     of keeping local source edits on this machine. Drops the stash entry
     instead of re-applying it, so the working tree stays clean at the freshly
     pulled HEAD. Unlike ``git reset --hard`` + ``git clean -fd``, this only
     affects what was stashed (tracked changes + the untracked files we
-    explicitly captured) â€” ignored paths like node_modules/venv/build outputs
+    explicitly captured) — ignored paths like node_modules/venv/build outputs
     are never touched, since they were never stashed.
 
     Returns True if the stash was dropped, False on a git failure (in which
@@ -7354,7 +7361,7 @@ def _discard_stashed_changes(
     stash_selector = _resolve_stash_selector(git_cmd, cwd, stash_ref)
     if stash_selector is None:
         print(
-            "âš  Configured to discard local changes on non-interactive update, "
+            "⚠ Configured to discard local changes on non-interactive update, "
             "but Kova couldn't find the stash entry to drop."
         )
         _print_stash_cleanup_guidance(stash_ref)
@@ -7368,7 +7375,7 @@ def _discard_stashed_changes(
     )
     if drop.returncode != 0:
         print(
-            "âš  Configured to discard local changes, but Kova couldn't drop "
+            "⚠ Configured to discard local changes, but Kova couldn't drop "
             "the saved stash entry."
         )
         if drop.stderr.strip():
@@ -7376,7 +7383,7 @@ def _discard_stashed_changes(
         _print_stash_cleanup_guidance(stash_ref, stash_selector)
         return False
 
-    print("â†’ Discarded local source changes (updates.non_interactive_local_changes=discard).")
+    print("→ Discarded local source changes (updates.non_interactive_local_changes=discard).")
     return True
 
 
@@ -7473,17 +7480,17 @@ def _count_commits_between(git_cmd: list[str], cwd: Path, base: str, head: str) 
 
 def _should_skip_upstream_prompt() -> bool:
     """Check if user previously declined to add upstream."""
-    from kova_constants import get_hermes_home
+    from kova_constants import get_kova_home
 
-    return (get_hermes_home() / SKIP_UPSTREAM_PROMPT_FILE).exists()
+    return (get_kova_home() / SKIP_UPSTREAM_PROMPT_FILE).exists()
 
 
 def _mark_skip_upstream_prompt():
     """Create marker file to skip future upstream prompts."""
     try:
-        from kova_constants import get_hermes_home
+        from kova_constants import get_kova_home
 
-        (get_hermes_home() / SKIP_UPSTREAM_PROMPT_FILE).touch()
+        (get_kova_home() / SKIP_UPSTREAM_PROMPT_FILE).touch()
     except Exception:
         pass
 
@@ -7523,7 +7530,7 @@ def _sync_with_upstream_if_needed(git_cmd: list[str], cwd: Path) -> None:
 
         # Ask user if they want to add upstream
         print()
-        print("â„¹ Your fork is not tracking the official Kova repository.")
+        print("ℹ Your fork is not tracking the official Kova repository.")
         print("  This means you may miss updates from OpenKova/Kova-Agent.")
         print()
         try:
@@ -7535,14 +7542,14 @@ def _sync_with_upstream_if_needed(git_cmd: list[str], cwd: Path) -> None:
             response = "n"
 
         if response in {"", "y", "yes"}:
-            print("â†’ Adding upstream remote...")
+            print("→ Adding upstream remote...")
             if _add_upstream_remote(git_cmd, cwd):
                 print(
                     "  ✓ Added upstream: https://github.com/OpenKova/Kova-Agent.git"
                 )
                 has_upstream = True
             else:
-                print("  âœ— Failed to add upstream remote. Skipping upstream sync.")
+                print("  ✗ Failed to add upstream remote. Skipping upstream sync.")
                 return
         else:
             print(
@@ -7552,10 +7559,10 @@ def _sync_with_upstream_if_needed(git_cmd: list[str], cwd: Path) -> None:
             return
 
     # Fetch upstream main only. This sync compares upstream/main with
-    # origin/main, so there's no reason to pull every upstream ref â€” and a bare
+    # origin/main, so there's no reason to pull every upstream ref — and a bare
     # fetch drags in thousands of auto-generated branches.
     print()
-    print("â†’ Fetching upstream...")
+    print("→ Fetching upstream...")
     try:
         subprocess.run(
             git_cmd + ["fetch", "upstream", "main", "--quiet"],
@@ -7564,7 +7571,7 @@ def _sync_with_upstream_if_needed(git_cmd: list[str], cwd: Path) -> None:
             check=True,
         )
     except subprocess.CalledProcessError:
-        print("  âœ— Failed to fetch upstream. Skipping upstream sync.")
+        print("  ✗ Failed to fetch upstream. Skipping upstream sync.")
         return
 
     # Compare origin/main with upstream/main
@@ -7574,13 +7581,13 @@ def _sync_with_upstream_if_needed(git_cmd: list[str], cwd: Path) -> None:
     )
 
     if origin_ahead < 0 or upstream_ahead < 0:
-        print("  âœ— Could not compare branches. Skipping upstream sync.")
+        print("  ✗ Could not compare branches. Skipping upstream sync.")
         return
 
     # If origin/main has commits not on upstream, don't trample
     if origin_ahead > 0:
         print()
-        print(f"â„¹ Your fork has {origin_ahead} commit(s) not on upstream.")
+        print(f"ℹ Your fork has {origin_ahead} commit(s) not on upstream.")
         print("  Skipping upstream sync to preserve your changes.")
         print("  If you want to merge upstream changes, run:")
         print("    git pull upstream main")
@@ -7593,8 +7600,8 @@ def _sync_with_upstream_if_needed(git_cmd: list[str], cwd: Path) -> None:
 
     # origin/main is strictly behind upstream/main (can fast-forward)
     print()
-    print(f"â†’ Fork is {upstream_ahead} commit(s) behind upstream")
-    print("â†’ Pulling from upstream...")
+    print(f"→ Fork is {upstream_ahead} commit(s) behind upstream")
+    print("→ Pulling from upstream...")
 
     try:
         subprocess.run(
@@ -7604,19 +7611,19 @@ def _sync_with_upstream_if_needed(git_cmd: list[str], cwd: Path) -> None:
         )
     except subprocess.CalledProcessError:
         print(
-            "  âœ— Failed to pull from upstream. You may need to resolve conflicts manually."
+            "  ✗ Failed to pull from upstream. You may need to resolve conflicts manually."
         )
         return
 
     print("  ✓ Updated from upstream")
 
     # Try to sync fork back to origin
-    print("â†’ Syncing fork...")
+    print("→ Syncing fork...")
     if _sync_fork_with_upstream(git_cmd, cwd):
         print("  ✓ Fork synced with upstream")
     else:
         print(
-            "  â„¹ Got updates from upstream but couldn't push to fork (no write access?)"
+            "  ℹ Got updates from upstream but couldn't push to fork (no write access?)"
         )
         print("    Your local repo is updated, but your fork on GitHub may be behind.")
 
@@ -7625,14 +7632,14 @@ def _invalidate_update_cache():
     """Delete the update-check cache for ALL profiles so no banner
     reports a stale "commits behind" count after a successful update.
 
-    The git repo is shared across profiles â€” when one profile runs
+    The git repo is shared across profiles — when one profile runs
     ``kova update``, every profile is now current.
     """
     homes = []
-    # Default profile home (Docker-aware â€” uses /opt/data in Docker)
-    from kova_constants import get_default_hermes_root
+    # Default profile home (Docker-aware — uses /opt/data in Docker)
+    from kova_constants import get_default_kova_root
 
-    default_home = get_default_hermes_root()
+    default_home = get_default_kova_root()
     homes.append(default_home)
     # Named profiles under <root>/profiles/
     profiles_root = default_home / "profiles"
@@ -7681,10 +7688,10 @@ def _load_installable_optional_extras(group: str = "all") -> list[str]:
 # Install-scoped breadcrumbs live next to the venv (not under $HERMES_HOME)
 # because the venv is shared across profiles.
 #
-# ``.update-incomplete`` â€” generic core ``.[all]`` install was interrupted.
+# ``.update-incomplete`` — generic core ``.[all]`` install was interrupted.
 # Cleared only after a confirmed full dependency reinstall/recovery.
 #
-# ``.lazy-refresh-incomplete`` â€” lazy-backend refresh phase may have corrupted
+# ``.lazy-refresh-incomplete`` — lazy-backend refresh phase may have corrupted
 # packages. Cleared only after import-probe repair confirms healthy (not when
 # probes are unavailable/indeterminate). Narrow lazy probes must NEVER clear
 # the generic core marker (#58004 review).
@@ -7741,10 +7748,10 @@ def _recover_from_interrupted_install() -> None:
 
     Handles two independent breadcrumbs:
 
-    - ``.update-incomplete`` â€” core ``.[all]`` install interrupted. Recovers
+    - ``.update-incomplete`` — core ``.[all]`` install interrupted. Recovers
       via full quarantined reinstall. Never cleared by the narrow lazy-refresh
       import probes alone.
-    - ``.lazy-refresh-incomplete`` â€” lazy-backend refresh may have corrupted
+    - ``.lazy-refresh-incomplete`` — lazy-backend refresh may have corrupted
       packages. Recovers via package-only import probes; cleared only when
       probes confirm healthy/repaired (indeterminate keeps the marker).
 
@@ -7757,8 +7764,8 @@ def _recover_from_interrupted_install() -> None:
     An ``O_EXCL`` lockfile ensures only one process runs recovery; the
     others skip and let the winner clear markers.
 
-    Output: everything â€” our status lines AND the streamed pip/uv install
-    (which inherits fd 1) â€” is routed to stderr.  Launches whose stdout is a
+    Output: everything — our status lines AND the streamed pip/uv install
+    (which inherits fd 1) — is routed to stderr.  Launches whose stdout is a
     protocol stream (``kova acp`` speaks JSON-RPC on stdout) must never get
     install noise on stdout.
     """
@@ -7776,7 +7783,7 @@ def _recover_from_interrupted_install() -> None:
         return
 
     # Single-flight guard: atomically claim the recovery lock. If another
-    # process holds it, skip â€” it is running the same reinstall into the same
+    # process holds it, skip — it is running the same reinstall into the same
     # shared venv right now. A crashed holder leaves a stale lock; break it
     # after an hour (well past any realistic install) so recovery can't be
     # wedged forever.
@@ -7793,7 +7800,7 @@ def _recover_from_interrupted_install() -> None:
             pass
         return
     except OSError as exc:
-        # Couldn't create the lock (read-only fs, perms). Proceed unlocked â€”
+        # Couldn't create the lock (read-only fs, perms). Proceed unlocked —
         # the install itself will surface the real problem.
         logger.debug("Could not create install-recovery lock: %s", exc)
 
@@ -7831,23 +7838,23 @@ def _recover_from_interrupted_install() -> None:
 def _recover_lazy_refresh_marker_locked() -> None:
     """Heal ``.lazy-refresh-incomplete`` via confirmed import-probe repair."""
     print(
-        "âš  A previous lazy-backend refresh may have left the venv unhealthy â€” "
+        "⚠ A previous lazy-backend refresh may have left the venv unhealthy — "
         "running import-based package repair..."
     )
     install_prefix, install_env = _default_venv_install_target()
     status = _repair_venv_via_import_probes(install_prefix, env=install_env)
     if status in ("healthy", "repaired"):
         _clear_lazy_refresh_incomplete_marker()
-        print("✓ Lazy-refresh venv recovery confirmed â€” install is healthy again.")
+        print("✓ Lazy-refresh venv recovery confirmed — install is healthy again.")
         return
     if status == "indeterminate":
         print(
-            "  âš  Import probes unavailable â€” cannot confirm venv health. "
+            "  ⚠ Import probes unavailable — cannot confirm venv health. "
             "Leaving `.lazy-refresh-incomplete` for the next launch."
         )
     else:
         print(
-            "  âš  Lazy-refresh package repair incomplete. "
+            "  ⚠ Lazy-refresh package repair incomplete. "
             "Leaving `.lazy-refresh-incomplete` for the next launch."
         )
         print("  Recover manually with:")
@@ -7864,23 +7871,23 @@ def _recover_core_update_marker_locked() -> None:
     """Heal ``.update-incomplete`` via full ``.[all]`` reinstall only.
 
     Narrow lazy-refresh import probes are not sufficient proof that a generic
-    interrupted core install finished â€” a missing dep outside that probe set
+    interrupted core install finished — a missing dep outside that probe set
     would otherwise look healthy and clear the breadcrumb too early.
     """
     print(
-        "âš  A previous `kova update` was interrupted mid-install â€” "
+        "⚠ A previous `kova update` was interrupted mid-install — "
         "finishing dependency installation now..."
     )
 
-    # Windows: a normal ``hermes.exe`` launch always has the launcher as an
+    # Windows: a normal ``kova.exe`` launch always has the launcher as an
     # ancestor. Full editable reinstall uses quarantine so the live shim can
     # still be replaced. Package-only import repair may help as first aid but
     # must NEVER clear this core marker on its own (#58004 review).
-    self_locked = _windows_running_hermes_launcher_locked()
+    self_locked = _windows_running_kova_launcher_locked()
     if self_locked:
         install_prefix, install_env = _default_venv_install_target()
         print(
-            "  â†’ Running from hermes.exe; applying package-only first aid, "
+            "  → Running from kova.exe; applying package-only first aid, "
             "then quarantined full reinstall (core marker stays until that "
             "succeeds)..."
         )
@@ -7919,12 +7926,12 @@ def _recover_core_update_marker_locked() -> None:
             )
 
         _clear_update_incomplete_marker()
-        print("✓ Dependency installation recovered â€” your install is healthy again.")
+        print("✓ Dependency installation recovered — your install is healthy again.")
     except Exception as exc:
         # Leave the marker in place so the next launch retries. Give the user
         # the exact manual recovery command in the meantime.
         logger.debug("Interrupted-install recovery failed: %s", exc)
-        print("âœ— Could not auto-recover the interrupted install.")
+        print("✗ Could not auto-recover the interrupted install.")
         if self_locked:
             print(
                 "  Kova is still running from the launcher that needs "
@@ -7942,8 +7949,8 @@ def _recover_core_update_marker_locked() -> None:
             print(f"    {sys.executable} -m pip install -e '.[all]'")
 
 
-def _windows_running_hermes_launcher_locked() -> bool:
-    """True when a venv ``hermes*.exe`` shim is this process or an ancestor.
+def _windows_running_kova_launcher_locked() -> bool:
+    """True when a venv ``kova*.exe`` shim is this process or an ancestor.
 
     Best-effort: returns False when psutil is unavailable or inspection fails.
     """
@@ -7952,7 +7959,7 @@ def _windows_running_hermes_launcher_locked() -> bool:
     scripts_dir = _venv_scripts_dir()
     if scripts_dir is None:
         return False
-    shims = _hermes_exe_shims(scripts_dir)
+    shims = _kova_exe_shims(scripts_dir)
     if not shims:
         return False
     shim_set: set[str] = set()
@@ -8014,8 +8021,8 @@ def _run_install_with_heartbeat(
         while not done.wait(heartbeat_interval_seconds):
             elapsed = int(_time.time() - start)
             print(
-                f"  â€¦ still installing dependencies ({elapsed}s elapsed)"
-                " â€” compiling Rust/C extensions can take several minutes",
+                f"  … still installing dependencies ({elapsed}s elapsed)"
+                " — compiling Rust/C extensions can take several minutes",
                 flush=True,
             )
 
@@ -8046,11 +8053,11 @@ def _venv_scripts_dir() -> Path | None:
     return scripts if scripts.is_dir() else None
 
 
-def _hermes_exe_shims(scripts_dir: Path) -> list[Path]:
+def _kova_exe_shims(scripts_dir: Path) -> list[Path]:
     """Entry-point shims that uv may try to rewrite during ``pip install -e .``.
 
     On Windows these are .exe launchers generated by setuptools/uv. On POSIX
-    they're regular Python scripts which can be replaced atomically â€” no
+    they're regular Python scripts which can be replaced atomically — no
     self-replacement hazard exists outside Windows.
     """
     if not _is_windows():
@@ -8060,17 +8067,22 @@ def _hermes_exe_shims(scripts_dir: Path) -> list[Path]:
     # The gateway shim is not a [project.scripts] entry point, but older
     # update/install paths still rewrite and quarantine it.
     names.add("kova-gateway")
+    # The desktop app spawns `kova.EXE` as its backend child, so the
+    # concurrent-instance detector must recognize the legacy kova launcher
+    # name alongside the kova shims.
+    names.add("kova")
+    names.add("kova-gateway")
     return [scripts_dir / f"{name}.exe" for name in sorted(names)]
 
 
-def _detect_concurrent_hermes_instances(
+def _detect_concurrent_kova_instances(
     scripts_dir: Path, *, exclude_pid: int | None = None
 ) -> list[tuple[int, str]]:
     """Find other live processes whose .exe is one of our entry-point shims.
 
-    Windows blocks DELETE/REPLACE on a running .exe â€” and even RENAME on the
+    Windows blocks DELETE/REPLACE on a running .exe — and even RENAME on the
     same .exe when another process opened it without ``FILE_SHARE_DELETE``.
-    The Kova Desktop Electron app spawns ``hermes.EXE`` as a backend child,
+    The Kova Desktop Electron app spawns ``kova.EXE`` as a backend child,
     so during ``kova update`` the user-invoked process and the desktop's
     child both hold the same file. The quarantine rename then fails with
     ``[WinError 32]`` and uv inherits the lock.
@@ -8079,12 +8091,12 @@ def _detect_concurrent_hermes_instances(
     shims (``kova.exe`` / ``kova-gateway.exe``) and returns ``(pid,
     process_name)`` pairs. The caller's own PID and its entire ancestor
     chain are excluded so the running ``kova update`` invocation never
-    reports itself â€” this matters on Windows where the setuptools .exe
-    launcher (``hermes.exe``) is a separate process from the Python
+    reports itself — this matters on Windows where the setuptools .exe
+    launcher (``kova.exe``) is a separate process from the Python
     interpreter it loads (``python.exe``).
 
     Returns an empty list off-Windows, on missing psutil, or when no other
-    instances exist. Never raises â€” process enumeration is best-effort.
+    instances exist. Never raises — process enumeration is best-effort.
     """
     if not _is_windows():
         return []
@@ -8096,7 +8108,7 @@ def _detect_concurrent_hermes_instances(
 
     # Resolve every shim path to its canonical form once for cheap comparison.
     shim_paths: set[str] = set()
-    for shim in _hermes_exe_shims(scripts_dir):
+    for shim in _kova_exe_shims(scripts_dir):
         try:
             shim_paths.add(str(shim.resolve()).lower())
         except OSError:
@@ -8106,21 +8118,21 @@ def _detect_concurrent_hermes_instances(
 
     # Build a set of PIDs to exclude: the Python process itself plus every
     # ancestor whose executable is one of our shims. On Windows the
-    # setuptools-generated hermes.exe launcher is a separate native process
+    # setuptools-generated kova.exe launcher is a separate native process
     # that spawns python.exe (the interpreter that runs our code).
     # os.getpid() returns the Python PID, but the launcher (which holds the
     # file lock) is the parent. Without excluding it, every ``kova update``
-    # reports its own launcher as a concurrent instance â€” a false positive
+    # reports its own launcher as a concurrent instance — a false positive
     # (issues #29341, #34795).
     #
     # Two robustness points learned from the field:
-    #   1. Use ``proc.parents()`` â€” it returns the WHOLE ancestor list in one
+    #   1. Use ``proc.parents()`` — it returns the WHOLE ancestor list in one
     #      call. The earlier per-hop ``current.parent()`` loop bailed on the
     #      first psutil error (AccessDenied/NoSuchProcess is common on Windows
     #      across session/elevation boundaries), leaving the launcher shim in
     #      the candidate set and re-triggering the false positive.
     #   2. Only exclude ancestors whose exe is itself a shim. A genuine second
-    #      hermes.exe sitting *under* a non-Kova parent (e.g. a Kova
+    #      kova.exe sitting *under* a non-Kova parent (e.g. a Kova
     #      Desktop backend child) must still be flagged, so we don't blanket-
     #      exclude unrelated ancestors like the shell or terminal.
     # Broad ``except Exception`` guards against partially-stubbed psutil in
@@ -8184,8 +8196,11 @@ def _format_concurrent_instances_message(
     matches: list[tuple[int, str]], scripts_dir: Path
 ) -> str:
     """Build a human-readable explanation + remediation hint for the user."""
-    shim = scripts_dir / "kova.exe"
-    lines = ["✗ Another kova.exe is running:"]
+    # Use the actually-detected exe name (e.g. kova.exe or KOVA.EXE) rather
+    # than hardcoding one — the desktop may spawn either name.
+    exe_name = matches[0][1] if matches else "kova.exe"
+    shim = scripts_dir / exe_name
+    lines = [f"✗ Another {exe_name} is running:"]
     for pid, name in matches:
         lines.append(f"    PID {pid}  {name}")
     lines.append("")
@@ -8206,7 +8221,7 @@ def _format_concurrent_instances_message(
     return "\n".join(lines)
 
 
-def _quarantine_running_hermes_exe(
+def _quarantine_running_kova_exe(
     scripts_dir: Path, *, max_attempts: int = 4
 ) -> list[tuple[Path, Path]]:
     """Pre-empt Windows file lock on the running ``kova.exe``.
@@ -8214,15 +8229,15 @@ def _quarantine_running_hermes_exe(
     Windows allows RENAMING a mapped/running executable (the kernel tracks the
     file by handle, not path), but blocks DELETE/REPLACE while it's loaded. uv
     needs to overwrite the entry-point shims during ``pip install -e .``;
-    when ``kova update`` runs, ``hermes.exe`` IS the live process, and uv
+    when ``kova update`` runs, ``kova.exe`` IS the live process, and uv
     fails with ``Access is denied. (os error 5)``.
 
-    We rename live shims to ``hermes.exe.old.<unix-ms>`` first. uv then writes
+    We rename live shims to ``kova.exe.old.<unix-ms>`` first. uv then writes
     fresh shims at the original paths. The ``.old`` files are cleaned up on
     the next kova invocation by ``_cleanup_quarantined_exes``.
 
     Rename can still fail when *another* process has opened the .exe without
-    ``FILE_SHARE_DELETE`` â€” typically AV real-time scanners with transient
+    ``FILE_SHARE_DELETE`` — typically AV real-time scanners with transient
     handles (recovers in <1s), or the Kova Desktop backend child process
     (won't recover until the user closes it). We mitigate:
 
@@ -8239,7 +8254,7 @@ def _quarantine_running_hermes_exe(
 
     Returns the list of (original, quarantined) pairs so the caller can roll
     back if the install itself fails before uv writes a replacement. Pairs
-    where we used ``MOVEFILE_DELAY_UNTIL_REBOOT`` are NOT returned â€” they
+    where we used ``MOVEFILE_DELAY_UNTIL_REBOOT`` are NOT returned — they
     are already deferred and roll-back is meaningless.
     """
     moved: list[tuple[Path, Path]] = []
@@ -8254,7 +8269,7 @@ def _quarantine_running_hermes_exe(
     backoff_ms = [0, 100, 250, 500, 1000]
     attempts = max(1, min(max_attempts, len(backoff_ms)))
 
-    for shim in _hermes_exe_shims(scripts_dir):
+    for shim in _kova_exe_shims(scripts_dir):
         if not shim.exists():
             continue
         target = shim.with_suffix(shim.suffix + f".old.{stamp}")
@@ -8284,7 +8299,7 @@ def _quarantine_running_hermes_exe(
         scheduled = _schedule_replace_on_reboot(shim, target)
         if scheduled:
             print(
-                f"  âš  {shim.name} is locked by another process; scheduled "
+                f"  ⚠ {shim.name} is locked by another process; scheduled "
                 f"replacement on next reboot."
             )
             print(
@@ -8296,9 +8311,9 @@ def _quarantine_running_hermes_exe(
             continue
 
         # Truly couldn't budge the .exe. Print an actionable warning and let
-        # uv try its luck â€” sometimes uv's own retry handling pulls through.
+        # uv try its luck — sometimes uv's own retry handling pulls through.
         print(
-            f"  âš  Could not quarantine {shim.name} ({last_exc.__class__.__name__}: "
+            f"  ⚠ Could not quarantine {shim.name} ({last_exc.__class__.__name__}: "
             f"another process is holding it open)."
         )
         print(
@@ -8316,7 +8331,7 @@ def _schedule_replace_on_reboot(shim: Path, quarantine_target: Path) -> bool:
     MOVEFILE_DELAY_UNTIL_REBOOT``. The OS persists the rename in
     ``HKLM\\System\\CurrentControlSet\\Control\\Session Manager\\
     PendingFileRenameOperations`` and applies it before any user-mode code
-    runs on next boot â€” at which point no process can hold the .exe.
+    runs on next boot — at which point no process can hold the .exe.
 
     Returns ``True`` if the schedule call succeeded, ``False`` otherwise
     (non-Windows, ctypes failure, lack of privilege, etc.). Never raises.
@@ -8345,7 +8360,7 @@ def _schedule_replace_on_reboot(shim: Path, quarantine_target: Path) -> bool:
 
 
 def _restore_quarantined_exes(moved: list[tuple[Path, Path]]) -> None:
-    """Roll back ``_quarantine_running_hermes_exe`` if uv didn't write replacements."""
+    """Roll back ``_quarantine_running_kova_exe`` if uv didn't write replacements."""
     for original, quarantined in moved:
         try:
             if not original.exists() and quarantined.exists():
@@ -8363,12 +8378,12 @@ def _run_quarantined_install(
     """Run an editable install, quarantining the running ``kova.exe`` first.
 
     Any ``pip install -e .`` (or ``--reinstall``) rewrites the entry-point
-    shims, and on Windows the live ``hermes.exe`` is the running process â€”
+    shims, and on Windows the live ``kova.exe`` is the running process —
     pip can neither delete nor overwrite it, so without quarantine the shim
     is left missing and ``kova`` drops off PATH. This wraps
     :func:`_run_install_with_heartbeat` with the same rename-out-of-the-way /
     restore-on-failure dance that the primary install path uses, so EVERY
-    install that touches the shims is protected â€” including the
+    install that touches the shims is protected — including the
     verification-repair reinstalls in
     :func:`_verify_core_dependencies_installed`, which previously called
     ``_run_install_with_heartbeat`` directly and bypassed quarantine.
@@ -8377,7 +8392,7 @@ def _run_quarantined_install(
     """
     moved: list[tuple[Path, Path]] = []
     if scripts_dir is not None:
-        moved = _quarantine_running_hermes_exe(scripts_dir)
+        moved = _quarantine_running_kova_exe(scripts_dir)
     try:
         _run_install_with_heartbeat(cmd, env=env)
     except BaseException:
@@ -8391,7 +8406,7 @@ def _run_quarantined_install(
 def _cleanup_quarantined_exes(scripts_dir: Path | None = None) -> None:
     """Sweep ``kova.exe.old.*`` left by prior updates.
 
-    Called early on every hermes invocation. The .old files are unlocked once
+    Called early on every kova invocation. The .old files are unlocked once
     their owning process exited, so deletion succeeds the next run. Silent
     no-op when nothing's there or on file-locked / permission errors.
     """
@@ -8406,7 +8421,7 @@ def _cleanup_quarantined_exes(scripts_dir: Path | None = None) -> None:
             try:
                 stale.unlink()
             except OSError:
-                pass  # still locked or in use â€” try again next run
+                pass  # still locked or in use — try again next run
     except OSError:
         pass
 
@@ -8433,7 +8448,7 @@ def _run_package_only_install(
     """Run a package-only pip/uv install without quarantining entry-point shims.
 
     ``pip install --upgrade pip`` and ``--force-reinstall <pkg>`` do not
-    rewrite ``hermes.exe``. The editable-install quarantine path would rename
+    rewrite ``kova.exe``. The editable-install quarantine path would rename
     shims without uv recreating them on Windows (#57828).
     """
     _run_install_with_heartbeat(cmd, env=env)
@@ -8513,7 +8528,7 @@ def _detect_broken_lazy_refresh_imports(
       - ``[]`` when probes ran and every package imported cleanly
       - ``[dist, ...]`` when probes ran and some packages failed
       - ``None`` when the probe could not run (missing venv Python, subprocess
-        failure, non-zero probe exit) â€” this is *indeterminate*, not healthy
+        failure, non-zero probe exit) — this is *indeterminate*, not healthy
     """
     venv_python = _resolve_install_target_python(install_cmd_prefix, env)
     if venv_python is None:
@@ -8604,24 +8619,24 @@ def _repair_venv_via_import_probes(
 
     Uses real ``import`` checks (not distribution metadata) so a venv where
     METADATA remains but ``.py`` files were wiped mid-install is still
-    detected (#57828). Package-only reinstall â€” never rewrites ``hermes.exe``.
+    detected (#57828). Package-only reinstall — never rewrites ``kova.exe``.
 
     Never raises. Returns one of:
-      - ``"healthy"`` â€” probes ran and found nothing broken
-      - ``"repaired"`` â€” probes found breakage and force-reinstall confirmed clean
-      - ``"failed"`` â€” probes found breakage and repair did not confirm clean
-      - ``"indeterminate"`` â€” probes could not run; do NOT treat as healthy
+      - ``"healthy"`` — probes ran and found nothing broken
+      - ``"repaired"`` — probes found breakage and force-reinstall confirmed clean
+      - ``"failed"`` — probes found breakage and repair did not confirm clean
+      - ``"indeterminate"`` — probes could not run; do NOT treat as healthy
     """
     broken = _detect_broken_lazy_refresh_imports(install_cmd_prefix, env=env)
     if broken is None:
         print(
-            "  âš  Import probes unavailable â€” cannot confirm venv package health."
+            "  ⚠ Import probes unavailable — cannot confirm venv package health."
         )
         return "indeterminate"
     if not broken:
         return "healthy"
     print(
-        "  â†’ Detected corrupted venv packages via import probes: "
+        "  → Detected corrupted venv packages via import probes: "
         f"{', '.join(broken)}; repairing..."
     )
     if _repair_broken_lazy_refresh_imports(
@@ -8632,7 +8647,7 @@ def _repair_venv_via_import_probes(
     manual = " ".join(
         shlex.quote(s) for s in _lazy_refresh_repair_specs(broken)
     )
-    print("  âš  Venv repair incomplete. Run manually, then `kova update`:")
+    print("  ⚠ Venv repair incomplete. Run manually, then `kova update`:")
     print(
         f"    {' '.join(install_cmd_prefix)} install --force-reinstall {manual}"
     )
@@ -8649,13 +8664,13 @@ def _refresh_active_lazy_features(
     When pyproject.toml's ``[all]`` extra was slimmed down (May 2026), most
     optional backends moved to ``tools/lazy_deps.py`` and only install on
     first use. ``kova update`` runs ``uv pip install -e .[all]`` which
-    leaves those packages untouched â€” so if we bump a pin in
+    leaves those packages untouched — so if we bump a pin in
     :data:`LAZY_DEPS` (CVE response, transitive bug fix), users who already
     activated the backend keep the stale version forever.
 
     This function asks lazy_deps which features the user has previously
     activated and reinstalls them under the current pins. Features the
-    user never enabled stay quiet â€” no churn for cold backends.
+    user never enabled stay quiet — no churn for cold backends.
 
     Returns True when the venv is safe to use (refresh succeeded, or no
     active lazy backends, or post-failure import repair succeeded). Returns
@@ -8680,7 +8695,7 @@ def _refresh_active_lazy_features(
         return True
 
     print()
-    print(f"â†’ Refreshing {len(active)} active lazy backend(s)...")
+    print(f"→ Refreshing {len(active)} active lazy backend(s)...")
 
     unexpected_failure = False
     try:
@@ -8688,7 +8703,7 @@ def _refresh_active_lazy_features(
     except Exception as exc:
         # refresh_active_features is documented as never-raise, but defend
         # the update flow against future regressions.
-        print(f"  âš  Lazy refresh failed unexpectedly: {exc}")
+        print(f"  ⚠ Lazy refresh failed unexpectedly: {exc}")
         results = {}
         unexpected_failure = True
 
@@ -8698,7 +8713,7 @@ def _refresh_active_lazy_features(
     skipped = [(f, s) for f, s in results.items() if s.startswith("skipped:")]
 
     if refreshed:
-        print(f"  â†‘ {len(refreshed)} refreshed: {', '.join(refreshed)}")
+        print(f"  ↑ {len(refreshed)} refreshed: {', '.join(refreshed)}")
     if current:
         print(f"  ✓ {len(current)} already current")
     if skipped:
@@ -8716,15 +8731,15 @@ def _refresh_active_lazy_features(
         # Clip noisy pip stderr to keep update output legible.
         if len(reason) > 200:
             reason = reason[:200] + "..."
-        print(f"  âš  {feature} failed to refresh: {reason}")
+        print(f"  ⚠ {feature} failed to refresh: {reason}")
 
     if install_cmd_prefix is None:
-        print("  âš  Lazy refresh failed; rerun `kova update` once resolved.")
+        print("  ⚠ Lazy refresh failed; rerun `kova update` once resolved.")
         return False
 
-    # Immediate import-based recovery â€” metadata-only verifiers miss the case
+    # Immediate import-based recovery — metadata-only verifiers miss the case
     # where DISTRIBUTION-INFO remains but import files were wiped (#57828).
-    # Unavailable probes are indeterminate, not healthy â€” keep the lazy marker.
+    # Unavailable probes are indeterminate, not healthy — keep the lazy marker.
     status = _repair_venv_via_import_probes(install_cmd_prefix, env=env)
     if status == "repaired":
         print(
@@ -8739,7 +8754,7 @@ def _refresh_active_lazy_features(
         return True
     if status == "indeterminate":
         print(
-            "  âš  Leaving `.lazy-refresh-incomplete` until import probes can confirm health."
+            "  ⚠ Leaving `.lazy-refresh-incomplete` until import probes can confirm health."
         )
     return False
 
@@ -8758,7 +8773,7 @@ def _install_python_dependencies_with_optional_fallback(
     On Windows, pre-renames live ``kova.exe`` / ``kova-gateway.exe`` shims
     in the venv Scripts dir before each install attempt so uv can write fresh
     copies (Windows blocks REPLACE on a running .exe but allows RENAME). See
-    ``_quarantine_running_hermes_exe`` for the rationale.
+    ``_quarantine_running_kova_exe`` for the rationale.
     """
     scripts_dir = _venv_scripts_dir() if _is_windows() else None
 
@@ -8773,7 +8788,7 @@ def _install_python_dependencies_with_optional_fallback(
         return
     except subprocess.CalledProcessError:
         print(
-            "  âš  Optional extras failed, reinstalling base dependencies and retrying extras individually..."
+            "  ⚠ Optional extras failed, reinstalling base dependencies and retrying extras individually..."
         )
 
     _install(["install", "-e", "."])
@@ -8793,12 +8808,12 @@ def _install_python_dependencies_with_optional_fallback(
         )
     if failed_extras:
         print(
-            f"  âš  Skipped optional extras that still failed: {', '.join(failed_extras)}"
+            f"  ⚠ Skipped optional extras that still failed: {', '.join(failed_extras)}"
         )
 
     # Belt-and-suspenders: verify every declared core dependency from
     # pyproject.toml's [project.dependencies] is actually importable in the
-    # target venv. uv's incremental resolver has â€” in the wild â€” produced
+    # target venv. uv's incremental resolver has — in the wild — produced
     # partial installs where a newly added base dep (e.g. ``pathspec``)
     # silently fails to land on top of a half-stale venv, and the only
     # symptom is a downstream subprocess crashing with ModuleNotFoundError
@@ -8838,11 +8853,11 @@ def _verify_console_scripts_installed(
 ) -> None:
     """Ensure every declared console_script shim exists on disk after install.
 
-    On Windows, ``uv pip install -e .`` can register ``hermes.exe`` in the
-    wheel RECORD while the file never lands on disk â€” typically when the live
-    ``hermes.exe`` shim is locked during ``kova update``, or when uv/distlib
+    On Windows, ``uv pip install -e .`` can register ``kova.exe`` in the
+    wheel RECORD while the file never lands on disk — typically when the live
+    ``kova.exe`` shim is locked during ``kova update``, or when uv/distlib
     skips a launcher write. The symptom is ``kova-agent.exe`` and
-    ``hermes-acp.exe`` present but ``hermes.exe`` missing, so ``hermes`` drops
+    ``kova-acp.exe`` present but ``kova.exe`` missing, so ``kova`` drops
     off PATH even though the install reported success (issue #52931).
 
     If any shim is missing we reinstall with ``--reinstall -e .`` under the
@@ -8871,10 +8886,10 @@ def _verify_console_scripts_installed(
         return
 
     print(
-        f"  âš  Verification: {len(missing)} console script(s) missing on disk: "
+        f"  ⚠ Verification: {len(missing)} console script(s) missing on disk: "
         f"{', '.join(missing)}"
     )
-    print("  â†’ Reinstalling entry points with --reinstall...")
+    print("  → Reinstalling entry points with --reinstall...")
 
     try:
         _run_quarantined_install(
@@ -8885,15 +8900,15 @@ def _verify_console_scripts_installed(
     except subprocess.CalledProcessError as e:
         logger.warning("console script verification: repair install failed: %s", e)
         print(
-            "  âš  Entry point repair failed; try `kova update --force` after "
-            "closing other hermes processes."
+            "  ⚠ Entry point repair failed; try `kova update --force` after "
+            "closing other kova processes."
         )
         return
 
     still_missing = _missing()
     if still_missing:
         print(
-            f"  âš  Still missing after repair: {', '.join(still_missing)}. "
+            f"  ⚠ Still missing after repair: {', '.join(still_missing)}. "
             "Workaround: python -m kova_cli.main <command>"
         )
     else:
@@ -8915,12 +8930,12 @@ def _verify_core_dependencies_installed(
     base group with ``--reinstall`` to force uv to re-resolve, then check
     again. We treat the final state as a warning rather than a hard failure
     so a single broken-on-PyPI dep can't block an otherwise-successful
-    update â€” but the warning makes the partial install visible at the spot
+    update — but the warning makes the partial install visible at the spot
     that caused it, instead of hours later in a downstream subprocess.
     """
     try:
         import tomllib  # Python 3.11+
-    except ImportError:  # pragma: no cover â€” Python < 3.11 unsupported but be safe
+    except ImportError:  # pragma: no cover — Python < 3.11 unsupported but be safe
         return
 
     pyproject = PROJECT_ROOT / "pyproject.toml"
@@ -8977,7 +8992,7 @@ def _verify_core_dependencies_installed(
     if not applicable:
         return
 
-    # Run the check inside the venv Python â€” sys.executable here may be the
+    # Run the check inside the venv Python — sys.executable here may be the
     # outer Python that drove ``kova update``, not the venv we just wrote
     # to. The uv install_cmd_prefix encodes which environment we targeted
     # (either ``[uv, pip]`` with VIRTUAL_ENV in env, or
@@ -9014,18 +9029,18 @@ def _verify_core_dependencies_installed(
         return
 
     print(
-        f"  âš  Verification: {len(missing)} declared dep(s) missing after install: "
+        f"  ⚠ Verification: {len(missing)} declared dep(s) missing after install: "
         f"{', '.join(missing[:8])}{'...' if len(missing) > 8 else ''}"
     )
-    print("  â†’ Reinstalling base group with --reinstall to repair...")
+    print("  → Reinstalling base group with --reinstall to repair...")
 
     # Reinstall base group with --reinstall so uv re-resolves from scratch
     # against the current pyproject. We don't pass ``[{group}]`` here on
-    # purpose â€” the missing dep is in *base* deps; rerunning the full all-
+    # purpose — the missing dep is in *base* deps; rerunning the full all-
     # extras install can cost minutes and trips on whatever optional extra
     # was already broken upstream. Base is fast and is what's actually wrong.
     #
-    # Quarantine the running ``hermes.exe`` first: ``--reinstall -e .``
+    # Quarantine the running ``kova.exe`` first: ``--reinstall -e .``
     # rewrites the entry-point shims, and on Windows pip can't overwrite the
     # live launcher, which would leave ``kova`` off PATH.
     scripts_dir = _venv_scripts_dir() if _is_windows() else None
@@ -9036,7 +9051,7 @@ def _verify_core_dependencies_installed(
         )
     except subprocess.CalledProcessError as e:
         logger.warning("dep verification: repair install failed: %s", e)
-        print("  âš  Repair install failed; check `kova update` output above.")
+        print("  ⚠ Repair install failed; check `kova update` output above.")
         return
 
     still_missing = _missing_deps()
@@ -9059,7 +9074,7 @@ def _verify_core_dependencies_installed(
 
     specs = [name_to_spec.get(n, n) for n in still_missing]
     print(
-        f"  â†’ Force-installing remaining missing dep(s): {', '.join(specs)}"
+        f"  → Force-installing remaining missing dep(s): {', '.join(specs)}"
     )
     try:
         _run_install_with_heartbeat(
@@ -9068,7 +9083,7 @@ def _verify_core_dependencies_installed(
     except subprocess.CalledProcessError as e:
         logger.warning("dep verification: per-package repair failed: %s", e)
         print(
-            f"  âš  Could not install: {', '.join(still_missing)}. "
+            f"  ⚠ Could not install: {', '.join(still_missing)}. "
             "Run `kova update --force` after closing other kova processes."
         )
         return
@@ -9076,7 +9091,7 @@ def _verify_core_dependencies_installed(
     final_missing = _missing_deps()
     if final_missing:
         print(
-            f"  âš  Still missing after repair: {', '.join(final_missing)}. "
+            f"  ⚠ Still missing after repair: {', '.join(final_missing)}. "
             "Run `kova update --force` after closing other kova processes."
         )
     else:
@@ -9178,7 +9193,7 @@ def _ensure_uv_for_termux(pip_cmd: list[str]) -> str | None:
     if system_uv:
         return system_uv
     try:
-        print("  â†’ Termux detected: trying to install uv for faster dependency updates...")
+        print("  → Termux detected: trying to install uv for faster dependency updates...")
         result = subprocess.run(
             pip_cmd + ["install", "uv", "--only-binary", ":all:"],
             cwd=PROJECT_ROOT,
@@ -9196,7 +9211,7 @@ def _npm_manifest_paths() -> tuple[Path, ...]:
     """Manifests whose changes must defeat the update-skip.
 
     The lockfile alone is NOT a sufficient key: on a local checkout a dev
-    can edit package.json (root or a workspace) without running npm â€” the
+    can edit package.json (root or a workspace) without running npm — the
     lockfile is then unchanged but `kova update` is exactly the step
     expected to sync node_modules (via the `npm install` fallback in
     _run_npm_install_deterministic).
@@ -9205,7 +9220,7 @@ def _npm_manifest_paths() -> tuple[Path, ...]:
     globs (npm's own source of truth) rather than hardcoded, so adding a
     workspace can never silently escape the skip key. The root install
     (step 1, --workspaces=false) still hoists shared deps for EVERY
-    workspace â€” desktop included â€” so all of them belong in the key, not
+    workspace — desktop included — so all of them belong in the key, not
     just the ones step 2 installs. Falls back to hashing just root
     manifests if package.json is unreadable (never skips more than main
     would have installed).
@@ -9245,7 +9260,7 @@ def _npm_manifests_digest() -> str | None:
     return h.hexdigest()
 
 
-def _npm_lockfile_changed(hermes_root: Path) -> bool:
+def _npm_lockfile_changed(kova_root: Path) -> bool:
     current = _npm_manifests_digest()
     if current is None:
         return True
@@ -9256,7 +9271,7 @@ def _npm_lockfile_changed(hermes_root: Path) -> bool:
     try:
         # Key the cache by PROJECT_ROOT so parallel worktrees don't collide.
         cache_key = hashlib.sha256(str(PROJECT_ROOT).encode()).hexdigest()[:12]
-        cache_file = hermes_root / f".npm_lock_hash_{cache_key}"
+        cache_file = kova_root / f".npm_lock_hash_{cache_key}"
         if not cache_file.exists():
             return True
         return cache_file.read_text(encoding="utf-8").strip() != current
@@ -9264,13 +9279,13 @@ def _npm_lockfile_changed(hermes_root: Path) -> bool:
         return True
 
 
-def _record_npm_lockfile_hash(hermes_root: Path) -> None:
+def _record_npm_lockfile_hash(kova_root: Path) -> None:
     digest = _npm_manifests_digest()
     if digest is None:
         return
     try:
         cache_key = hashlib.sha256(str(PROJECT_ROOT).encode()).hexdigest()[:12]
-        cache_file = hermes_root / f".npm_lock_hash_{cache_key}"
+        cache_file = kova_root / f".npm_lock_hash_{cache_key}"
         cache_file.write_text(digest, encoding="utf-8")
     except OSError:
         logger.debug("Could not write npm lockfile hash cache")
@@ -9284,7 +9299,7 @@ def _is_windows_npm_path(npm_path: str) -> bool:
     ``/mnt/c/Program Files/nodejs/npm`` (or the ``npm.cmd`` / ``npm.exe``
     shim). Those are detected here by their ``.exe``/``.cmd``/``.bat``
     suffix, a ``/mnt/`` drive-mount prefix, or an embedded backslash (a UNC
-    path). Callers use this only on a POSIX host â€” on native Windows an
+    path). Callers use this only on a POSIX host — on native Windows an
     ``npm.cmd`` shim is the correct executable.
     """
     low = npm_path.lower()
@@ -9311,7 +9326,7 @@ def _resolve_node_runtime_npm() -> str | None:
     npm = find_node_executable("npm")
 
     # On native Windows the platform npm (``npm.cmd``) is exactly what we
-    # want â€” only reject Windows shims when we're a POSIX/WSL process.
+    # want — only reject Windows shims when we're a POSIX/WSL process.
     if _is_windows():
         return npm
 
@@ -9352,8 +9367,8 @@ def _update_node_dependencies() -> list[str]:
 
         path_npm = shutil.which("npm")
         if is_wsl() and path_npm and _is_windows_npm_path(path_npm):
-            print("â†’ Updating Node.js dependencies...")
-            print("  âš  Skipped: only a Windows npm is reachable from this WSL shell.")
+            print("→ Updating Node.js dependencies...")
+            print("  ⚠ Skipped: only a Windows npm is reachable from this WSL shell.")
             print("    Install Node.js inside the WSL distro (nvm, or your distro's")
             print("    package manager), then re-run `kova update`.")
             failed = ["repo root"]
@@ -9365,40 +9380,40 @@ def _update_node_dependencies() -> list[str]:
             return failed
         return []
 
-    from kova_constants import get_default_hermes_root
+    from kova_constants import get_default_kova_root
 
     # This cache describes PROJECT_ROOT/node_modules, which is shared by every
     # Kova profile using this checkout. Keep one per-checkout cache under the
     # shared Kova root rather than rerunning npm once per named profile.
-    shared_hermes_root = get_default_hermes_root()
-    if not _npm_lockfile_changed(shared_hermes_root):
+    shared_kova_root = get_default_kova_root()
+    if not _npm_lockfile_changed(shared_kova_root):
         logger.info("npm lockfile unchanged, skipping npm install")
         return []
 
     # With a single workspace lockfile the root install would cover ALL
-    # workspaces â€” but apps/desktop pulls in Electron as a devDependency,
+    # workspaces — but apps/desktop pulls in Electron as a devDependency,
     # and its postinstall downloads a ~200MB binary.  Most users don't
     # need desktop during `kova update`, so we install root-only first
     # then add just the workspaces the CLI/TUI/web build actually requires.
     # Desktop deps are installed on demand by the desktop launcher
     # (see _desktop_build_needed).
-    print("â†’ Updating Node.js dependencies...")
+    print("→ Updating Node.js dependencies...")
 
     def _partial_update_failure(*labels: str) -> list[str]:
         print()
-        print("  âš  Node.js dependency refresh did not complete cleanly; the")
+        print("  ⚠ Node.js dependency refresh did not complete cleanly; the")
         print("    installation may be in a mixed state (updated code, stale Node")
         print("    deps). Fix npm and re-run `kova update`.")
         return list(labels)
 
     extra_args = ["--no-fund", "--no-audit", "--progress=false"]
 
-    from kova_constants import with_hermes_node_path
+    from kova_constants import with_kova_node_path
 
-    nixos_env = with_hermes_node_path(_nixos_build_env())
+    nixos_env = with_kova_node_path(_nixos_build_env())
 
     # Step 1: root install (no workspace recursion).
-    # NOTE: capture_output=False here is deliberate (#18840) â€” optional
+    # NOTE: capture_output=False here is deliberate (#18840) — optional
     # postinstall scripts (e.g. @askjo/camofox-browser's browser-binary fetch)
     # print download progress, and capturing it makes a long download look
     # hung. The chatty npm-deprecation noise during `kova update` comes from
@@ -9412,7 +9427,7 @@ def _update_node_dependencies() -> list[str]:
         env=nixos_env,
     )
     if root_result.returncode != 0:
-        print("  âš  npm install failed in repo root")
+        print("  ⚠ npm install failed in repo root")
         stderr = (root_result.stderr or "").strip() if root_result.stderr else ""
         if stderr:
             print(f"    {stderr.splitlines()[-1]}")
@@ -9429,11 +9444,11 @@ def _update_node_dependencies() -> list[str]:
         env=nixos_env,
     )
     if ws_result.returncode == 0:
-        _record_npm_lockfile_hash(shared_hermes_root)
+        _record_npm_lockfile_hash(shared_kova_root)
         print("  ✓ repo root + ui-tui, web workspaces (desktop skipped)")
         return []
 
-    print("  âš  npm workspace install failed")
+    print("  ⚠ npm workspace install failed")
     stderr = (ws_result.stderr or "").strip() if ws_result.stderr else ""
     if stderr:
         print(f"    {stderr.splitlines()[-1]}")
@@ -9450,7 +9465,7 @@ class _UpdateOutputStream:
       terminal disconnects.
     * Writes to the original stream that fail with ``BrokenPipeError`` /
       ``OSError`` / ``ValueError`` (closed file) no longer cascade into
-      process exit â€” the update keeps going, only the on-screen output
+      process exit — the update keeps going, only the on-screen output
       stops.
 
     Combined with ``SIGHUP -> SIG_IGN`` installed by
@@ -9464,7 +9479,7 @@ class _UpdateOutputStream:
         self._original_broken = False
 
     def write(self, data):
-        # Mirror to the log file first â€” it's the most reliable destination.
+        # Mirror to the log file first — it's the most reliable destination.
         if self._log is not None:
             try:
                 self._log.write(data)
@@ -9532,7 +9547,7 @@ def _install_hangup_protection(gateway_mode: bool = False):
        ``BrokenPipeError`` when the terminal vanishes.
 
     ``SIGINT`` (Ctrl-C) and ``SIGTERM`` (systemd shutdown) are
-    **intentionally left alone** â€” those are legitimate cancellation
+    **intentionally left alone** — those are legitimate cancellation
     signals the user or OS sent on purpose.
 
     In gateway mode (``kova update --gateway``) the update is already
@@ -9559,7 +9574,7 @@ def _install_hangup_protection(gateway_mode: bool = False):
         try:
             _signal.signal(_signal.SIGHUP, _signal.SIG_IGN)
         except (ValueError, OSError):
-            # Called from a non-main thread â€” not fatal.  The update still
+            # Called from a non-main thread — not fatal.  The update still
             # runs, just without hangup protection.
             pass
 
@@ -9567,10 +9582,10 @@ def _install_hangup_protection(gateway_mode: bool = False):
     # tolerance.  Any failure here is non-fatal; we just skip the wrap.
     try:
         # Late-bound import so tests can monkeypatch
-        # kova_cli.config.get_hermes_home to simulate setup failure.
-        from kova_cli.config import get_hermes_home as _get_hermes_home
+        # kova_cli.config.get_kova_home to simulate setup failure.
+        from kova_cli.config import get_kova_home as _get_kova_home
 
-        logs_dir = _get_hermes_home() / "logs"
+        logs_dir = _get_kova_home() / "logs"
         logs_dir.mkdir(parents=True, exist_ok=True)
         log_path = logs_dir / "update.log"
         log_file = open(log_path, "a", buffering=1, encoding="utf-8")
@@ -9687,7 +9702,7 @@ def _cmd_update_check(branch: str = "main", *, branch_explicit: bool = False):
     if method == "docker":
         # Docker can't ``git fetch`` from within the container.  Surface the
         # same long-form ``docker pull`` guidance ``kova update`` (apply
-        # path) uses â€” telling the user to "reinstall via curl" or that
+        # path) uses — telling the user to "reinstall via curl" or that
         # ".git is missing" would point them at the wrong remediation.
         from kova_cli.config import format_docker_update_message
         print(format_docker_update_message())
@@ -9699,7 +9714,7 @@ def _cmd_update_check(branch: str = "main", *, branch_explicit: bool = False):
 
     git_dir = PROJECT_ROOT / ".git"
     if not git_dir.exists():
-        print("âœ— Not a git repository â€” cannot check for updates.")
+        print("✗ Not a git repository — cannot check for updates.")
         sys.exit(1)
 
     git_cmd = ["git"]
@@ -9713,7 +9728,7 @@ def _cmd_update_check(branch: str = "main", *, branch_explicit: bool = False):
     # bb/gui has no upstream counterpart), so when the caller picks a
     # non-default branch we skip the upstream probe and use origin directly.
     # Installer checkouts are shallow (`git clone --depth 1`). A plain
-    # `git fetch` would unshallow the repo (dragging in the whole history â€”
+    # `git fetch` would unshallow the repo (dragging in the whole history —
     # the exact cost the shallow clone avoided) and the rev-list count below
     # would then report a huge bogus "behind" number. Detect shallow up front:
     # fetch with --depth 1 to preserve the boundary and report presence-only.
@@ -9729,7 +9744,7 @@ def _cmd_update_check(branch: str = "main", *, branch_explicit: bool = False):
     depth_args = ["--depth", "1"] if is_shallow else []
 
     if branch == "main":
-        print("â†’ Fetching from upstream...")
+        print("→ Fetching from upstream...")
         fetch_result = subprocess.run(
             git_cmd + ["fetch"] + depth_args + ["upstream", branch],
             cwd=PROJECT_ROOT,
@@ -9738,7 +9753,7 @@ def _cmd_update_check(branch: str = "main", *, branch_explicit: bool = False):
         )
         if fetch_result.returncode != 0:
             # Fallback to origin if upstream doesn't exist
-            print("â†’ Fetching from origin...")
+            print("→ Fetching from origin...")
             fetch_result = subprocess.run(
                 git_cmd + ["fetch"] + depth_args + ["origin", branch],
                 cwd=PROJECT_ROOT,
@@ -9752,7 +9767,7 @@ def _cmd_update_check(branch: str = "main", *, branch_explicit: bool = False):
             compare_branch = f"upstream/{branch}"
     else:
         # Non-default branch: compare against origin/<branch> directly.
-        print("â†’ Fetching from origin...")
+        print("→ Fetching from origin...")
         fetch_result = subprocess.run(
             git_cmd + ["fetch"] + depth_args + ["origin", branch],
             cwd=PROJECT_ROOT,
@@ -9765,11 +9780,11 @@ def _cmd_update_check(branch: str = "main", *, branch_explicit: bool = False):
     if fetch_result.returncode != 0:
         stderr = fetch_result.stderr.strip()
         if "Could not resolve host" in stderr or "unable to access" in stderr:
-            print("âœ— Network error â€” cannot reach the remote repository.")
+            print("✗ Network error — cannot reach the remote repository.")
         elif "Authentication failed" in stderr or "could not read Username" in stderr:
-            print("âœ— Authentication failed â€” check your git credentials or SSH key.")
+            print("✗ Authentication failed — check your git credentials or SSH key.")
         else:
-            print("âœ— Failed to fetch.")
+            print("✗ Failed to fetch.")
             if stderr:
                 print(f"  {stderr.splitlines()[0]}")
         sys.exit(1)
@@ -9785,7 +9800,7 @@ def _cmd_update_check(branch: str = "main", *, branch_explicit: bool = False):
         text=True,
     )
     if verify_result.returncode != 0:
-        print(f"âœ— Branch '{branch}' not found on {compare_branch.split('/', 1)[0]}.")
+        print(f"✗ Branch '{branch}' not found on {compare_branch.split('/', 1)[0]}.")
         sys.exit(1)
 
     if is_shallow:
@@ -9802,7 +9817,7 @@ def _cmd_update_check(branch: str = "main", *, branch_explicit: bool = False):
         if head_sha and target_sha and head_sha == target_sha:
             print("✓ Already up to date.")
         else:
-            print(f"âš• Update available (behind {compare_branch}).")
+            print(f"⚕ Update available (behind {compare_branch}).")
             from kova_cli.config import recommended_update_command
 
             print(f"  Run '{recommended_update_command()}' to install.")
@@ -9821,7 +9836,7 @@ def _cmd_update_check(branch: str = "main", *, branch_explicit: bool = False):
         print("✓ Already up to date.")
     else:
         commits_word = "commit" if behind == 1 else "commits"
-        print(f"âš• Update available: {behind} {commits_word} behind {compare_branch}.")
+        print(f"⚕ Update available: {behind} {commits_word} behind {compare_branch}.")
         from kova_cli.config import recommended_update_command
 
         print(f"  Run '{recommended_update_command()}' to install.")
@@ -9838,21 +9853,21 @@ def _ensure_fhs_path_guard() -> None:
     (su, sudo -s, tmux panes, some web terminals): /etc/bashrc doesn't
     add /usr/local/bin and /root/.bash_profile doesn't either.  Symptom:
     ``kova`` prints ``command not found`` even though the symlink lives
-    at /usr/local/bin/hermes.
+    at /usr/local/bin/kova.
 
     Silent no-op on: non-Linux, non-root, non-FHS installs, and any system
-    where ``bash -i -c 'command -v hermes'`` already resolves.  Idempotent.
+    where ``bash -i -c 'command -v kova'`` already resolves.  Idempotent.
     """
     if sys.platform != "linux":
         return
     try:
-        if os.geteuid() != 0:  # windows-footgun: ok â€” Linux FHS helper, guarded by sys.platform == "linux" above + AttributeError catch
+        if os.geteuid() != 0:  # windows-footgun: ok — Linux FHS helper, guarded by sys.platform == "linux" above + AttributeError catch
             return
     except AttributeError:
         return
     # Only act when this is actually an FHS-layout install (command link at
-    # /usr/local/bin/hermes, code at /usr/local/lib/kova-agent).
-    fhs_link = Path("/usr/local/bin/hermes")
+    # /usr/local/bin/kova, code at /usr/local/lib/kova-agent).
+    fhs_link = Path("/usr/local/bin/kova")
     if not fhs_link.is_symlink() and not fhs_link.exists():
         return
 
@@ -9870,20 +9885,20 @@ def _ensure_fhs_path_guard() -> None:
                 "bash",
                 "-i",
                 "-c",
-                "command -v hermes",
+                "command -v kova",
             ],
             capture_output=True,
             text=True,
             timeout=10,
         )
     except (FileNotFoundError, subprocess.TimeoutExpired):
-        return  # no bash or probe hung â€” don't block update on this
+        return  # no bash or probe hung — don't block update on this
     if probe.returncode == 0:
         return  # already on PATH, nothing to do
 
     path_line = 'export PATH="/usr/local/bin:$PATH"'
     path_comment = (
-        "# Kova Agent â€” ensure /usr/local/bin is on PATH " "(RHEL non-login shells)"
+        "# Kova Agent — ensure /usr/local/bin is on PATH " "(RHEL non-login shells)"
     )
     wrote_any = False
     for candidate in (".bashrc", ".bash_profile"):
@@ -9908,7 +9923,7 @@ def _ensure_fhs_path_guard() -> None:
             with cfg.open("a", encoding="utf-8") as f:
                 f.write("\n" + path_comment + "\n" + path_line + "\n")
         except OSError as e:
-            print(f"  âš  Could not update {cfg}: {e}")
+            print(f"  ⚠ Could not update {cfg}: {e}")
             continue
         print(f"  ✓ Added /usr/local/bin to PATH in {cfg}")
         wrote_any = True
@@ -9920,7 +9935,7 @@ _PRE_UPDATE_SNAPSHOT_KEEP = 1
 
 # Per-file size cap for the pre-update quick snapshot. Anything larger is
 # skipped with a warning: the snapshot exists to protect small, hard-to-
-# regenerate state (pairing JSONs, cron jobs, config, auth) â€” not to copy a
+# regenerate state (pairing JSONs, cron jobs, config, auth) — not to copy a
 # multi-GB state.db on every update (observed: a 24 GB state.db added ~60s
 # of wall time and silently ate 24 GB of disk per update).
 _PRE_UPDATE_SNAPSHOT_MAX_FILE_SIZE = 1 << 30  # 1 GiB
@@ -9931,8 +9946,8 @@ def _resolve_pre_update_backup_mode(args) -> str:
 
     CLI flags win over config; ``--no-backup`` beats ``--backup`` when both
     are set. Config accepts the mode strings plus legacy booleans:
-    ``true`` â†’ ``full`` (the old zip behavior), ``false`` â†’ ``off``
-    (an explicit opt-out now disables the quick snapshot too â€” previously
+    ``true`` → ``full`` (the old zip behavior), ``false`` → ``off``
+    (an explicit opt-out now disables the quick snapshot too — previously
     it ran unconditionally, ignoring the user's setting). A missing key
     defaults to ``quick``.
     """
@@ -9966,7 +9981,7 @@ def _resolve_pre_update_backup_mode(args) -> str:
     if mode == "quick":
         return "quick"
     logging.getLogger(__name__).warning(
-        "Unknown updates.pre_update_backup value %r â€” using 'quick'", raw
+        "Unknown updates.pre_update_backup value %r — using 'quick'", raw
     )
     return "quick"
 
@@ -9976,18 +9991,18 @@ def _run_pre_update_backup(args) -> Optional[str]:
 
     Single consolidated mechanism gated on ``updates.pre_update_backup``:
 
-    - ``off``   â€” nothing runs. Explicit user opt-out is honored fully.
-    - ``quick`` (default) â€” a state snapshot of critical small files
+    - ``off``   — nothing runs. Explicit user opt-out is honored fully.
+    - ``quick`` (default) — a state snapshot of critical small files
       (pairing JSONs, cron jobs, config, auth; see ``_QUICK_STATE_FILES``)
       under ``state-snapshots/``. Files over 1 GiB are skipped with a
       warning so a bloated state.db can never stall the update
       (issues #15733, #34600 are the reason this safety net exists).
-    - ``full``  â€” the quick snapshot PLUS a full zip of HERMES_HOME under
+    - ``full``  — the quick snapshot PLUS a full zip of HERMES_HOME under
       ``backups/`` (restorable via ``kova import``; the #48200 wrong-path
       wipe is the reason this level exists).
 
     ``--backup`` forces ``full`` for one run; ``--no-backup`` forces ``off``.
-    Never raises â€” a backup failure should not block the update itself.
+    Never raises — a backup failure should not block the update itself.
 
     Returns the quick-snapshot id (used by the post-update cron-jobs
     restore safety net), or ``None`` when mode is ``off`` or the snapshot
@@ -9997,9 +10012,9 @@ def _run_pre_update_backup(args) -> Optional[str]:
 
     if mode == "off":
         if getattr(args, "no_backup", False):
-            print("â—† Pre-update backup: skipped (--no-backup)")
+            print("◆ Pre-update backup: skipped (--no-backup)")
             print()
-        # Config-level off is silent â€” the user opted out; don't spam them
+        # Config-level off is silent — the user opted out; don't spam them
         # on every update.
         return None
 
@@ -10013,7 +10028,7 @@ def _run_pre_update_backup(args) -> Optional[str]:
             max_file_size=_PRE_UPDATE_SNAPSHOT_MAX_FILE_SIZE,
         )
         if snapshot_id:
-            print(f"â—† Pre-update snapshot: {snapshot_id}")
+            print(f"◆ Pre-update snapshot: {snapshot_id}")
     except Exception as exc:
         # Never let a snapshot failure block an update.
         logging.getLogger(__name__).debug("Pre-update snapshot failed: %s", exc)
@@ -10027,7 +10042,7 @@ def _run_pre_update_backup(args) -> Optional[str]:
         from kova_cli.backup import create_pre_update_backup
     except Exception as exc:
         print(
-            f"âš  Pre-update backup: could not load backup module ({exc}); continuing update."
+            f"⚠ Pre-update backup: could not load backup module ({exc}); continuing update."
         )
         print()
         return snapshot_id
@@ -10039,12 +10054,12 @@ def _run_pre_update_backup(args) -> Optional[str]:
     except Exception:
         _keep = 5
 
-    print("â—† Creating pre-update backup...")
+    print("◆ Creating pre-update backup...")
     t0 = _time.monotonic()
     try:
         out_path = create_pre_update_backup(keep=int(_keep))
-    except Exception as exc:  # defensive â€” helper already swallows, but just in case
-        print(f"  âš  Backup failed: {exc}")
+    except Exception as exc:  # defensive — helper already swallows, but just in case
+        print(f"  ⚠ Backup failed: {exc}")
         print("  Continuing with update.")
         print()
         return snapshot_id
@@ -10052,7 +10067,7 @@ def _run_pre_update_backup(args) -> Optional[str]:
     elapsed = _time.monotonic() - t0
 
     if out_path is None:
-        print("  âš  Backup skipped (no files found or write failed); continuing update.")
+        print("  ⚠ Backup skipped (no files found or write failed); continuing update.")
         print()
         return snapshot_id
 
@@ -10069,13 +10084,13 @@ def _run_pre_update_backup(args) -> Optional[str]:
         size_bytes /= 1024
         size_str = f"{size_bytes:.1f} {unit}"
 
-    # Render path using display_hermes_home so the user sees ~/.hermes/...
+    # Render path using display_kova_home so the user sees ~/.hermes/...
     try:
-        from kova_constants import get_hermes_home, display_hermes_home
+        from kova_constants import get_kova_home, display_kova_home
 
-        home = get_hermes_home()
+        home = get_kova_home()
         try:
-            display_path = f"{display_hermes_home()}/{out_path.relative_to(home)}"
+            display_path = f"{display_kova_home()}/{out_path.relative_to(home)}"
         except ValueError:
             display_path = str(out_path)
     except Exception:
@@ -10147,13 +10162,13 @@ def _wait_for_windows_update_gateway_exit(
 def _venv_core_imports_healthy() -> tuple[bool, str]:
     """Probe the project venv for the core imports the backend needs to boot.
 
-    Runs a tiny import check inside the venv interpreter (NOT this process â€”
+    Runs a tiny import check inside the venv interpreter (NOT this process —
     ``kova update`` may be driven by a different Python). Catches the
     half-updated-venv state: git checkout current but a dependency sync that
     failed or was killed partway (e.g. Windows access-denied on a loaded
     .pyd), leaving imports like ``fastapi``'s new transitive deps missing.
     Without this probe, ``kova update`` on a current checkout prints
-    "Already up to date!" and returns without ever re-syncing dependencies â€”
+    "Already up to date!" and returns without ever re-syncing dependencies —
     the user's install stays broken no matter how many times they update
     (ryanc's incident, July 2026).
 
@@ -10166,11 +10181,11 @@ def _venv_core_imports_healthy() -> tuple[bool, str]:
     venv_python = venv_dir / bin_dir / python_name
     if not venv_python.exists():
         # No venv interpreter at all. In a dev checkout that's normal (the
-        # dev may run hermes from any interpreter), so report healthy to
+        # dev may run kova from any interpreter), so report healthy to
         # avoid forcing reinstalls. But on a MANAGED install (the Windows
         # installer / desktop bootstrap stamps `.hermes-bootstrap-complete`,
         # and an interrupted update leaves `.update-incomplete`), the venv
-        # IS the install â€” its absence means a repair got interrupted after
+        # IS the install — its absence means a repair got interrupted after
         # the old venv was moved aside, and "Already up to date!" would
         # gaslight the user while nothing can run.
         managed_markers = (
@@ -10182,7 +10197,7 @@ def _venv_core_imports_healthy() -> tuple[bool, str]:
         return True, ""
 
     # Core web/serve imports plus their newest transitive deps. Import (not
-    # just metadata) â€” a package can have intact dist-info but a missing
+    # just metadata) — a package can have intact dist-info but a missing
     # module after an interrupted uninstall/install cycle.
     check = (
         "import importlib\n"
@@ -10207,7 +10222,7 @@ def _venv_core_imports_healthy() -> tuple[bool, str]:
 
     missing = [line.strip() for line in (result.stdout or "").splitlines() if line.strip()]
     if result.returncode != 0 and not missing:
-        # Interpreter itself is broken (e.g. deleted stdlib) â€” that IS unhealthy.
+        # Interpreter itself is broken (e.g. deleted stdlib) — that IS unhealthy.
         detail = (result.stderr or "").strip().splitlines()
         return False, detail[0] if detail else "venv python failed to run"
     if missing:
@@ -10220,15 +10235,15 @@ def _detect_venv_python_processes(
 ) -> list[tuple[int, str, str]]:
     """Find live processes running from the project venv's interpreter.
 
-    The hermes.exe shim guard misses the biggest lock-holder class on
+    The kova.exe shim guard misses the biggest lock-holder class on
     Windows: the Desktop app's backend (``python.exe -m kova_cli.main
     serve``) and anything else running straight off ``venv\\Scripts\\python
     (w).exe``. Those processes keep native ``.pyd`` extensions mapped, so a
     dependency sync mid-update dies with access-denied and strands the venv
     half-updated (ryanc's brotlicffi/_sodium.pyd incidents, July 2026).
 
-    Killing them from here is pointless â€” the Desktop app supervises its
-    backend and respawns it within seconds â€” so the caller should refuse and
+    Killing them from here is pointless — the Desktop app supervises its
+    backend and respawns it within seconds — so the caller should refuse and
     tell the user to close the app instead. Returns ``(pid, name, cmdline)``
     tuples; empty off-Windows / without psutil / when nothing matches. The
     calling process and its ancestors are always excluded (a CLI ``kova
@@ -10282,7 +10297,7 @@ def _detect_venv_python_processes(
         cwd_low = str(info.get("cwd") or "").lower().rstrip(os.sep) + os.sep
 
         # Primary match: the executable itself lives under this venv
-        # (venv\Scripts\python(w).exe â€” the desktop backend / gateway case).
+        # (venv\Scripts\python(w).exe — the desktop backend / gateway case).
         is_holder = exe_norm.startswith(venv_prefix)
         # Fallback: uv/base-interpreter trampolines run a python whose exe is
         # OUTSIDE the venv but which still imports from it and holds its .pyd
@@ -10304,15 +10319,15 @@ def _detect_venv_python_processes(
 def _format_venv_python_holders_message(matches: list[tuple[int, str, str]]) -> str:
     """Explain which venv processes block the update and how to clear them."""
     lines = [
-        "âœ— Other Kova processes are running from this install's venv:",
+        "✗ Other Kova processes are running from this install's venv:",
     ]
     for pid, name, cmdline in matches[:6]:
         hint = ""
         low = cmdline.lower()
         if "serve" in low or "dashboard" in low:
-            hint = "  â† Kova Desktop backend (close the desktop app)"
+            hint = "  ← Kova Desktop backend (close the desktop app)"
         elif "gateway" in low:
-            hint = "  â† gateway"
+            hint = "  ← gateway"
         lines.append(f"  PID {pid}  {name}  {cmdline}{hint}")
     if len(matches) > 6:
         lines.append(f"  ... and {len(matches) - 6} more")
@@ -10335,7 +10350,7 @@ def _pause_windows_gateways_for_update() -> dict | None:
     """Stop running Windows gateways before mutating the checkout or venv.
 
     Windows scheduled/startup gateways run through pythonw.exe, so the generic
-    hermes.exe concurrent-instance guard does not see them. They still import
+    kova.exe concurrent-instance guard does not see them. They still import
     from the checkout and can keep files locked while ``git`` or ``uv`` updates
     the install. Stop only PIDs that the gateway discovery code identifies.
     """
@@ -10361,7 +10376,7 @@ def _pause_windows_gateways_for_update() -> dict | None:
         return None
     if not running_pids:
         # No gateway is running right now, but the user may have installed an
-        # autostart entry (Scheduled Task or Startup-folder login item) â€” that
+        # autostart entry (Scheduled Task or Startup-folder login item) — that
         # is an explicit "I want a gateway" signal. A gateway that died between
         # updates (e.g. the spawning terminal/TUI closed, taking its child with
         # it) would otherwise never come back: the autostart entry only fires on
@@ -10405,7 +10420,7 @@ def _pause_windows_gateways_for_update() -> dict | None:
         mapped_pids.append(int(pid))
         _write_update_planned_stop_marker(Path(proc.path), int(pid))
 
-    print("â†’ Stopping Windows gateway process(es) before updating Kova...")
+    print("→ Stopping Windows gateway process(es) before updating Kova...")
     try:
         drain_timeout = max(float(_get_restart_drain_timeout()), 1.0)
     except Exception:
@@ -10418,8 +10433,8 @@ def _pause_windows_gateways_for_update() -> dict | None:
 
     # Snapshot each unmapped gateway's command line *before* we force-kill it,
     # so ``_resume_windows_gateways_after_update`` can respawn it by replaying
-    # its own argv. Unmapped gateways are ones with no profileâ†’PID-file mapping
-    # â€” e.g. a Windows Scheduled Task running ``pythonw.exe -m kova_cli.main
+    # its own argv. Unmapped gateways are ones with no profile→PID-file mapping
+    # — e.g. a Windows Scheduled Task running ``pythonw.exe -m kova_cli.main
     # gateway run``. Without this snapshot they were force-killed and never
     # restarted (the "Restart manually after update" dead-end from #50090).
     unmapped: list[dict] = []
@@ -10442,12 +10457,12 @@ def _pause_windows_gateways_for_update() -> dict | None:
     if profiles:
         print(f"  ✓ Paused gateway profile(s): {', '.join(sorted(profiles))}")
     if force_killed:
-        print(f"  â†’ Force-stopped {len(force_killed)} gateway process(es)")
+        print(f"  → Force-stopped {len(force_killed)} gateway process(es)")
 
     if unmapped_pids:
         respawnable = sum(1 for u in unmapped if u.get("argv"))
         print(
-            f"  â†’ Stopped {len(unmapped_pids)} gateway process(es) without profile mapping"
+            f"  → Stopped {len(unmapped_pids)} gateway process(es) without profile mapping"
         )
         if respawnable < len(unmapped_pids):
             # Some had no recoverable command line (psutil missing, access
@@ -10469,7 +10484,7 @@ def _cold_start_windows_gateway_after_update() -> None:
     ``cold_start_if_installed`` case: no gateway was running when the update
     began, but an autostart entry (Scheduled Task / Startup-folder login item)
     is installed, signalling the user wants a gateway. Unlike the relaunch
-    paths â€” which watch an old PID and respawn once it exits â€” this is a direct
+    paths — which watch an old PID and respawn once it exits — this is a direct
     fresh spawn via the same hidden-console + breakaway path that
     ``kova gateway start`` uses (``gateway_windows._spawn_detached``).
 
@@ -10486,7 +10501,7 @@ def _cold_start_windows_gateway_after_update() -> None:
         logger.debug("Could not load Windows gateway cold-start helpers: %s", exc)
         return
 
-    # Re-check liveness right before spawning â€” between pause and resume the
+    # Re-check liveness right before spawning — between pause and resume the
     # autostart entry may have already brought a gateway up, or a leftover
     # process may have re-registered. Don't double-start.
     try:
@@ -10514,7 +10529,7 @@ def _for_each_systemd_gateway_unit(
     process_unit,
     on_unit_timeout,
 ) -> None:
-    """Process each ``hermes-gateway*.service`` from ``systemctl list-units``.
+    """Process each ``kova-gateway*.service`` from ``systemctl list-units``.
 
     ``subprocess.TimeoutExpired`` raised by ``process_unit`` is isolated to
     that unit via ``on_unit_timeout`` so one wedged systemctl call cannot
@@ -10529,7 +10544,7 @@ def _for_each_systemd_gateway_unit(
             continue
         # list-units is already pattern-filtered, but keep the name gate so a
         # stray non-gateway line cannot enter the restart path.
-        if not (unit.startswith("hermes-gateway") or unit.startswith("kova-gateway")):
+        if not (unit.startswith("kova-gateway") or unit.startswith("kova-gateway")):
             continue
         svc_name = unit.removesuffix(".service")
         try:
@@ -10551,7 +10566,7 @@ def _warn_incomplete_gateway_fleet_restart(failed_units: list) -> None:
         seen.add(name)
         ordered.append(name)
     print()
-    print("âš  Update incomplete â€” some gateway units were not restarted:")
+    print("⚠ Update incomplete — some gateway units were not restarted:")
     for name in ordered:
         print(f"    - {name}")
     print("  Skipped units may still be running pre-update code (mixed")
@@ -10598,7 +10613,7 @@ def _resume_windows_gateways_after_update(token: dict | None) -> None:
                 exc,
             )
 
-    # Respawn unmapped gateways (no profileâ†’PID-file mapping, e.g. a Scheduled
+    # Respawn unmapped gateways (no profile→PID-file mapping, e.g. a Scheduled
     # Task) by replaying the argv we snapshotted before force-killing them.
     unmapped_relaunched = 0
     for entry in unmapped:
@@ -10664,7 +10679,7 @@ def _discard_lockfile_churn(git_cmd, repo_root):
             text=True,
             check=False,
         )
-        print(f"â†’ Discarded npm lockfile churn ({len(dirty)} file(s))")
+        print(f"→ Discarded npm lockfile churn ({len(dirty)} file(s))")
     except Exception:
         # Never let lockfile cleanup block an update.
         pass
@@ -10689,7 +10704,7 @@ def cmd_update(args):
         managed_error("update Kova Agent")
         return
 
-    # Docker users can't ``git pull`` â€” the image excludes ``.git`` from
+    # Docker users can't ``git pull`` — the image excludes ``.git`` from
     # the build context.  Bail with a friendly explanation pointing at
     # ``docker pull`` BEFORE any of the apply-path / check-path branches
     # below get a chance to error out with misleading "Not a git
@@ -10727,7 +10742,7 @@ def cmd_update(args):
 
 
 def _cmd_update_impl(args, gateway_mode: bool):
-    """Body of ``cmd_update`` â€” kept separate so the wrapper can always
+    """Body of ``cmd_update`` — kept separate so the wrapper can always
     restore stdio even on ``sys.exit``."""
     # In gateway mode, use file-based IPC for prompts instead of stdin
     gw_input_fn = (
@@ -10761,22 +10776,22 @@ def _cmd_update_impl(args, gateway_mode: bool):
             logger.debug("Could not read updates.non_interactive_local_changes: %s", exc)
             discard_local_changes = False
 
-    print("âš• Updating Kova Agent...")
+    print("⚕ Updating Kova Agent...")
     print()
 
-    # On Windows, abort early if another hermes.exe is holding the venv shim
+    # On Windows, abort early if another kova.exe is holding the venv shim
     # open. Continuing would result in a string of WinError 32 warnings and
     # then either a deferred-rename leftover or a failed git-pull fast path
     # that silently falls back to the slower ZIP route. See issue #26670.
     if _is_windows() and not getattr(args, "force", False):
         scripts_dir = _venv_scripts_dir()
         if scripts_dir is not None:
-            concurrent = _detect_concurrent_hermes_instances(scripts_dir)
+            concurrent = _detect_concurrent_kova_instances(scripts_dir)
             if concurrent:
                 print(_format_concurrent_instances_message(concurrent, scripts_dir))
                 sys.exit(2)
 
-    # Pre-update backup â€” runs before any git/file mutation so users can
+    # Pre-update backup — runs before any git/file mutation so users can
     # always roll back to the exact state they had before this update.
     # Returns the quick-snapshot id (or None when disabled/failed); the
     # post-update cron-jobs safety net uses it to detect job loss.
@@ -10797,8 +10812,8 @@ def _cmd_update_impl(args, gateway_mode: bool):
     # race: killing the desktop backend is futile (the app supervises and
     # respawns it), so the user must close the app. Deliberately NOT bypassed
     # by plain --force: the desktop bootstrap updater passes --force to skip
-    # the hermes.exe shim guard above, but its lock probe only checks the shim
-    # and app.asar â€” a non-desktop venv python holding a .pyd would sail
+    # the kova.exe shim guard above, but its lock probe only checks the shim
+    # and app.asar — a non-desktop venv python holding a .pyd would sail
     # through and corrupt the sync (the exact failure this guard exists for).
     # --force-venv is the explicit escape hatch.
     if _is_windows() and not getattr(args, "force_venv", False):
@@ -10817,7 +10832,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
         if sys.platform == "win32":
             use_zip_update = True
         else:
-            print("âœ— Not a git repository. Please reinstall:")
+            print("✗ Not a git repository. Please reinstall:")
             print(
                 "  curl -fsSL https://kova-agent.nousresearch.com/install.sh | bash"
             )
@@ -10840,7 +10855,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
             capture_output=True,
         )
 
-    # Build git command once â€” reused for fork detection and the update itself.
+    # Build git command once — reused for fork detection and the update itself.
     git_cmd = ["git"]
     if sys.platform == "win32":
         git_cmd = ["git", "-c", "windows.appendAtomically=false"]
@@ -10849,7 +10864,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
     # tracked package-lock.json files non-deterministically at install/build
     # time (platform-specific optional deps, ideallyInert annotations, etc.),
     # which is never an intentional edit on a managed install but leaves the
-    # tree dirty â€” forcing an autostash on every update and making branch
+    # tree dirty — forcing an autostash on every update and making branch
     # switches fragile. Restoring them first lets the common case (only
     # lockfile churn) update with a clean tree.
     _discard_lockfile_churn(git_cmd, PROJECT_ROOT)
@@ -10859,7 +10874,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
     is_fork = _is_fork(origin_url)
 
     if is_fork:
-        print("âš  Updating from fork:")
+        print("⚠ Updating from fork:")
         print(f"  {origin_url}")
         print()
 
@@ -10876,12 +10891,12 @@ def _cmd_update_impl(args, gateway_mode: bool):
 
         # Resolve the target branch up front so the fetch can be scoped to it.
         # A bare `git fetch origin` pulls every ref, and this repo carries
-        # thousands of auto-generated branches â€” an unscoped fetch can stall for
+        # thousands of auto-generated branches — an unscoped fetch can stall for
         # minutes on a non-single-branch checkout. Fetch only what we update
         # against.
         branch = _resolve_update_branch(args)
 
-        print("â†’ Fetching updates...")
+        print("→ Fetching updates...")
         fetch_result = subprocess.run(
             git_cmd + ["fetch", "origin", branch],
             cwd=PROJECT_ROOT,
@@ -10891,16 +10906,16 @@ def _cmd_update_impl(args, gateway_mode: bool):
         if fetch_result.returncode != 0:
             stderr = fetch_result.stderr.strip()
             if "Could not resolve host" in stderr or "unable to access" in stderr:
-                print("âœ— Network error â€” cannot reach the remote repository.")
+                print("✗ Network error — cannot reach the remote repository.")
                 print(f"  {stderr.splitlines()[0]}" if stderr else "")
             elif (
                 "Authentication failed" in stderr or "could not read Username" in stderr
             ):
                 print(
-                    "âœ— Authentication failed â€” check your git credentials or SSH key."
+                    "✗ Authentication failed — check your git credentials or SSH key."
                 )
             else:
-                print("âœ— Failed to fetch updates from origin.")
+                print("✗ Failed to fetch updates from origin.")
                 if stderr:
                     print(f"  {stderr.splitlines()[0]}")
             sys.exit(1)
@@ -10918,7 +10933,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
         # If user is on a different branch than the update target, switch
         # to the target. When the target is "main" this is the historical
         # "always update against main" behavior; for any other target it's
-        # the same thing â€” get HEAD onto the requested branch first, then
+        # the same thing — get HEAD onto the requested branch first, then
         # fast-forward.
         if current_branch != branch:
             label = (
@@ -10926,7 +10941,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                 if current_branch == "HEAD"
                 else f"branch '{current_branch}'"
             )
-            print(f"  âš  Currently on {label} â€” switching to {branch} for update...")
+            print(f"  ⚠ Currently on {label} — switching to {branch} for update...")
             # Stash before checkout so uncommitted work isn't lost
             auto_stash_ref = _stash_local_changes_if_needed(git_cmd, PROJECT_ROOT)
             checkout_result = subprocess.run(
@@ -10957,7 +10972,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                             prompt_user=False,
                             input_fn=gw_input_fn,
                         )
-                    print(f"âœ— Branch '{branch}' does not exist locally or on origin.")
+                    print(f"✗ Branch '{branch}' does not exist locally or on origin.")
                     if track_result.stderr.strip():
                         print(f"  {track_result.stderr.strip().splitlines()[0]}")
                     sys.exit(1)
@@ -11009,14 +11024,14 @@ def _cmd_update_impl(args, gateway_mode: bool):
             # dependency sync may have failed partway (classic on Windows,
             # where a running gateway/desktop backend keeps .pyd files locked
             # and uv/pip dies with access-denied, stranding the venv between
-            # versions). Probe the venv's core imports and repair if broken â€”
+            # versions). Probe the venv's core imports and repair if broken —
             # otherwise "Already up to date!" gaslights the user while their
             # install stays bricked.
             healthy, detail = _venv_core_imports_healthy()
             if not healthy:
-                print("âš  Checkout is current, but the venv is unhealthy:")
+                print("⚠ Checkout is current, but the venv is unhealthy:")
                 print(f"  {detail}")
-                print("â†’ Repairing Python dependencies...")
+                print("→ Repairing Python dependencies...")
                 _write_update_incomplete_marker()
                 from kova_cli.managed_uv import ensure_uv
 
@@ -11031,7 +11046,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                     / ("python.exe" if _is_windows() else "python")
                 ).exists()
                 if venv_python_missing and repair_uv:
-                    print("â†’ Recreating virtual environment...")
+                    print("→ Recreating virtual environment...")
                     subprocess.run(
                         [repair_uv, "venv", "venv"],
                         cwd=PROJECT_ROOT,
@@ -11051,16 +11066,16 @@ def _cmd_update_impl(args, gateway_mode: bool):
                 if healthy_after:
                     print("✓ Dependencies repaired!")
                 else:
-                    print(f"âš  Venv still unhealthy after repair: {detail_after}")
+                    print(f"⚠ Venv still unhealthy after repair: {detail_after}")
                     print("  Close all Kova windows/gateways and re-run: kova update")
             else:
                 print("✓ Already up to date!")
             _resume_windows_gateways_after_update(_windows_gateway_resume)
             return
 
-        print(f"â†’ Found {commit_count} new commit(s)")
+        print(f"→ Found {commit_count} new commit(s)")
 
-        print("â†’ Pulling updates...")
+        print("→ Pulling updates...")
         update_succeeded = False
         # Capture the pre-pull SHA so we can auto-roll-back if the new code
         # has a syntax error in a critical-path file (PR #28452 incident:
@@ -11076,11 +11091,11 @@ def _cmd_update_impl(args, gateway_mode: bool):
                 text=True,
             )
             if pull_result.returncode != 0:
-                # ff-only failed â€” local and remote have diverged (e.g. upstream
+                # ff-only failed — local and remote have diverged (e.g. upstream
                 # force-pushed or rebase).  Since local changes are already
                 # stashed, reset to match the remote exactly.
                 print(
-                    "  âš  Fast-forward not possible (history diverged), resetting to match remote..."
+                    "  ⚠ Fast-forward not possible (history diverged), resetting to match remote..."
                 )
                 reset_result = subprocess.run(
                     git_cmd + ["reset", "--hard", f"origin/{branch}"],
@@ -11089,7 +11104,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                     text=True,
                 )
                 if reset_result.returncode != 0:
-                    print(f"âœ— Failed to reset to origin/{branch}.")
+                    print(f"✗ Failed to reset to origin/{branch}.")
                     if reset_result.stderr.strip():
                         print(f"  {reset_result.stderr.strip()}")
                     print(
@@ -11108,7 +11123,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
             )
             if not syntax_ok:
                 print()
-                print("âœ— Pulled code has a syntax error in a critical file:")
+                print("✗ Pulled code has a syntax error in a critical file:")
                 print(f"  {failing_path}")
                 if syntax_error:
                     # py_compile errors can be multi-line; show the first
@@ -11117,7 +11132,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                         print(f"    {line}")
                 if pre_pull_sha:
                     print()
-                    print(f"â†’ Rolling back to {pre_pull_sha[:10]}...")
+                    print(f"→ Rolling back to {pre_pull_sha[:10]}...")
                     rollback_result = subprocess.run(
                         git_cmd + ["reset", "--hard", pre_pull_sha],
                         cwd=PROJECT_ROOT,
@@ -11125,27 +11140,27 @@ def _cmd_update_impl(args, gateway_mode: bool):
                         text=True,
                     )
                     if rollback_result.returncode == 0:
-                        print("  ✓ Rollback complete â€” your install is unchanged.")
+                        print("  ✓ Rollback complete — your install is unchanged.")
                         print("  Try ``kova update`` again later once a fix lands.")
                     else:
-                        print("  âœ— Rollback failed. Recover manually with:")
+                        print("  ✗ Rollback failed. Recover manually with:")
                         print(f"    cd {PROJECT_ROOT} && git reset --hard {pre_pull_sha}")
                         if rollback_result.stderr.strip():
                             print(f"    ({rollback_result.stderr.strip().splitlines()[0]})")
                 else:
                     print()
-                    print("  Could not capture pre-pull SHA â€” recover manually with:")
+                    print("  Could not capture pre-pull SHA — recover manually with:")
                     print(f"    cd {PROJECT_ROOT} && git reflog && git reset --hard <prev-sha>")
                 sys.exit(1)
 
             update_succeeded = True
         finally:
             if auto_stash_ref is not None:
-                # Don't attempt stash restore if the code update itself failed â€”
+                # Don't attempt stash restore if the code update itself failed —
                 # working tree is in an unknown state.
                 if not update_succeeded:
                     print(
-                        f"  â„¹ï¸  Local changes preserved in stash (ref: {auto_stash_ref})"
+                        f"  ℹ️  Local changes preserved in stash (ref: {auto_stash_ref})"
                     )
                     print("  Restore manually with: git stash apply")
                 elif discard_local_changes:
@@ -11168,9 +11183,9 @@ def _cmd_update_impl(args, gateway_mode: bool):
 
         _invalidate_update_cache()
 
-        # Clear stale .pyc bytecode cache â€” prevents ImportError on gateway
+        # Clear stale .pyc bytecode cache — prevents ImportError on gateway
         # restart when updated source references names that didn't exist in
-        # the old bytecode (e.g. get_hermes_home added to kova_constants).
+        # the old bytecode (e.g. get_kova_home added to kova_constants).
         removed = _clear_bytecode_cache(PROJECT_ROOT)
         if removed:
             print(
@@ -11189,12 +11204,12 @@ def _cmd_update_impl(args, gateway_mode: bool):
         # install is killed mid-flight (Ctrl-C, terminal close, WSL OOM), the
         # marker survives and the next ``kova`` launch finishes the install
         # via ``_recover_from_interrupted_install``. Cleared after the core
-        # ``.[all]`` install completes â€” lazy refresh uses a separate marker.
+        # ``.[all]`` install completes — lazy refresh uses a separate marker.
         _write_update_incomplete_marker()
-        print("â†’ Updating Python dependencies...")
+        print("→ Updating Python dependencies...")
         from kova_cli.managed_uv import ensure_uv, update_managed_uv
 
-        # Keep managed uv current â€” runs `uv self update` if we already have one.
+        # Keep managed uv current — runs `uv self update` if we already have one.
         update_managed_uv()
 
         uv_bin = ensure_uv()
@@ -11210,9 +11225,9 @@ def _cmd_update_impl(args, gateway_mode: bool):
                 uv_env.pop("PYTHONPATH", None)
                 uv_env.pop("PYTHONHOME", None)
                 install_group = "termux-all"
-                print("  â†’ Termux detected: using uv + curated termux-all optional profile...")
+                print("  → Termux detected: using uv + curated termux-all optional profile...")
             if _is_termux_env(uv_env) and _is_android_python():
-                print("  â†’ Termux/Android detected: prebuilding psutil with Linux source path compatibility...")
+                print("  → Termux/Android detected: prebuilding psutil with Linux source path compatibility...")
                 _install_psutil_android_compat([uv_bin, "pip"], env=uv_env)
             _install_python_dependencies_with_optional_fallback(
                 [uv_bin, "pip"], env=uv_env, group=install_group
@@ -11238,9 +11253,9 @@ def _cmd_update_impl(args, gateway_mode: bool):
                 )
             if _is_termux_env():
                 install_group = "termux-all"
-                print("  â†’ Termux detected: using curated termux-all optional profile...")
+                print("  → Termux detected: using curated termux-all optional profile...")
             if _is_termux_env() and _is_android_python():
-                print("  â†’ Termux/Android detected: prebuilding psutil with Linux source path compatibility...")
+                print("  → Termux/Android detected: prebuilding psutil with Linux source path compatibility...")
                 _install_psutil_android_compat(pip_cmd)
             _install_python_dependencies_with_optional_fallback(pip_cmd, group=install_group)
 
@@ -11248,12 +11263,12 @@ def _cmd_update_impl(args, gateway_mode: bool):
         lazy_env = uv_env if uv_bin else None
 
         # Core ``.[all]`` install finished. Clear the generic core breadcrumb
-        # before the lazy-refresh phase â€” that phase uses its own marker so a
+        # before the lazy-refresh phase — that phase uses its own marker so a
         # later lazy failure cannot be "healed" by clearing the core marker
         # based on a narrow 7-package import probe (#58004 review).
         _clear_update_incomplete_marker()
 
-        # Upgrade pip before lazy refreshes â€” stale pip can fail source builds
+        # Upgrade pip before lazy refreshes — stale pip can fail source builds
         # and leave partially-written packages (#57828).
         _write_lazy_refresh_incomplete_marker()
         _upgrade_pip_before_lazy_refresh(install_prefix, env=lazy_env)
@@ -11265,7 +11280,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
             _clear_lazy_refresh_incomplete_marker()
         else:
             print(
-                "  âš  Lazy-refresh recovery incomplete â€” run `kova` again "
+                "  ⚠ Lazy-refresh recovery incomplete — run `kova` again "
                 "to finish import-based venv repair."
             )
 
@@ -11282,32 +11297,32 @@ def _cmd_update_impl(args, gateway_mode: bool):
         desktop_dir = PROJECT_ROOT / "apps" / "desktop"
         has_desktop_app = _desktop_packaged_executable(desktop_dir) is not None or _desktop_dist_exists(desktop_dir)
         if (desktop_dir / "package.json").exists() and _resolve_node_runtime_npm() and has_desktop_app:
-            print("â†’ Checking if desktop app needs rebuilding...")
+            print("→ Checking if desktop app needs rebuilding...")
             _desktop_build_cmd = [sys.executable, "-m", "kova_cli.main", "desktop", "--build-only"]
             # Capture the (very loud) Electron/vite build output into
             # update.log instead of streaming it to the terminal. On the rare
-            # nonzero exit, retry once after waiting again for the venv â€” this
+            # nonzero exit, retry once after waiting again for the venv — this
             # covers a still-settling rebuild window the first wait didn't fully
-            # catch â€” then surface the captured tail so the failure is
+            # catch — then surface the captured tail so the failure is
             # debuggable.
             #
             # Start the build subprocess with the Kova-managed Node on PATH:
             # when `kova update` runs inside the desktop updater chain
-            # (Desktop â†’ hermes-setup â†’ kova update), the shell PATH
+            # (Desktop → kova-setup → kova update), the shell PATH
             # customizations are lost, so a bare-PATH child would fail with
             # `node: not found` before cmd_gui can self-heal.
-            from kova_constants import with_hermes_node_path
+            from kova_constants import with_kova_node_path
 
-            _build_env = with_hermes_node_path()
+            _build_env = with_kova_node_path()
             build_result = _run_logged_subprocess(_desktop_build_cmd, cwd=PROJECT_ROOT, env=_build_env)
             if build_result.returncode != 0:
                 build_result = _run_logged_subprocess(_desktop_build_cmd, cwd=PROJECT_ROOT, env=_build_env)
             if build_result.returncode != 0:
-                print("  âš  Desktop build failed...run `kova desktop`` to retry)")
+                print("  ⚠ Desktop build failed (non-fatal; run `kova desktop` to retry)")
                 tail = "\n".join((build_result.stdout or "").strip().splitlines()[-15:])
                 if tail:
                     print(tail)
-                from kova_constants import display_hermes_home as _dhh
+                from kova_constants import display_kova_home as _dhh
                 print(f"  Full build log: {_dhh()}/logs/update.log")
             else:
                 print("  ✓ Desktop app up to date")
@@ -11318,7 +11333,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
         # Seed the model-catalog disk cache from the freshly-pulled checkout.
         # The repo ships the canonical catalog at
         # website/static/api/model-catalog.json, and `git pull` just made it
-        # current â€” so copy it straight over ~/.hermes/cache/model_catalog.json
+        # current — so copy it straight over ~/.hermes/cache/model_catalog.json
         # instead of waiting on a network fetch (which can be bot-gated or hit a
         # Portal hiccup). Keeps the model picker's curated/free lists in sync
         # with the version the user just installed. Non-fatal on failure: the
@@ -11334,36 +11349,36 @@ def _cmd_update_impl(args, gateway_mode: bool):
         # After git pull, source files on disk are newer than cached Python
         # modules in this process.  Reload kova_constants so that any lazy
         # import executed below (skills sync, gateway restart) sees new
-        # attributes like display_hermes_home() added since the last release.
+        # attributes like display_kova_home() added since the last release.
         try:
             import importlib
             import kova_constants as _hc
 
             importlib.reload(_hc)
         except Exception:
-            pass  # non-fatal â€” worst case a lazy import fails gracefully
+            pass  # non-fatal — worst case a lazy import fails gracefully
 
         # Sync bundled skills (copies new, updates changed, respects user deletions)
         try:
             from tools.skills_sync import sync_skills
 
             print()
-            print("â†’ Syncing bundled skills...")
+            print("→ Syncing bundled skills...")
             result = sync_skills(quiet=True)
             if result["copied"]:
                 print(f"  + {len(result['copied'])} new: {', '.join(result['copied'])}")
             if result.get("updated"):
                 print(
-                    f"  â†‘ {len(result['updated'])} updated: {', '.join(result['updated'])}"
+                    f"  ↑ {len(result['updated'])} updated: {', '.join(result['updated'])}"
                 )
             if result.get("user_modified"):
                 print(f"  ~ {len(result['user_modified'])} user-modified (kept)")
                 print(
-                    "    â†’ see them: kova skills list-modified  "
+                    "    → see them: kova skills list-modified  "
                     "(diff/reset to resume updates)"
                 )
             if result.get("cleaned"):
-                print(f"  âˆ’ {len(result['cleaned'])} removed from manifest")
+                print(f"  − {len(result['cleaned'])} removed from manifest")
             if not result["copied"] and not result.get("updated"):
                 print("  ✓ Skills are up to date")
         except Exception as e:
@@ -11383,7 +11398,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
             all_profiles = list_profiles()
             if all_profiles:
                 print()
-                print("â†’ Syncing bundled skills to all profiles...")
+                print("→ Syncing bundled skills to all profiles...")
                 for p in all_profiles:
                     try:
                         r = seed_profile_skills(p.path, quiet=True)
@@ -11397,7 +11412,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                             if copied:
                                 parts.append(f"+{copied} new")
                             if updated:
-                                parts.append(f"â†‘{updated} updated")
+                                parts.append(f"↑{updated} updated")
                             if modified:
                                 parts.append(f"~{modified} user-modified")
                             status = ", ".join(parts) if parts else "up to date"
@@ -11419,7 +11434,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
             if backfilled:
                 print()
                 print(
-                    f"â†’ Seeded .env for {len(backfilled)} profile(s) "
+                    f"→ Seeded .env for {len(backfilled)} profile(s) "
                     f"(copied from default): {', '.join(backfilled)}"
                 )
         except Exception:
@@ -11437,7 +11452,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
 
         # Check for config migrations
         print()
-        print("â†’ Checking configuration for new options...")
+        print("→ Checking configuration for new options...")
 
         from kova_cli.config import (
             get_missing_env_vars,
@@ -11457,7 +11472,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
         needs_migration = has_new_options or current_ver < latest_ver
 
         if version_bump_only:
-            # Nothing for the user to fill in â€” only the config format version
+            # Nothing for the user to fill in — only the config format version
             # changed (new defaults already merge in transparently). Asking
             # "configure new options now?" here is misleading: saying yes just
             # bumps the version and looks like a no-op (issue: ScottFive /
@@ -11470,7 +11485,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                 migrate_config(interactive=False, quiet=True)
                 print("  ✓ Config format updated (no new settings to configure)")
             except Exception as _mig_err:
-                print(f"  âš ï¸  Config format update failed: {_mig_err}")
+                print(f"  ⚠️  Config format update failed: {_mig_err}")
                 print("     Run 'kova config migrate' to retry.")
         elif needs_migration:
             print()
@@ -11490,26 +11505,26 @@ def _cmd_update_impl(args, gateway_mode: bool):
                         name = str(it)
                         desc = ""
                     if desc:
-                        print(f"      â€¢ {name} â€” {desc}")
+                        print(f"      • {name} — {desc}")
                     else:
-                        print(f"      â€¢ {name}")
+                        print(f"      • {name}")
                 extra = len(items) - len(shown)
                 if extra > 0:
-                    print(f"      â€¦ and {extra} more")
+                    print(f"      … and {extra} more")
 
             if missing_env:
                 print(
-                    f"  âš ï¸  {len(missing_env)} new required setting(s) need configuration"
+                    f"  ⚠️  {len(missing_env)} new required setting(s) need configuration"
                 )
                 _print_items(missing_env, "New settings", "name")
             if missing_config:
-                print(f"  â„¹ï¸  {len(missing_config)} new config option(s) available")
+                print(f"  ℹ️  {len(missing_config)} new config option(s) available")
                 _print_items(missing_config, "New options", "key")
 
             print()
             if assume_yes:
                 print(
-                    "  â„¹ --yes: auto-applying config migration (skipping API-key prompts)."
+                    "  ℹ --yes: auto-applying config migration (skipping API-key prompts)."
                 )
                 response = "y"
             elif gateway_mode:
@@ -11521,7 +11536,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                     .lower()
                 )
             elif not (sys.stdin.isatty() and sys.stdout.isatty()):
-                print("  â„¹ Non-interactive session â€” applying safe config migrations.")
+                print("  ℹ Non-interactive session — applying safe config migrations.")
                 response = "auto"
             else:
                 try:
@@ -11549,7 +11564,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                     print()
                     print("✓ Configuration updated!")
                 if (gateway_mode or assume_yes or response == "auto") and missing_env:
-                    print("  â„¹ API keys require manual entry: kova config migrate")
+                    print("  ℹ API keys require manual entry: kova config migrate")
             else:
                 print()
                 print("Skipped. Run 'kova config migrate' later to configure.")
@@ -11569,7 +11584,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
             if cron_restore:
                 print()
                 print(
-                    "  âš ï¸  cron/jobs.json lost jobs during this update â€” "
+                    "  ⚠️  cron/jobs.json lost jobs during this update — "
                     f"restored {cron_restore['job_count']} job(s) from "
                     f"pre-update snapshot {cron_restore['snapshot_id']}."
                 )
@@ -11580,7 +11595,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
         print()
         if node_failures:
             print(
-                "âš  Update partially complete â€” Node.js dependencies for "
+                "⚠ Update partially complete — Node.js dependencies for "
                 f"{', '.join(node_failures)} did not refresh."
             )
             print("  Code and Python deps are updated, but the dashboard/TUI may")
@@ -11589,8 +11604,8 @@ def _cmd_update_impl(args, gateway_mode: bool):
             print("✓ Update complete!")
 
         # Search-index optimization notice (v23). Existing installs keep their
-        # working search index untouched on update; the compact v23 layout â€”
-        # which reclaims a large fraction of state.db on heavy users â€” is
+        # working search index untouched on update; the compact v23 layout —
+        # which reclaims a large fraction of state.db on heavy users — is
         # opt-in. Surface it here (the moment the user is already thinking
         # about their install) with the exact command and the concrete size
         # win. Show-once-ish: only when a legacy index is actually present.
@@ -11600,7 +11615,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
             logger.debug("FTS optimize notice failed: %s", e)
 
         # Curator first-run heads-up. Only prints when curator is enabled AND
-        # has never run â€” i.e. the window where the ticker would otherwise
+        # has never run — i.e. the window where the ticker would otherwise
         # have fired against a fresh skill library. Kept silent on steady
         # state so we don't nag.
         try:
@@ -11608,8 +11623,8 @@ def _cmd_update_impl(args, gateway_mode: bool):
         except Exception as e:
             logger.debug("Curator first-run notice failed: %s", e)
 
-        # Most-recent curator run notice â€” show-once per run. Surfaces the
-        # rename map (`old-name â†’ umbrella`) on the high-attention update
+        # Most-recent curator run notice — show-once per run. Surfaces the
+        # rename map (`old-name → umbrella`) on the high-attention update
         # surface so users learn about consolidations without having to
         # check `kova curator status`. Self-stamps after printing so it
         # never repeats for the same run.
@@ -11652,7 +11667,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                 from kova_cli.tools_config import install_cua_driver
 
                 print()
-                print("â†’ Refreshing cua-driver (Computer Use)...")
+                print("→ Refreshing cua-driver (Computer Use)...")
                 install_cua_driver(upgrade=True)
         except Exception as e:
             logger.debug("cua-driver refresh failed: %s", e)
@@ -11663,18 +11678,18 @@ def _cmd_update_impl(args, gateway_mode: bool):
         # cgroup.  A graceful SIGUSR1 restart keeps the drain loop alive long
         # enough for the exit-code marker to be written below, but the
         # fallback ``systemctl restart`` path (see below) kills everything in
-        # the cgroup (KillMode=mixed â†’ SIGKILL to remaining processes),
+        # the cgroup (KillMode=mixed → SIGKILL to remaining processes),
         # including us and the wrapping bash shell.  The shell never reaches
         # its ``printf $status > .update_exit_code`` epilogue, so the
         # exit-code marker file would never be created.  The new gateway's
         # update watcher would then poll for 30 minutes and send a spurious
         # timeout message.
         #
-        # Writing the marker here â€” after git pull + pip install succeed but
-        # before we attempt the restart â€” ensures the new gateway sees it
+        # Writing the marker here — after git pull + pip install succeed but
+        # before we attempt the restart — ensures the new gateway sees it
         # regardless of how we die.
         if gateway_mode:
-            _exit_code_path = get_hermes_home() / ".update_exit_code"
+            _exit_code_path = get_kova_home() / ".update_exit_code"
             try:
                 _exit_code_path.write_text("0")
             except OSError:
@@ -11790,17 +11805,17 @@ def _cmd_update_impl(args, gateway_mode: bool):
                 service trigger a polkit ``org.freedesktop.systemd1.manage-units``
                 authentication prompt when run as a non-root user.  That
                 interactive prompt runs inside our captured subprocess with a
-                10-15s timeout â€” the user sees the prompt flash and "exit
+                10-15s timeout — the user sees the prompt flash and "exit
                 directly" before they can answer, and the resulting
                 TimeoutExpired used to be swallowed silently.
 
                 Strategy: if root, plain systemctl.  If not root, try
-                non-interactive sudo (``sudo -n``) â€” first a blanket probe,
+                non-interactive sudo (``sudo -n``) — first a blanket probe,
                 then a targeted ``systemctl reset-failed`` probe so a
                 least-privilege sudoers entry scoped to
-                ``systemctl ... hermes-gateway*`` also qualifies
+                ``systemctl ... kova-gateway*`` also qualifies
                 (``reset-failed`` is an idempotent no-op we run before every
-                privileged restart anyway).  If neither works, return None â€”
+                privileged restart anyway).  If neither works, return None —
                 the caller must SKIP the restart (without draining the
                 gateway first!) and tell the user how to restart manually.
                 ``--no-ask-password`` guarantees polkit can never hang a
@@ -11812,7 +11827,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                 if (
                     scope_ == "system"
                     and hasattr(os, "geteuid")
-                    and os.geteuid() != 0  # windows-footgun: ok â€” systemd path, Linux-only
+                    and os.geteuid() != 0  # windows-footgun: ok — systemd path, Linux-only
                 ):
                     sudo_cmd = ["sudo", "-n"] + scope_cmd_ + ["--no-ask-password"]
                     sudo_ok = False
@@ -11824,8 +11839,8 @@ def _cmd_update_impl(args, gateway_mode: bool):
                         )
                         sudo_ok = _probe.returncode == 0
                         if not sudo_ok:
-                            # Blanket sudo refused â€” a targeted sudoers entry
-                            # (NOPASSWD for systemctl ... hermes-gateway*)
+                            # Blanket sudo refused — a targeted sudoers entry
+                            # (NOPASSWD for systemctl ... kova-gateway*)
                             # may still allow the exact commands we need.
                             _probe = subprocess.run(
                                 sudo_cmd + ["reset-failed", svc_name_],
@@ -11878,7 +11893,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
             externally_supervised_profiles = []
 
             # --- Systemd services (Linux) ---
-            # Discover all hermes-gateway* units (default + profiles)
+            # Discover all kova-gateway* units (default + profiles)
             if supports_systemd_services():
                 try:
                     _ensure_user_systemd_env()
@@ -11894,7 +11909,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                             scope_cmd
                             + [
                                 "list-units",
-                                "hermes-gateway*",
+                                "kova-gateway*",
                                 "--plain",
                                 "--no-legend",
                                 "--no-pager",
@@ -11906,9 +11921,9 @@ def _cmd_update_impl(args, gateway_mode: bool):
                     except FileNotFoundError:
                         continue
                     except subprocess.TimeoutExpired as exc:
-                        # Discovery timeout â€” skip this scope, keep the other.
+                        # Discovery timeout — skip this scope, keep the other.
                         print(
-                            f"  âš  systemctl timed out listing {scope}-scope "
+                            f"  ⚠ systemctl timed out listing {scope}-scope "
                             f"gateway units ({exc.cmd if exc.cmd else 'unknown command'}). "
                             f"Check the gateway with: kova gateway status"
                         )
@@ -11927,11 +11942,11 @@ def _cmd_update_impl(args, gateway_mode: bool):
 
                         # Resolve how we may run manage-units verbs
                         # (reset-failed/start/restart) for this scope.
-                        # None â‡’ no non-interactive privilege path; we
+                        # None ⇒ no non-interactive privilege path; we
                         # must avoid those verbs entirely or polkit will
                         # throw an interactive auth prompt inside our
                         # captured 10-15s subprocess (the user sees it
-                        # flash and "exit directly" â€” reported June 2026).
+                        # flash and "exit directly" — reported June 2026).
                         _manage_cmd = _resolve_manage_cmd(
                             scope, scope_cmd, svc_name
                         )
@@ -11939,7 +11954,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                         # Prefer a graceful SIGUSR1 restart so in-flight
                         # agent runs drain instead of being SIGKILLed.
                         # The gateway's SIGUSR1 handler calls
-                        # request_restart(via_service=True) â†’ drain â†’
+                        # request_restart(via_service=True) → drain →
                         # exit; systemd's Restart=always respawns the unit.
                         _main_pid = 0
                         try:
@@ -11966,7 +11981,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                         _graceful_ok = False
                         if _main_pid > 0:
                             print(
-                                f"  â†’ {svc_name}: draining (up to {int(_drain_budget)}s)..."
+                                f"  → {svc_name}: draining (up to {int(_drain_budget)}s)..."
                             )
                             _graceful_ok = _graceful_restart_via_sigusr1(
                                 _main_pid,
@@ -11976,7 +11991,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                         if _graceful_ok:
                             # Gateway exited after a planned restart.
                             # ``Restart=always`` means systemd WILL respawn
-                            # the unit â€” but only after
+                            # the unit — but only after
                             # ``RestartSec`` (default 60s on our unit
                             # file). That 60s wait is a crash-loop guard,
                             # and is the right default when the gateway
@@ -11998,7 +12013,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                             #
                             # The shortcut needs manage-units privileges.
                             # Without them (system service, non-root, no
-                            # passwordless sudo) skip it â€” systemd's own
+                            # passwordless sudo) skip it — systemd's own
                             # auto-restart still relaunches the unit after
                             # RestartSec, no privileges required.
                             if _manage_cmd is not None:
@@ -12040,7 +12055,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                             )
                             if _manage_cmd is None and _restart_sec > 5.0:
                                 print(
-                                    f"  â†’ {svc_name}: waiting for systemd "
+                                    f"  → {svc_name}: waiting for systemd "
                                     f"auto-restart (~{int(_restart_sec)}s; "
                                     "no root for an immediate restart)..."
                                 )
@@ -12056,19 +12071,19 @@ def _cmd_update_impl(args, gateway_mode: bool):
                             # RestartForceExitStatus=75).  Fall through
                             # to systemctl start/restart.
                             print(
-                                f"  âš  {svc_name} drained but didn't relaunch â€” forcing restart"
+                                f"  ⚠ {svc_name} drained but didn't relaunch — forcing restart"
                             )
 
                         # Forcing a restart requires manage-units
                         # privileges.  Without a non-interactive path,
                         # running systemctl here would spawn a polkit
                         # auth prompt inside a captured 10-15s subprocess
-                        # â€” it flashes and dies before the user can
+                        # — it flashes and dies before the user can
                         # answer.  Skip with clear instructions instead.
                         if _manage_cmd is None:
                             failed_or_stale_units.append(svc_name)
                             print(
-                                f"  âš  {svc_name} is a system service and restarting it needs root.\n"
+                                f"  ⚠ {svc_name} is a system service and restarting it needs root.\n"
                                 f"    Restart it manually to load the new version:\n"
                                 f"      sudo systemctl restart {svc_name}\n"
                                 f"    To let `kova update` restart it automatically, allow\n"
@@ -12115,14 +12130,14 @@ def _cmd_update_impl(args, gateway_mode: bool):
                             ):
                                 restarted_services.append(svc_name)
                             else:
-                                # Retry once â€” transient startup failures
+                                # Retry once — transient startup failures
                                 # (stale module cache, import race) often
                                 # resolve on the second attempt.  Again
                                 # clear any failed state first so the
                                 # retry isn't blocked by the previous
                                 # crash.
                                 print(
-                                    f"  âš  {svc_name} died after restart, retrying..."
+                                    f"  ⚠ {svc_name} died after restart, retrying..."
                                 )
                                 subprocess.run(
                                     _manage_cmd + ["reset-failed", svc_name],
@@ -12148,7 +12163,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                                     _scope_flag = "--user " if scope == "user" else ""
                                     _sudo_hint = "sudo " if scope == "system" else ""
                                     print(
-                                        f"  âœ— {svc_name} failed to stay running after restart.\n"
+                                        f"  ✗ {svc_name} failed to stay running after restart.\n"
                                         f"    Check logs: {_sudo_hint}journalctl {_scope_flag}-u {svc_name} --since '2 min ago'\n"
                                         f"    Recover manually:\n"
                                         f"      {_sudo_hint}systemctl {_scope_flag}reset-failed {svc_name}\n"
@@ -12157,7 +12172,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                         else:
                             failed_or_stale_units.append(svc_name)
                             print(
-                                f"  âš  Failed to restart {svc_name}: {restart.stderr.strip()}"
+                                f"  ⚠ Failed to restart {svc_name}: {restart.stderr.strip()}"
                             )
 
                     def _on_unit_timeout(svc_name: str, exc: subprocess.TimeoutExpired) -> None:
@@ -12166,7 +12181,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                         # later gateway and leave the fleet on mixed code.
                         failed_or_stale_units.append(svc_name)
                         print(
-                            f"  âš  systemctl timed out restarting {svc_name} "
+                            f"  ⚠ systemctl timed out restarting {svc_name} "
                             f"({exc.cmd if exc.cmd else 'unknown command'}); "
                             f"continuing with remaining gateways"
                         )
@@ -12200,7 +12215,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                                 restarted_services.append(get_launchd_label())
                             except subprocess.CalledProcessError as e:
                                 stderr = (getattr(e, "stderr", "") or "").strip()
-                                print(f"  âš  Gateway restart failed: {stderr}")
+                                print(f"  ⚠ Gateway restart failed: {stderr}")
                 except (FileNotFoundError, subprocess.TimeoutExpired, ImportError):
                     pass
 
@@ -12226,14 +12241,14 @@ def _cmd_update_impl(args, gateway_mode: bool):
                 # Prefer a graceful SIGUSR1 drain so in-flight agent runs
                 # finish before the watcher respawns the gateway.  If the
                 # gateway doesn't support SIGUSR1 or doesn't exit within
-                # the drain budget, fall back to SIGTERM â€” the watcher
+                # the drain budget, fall back to SIGTERM — the watcher
                 # still sees the exit and relaunches either way.
                 # Announce the drain first: this wait can hold for the full
                 # budget per gateway with no other output, and on surfaces
                 # that stream update progress (the desktop updater most of
                 # all) the silence reads as a hung update (#44515).
                 print(
-                    f"  â†’ {proc.profile}: draining gateway PID {pid} "
+                    f"  → {proc.profile}: draining gateway PID {pid} "
                     f"(up to {int(_drain_budget)}s)..."
                 )
                 drained = _graceful_restart_via_sigusr1(
@@ -12251,7 +12266,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                 # ~30s after the client disconnects.  If the new gateway
                 # connects before that window expires it receives a 409
                 # Conflict, which _handle_polling_conflict() recovers from
-                # via back-off retries â€” but a brief wait here reduces the
+                # via back-off retries — but a brief wait here reduces the
                 # chance of hitting that path at all, especially on fast
                 # machines where the watcher loop restarts in < 1s.
                 # We wait up to 5s for the process to exit (the OS-level
@@ -12294,7 +12309,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
                     - len(externally_supervised_profiles)
                 )
                 if unmapped_count:
-                    print(f"  â†’ Stopped {unmapped_count} manual gateway process(es)")
+                    print(f"  → Stopped {unmapped_count} manual gateway process(es)")
                     print("    Restart manually: kova gateway run")
                     if unmapped_count > 1:
                         print(
@@ -12304,7 +12319,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
             if failed_or_stale_units:
                 gateway_fleet_restart_incomplete = True
                 if gateway_mode:
-                    _exit_code_path = get_hermes_home() / ".update_exit_code"
+                    _exit_code_path = get_kova_home() / ".update_exit_code"
                     try:
                         _exit_code_path.write_text("1")
                     except OSError:
@@ -12312,13 +12327,13 @@ def _cmd_update_impl(args, gateway_mode: bool):
             _warn_incomplete_gateway_fleet_restart(failed_or_stale_units)
 
             if not restarted_services and not killed_pids:
-                # No gateways were running â€” nothing to do
+                # No gateways were running — nothing to do
                 pass
 
             # --- Post-restart survivor sweep -----------------------------
             # Issue #17648: some gateways ignore SIGTERM (stuck drain,
             # blocked I/O, PID dead but zombie).  The detached profile
-            # watchers wait 120s for the old PID to exit â€” if it never
+            # watchers wait 120s for the old PID to exit — if it never
             # does, no respawn happens and the user keeps hitting
             # ImportError against a stale sys.modules.  Give the
             # graceful paths a brief window to complete, then SIGKILL
@@ -12333,19 +12348,19 @@ def _cmd_update_impl(args, gateway_mode: bool):
                 )
                 # Scope to PIDs we already tried to kill during this
                 # update (killed_pids).  Anything new is a gateway that
-                # started AFTER our restart attempt â€” respecting user
+                # started AFTER our restart attempt — respecting user
                 # intent, we don't kill those.
                 _stuck = [pid for pid in _surviving if pid in killed_pids]
                 if _stuck:
                     print()
                     print(
-                        f"  âš  {len(_stuck)} gateway process(es) ignored SIGTERM â€” force-killing"
+                        f"  ⚠ {len(_stuck)} gateway process(es) ignored SIGTERM — force-killing"
                     )
                     from gateway.status import terminate_pid as _terminate_pid
                     for pid in _stuck:
                         try:
                             # Routes through taskkill /T /F on Windows,
-                            # SIGKILL on POSIX â€” _signal.SIGKILL doesn't
+                            # SIGKILL on POSIX — _signal.SIGKILL doesn't
                             # exist on Windows so the old raw os.kill call
                             # used to crash the entire update path.
                             _terminate_pid(pid, force=True)
@@ -12363,26 +12378,26 @@ def _cmd_update_impl(args, gateway_mode: bool):
         _resume_windows_gateways_after_update(_windows_gateway_resume)
 
         # Warn if legacy Kova gateway unit files are still installed.
-        # When both hermes.service (from a pre-rename install) and the
-        # current hermes-gateway.service are enabled, they SIGTERM-fight
+        # When both kova.service (from a pre-rename install) and the
+        # current kova-gateway.service are enabled, they SIGTERM-fight
         # for the same bot token (see PR #11909). Flagging here means
         # every `kova update` surfaces the issue until the user migrates.
         try:
             from kova_cli.gateway import (
-                has_legacy_hermes_units,
-                _find_legacy_hermes_units,
+                has_legacy_kova_units,
+                _find_legacy_kova_units,
                 supports_systemd_services,
             )
 
-            if supports_systemd_services() and has_legacy_hermes_units():
+            if supports_systemd_services() and has_legacy_kova_units():
                 print()
-                print("âš  Legacy Kova gateway unit(s) detected:")
-                for name, path, is_sys in _find_legacy_hermes_units():
+                print("⚠ Legacy Kova gateway unit(s) detected:")
+                for name, path, is_sys in _find_legacy_kova_units():
                     scope = "system" if is_sys else "user"
                     print(f"    {path}  ({scope} scope)")
                 print()
-                print("  These pre-rename units (hermes.service) fight the current")
-                print("  hermes-gateway.service for the bot token and cause SIGTERM")
+                print("  These pre-rename units (kova.service) fight the current")
+                print("  kova-gateway.service for the bot token and cause SIGTERM")
                 print("  flap loops. Remove them with:")
                 print()
                 print("    kova gateway migrate-legacy")
@@ -12398,7 +12413,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
         # currently running dashboard untouched.
         if node_failures:
             print()
-            print("  â„¹ Leaving running dashboard process(es) untouched because the")
+            print("  ℹ Leaving running dashboard process(es) untouched because the")
             print("    Node.js dependency refresh did not complete.")
         else:
             _kill_stale_dashboard_processes(restart_managed=True)
@@ -12409,18 +12424,18 @@ def _cmd_update_impl(args, gateway_mode: bool):
 
         if gateway_fleet_restart_incomplete:
             # Code update itself succeeded, but at least one gateway still
-            # runs pre-update modules â€” surface that as a failed update so
+            # runs pre-update modules — surface that as a failed update so
             # automation / operators do not treat the fleet as healthy.
             sys.exit(1)
 
     except subprocess.CalledProcessError as e:
         if sys.platform == "win32":
-            print(f"âš  Git update failed: {e}")
-            print("â†’ Falling back to ZIP download...")
+            print(f"⚠ Git update failed: {e}")
+            print("→ Falling back to ZIP download...")
             print()
             _update_via_zip(args)
         else:
-            print(f"âœ— Update failed: {e}")
+            print(f"✗ Update failed: {e}")
             sys.exit(1)
 
 
@@ -12504,7 +12519,7 @@ def _coalesce_session_name_args(argv: list) -> list:
 
 
 def cmd_profile(args):
-    """Profile management â€” create, delete, list, switch, alias."""
+    """Profile management — create, delete, list, switch, alias."""
     from kova_cli.profiles import (
         list_profiles,
         create_profile,
@@ -12518,14 +12533,14 @@ def cmd_profile(args):
         _is_wrapper_dir_in_path,
         _get_wrapper_dir,
     )
-    from kova_constants import display_hermes_home
+    from kova_constants import display_kova_home
 
     action = getattr(args, "profile_action", None)
 
     if action is None:
-        # Bare `kova profile` â€” show current profile status
+        # Bare `kova profile` — show current profile status
         profile_name = get_active_profile_name()
-        dhh = display_hermes_home()
+        dhh = display_kova_home()
         print(f"\nActive profile: {profile_name}")
         print(f"Path:           {dhh}")
 
@@ -12543,7 +12558,7 @@ def cmd_profile(args):
                 print(f"Skills:         {p.skill_count} installed")
                 if p.alias_path:
                     alias_display = p.alias_name or p.name
-                    print(f"Alias:          {alias_display} â†’ kova -p {p.name}")
+                    print(f"Alias:          {alias_display} → kova -p {p.name}")
                 break
         print()
         return
@@ -12562,27 +12577,27 @@ def cmd_profile(args):
             f"{'Alias':<12} {'Distribution'}"
         )
         print(
-            f" {'â”€' * 15}    {'â”€' * 27}    {'â”€' * 11}    "
-            f"{'â”€' * 11}    {'â”€' * 20}"
+            f" {'─' * 15}    {'─' * 27}    {'─' * 11}    "
+            f"{'─' * 11}    {'─' * 20}"
         )
 
         for p in profiles:
             marker = (
-                " â—†"
+                " ◆"
                 if (p.name == active or (active == "default" and p.is_default))
                 else "  "
             )
             name = p.name
-            model = (p.model or "â€”")[:26]
+            model = (p.model or "—")[:26]
             gw = "running" if p.gateway_running else "stopped"
-            alias = (p.alias_name or p.name) if p.alias_path else "â€”"
+            alias = (p.alias_name or p.name) if p.alias_path else "—"
             if p.is_default:
-                alias = "â€”"
+                alias = "—"
             if p.distribution_name:
                 dist = f"{p.distribution_name}@{p.distribution_version or '?'}"
                 dist = dist[:30]
             else:
-                dist = "â€”"
+                dist = "—"
             print(f"{marker}{name:<15} {model:<28} {gw:<12} {alias:<12} {dist}")
         print()
 
@@ -12659,7 +12674,7 @@ def cmd_profile(args):
                     print(f"{copied} bundled skills synced.")
                 else:
                     print(
-                        "âš  Skills could not be seeded. Run `{} update` to retry.".format(
+                        "⚠ Skills could not be seeded. Run `{} update` to retry.".format(
                             name
                         )
                     )
@@ -12668,7 +12683,7 @@ def cmd_profile(args):
             if not no_alias:
                 collision = check_alias_collision(name)
                 if collision:
-                    print(f"\nâš  Cannot create alias '{name}' â€” {collision}")
+                    print(f"\n⚠ Cannot create alias '{name}' — {collision}")
                     print(
                         f"  Choose a custom alias:  kova profile alias {name} --name <custom>"
                     )
@@ -12678,7 +12693,7 @@ def cmd_profile(args):
                     if wrapper_path:
                         print(f"Wrapper created: {wrapper_path}")
                         if not _is_wrapper_dir_in_path():
-                            print(f"\nâš  {_get_wrapper_dir()} is not in your PATH.")
+                            print(f"\n⚠ {_get_wrapper_dir()} is not in your PATH.")
                             print(
                                 "  Add to your shell config (~/.bashrc or ~/.zshrc):"
                             )
@@ -12700,7 +12715,7 @@ def cmd_profile(args):
                 print(f"  Edit {profile_dir_display}/SOUL.md for different personality")
             else:
                 print(
-                    f"\n  âš  This profile has no API keys yet. Run '{name} setup' first,"
+                    f"\n  ⚠ This profile has no API keys yet. Run '{name} setup' first,"
                 )
                 print("    or it will inherit keys from your shell environment.")
                 print(f"  Edit {profile_dir_display}/SOUL.md to customize personality")
@@ -12754,7 +12769,7 @@ def cmd_profile(args):
         if name and not text_value and not auto_flag:
             try:
                 if _profiles_mod.normalize_profile_name(name) == "default":
-                    from kova_constants import get_hermes_home as _hh
+                    from kova_constants import get_kova_home as _hh
                     profile_dir = Path(_hh())
                 else:
                     profile_dir = _profiles_mod.get_profile_dir(name)
@@ -12777,7 +12792,7 @@ def cmd_profile(args):
         if text_value:
             try:
                 if _profiles_mod.normalize_profile_name(name) == "default":
-                    from kova_constants import get_hermes_home as _hh
+                    from kova_constants import get_kova_home as _hh
                     profile_dir = Path(_hh())
                 else:
                     profile_dir = _profiles_mod.get_profile_dir(name)
@@ -12863,7 +12878,7 @@ def cmd_profile(args):
         if alias_name:
             is_windows = sys.platform == "win32"
             wrapper = _get_wrapper_dir() / (f"{alias_name}.bat" if is_windows else alias_name)
-            print(f"Alias:   {alias_name} â†’ kova -p {name}  ({wrapper})")
+            print(f"Alias:   {alias_name} → kova -p {name}  ({wrapper})")
         print()
 
     elif action == "alias":
@@ -12901,14 +12916,14 @@ def cmd_profile(args):
             if wrapper_path:
                 print(f"✓ Alias created: {wrapper_path}")
                 if not _is_wrapper_dir_in_path():
-                    print(f"âš  {_get_wrapper_dir()} is not in your PATH.")
+                    print(f"⚠ {_get_wrapper_dir()} is not in your PATH.")
 
     elif action == "rename":
         from kova_cli.profiles import rename_profile
 
         try:
             new_dir = rename_profile(args.old_name, args.new_name)
-            print(f"\nProfile renamed: {args.old_name} â†’ {args.new_name}")
+            print(f"\nProfile renamed: {args.old_name} → {args.new_name}")
             print(f"Path: {new_dir}\n")
         except (ValueError, FileExistsError, FileNotFoundError) as e:
             print(f"Error: {e}")
@@ -12959,7 +12974,7 @@ def cmd_profile(args):
             # Preview: stage the distribution into a scratch dir, show the
             # manifest, then do the real install.  The double-stage avoids
             # any side-effects if the user declines.
-            with tempfile.TemporaryDirectory(prefix="hermes_dist_preview_") as tmp:
+            with tempfile.TemporaryDirectory(prefix="kova_dist_preview_") as tmp:
                 plan = plan_install(
                     args.source,
                     Path(tmp),
@@ -13036,7 +13051,7 @@ def cmd_profile(args):
                     return
 
             plan = update_distribution(canon, force_config=force_config)
-            print(f"\n✓ Updated '{plan.manifest.name}' â†’ v{plan.manifest.version}")
+            print(f"\n✓ Updated '{plan.manifest.name}' → v{plan.manifest.version}")
             if plan.has_cron:
                 print(
                     "  Cron files were refreshed.  Review with:  "
@@ -13068,8 +13083,8 @@ def cmd_profile(args):
             print(f"Author:       {data['author']}")
         if data.get("license"):
             print(f"License:      {data['license']}")
-        if data.get("hermes_requires"):
-            print(f"Requires:     Kova {data['hermes_requires']}")
+        if data.get("kova_requires"):
+            print(f"Requires:     Kova {data['kova_requires']}")
         if data.get("source"):
             print(f"Source:       {data['source']}")
         if data.get("installed_at"):
@@ -13081,7 +13096,7 @@ def cmd_profile(args):
                 tag = "required" if er.get("required", True) else "optional"
                 line = f"  {er['name']} ({tag})"
                 if er.get("description"):
-                    line += f" â€” {er['description']}"
+                    line += f" — {er['description']}"
                 print(line)
                 if er.get("default") is not None:
                     print(f"      default: {er['default']}")
@@ -13097,22 +13112,22 @@ def _render_distribution_plan(plan) -> None:
         print(f"  {mf.description}")
     if mf.author:
         print(f"  Author:   {mf.author}")
-    if mf.hermes_requires:
-        print(f"  Requires: Kova {mf.hermes_requires}")
+    if mf.kova_requires:
+        print(f"  Requires: Kova {mf.kova_requires}")
     print(f"  Source:   {plan.provenance}")
     print(f"  Target:   {plan.target_dir}")
     if plan.existing:
         # Distinguish "updating an existing distribution" (well-understood
-        # semantics â€” dist-owned overwritten, config preserved, user data
+        # semantics — dist-owned overwritten, config preserved, user data
         # untouched) from "overwriting a hand-built plain profile" (same
         # mechanics but the user didn't sign up for this when they created
         # the profile manually).
         existing_is_distribution = (plan.target_dir / MANIFEST_FILENAME).is_file()
         if existing_is_distribution:
-            print("  (profile exists â€” will overwrite distribution-owned files only)")
+            print("  (profile exists — will overwrite distribution-owned files only)")
         else:
             print(
-                "  âš  Profile exists but is NOT a distribution.  Installing here will\n"
+                "  ⚠ Profile exists but is NOT a distribution.  Installing here will\n"
                 "    overwrite its SOUL.md, skills/, cron/, and mcp.json.\n"
                 "    Your memories, sessions, auth.json, and .env will be preserved,\n"
                 "    but any hand-edits to distribution-owned files will be lost."
@@ -13138,15 +13153,15 @@ def _render_distribution_plan(plan) -> None:
                                 break
                     except OSError:
                         pass
-            status = "✓ set" if already else ("needs setting" if er.required else "â€”")
-            line = f"    â€¢ {er.name} ({tag}, {status})"
+            status = "✓ set" if already else ("needs setting" if er.required else "—")
+            line = f"    • {er.name} ({tag}, {status})"
             if er.description:
-                line += f" â€” {er.description}"
+                line += f" — {er.description}"
             print(line)
     if plan.has_cron:
         print(
-            "\n  âš  This distribution ships cron jobs.  They will NOT run "
-            "automatically â€” review and enable manually."
+            "\n  ⚠ This distribution ships cron jobs.  They will NOT run "
+            "automatically — review and enable manually."
         )
 
 
@@ -13190,7 +13205,7 @@ def _report_dashboard_status() -> int:
 def _dashboard_listening(host: str, port: int) -> bool:
     """True when something is accepting TCP connections at host:port.
 
-    Any listener counts â€” even a 401 response proves a dashboard is up.
+    Any listener counts — even a 401 response proves a dashboard is up.
     Used by the unified profile-launch routing to decide attach-vs-start.
     """
     import socket
@@ -13210,7 +13225,7 @@ def _maybe_setup_dashboard_auth_interactively(args) -> None:
     the June 2026 hardening), and ``start_server`` fails closed when no
     ``DashboardAuthProvider`` is registered. Rather than greet an interactive
     operator with that hard error, prompt them to set up the bundled
-    username/password provider on the spot â€” or point them at
+    username/password provider on the spot — or point them at
     ``kova dashboard register`` for OAuth.
 
     No-ops (so the existing fail-closed ``SystemExit`` remains the backstop)
@@ -13224,7 +13239,7 @@ def _maybe_setup_dashboard_auth_interactively(args) -> None:
     try:
         from kova_cli.web_server import should_require_auth
         if not should_require_auth(host):
-            return  # loopback bind â€” gate never engages
+            return  # loopback bind — gate never engages
     except Exception:
         return  # if we can't tell, defer to start_server's own gate
 
@@ -13242,7 +13257,7 @@ def _maybe_setup_dashboard_auth_interactively(args) -> None:
 
     print()
     print(
-        f"âš  The dashboard is binding to a non-loopback address ({host}) and "
+        f"⚠ The dashboard is binding to a non-loopback address ({host}) and "
         f"needs an auth provider."
     )
     print(
@@ -13269,7 +13284,7 @@ def _maybe_setup_dashboard_auth_interactively(args) -> None:
             "the dashboard again:\n"
             "    kova dashboard register\n"
             "  It provisions a Nous Portal OAuth client and writes "
-            "HERMES_DASHBOARD_OAUTH_CLIENT_ID into ~/.hermes/.env for you.\n"
+            "KOVA_DASHBOARD_OAUTH_CLIENT_ID into ~/.hermes/.env for you.\n"
             "  Docs: https://kova-agent.nousresearch.com/docs/"
             "user-guide/features/web-dashboard#authentication-gated-mode"
         )
@@ -13279,7 +13294,7 @@ def _maybe_setup_dashboard_auth_interactively(args) -> None:
         print("  Cancelled.")
         sys.exit(1)
 
-    # â”€â”€ Username/password setup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Username/password setup ──────────────────────────────────────────
     import getpass
     import secrets
 
@@ -13293,16 +13308,16 @@ def _maybe_setup_dashboard_auth_interactively(args) -> None:
         sys.exit(1)
 
     if not password:
-        print("  âœ— Empty password â€” aborting.")
+        print("  ✗ Empty password — aborting.")
         sys.exit(1)
     if password != confirm:
-        print("  âœ— Passwords don't match â€” aborting.")
+        print("  ✗ Passwords don't match — aborting.")
         sys.exit(1)
 
     try:
         from plugins.dashboard_auth.basic import hash_password
     except Exception as exc:
-        print(f"  âœ— Could not load the password provider: {exc}")
+        print(f"  ✗ Could not load the password provider: {exc}")
         sys.exit(1)
 
     password_hash = hash_password(password)
@@ -13334,7 +13349,7 @@ def _maybe_setup_dashboard_auth_interactively(args) -> None:
             )
         save_config(cfg)
     except Exception as exc:
-        print(f"  âœ— Failed to write config.yaml: {exc}")
+        print(f"  ✗ Failed to write config.yaml: {exc}")
         sys.exit(1)
 
     # Re-run plugin discovery so the basic provider registers from the
@@ -13344,7 +13359,7 @@ def _maybe_setup_dashboard_auth_interactively(args) -> None:
 
         discover_plugins(force=True)
     except Exception as exc:
-        print(f"  âš  Plugin re-discovery failed ({exc}); the gate may still "
+        print(f"  ⚠ Plugin re-discovery failed ({exc}); the gate may still "
               "fail closed. Set the password again or restart the dashboard.")
 
     print()
@@ -13362,13 +13377,13 @@ def _read_ssh_session_token_file(path: str) -> str:
 
     import stat as _stat
     from pathlib import Path as _Path
-    from kova_constants import get_hermes_home as _get_hermes_home
+    from kova_constants import get_kova_home as _get_kova_home
 
     if not os.path.isabs(path):
         raise SystemExit("--ssh-session-token-file must be absolute")
 
     token_path = _Path(path)
-    token_root = _get_hermes_home() / "desktop-ssh"
+    token_root = _get_kova_home() / "desktop-ssh"
     try:
         relative = token_path.relative_to(token_root)
     except ValueError as exc:
@@ -13440,10 +13455,10 @@ def _read_ssh_session_token_file(path: str) -> str:
 def _is_electron_packaged_web_dist(path: str) -> bool:
     """True when *path* looks like an Electron-packaged renderer dist.
 
-    Packaged Desktop sets ``HERMES_WEB_DIST`` to ``.../app.asar/dist`` or
+    Packaged Desktop sets ``KOVA_WEB_DIST`` to ``.../app.asar/dist`` or
     ``.../app.asar.unpacked/dist``. A standalone ``kova dashboard`` that
     inherits that value serves the desktop frontend in the browser
-    (issue #52945 â€” "Desktop IPC bridge is unavailable").
+    (issue #52945 — "Desktop IPC bridge is unavailable").
     """
     if not path:
         return False
@@ -13489,34 +13504,34 @@ def cmd_dashboard(args):
     if _token_file and not _headless_backend:
         raise SystemExit("--ssh-session-token-file is only valid with kova serve")
 
-    # â”€â”€ Sanitize Desktop-inherited env that hijacks a standalone launch â”€
-    # Desktop Electron spawns its backend with HERMES_DESKTOP=1 plus
-    # HERMES_WEB_DIST=<packaged app.asar[/unpacked]/dist> (and often
-    # HERMES_SERVE_HEADLESS=1 on the serve path). A shell that inherits
+    # ── Sanitize Desktop-inherited env that hijacks a standalone launch ─
+    # Desktop Electron spawns its backend with KOVA_DESKTOP=1 plus
+    # KOVA_WEB_DIST=<packaged app.asar[/unpacked]/dist> (and often
+    # KOVA_SERVE_HEADLESS=1 on the serve path). A shell that inherits
     # those vars then runs `kova dashboard` would otherwise:
-    #   - serve the desktop renderer â†’ "Desktop IPC bridge is unavailable"
+    #   - serve the desktop renderer → "Desktop IPC bridge is unavailable"
     #     (issue #52945), or
-    #   - disable the SPA via inherited HERMES_SERVE_HEADLESS.
-    # Only strip Electron-packaged WEB_DIST contamination â€” caller-managed
-    # HERMES_WEB_DIST overrides (dev / custom builds) must still work.
-    # The desktop-spawned backend itself (HERMES_DESKTOP=1) keeps its dist.
-    # Intentionally headless `serve` re-sets HERMES_SERVE_HEADLESS below.
-    if os.environ.get("HERMES_DESKTOP") != "1":
-        _inherited_web_dist = os.environ.get("HERMES_WEB_DIST", "")
+    #   - disable the SPA via inherited KOVA_SERVE_HEADLESS.
+    # Only strip Electron-packaged WEB_DIST contamination — caller-managed
+    # KOVA_WEB_DIST overrides (dev / custom builds) must still work.
+    # The desktop-spawned backend itself (KOVA_DESKTOP=1) keeps its dist.
+    # Intentionally headless `serve` re-sets KOVA_SERVE_HEADLESS below.
+    if os.environ.get("KOVA_DESKTOP") != "1":
+        _inherited_web_dist = os.environ.get("KOVA_WEB_DIST", "")
         if _is_electron_packaged_web_dist(_inherited_web_dist):
-            os.environ.pop("HERMES_WEB_DIST", None)
+            os.environ.pop("KOVA_WEB_DIST", None)
     if not _headless_backend:
-        os.environ.pop("HERMES_SERVE_HEADLESS", None)
+        os.environ.pop("KOVA_SERVE_HEADLESS", None)
 
-    # â”€â”€ Unified profile launch routing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Unified profile launch routing ────────────────────────────────
     # The dashboard is a MACHINE management surface: it can read/write any
     # profile via the per-request ?profile= scoping. Running one dashboard
     # per profile just fragments that (port collisions, N processes, and a
     # "which dashboard am I on?" guessing game). So when a NAMED profile
-    # launches the dashboard (`worker dashboard` â†’ HERMES_HOME points into
+    # launches the dashboard (`worker dashboard` → HERMES_HOME points into
     # profiles/), default to the machine dashboard:
-    #   - already running â†’ open the browser at ?profile=<name> and exit
-    #   - not running     â†’ re-exec as the machine dashboard (pinned to the
+    #   - already running → open the browser at ?profile=<name> and exit
+    #   - not running     → re-exec as the machine dashboard (pinned to the
     #     default profile so _apply_profile_override can't re-route through
     #     the sticky active_profile file) with the launching profile
     #     preselected in the UI's switcher.
@@ -13532,7 +13547,7 @@ def cmd_dashboard(args):
         and not getattr(args, "isolated", False)
         and not getattr(args, "open_profile", "")
         # Desktop pool backends are intentionally per-profile.
-        and os.environ.get("HERMES_DESKTOP") != "1"
+        and os.environ.get("KOVA_DESKTOP") != "1"
     ):
         url = f"http://{args.host or '127.0.0.1'}:{args.port}/?profile={_launch_profile}"
         if _dashboard_listening(args.host, args.port):
@@ -13575,21 +13590,21 @@ def cmd_dashboard(args):
         # HERMES_HOME.  We must resolve the root explicitly instead of just
         # dropping HERMES_HOME: in the Docker layout the machine root is
         # /opt/data (set via `ENV HERMES_HOME=/opt/data`), so an unset
-        # HERMES_HOME falls back to $HOME/.hermes = /opt/data/.hermes â€” an
+        # HERMES_HOME falls back to $HOME/.hermes = /opt/data/.hermes — an
         # empty, auto-seeded home where the dashboard sees only the default
         # profile and the install-method stamp is missing (so the Docker
-        # update-button guard also misfires).  get_default_hermes_root()
+        # update-button guard also misfires).  get_default_kova_root()
         # returns the root for both layouts: ~/.hermes for a standard install
         # and /opt/data for Docker (it strips a trailing profiles/<name>).
         # See the support report for the double-mount workaround this avoids.
         try:
-            from kova_constants import get_default_hermes_root
-            env["HERMES_HOME"] = str(get_default_hermes_root())
+            from kova_constants import get_default_kova_root
+            env["HERMES_HOME"] = str(get_default_kova_root())
         except Exception:
             # Best-effort: if root resolution fails, fall back to the prior
             # behaviour (drop HERMES_HOME) rather than block the reroute.
             env.pop("HERMES_HOME", None)
-        # On Windows, os.execvpe() does not truly replace the process â€” it
+        # On Windows, os.execvpe() does not truly replace the process — it
         # spawns via CreateProcess then the parent exits.  Under Python 3.14+
         # this can crash with STATUS_ACCESS_VIOLATION (0xC0000005) when
         # re-executing the dashboard for a non-default profile.  Use
@@ -13634,8 +13649,8 @@ def cmd_dashboard(args):
     # Bridge terminal.* config into the TERMINAL_* env vars for THIS process,
     # mirroring the CLI (cli.py env_mappings) and gateway (gateway/run.py
     # _terminal_env_map) startup bridges. The dashboard/serve backend runs
-    # agents in-process (tui_gateway.ws â†’ server._make_agent) and ticks cron
-    # jobs itself when desktop-spawned â€” without this bridge those consumers
+    # agents in-process (tui_gateway.ws → server._make_agent) and ticks cron
+    # jobs itself when desktop-spawned — without this bridge those consumers
     # saw an unset TERMINAL_ENV and silently ran every command on the host
     # even when config.yaml selects `terminal.backend: docker`
     # (#63141, #54449, #61115, #65696). PTY chat spawns already bridge their
@@ -13645,14 +13660,14 @@ def cmd_dashboard(args):
 
         apply_terminal_config_to_env()
     except Exception:
-        logger.debug("terminal config â†’ env bridge failed for dashboard/serve",
+        logger.debug("terminal config → env bridge failed for dashboard/serve",
                      exc_info=True)
 
     if _headless_backend:
         # Don't build the SPA, and tell mount_spa() (read at web_server import
         # below) to disable it even if a stray dist exists. Set it first.
-        os.environ["HERMES_SERVE_HEADLESS"] = "1"
-    elif "HERMES_WEB_DIST" not in os.environ and not getattr(args, "skip_build", False):
+        os.environ["KOVA_SERVE_HEADLESS"] = "1"
+    elif "KOVA_WEB_DIST" not in os.environ and not getattr(args, "skip_build", False):
         if not _build_web_ui(PROJECT_ROOT / "web", fatal=True):
             sys.exit(1)
     elif getattr(args, "skip_build", False):
@@ -13660,48 +13675,48 @@ def cmd_dashboard(args):
         # Verify the dist actually exists; otherwise the server will start
         # and serve 404s with no obvious cause (issue #23817).
         _dist_root = (
-            Path(os.environ["HERMES_WEB_DIST"])
-            if "HERMES_WEB_DIST" in os.environ
+            Path(os.environ["KOVA_WEB_DIST"])
+            if "KOVA_WEB_DIST" in os.environ
             else PROJECT_ROOT / "kova_cli" / "web_dist"
         )
         if not (_dist_root / "index.html").exists():
             # The caller promised a pre-built dist but there isn't one.
-            # Instead of hard-failing (issue #59288 â€” desktop launches with
+            # Instead of hard-failing (issue #59288 — desktop launches with
             # --build-mode skip after a wipe of web_dist), warn and attempt
             # ONE recovery build through the normal build path. Only the
-            # default dist location is recoverable: a custom HERMES_WEB_DIST
+            # default dist location is recoverable: a custom KOVA_WEB_DIST
             # points at a caller-managed directory the build cannot populate.
-            _recoverable = "HERMES_WEB_DIST" not in os.environ
+            _recoverable = "KOVA_WEB_DIST" not in os.environ
             if _recoverable:
-                print(f"âš  --skip-build was passed but no web dist found at: {_dist_root}")
+                print(f"⚠ --skip-build was passed but no web dist found at: {_dist_root}")
                 print("  Attempting one recovery build of the web UI...")
                 _build_web_ui(PROJECT_ROOT / "web", fatal=True)
             if not (_dist_root / "index.html").exists():
-                print(f"âœ— --skip-build was passed but no web dist found at: {_dist_root}")
+                print(f"✗ --skip-build was passed but no web dist found at: {_dist_root}")
                 if _recoverable:
                     print("  The recovery build did not produce a usable dist.")
                 print("  Pre-build first:  npm install --workspace web && npm run build -w web")
                 print("  Or drop --skip-build to build automatically.")
                 sys.exit(1)
             print("  ✓ Recovery build produced a web dist")
-        print(f"â†’ Skipping web UI build (--skip-build); using dist at {_dist_root}")
+        print(f"→ Skipping web UI build (--skip-build); using dist at {_dist_root}")
     else:
-        # HERMES_WEB_DIST is set without --skip-build: the build is skipped
+        # KOVA_WEB_DIST is set without --skip-build: the build is skipped
         # (the env var points at a caller-managed dist), so validate it the
-        # same way the --skip-build branch does â€” otherwise the server starts
+        # same way the --skip-build branch does — otherwise the server starts
         # and serves 404s with no obvious cause (same failure mode as #23817,
         # via the env-var path).
-        _dist_root = Path(os.environ["HERMES_WEB_DIST"]).expanduser()
+        _dist_root = Path(os.environ["KOVA_WEB_DIST"]).expanduser()
         if not (_dist_root / "index.html").exists():
-            print(f"âœ— HERMES_WEB_DIST is set but no web dist found at: {_dist_root}")
+            print(f"✗ KOVA_WEB_DIST is set but no web dist found at: {_dist_root}")
             print("  Pre-build first:  npm install --workspace web && npm run build -w web")
-            print("  Or unset HERMES_WEB_DIST to build and use the default web UI dist.")
+            print("  Or unset KOVA_WEB_DIST to build and use the default web UI dist.")
             sys.exit(1)
-        # Write the expanded path back: web_server reads HERMES_WEB_DIST raw
+        # Write the expanded path back: web_server reads KOVA_WEB_DIST raw
         # at import (no expanduser), so a validated "~/dist" would otherwise
         # pass here and still 404 there.
-        os.environ["HERMES_WEB_DIST"] = str(_dist_root)
-        print(f"â†’ Using web dist from HERMES_WEB_DIST: {_dist_root}")
+        os.environ["KOVA_WEB_DIST"] = str(_dist_root)
+        print(f"→ Using web dist from KOVA_WEB_DIST: {_dist_root}")
 
     # Discover and load plugins so any DashboardAuthProvider plugin
     # (e.g. plugins/dashboard_auth/nous) registers BEFORE start_server's
@@ -13709,19 +13724,19 @@ def cmd_dashboard(args):
     # plugin discovery for built-in subcommands like ``dashboard`` to
     # save ~500ms startup; we have to trigger it explicitly here because
     # the dashboard's server-side runtime depends on plugin-registered
-    # providers (image_gen, web, dashboard_auth, â€¦).
+    # providers (image_gen, web, dashboard_auth, …).
     try:
         from kova_cli.plugins import discover_plugins
         discover_plugins()
     except Exception as exc:
-        # Discovery failures must not block dashboard startup outright â€”
+        # Discovery failures must not block dashboard startup outright —
         # log and proceed; the gate's fail-closed branch will surface
         # the missing-provider state if it matters.
-        print(f"âš  Plugin discovery failed: {exc}", file=sys.stderr)
+        print(f"⚠ Plugin discovery failed: {exc}", file=sys.stderr)
 
     # Desktop chat uses the dashboard's in-process /api/ws gateway, which builds
     # agents via tui_gateway.server._make_agent.  That path only snapshots the
-    # tool registry â€” it never starts MCP discovery (the stdio TUI does that in
+    # tool registry — it never starts MCP discovery (the stdio TUI does that in
     # tui_gateway/entry.py, which the dashboard process doesn't run).  Without
     # this, a profile's configured MCP servers never connect, so desktop
     # sessions show no MCP tools.  Spawn discovery in the background here so a
@@ -13749,7 +13764,7 @@ def cmd_dashboard(args):
     _maybe_setup_dashboard_auth_interactively(args)
 
     # The in-browser Chat tab (the embedded TUI over PTY/WebSocket) is always
-    # available â€” the desktop app and the dashboard's own Chat tab both rely on
+    # available — the desktop app and the dashboard's own Chat tab both rely on
     # the `/api/ws` + `/api/pty` sockets, so there is no reason to gate them.
     start_server(
         host=args.host,
@@ -13864,7 +13879,7 @@ _BUILTIN_SUBCOMMANDS = frozenset(
         "send", "sessions", "setup",
         "skin", "skills", "slack", "status", "tools", "uninstall", "update",
         "version", "webhook", "whatsapp", "whatsapp-cloud", "chat", "secrets", "security",
-        # Help-ish invocations â€” plugin commands not being listed in
+        # Help-ish invocations — plugin commands not being listed in
         # top-level --help is an acceptable trade-off for skipping an
         # expensive eager import of every bundled plugin module.
         "help",
@@ -13906,7 +13921,7 @@ def _first_positional_argv() -> str | None:
     ``kova -m gpt5 --provider openai chat "msg"`` by skipping the
     values attached to known top-level flags.
 
-    Does NOT fully simulate argparse â€” unknown ``--foo=bar`` / ``--foo
+    Does NOT fully simulate argparse — unknown ``--foo=bar`` / ``--foo
     bar`` flags degrade gracefully (``bar`` may be wrongly classified as
     a positional, which at worst forces a one-time plugin discovery).
     """
@@ -13920,7 +13935,7 @@ def _first_positional_argv() -> str | None:
                 return argv[i + 1]
             return None
         if tok.startswith("-"):
-            # ``--flag=value`` carries its value inline â€” single token.
+            # ``--flag=value`` carries its value inline — single token.
             if "=" in tok:
                 i += 1
                 continue
@@ -13942,11 +13957,11 @@ def _plugin_cli_discovery_needed() -> bool:
     """
     first = _first_positional_argv()
     if first is None:
-        # Bare ``kova`` or only flags â†’ defaults to ``chat``.
+        # Bare ``kova`` or only flags → defaults to ``chat``.
         return False
     if first in _BUILTIN_SUBCOMMANDS:
         return False
-    # Unknown token â€” could be a plugin subcommand, OR a chat prompt
+    # Unknown token — could be a plugin subcommand, OR a chat prompt
     # starting with a non-flag word. Either way we need discovery: if it
     # IS a plugin command, argparse needs the subparser; if it's a chat
     # prompt, argparse will route it via positional handling and the
@@ -13963,7 +13978,7 @@ _AGENT_SUBCOMMANDS = {
 
 
 def _is_tui_chat_launch(args) -> bool:
-    return bool(getattr(args, "tui", False) or os.environ.get("HERMES_TUI") == "1")
+    return bool(getattr(args, "tui", False) or os.environ.get("KOVA_TUI") == "1")
 
 
 def _command_has_dedicated_mcp_startup(args) -> bool:
@@ -13984,7 +13999,7 @@ def _should_background_mcp_startup(args) -> bool:
 
 def _prepare_agent_startup(args) -> None:
     """Discover plugins/MCP/hooks for commands that can run an agent turn."""
-    # --yolo: chokepoint guarantee that HERMES_YOLO_MODE is set before ANY
+    # --yolo: chokepoint guarantee that KOVA_YOLO_MODE is set before ANY
     # plugin/tool discovery below imports tools.approval, which freezes
     # _YOLO_MODE_FROZEN at import time (PR #7994 security design).  main()'s
     # dispatch path also sets this earlier, but _prepare_agent_startup() is
@@ -13992,7 +14007,7 @@ def _prepare_agent_startup(args) -> None:
     # so the guarantee lives here where the import is actually triggered
     # (#60328).
     if getattr(args, "yolo", False):
-        os.environ["HERMES_YOLO_MODE"] = "1"
+        os.environ["KOVA_YOLO_MODE"] = "1"
     _apply_safe_mode(args)
 
     _sub_attr, _sub_set = _AGENT_SUBCOMMANDS.get(args.command, (None, None))
@@ -14063,9 +14078,9 @@ def _prepare_agent_startup(args) -> None:
 def _apply_safe_mode(args) -> None:
     if not getattr(args, "safe_mode", False):
         return
-    os.environ["HERMES_SAFE_MODE"] = "1"
-    os.environ["HERMES_IGNORE_USER_CONFIG"] = "1"
-    os.environ["HERMES_IGNORE_RULES"] = "1"
+    os.environ["KOVA_SAFE_MODE"] = "1"
+    os.environ["KOVA_IGNORE_USER_CONFIG"] = "1"
+    os.environ["KOVA_IGNORE_RULES"] = "1"
 
 
 def _set_chat_arg_defaults(args) -> None:
@@ -14087,14 +14102,14 @@ def _try_termux_fast_cli_launch() -> bool:
     """Run obvious Termux non-TUI chat/oneshot/version paths on a light parser."""
     if not _is_termux_startup_environment():
         return False
-    if os.environ.get("HERMES_TERMUX_DISABLE_FAST_CLI") == "1":
+    if os.environ.get("KOVA_TERMUX_DISABLE_FAST_CLI") == "1":
         return False
 
     argv = sys.argv[1:]
     if "-h" in argv or "--help" in argv:
         return False
     # Let the TUI fast path (or full dispatch) handle anything that resolves to
-    # the TUI â€” explicit --tui/env or display.interface=tui. `--cli` forces this
+    # the TUI — explicit --tui/env or display.interface=tui. `--cli` forces this
     # to stay False so the classic fast path still runs.
     if _wants_tui_early(argv):
         return False
@@ -14141,10 +14156,10 @@ def _try_termux_fast_cli_launch() -> bool:
             # Bare Termux CLI should reach the prompt first and do agent-only
             # discovery on the first submitted turn instead of before input.
             setattr(args, "compact", True)
-            os.environ["HERMES_DEFER_AGENT_STARTUP"] = "1"
-            os.environ["HERMES_FAST_STARTUP_BANNER"] = "1"
+            os.environ["KOVA_DEFER_AGENT_STARTUP"] = "1"
+            os.environ["KOVA_FAST_STARTUP_BANNER"] = "1"
             if getattr(args, "accept_hooks", False):
-                os.environ["HERMES_ACCEPT_HOOKS"] = "1"
+                os.environ["KOVA_ACCEPT_HOOKS"] = "1"
         else:
             _prepare_agent_startup(args)
         cmd_chat(args)
@@ -14207,9 +14222,9 @@ def cmd_memory(args):
         print("\n  ✓ Memory provider: built-in only")
         print("  Saved to config.yaml\n")
     elif sub == "reset":
-        from kova_constants import get_hermes_home, display_hermes_home
+        from kova_constants import get_kova_home, display_kova_home
 
-        mem_dir = get_hermes_home() / "memories"
+        mem_dir = get_kova_home() / "memories"
         target = getattr(args, "target", "all")
         files_to_reset = []
         if target in {"all", "memory"}:
@@ -14223,7 +14238,7 @@ def cmd_memory(args):
         ]
         if not existing:
             print(
-                f"\n  Nothing to reset â€” no memory files found in {display_hermes_home()}/memories/\n"
+                f"\n  Nothing to reset — no memory files found in {display_kova_home()}/memories/\n"
             )
             return
 
@@ -14231,7 +14246,7 @@ def cmd_memory(args):
         for f, desc in existing:
             path = mem_dir / f
             size = path.stat().st_size
-            print(f"    â—† {f} ({desc}) â€” {size:,} bytes")
+            print(f"    ◆ {f} ({desc}) — {size:,} bytes")
 
         if not getattr(args, "yes", False):
             try:
@@ -14250,7 +14265,7 @@ def cmd_memory(args):
         print(
             "\n  Memory reset complete. New sessions will start with a blank slate."
         )
-        print(f"  Files were in: {display_hermes_home()}/memories/\n")
+        print(f"  Files were in: {display_kova_home()}/memories/\n")
     else:
         from kova_cli.memory_setup import memory_command
 
@@ -14349,9 +14364,9 @@ def cmd_claw(args):
 
 
 def main():
-    """Main entry point for hermes CLI."""
-    # Cosmetic: make the process show up as 'hermes' instead of 'python3.11'
-    # in ps/top/htop.  Non-fatal â€” just a nicer UX.
+    """Main entry point for kova CLI."""
+    # Cosmetic: make the process show up as 'kova' instead of 'python3.11'
+    # in ps/top/htop.  Non-fatal — just a nicer UX.
     _set_process_title()
 
     # Force UTF-8 stdio on Windows before anything prints.  No-op elsewhere.
@@ -14361,9 +14376,9 @@ def main():
     except Exception:
         pass
 
-    # Sweep stale ``hermes.exe.old.*`` quarantine files left by previous
+    # Sweep stale ``kova.exe.old.*`` quarantine files left by previous
     # ``kova update`` runs on Windows. Silent no-op on non-Windows or when
-    # there's nothing to clean. See ``_quarantine_running_hermes_exe``.
+    # there's nothing to clean. See ``_quarantine_running_kova_exe``.
     try:
         _cleanup_quarantined_exes()
     except Exception:
@@ -14371,7 +14386,7 @@ def main():
 
     # Self-heal a venv left half-built by an interrupted ``kova update``
     # (Ctrl-C, terminal close, WSL OOM mid-install). Skip when the user is
-    # *running* update â€” that flow writes and clears its own marker, and we
+    # *running* update — that flow writes and clears its own marker, and we
     # don't want a recovery install racing the real one. Never raises.
     #
     # The substring match is deliberately loose: argv isn't parsed yet at this
@@ -14416,7 +14431,7 @@ def main():
     moa_parser.set_defaults(func=cmd_moa)
 
     # =========================================================================
-    # fallback command â€” manage the fallback provider chain
+    # fallback command — manage the fallback provider chain
     # =========================================================================
     from kova_cli.fallback_cmd import cmd_fallback
 
@@ -14452,7 +14467,7 @@ def main():
     fallback_parser.set_defaults(func=cmd_fallback)
 
     # =========================================================================
-    # secrets command â€” external secret managers (Bitwarden, 1Password)
+    # secrets command — external secret managers (Bitwarden, 1Password)
     # =========================================================================
     secrets_parser = subparsers.add_parser(
         "secrets",
@@ -14478,7 +14493,7 @@ def main():
         help="1Password (op:// references) integration",
     )
 
-    # Lazy import â€” only pays for itself when this subcommand is actually used.
+    # Lazy import — only pays for itself when this subcommand is actually used.
     from kova_cli import secrets_cli as _secrets_cli
     from kova_cli import onepassword_secrets_cli as _op_secrets_cli
 
@@ -14550,7 +14565,7 @@ def main():
         from agent.lsp.cli import register_subparser as _lsp_register
         _lsp_register(subparsers)
     except Exception as _lsp_err:  # noqa: BLE001
-        # LSP is optional infrastructure â€” never let a registration
+        # LSP is optional infrastructure — never let a registration
         # failure break the CLI overall.
         logger.debug("LSP CLI registration failed: %s", _lsp_err)
 
@@ -14586,7 +14601,7 @@ def main():
     build_slack_parser(subparsers, cmd_slack=cmd_slack)
 
     # =========================================================================
-    # send command â€” pipe shell-script output to any configured platform
+    # send command — pipe shell-script output to any configured platform
     # =========================================================================
     from kova_cli.send_cmd import register_send_subparser
     register_send_subparser(subparsers)
@@ -14622,13 +14637,13 @@ def main():
     build_webhook_parser(subparsers, cmd_webhook=cmd_webhook)
 
     # =========================================================================
-    # portal command â€” Nous Portal status + Tool Gateway routing
+    # portal command — Nous Portal status + Tool Gateway routing
     # =========================================================================
     from kova_cli.portal_cli import add_parser as _add_portal_parser
     _add_portal_parser(subparsers)
 
     # =========================================================================
-    # kanban command â€” multi-profile collaboration board
+    # kanban command — multi-profile collaboration board
     # =========================================================================
     from kova_cli.kanban import build_parser as _build_kanban_parser
 
@@ -14636,7 +14651,7 @@ def main():
     kanban_parser.set_defaults(func=cmd_kanban)
 
     # =========================================================================
-    # project command â€” named, multi-folder workspaces
+    # project command — named, multi-folder workspaces
     # =========================================================================
     from kova_cli.projects_cmd import build_parser as _build_project_parser
 
@@ -14644,7 +14659,7 @@ def main():
     project_parser.set_defaults(func=cmd_project)
 
     # =========================================================================
-    # hooks command â€” shell-hook inspection and management
+    # hooks command — shell-hook inspection and management
     # =========================================================================
     # hooks command  (parser built in kova_cli/subcommands/hooks.py)
     # =========================================================================
@@ -14656,7 +14671,7 @@ def main():
     build_doctor_parser(subparsers, cmd_doctor=cmd_doctor)
 
     # =========================================================================
-    # security command â€” on-demand supply-chain audit
+    # security command — on-demand supply-chain audit
     # =========================================================================
     # security command  (parser built in kova_cli/subcommands/security.py)
     # =========================================================================
@@ -14683,8 +14698,8 @@ def main():
     checkpoints_parser = subparsers.add_parser(
         "checkpoints",
         help="Inspect / prune / clear ~/.hermes/checkpoints/",
-        description="Manage the filesystem checkpoint store â€” the shadow git "
-        "repo hermes uses to snapshot working directories before "
+        description="Manage the filesystem checkpoint store — the shadow git "
+        "repo kova uses to snapshot working directories before "
         "write_file/patch/terminal calls. Lets you see how much "
         "space checkpoints occupy, force a prune, or wipe the base.",
     )
@@ -14722,7 +14737,7 @@ def main():
     build_skills_parser(subparsers, cmd_skills=cmd_skills)
 
     # =========================================================================
-    # bundles command â€” skill bundles (alias /<name> for multiple skills)
+    # bundles command — skill bundles (alias /<name> for multiple skills)
     # =========================================================================
     bundles_parser = subparsers.add_parser(
         "bundles",
@@ -14743,14 +14758,14 @@ def main():
     build_plugins_parser(subparsers, cmd_plugins=cmd_plugins)
 
     # =========================================================================
-    # Plugin CLI commands â€” dynamically registered by memory/general plugins.
+    # Plugin CLI commands — dynamically registered by memory/general plugins.
     # Plugins provide a register_cli(subparser) function that builds their
     # own argparse tree.  No hardcoded plugin commands in main.py.
     #
     # Skipped when the invocation is already targeting a known built-in
-    # subcommand â€” ``kova --help``, ``kova version``, ``kova logs``,
+    # subcommand — ``kova --help``, ``kova version``, ``kova logs``,
     # etc.  This avoids eagerly importing every bundled plugin module
-    # (google.cloud.pubsub_v1, aiohttp, grpc, PIL â€¦) which costs
+    # (google.cloud.pubsub_v1, aiohttp, grpc, PIL …) which costs
     # 500-650ms on typical installs.
     # =========================================================================
     if _plugin_cli_discovery_needed():
@@ -14788,11 +14803,11 @@ def main():
             logging.getLogger(__name__).debug("Plugin CLI discovery failed: %s", _exc)
 
     # =========================================================================
-    # curator command â€” background skill maintenance
+    # curator command — background skill maintenance
     # =========================================================================
     curator_parser = subparsers.add_parser(
         "curator",
-        help="Background skill maintenance (curator) â€” status, run, pause, pin",
+        help="Background skill maintenance (curator) — status, run, pause, pin",
         description=(
             "The curator is an auxiliary-model background task that "
             "periodically reviews agent-created skills, prunes stale ones, "
@@ -14809,7 +14824,7 @@ def main():
         logging.getLogger(__name__).debug("curator CLI wiring failed: %s", _exc)
 
     # =========================================================================
-    # pets command â€” petdex animated mascots (CLI / TUI / desktop display)
+    # pets command — petdex animated mascots (CLI / TUI / desktop display)
     # =========================================================================
     pets_parser = subparsers.add_parser(
         "pets",
@@ -14829,7 +14844,7 @@ def main():
         logging.getLogger(__name__).debug("pets CLI wiring failed: %s", _exc)
 
     # =========================================================================
-    # journey command â€” learned skills + memories over time, in the terminal
+    # journey command — learned skills + memories over time, in the terminal
     # =========================================================================
     journey_parser = subparsers.add_parser(
         "journey",
@@ -14860,7 +14875,7 @@ def main():
     build_tools_parser(subparsers, cmd_tools=cmd_tools)
 
     # =========================================================================
-    # computer-use command â€” manage Computer Use (cua-driver) on macOS
+    # computer-use command — manage Computer Use (cua-driver) on macOS
     # =========================================================================
     computer_use_parser = subparsers.add_parser(
         "computer-use",
@@ -14906,7 +14921,7 @@ def main():
         description=(
             "Drive cua-driver's stable `health_report` MCP tool and render\n"
             "its check matrix (TCC permissions, bundle identity, version,\n"
-            "platform support, screenshot probe, â€¦) as human-readable\n"
+            "platform support, screenshot probe, …) as human-readable\n"
             "output. cua-driver owns the health model; this command stays\n"
             "thin so new checks added upstream surface here without code\n"
             "changes. Exits 0 when overall=ok, 1 when degraded/failed, 2\n"
@@ -14941,7 +14956,7 @@ def main():
         help="Check or grant macOS Accessibility + Screen Recording (macOS)",
         description=(
             "Computer Use drives the Mac through cua-driver, whose TCC grants\n"
-            "attach to cua-driver's own identity (com.trycua.driver) â€” not the\n"
+            "attach to cua-driver's own identity (com.trycua.driver) — not the\n"
             "terminal or the Kova app. `status` reports the driver's grant\n"
             "state; `grant` launches CuaDriver via LaunchServices so the macOS\n"
             "permission dialog is attributed to the process that does the work."
@@ -14998,7 +15013,7 @@ def main():
                     st = cua_driver_update_check()
                     if st and st.get("update_available"):
                         latest = st.get("latest_version") or "?"
-                        print(f"  â¬† Update available: cua-driver {latest}.")
+                        print(f"  ⬆ Update available: cua-driver {latest}.")
                         print("    Run: kova computer-use install --upgrade")
                     elif st:
                         print("  ✓ Up to date.")
@@ -15037,24 +15052,24 @@ def main():
                 if not st["installed"]:
                     print("cua-driver: not installed. Run: kova computer-use install")
                     sys.exit(1)
-                glyph = lambda v: "âœ…" if v is True else ("âŒ" if v is False else "â€¢")  # noqa: E731
+                glyph = lambda v: "✅" if v is True else ("❌" if v is False else "•")  # noqa: E731
                 print(f"cua-driver: {st['version'] or 'installed'} ({st['platform']})")
                 if st["can_grant"]:  # macOS TCC permissions
                     print(f"  {glyph(st['accessibility'])} Accessibility")
                     print(f"  {glyph(st['screen_recording'])} Screen Recording")
                     if not st["ready"]:
                         print("  Grant: kova computer-use permissions grant")
-                else:  # no TCC model â€” readiness is driver health
+                else:  # no TCC model — readiness is driver health
                     print(f"  {glyph(st['ready'])} driver health (no permission toggles on {st['platform']})")
                 for c in st["checks"]:
                     if c["status"] != "ok":
-                        print(f"  âš  {c['label']}: {c['message']}")
+                        print(f"  ⚠ {c['label']}: {c['message']}")
                 if st["error"]:
-                    print(f"  âš  {st['error']}")
+                    print(f"  ⚠ {st['error']}")
                 sys.exit(0 if st["ready"] else 1)
             computer_use_perms.print_help()
             return
-        # No subcommand â†’ show help
+        # No subcommand → show help
         computer_use_parser.print_help()
 
     computer_use_parser.set_defaults(func=cmd_computer_use)
@@ -15130,7 +15145,7 @@ def main():
         p.add_argument(
             "--model",
             help="Only match sessions whose model name contains this substring "
-            "(e.g. 'sonnet', 'gpt-5', 'hermes')",
+            "(e.g. 'sonnet', 'gpt-5', 'kova')",
         )
         p.add_argument(
             "--provider",
@@ -15192,7 +15207,7 @@ def main():
         nargs="?",
         help=(
             "Output path. JSONL: file path (use - for stdout, required). "
-            "md/qmd: output directory (default: <hermes home>/session-exports)"
+            "md/qmd: output directory (default: <kova home>/session-exports)"
         ),
     )
     sessions_export.add_argument(
@@ -15277,7 +15292,7 @@ def main():
     )
     _add_session_filter_args(
         sessions_prune,
-        "Delete sessions older than AGE â€” days if bare number, or a duration "
+        "Delete sessions older than AGE — days if bare number, or a duration "
         "like '5h'/'2d'/'1w', or an ISO timestamp (bare prune with no filters "
         "defaults to 90 days; any filter matches all ages)",
     )
@@ -15289,7 +15304,7 @@ def main():
 
     sessions_archive = sessions_subparsers.add_parser(
         "archive",
-        help="Bulk-archive (soft-hide) sessions matching filters â€” no deletion",
+        help="Bulk-archive (soft-hide) sessions matching filters — no deletion",
     )
     _add_session_filter_args(
         sessions_archive,
@@ -15312,7 +15327,7 @@ def main():
             "copies of every message and indexed tool output). Runs "
             "foreground with a progress bar, throttles so a running gateway "
             "stays responsive, and VACUUMs at the end. Safe to interrupt and "
-            "re-run â€” it resumes where it left off. No conversation data is "
+            "re-run — it resumes where it left off. No conversation data is "
             "changed; only the search index is rebuilt."
         ),
     )
@@ -15360,7 +15375,7 @@ def main():
 
     sessions_browse = sessions_subparsers.add_parser(
         "browse",
-        help="Interactive session picker â€” browse, search, and resume sessions",
+        help="Interactive session picker — browse, search, and resume sessions",
     )
     sessions_browse.add_argument(
         "--source", help="Filter by source (cli, telegram, discord, etc.)"
@@ -15397,12 +15412,12 @@ def main():
                 return
             reason = _db_opens_cleanly(db_path)
             if reason is None:
-                print(f"✓ {db_path} opens cleanly â€” no repair needed.")
+                print(f"✓ {db_path} opens cleanly — no repair needed.")
                 return
-            print(f"âœ— {db_path} does not open cleanly: {reason}")
+            print(f"✗ {db_path} does not open cleanly: {reason}")
             if getattr(args, "check_only", False):
                 return
-            print("Repairing (a backup copy is made first)â€¦")
+            print("Repairing (a backup copy is made first)…")
             report = repair_state_db_schema(
                 db_path, backup=not getattr(args, "no_backup", False)
             )
@@ -15416,11 +15431,11 @@ def main():
                     n = SessionDB()._conn.execute(
                         "SELECT COUNT(*) FROM sessions"
                     ).fetchone()[0]
-                    print(f"✓ Repaired â€” {n} sessions recovered.")
+                    print(f"✓ Repaired — {n} sessions recovered.")
                 except Exception:
                     print("✓ Repaired.")
             else:
-                print(f"âœ— Repair failed: {report.get('error')}")
+                print(f"✗ Repair failed: {report.get('error')}")
                 if report.get("backup_path"):
                     print(f"  A backup is preserved at: {report['backup_path']}")
                 print("  Keep state.db and the backup; do not delete them.")
@@ -15446,7 +15461,7 @@ def main():
             )
 
             # Workspace filter: match a session by its workspace key (git repo
-            # root, else cwd) â€” path substring or exact basename.
+            # root, else cwd) — path substring or exact basename.
             _ws_filter = (getattr(args, "workspace", None) or "").strip()
             if _ws_filter:
                 _needle = _ws_filter.lower()
@@ -15463,12 +15478,12 @@ def main():
                 print("No sessions found.")
                 return
 
-            # Short workspace label: the repo/dir basename, "â€”" when unbound. The
+            # Short workspace label: the repo/dir basename, "—" when unbound. The
             # Workspace column only appears once at least one session carries one
             # (or when filtering), so all-unbound listings read as before.
             def _ws_label(s):
                 key = _ws_key(s)
-                return (os.path.basename(key.rstrip("/\\")) or key) if key else "â€”"
+                return (os.path.basename(key.rstrip("/\\")) or key) if key else "—"
 
             has_ws = bool(_ws_filter) or any(_ws_key(s) for s in sessions)
             has_titles = any(s.get("title") for s in sessions)
@@ -15476,15 +15491,15 @@ def main():
             if has_ws:
                 if has_titles:
                     print(f"{'Title':<28} {'Workspace':<18} {'Last Active':<13} {'ID'}")
-                    print("â”€" * 110)
+                    print("─" * 110)
                 else:
                     print(f"{'Preview':<38} {'Workspace':<18} {'Last Active':<13} {'Src':<6} {'ID'}")
-                    print("â”€" * 100)
+                    print("─" * 100)
                 for s in sessions:
                     last_active = _relative_time(s.get("last_active"))
                     ws = _ws_label(s)[:16]
                     if has_titles:
-                        title = (s.get("title") or "â€”")[:26]
+                        title = (s.get("title") or "—")[:26]
                         print(f"{title:<28} {ws:<18} {last_active:<13} {s['id']}")
                     else:
                         preview = s.get("preview", "")[:36]
@@ -15493,10 +15508,10 @@ def main():
 
             if has_titles:
                 print(f"{'Title':<32} {'Preview':<40} {'Last Active':<13} {'ID'}")
-                print("â”€" * 110)
+                print("─" * 110)
             else:
                 print(f"{'Preview':<50} {'Last Active':<13} {'Src':<6} {'ID'}")
-                print("â”€" * 95)
+                print("─" * 95)
             for s in sessions:
                 last_active = _relative_time(s.get("last_active"))
                 preview = (
@@ -15505,7 +15520,7 @@ def main():
                     else s.get("preview", "")[:48]
                 )
                 if has_titles:
-                    title = (s.get("title") or "â€”")[:30]
+                    title = (s.get("title") or "—")[:30]
                     sid = s["id"]
                     print(f"{title:<32} {preview:<40} {last_active:<13} {sid}")
                 else:
@@ -15639,7 +15654,7 @@ def main():
                 db.close()
                 return
 
-            # Claude Code JSONL trace export â€” local file or HF upload.
+            # Claude Code JSONL trace export — local file or HF upload.
             # Redaction is ON by default for traces (they leave the machine
             # when --upload is used); --no-redact opts out after review.
             if args.format == "trace":
@@ -15737,7 +15752,7 @@ def main():
                         out_dir = (
                             Path(args.output).expanduser()
                             if args.output and args.output != "-"
-                            else get_hermes_home() / "session-exports"
+                            else get_kova_home() / "session-exports"
                         )
                         out_dir.mkdir(parents=True, exist_ok=True)
                         exported = 0
@@ -15827,7 +15842,7 @@ def main():
                 print("Markdown/QMD export writes files; stdout (-) is only supported with --format jsonl.")
                 db.close()
                 return
-            output_dir = Path(args.output).expanduser() if args.output else get_hermes_home() / "session-exports"
+            output_dir = Path(args.output).expanduser() if args.output else get_kova_home() / "session-exports"
 
             def _export_one(session_id: str):
                 data = (
@@ -15881,7 +15896,7 @@ def main():
                         print(f"Export verification failed; not deleting: {reason}")
                         db.close()
                         return
-                    sessions_dir = get_hermes_home() / "sessions"
+                    sessions_dir = get_kova_home() / "sessions"
                     if db.delete_session(resolved_session_id, sessions_dir=sessions_dir):
                         print(f"Deleted exported session '{resolved_session_id}'.")
                     else:
@@ -15930,7 +15945,7 @@ def main():
                 ):
                     print("Cancelled.")
                     return
-            sessions_dir = get_hermes_home() / "sessions"
+            sessions_dir = get_kova_home() / "sessions"
             if db.delete_session(resolved_session_id, sessions_dir=sessions_dir):
                 print(f"Deleted session '{resolved_session_id}'.")
             else:
@@ -15945,7 +15960,7 @@ def main():
 
             # Preserve the historical default ONLY for a truly bare
             # `kova sessions prune`: no time window and no filters at all
-            # means "older than 90 days". ANY filter â€” including --source â€”
+            # means "older than 90 days". ANY filter — including --source —
             # suppresses the implicit cutoff, so `prune --source cron`
             # matches ALL cron sessions regardless of age. The preview +
             # confirmation below (count, oldest/newest) is the safety net.
@@ -15999,7 +16014,7 @@ def main():
                 print(f"No sessions match ({describe_filters(filters)}).")
                 return
 
-            # Candidates are ordered oldest-first â€” surface the age span so
+            # Candidates are ordered oldest-first — surface the age span so
             # the confirmation makes the blast radius obvious.
             _oldest = candidates[0].get("started_at")
             _newest = candidates[-1].get("started_at")
@@ -16022,9 +16037,9 @@ def main():
                         f"{s['message_count']:>4} msgs  {title}"
                     )
                 if len(candidates) > len(shown):
-                    print(f"  â€¦ and {len(candidates) - len(shown)} more")
+                    print(f"  … and {len(candidates) - len(shown)} more")
                 if args.dry_run:
-                    print(f"Dry run â€” nothing {'deleted' if action == 'prune' else 'archived'}.")
+                    print(f"Dry run — nothing {'deleted' if action == 'prune' else 'archived'}.")
                     return
 
             if not args.yes:
@@ -16035,7 +16050,7 @@ def main():
                     return
 
             if action == "prune":
-                sessions_dir = get_hermes_home() / "sessions"
+                sessions_dir = get_kova_home() / "sessions"
                 count = db.prune_sessions(sessions_dir=sessions_dir, **filters)
                 print(f"Pruned {count} session(s).")
             else:
@@ -16076,7 +16091,7 @@ def main():
                 print("Cancelled.")
                 return
 
-            # Launch hermes --resume <id> by replacing the current process
+            # Launch kova --resume <id> by replacing the current process
             print(f"Resuming session: {selected_id}")
             from kova_cli.relaunch import relaunch
 
@@ -16090,7 +16105,7 @@ def main():
                 if db_path.exists()
                 else 0.0
             )
-            print("Optimizing session store (FTS merge + VACUUM)â€¦")
+            print("Optimizing session store (FTS merge + VACUUM)…")
             try:
                 # vacuum() merges FTS5 segments (optimize_fts) then VACUUMs,
                 # and returns the number of indexes it merged.
@@ -16114,7 +16129,7 @@ def main():
         elif action == "optimize-storage":
             db_path = db.db_path
             if not db.fts_optimize_available():
-                print("Search index is already on the compact layout â€” nothing to do.")
+                print("Search index is already on the compact layout — nothing to do.")
                 db.close()
                 return
 
@@ -16123,7 +16138,7 @@ def main():
 
             # Disk preflight: the rebuild adds the new index before the old is
             # torn down, and the final VACUUM needs a full second copy of the
-            # file. Require headroom â‰ˆ current file size to finish cleanly.
+            # file. Require headroom ≈ current file size to finish cleanly.
             do_vacuum = not getattr(args, "no_vacuum", False)
             try:
                 import shutil as _shutil
@@ -16139,7 +16154,7 @@ def main():
                       f"{' incl. VACUUM' if do_vacuum else ''})")
                 if free_bytes < need_bytes:
                     print()
-                    print("âš  Not enough free disk to complete safely. Free up "
+                    print("⚠ Not enough free disk to complete safely. Free up "
                           "space, or run with --no-vacuum (rebuilds the index "
                           "but doesn't reclaim space until a later VACUUM).")
                     db.close()
@@ -16171,10 +16186,10 @@ def main():
                     label = {"teardown": "Reclaiming old index",
                              "vacuum": "Compacting database (VACUUM)",
                              "done": "Done"}.get(phase, phase)
-                    print(f"\n  {label}â€¦", flush=True)
+                    print(f"\n  {label}…", flush=True)
                 _last["phase"] = phase
 
-            print("Optimizing search-index storageâ€¦")
+            print("Optimizing search-index storage…")
             try:
                 result = db.optimize_fts_storage(
                     progress_cb=_progress, vacuum=do_vacuum
@@ -16198,7 +16213,7 @@ def main():
                 f"(reclaimed {saved:.1f} MB)"
             )
             if result.get("vacuumed") is False:
-                print("  (VACUUM was skipped or failed â€” run "
+                print("  (VACUUM was skipped or failed — run "
                       "`kova sessions optimize` later to reclaim freed space.)")
 
         elif action == "stats":
@@ -16311,8 +16326,8 @@ def main():
     # =========================================================================
     # Pre-process argv so unquoted multi-word session names after -c / -r
     # are merged into a single token before argparse sees them.
-    # e.g. ``kova -c Pokemon Agent Dev`` â†’ ``kova -c 'Pokemon Agent Dev'``
-    # â”€â”€ Container-aware routing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # e.g. ``kova -c Pokemon Agent Dev`` → ``kova -c 'Pokemon Agent Dev'``
+    # ── Container-aware routing ────────────────────────────────────────
     # When NixOS container mode is active, route ALL subcommands into
     # the managed container.  This MUST run before parse_args() so that
     # --help, unrecognised flags, and every subcommand are forwarded
@@ -16328,7 +16343,7 @@ def main():
 
     _processed_argv = _coalesce_session_name_args(sys.argv[1:])
 
-    # â”€â”€ Defensive subparser routing (bpo-9338 workaround) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # ── Defensive subparser routing (bpo-9338 workaround) ───────────
     # On some Python versions (notably <3.11), argparse fails to route
     # subcommand tokens when the parent parser has nargs='?' optional
     # arguments (--continue).  The symptom: "unrecognized arguments: model"
@@ -16356,7 +16371,7 @@ def main():
             sys.stderr = _saved_stderr
         except SystemExit as exc:
             sys.stderr = _saved_stderr
-            # Help/version flags (exit code 0) already printed output â€”
+            # Help/version flags (exit code 0) already printed output —
             # re-raise immediately to avoid a second parse_args printing
             # the same help text again (#10230).
             if exc.code == 0:
@@ -16374,18 +16389,18 @@ def main():
         cmd_version(args)
         return
 
-    # --yolo: set HERMES_YOLO_MODE *before* plugin discovery.  The call to
-    # _prepare_agent_startup() below triggers discover_plugins() â†’ tool
+    # --yolo: set KOVA_YOLO_MODE *before* plugin discovery.  The call to
+    # _prepare_agent_startup() below triggers discover_plugins() → tool
     # imports, and tools.approval freezes _YOLO_MODE_FROZEN at module
     # import time (PR #7994, security hardening against prompt-injection).
     # If the env var is set only later (e.g. inside cmd_chat), the frozen
     # value is already False and --yolo silently does nothing.
     if getattr(args, "yolo", False):
-        os.environ["HERMES_YOLO_MODE"] = "1"
+        os.environ["KOVA_YOLO_MODE"] = "1"
 
     # Discover Python plugins and register shell hooks once, before any
     # command that can fire lifecycle hooks.  Both are idempotent; gated
-    # so introspection/management commands (hermes hooks list, cron
+    # so introspection/management commands (kova hooks list, cron
     # list, gateway status, mcp add, ...) don't pay discovery cost or
     # trigger consent prompts for hooks the user is still inspecting.
     _prepare_agent_startup(args)

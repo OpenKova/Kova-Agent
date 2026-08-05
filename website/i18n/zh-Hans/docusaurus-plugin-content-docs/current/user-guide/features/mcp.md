@@ -23,7 +23,7 @@ MCP 让 Kova Agent 连接到外部工具服务器，使 agent 能够使用 Kova 
 1. 安装 MCP 支持（如果你使用了标准安装脚本，已包含在内）：
 
 ```bash
-cd ~/.hermes/hermes-agent
+cd ~/.hermes/kova-agent
 uv pip install -e ".[mcp]"
 ```
 
@@ -407,7 +407,7 @@ Inspect the project root and explain the directory layout.
 
 ```bash
 # 验证 MCP 依赖已安装（标准安装已包含）
-cd ~/.hermes/hermes-agent && uv pip install -e ".[mcp]"
+cd ~/.hermes/kova-agent && uv pip install -e ".[mcp]"
 
 node --version
 npx --version
@@ -509,8 +509,8 @@ kova mcp serve
 ```json
 {
   "mcpServers": {
-    "hermes": {
-      "command": "hermes",
+    "kova": {
+      "command": "kova",
       "args": ["mcp", "serve"]
     }
   }
@@ -522,8 +522,8 @@ kova mcp serve
 ```json
 {
   "mcpServers": {
-    "hermes": {
-      "command": "/home/user/.hermes/hermes-agent/venv/bin/hermes",
+    "kova": {
+      "command": "/home/user/.hermes/hermes-agent/venv/bin/kova",
       "args": ["mcp", "serve"]
     }
   }
@@ -585,7 +585,7 @@ MCP 服务器直接从 Kova 的会话存储（`~/.hermes/sessions/sessions.json`
 
 ## 相关文档
 
-- [在 Kova 中使用 MCP](/guides/use-mcp-with-hermes)
+- [在 Kova 中使用 MCP](/guides/use-mcp-with-kova)
 - [CLI 命令](/reference/cli-commands)
 - [斜杠命令](/reference/slash-commands)
 - [常见问题](/reference/faq)

@@ -1,10 +1,10 @@
 # Kova Desktop ☤
 
 <p align="center">
-  <a href="https://github.com/Kova/hermes-agent/releases"><img src="https://img.shields.io/badge/Download-macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-FFD700?style=for-the-badge" alt="Download"></a>
-  <a href="https://hermes-agent.kova.ai/docs/"><img src="https://img.shields.io/badge/Docs-kova-agent.kova.ai-FFD700?style=for-the-badge" alt="Documentation"></a>
+  <a href="https://github.com/Kova/kova-agent/releases"><img src="https://img.shields.io/badge/Download-macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-FFD700?style=for-the-badge" alt="Download"></a>
+  <a href="https://kova-agent.kova.ai/docs/"><img src="https://img.shields.io/badge/Docs-kova-agent.kova.ai-FFD700?style=for-the-badge" alt="Documentation"></a>
   <a href="https://discord.gg/openkova"><img src="https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord"></a>
-  <a href="https://github.com/Kova/hermes-agent/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
+  <a href="https://github.com/Kova/kova-agent/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
 </p>
 
 **The native desktop app for [Kova Agent](../../README.md) — the self-improving AI agent from [Kova](https://github.com/OpenKova).** Same agent, same skills, same memory as the CLI and gateway, in a polished native window — chat with streaming tool output, side-by-side previews, a file browser, voice, and settings, no terminal required. Available for **macOS, Windows, and Linux**.
@@ -27,14 +27,14 @@
 Already have the Kova CLI? Just run:
 
 ```bash
-hermes desktop
+kova desktop
 ```
 
 It builds and launches the GUI against your existing install — same config, keys, sessions, and skills. On first launch Kova walks you through picking a provider and model; nothing else to configure.
 
 ### Prebuilt installers
 
-Prebuilt installers are built and distributed via [the Kova Desktop website.](https://hermes-agent.kova.ai/).
+Prebuilt installers are built and distributed via [the Kova Desktop website.](https://kova-agent.kova.ai/).
 
 ---
 
@@ -43,7 +43,7 @@ Prebuilt installers are built and distributed via [the Kova Desktop website.](ht
 The app checks for updates in the background and offers a one-click update when one is ready. You can also update any time from the CLI:
 
 ```bash
-hermes update
+kova update
 ```
 
 ---
@@ -69,7 +69,7 @@ Point the app at a specific source checkout, or sandbox it away from your real c
 ```bash
 # throwaway HERMES_HOME, separate Electron userData, distinct app name to avoid the single-instance lock
 ../scripts/dev-sandbox.sh npm run dev
-HERMES_DESKTOP_HERMES_ROOT=/path/to/clone npm run dev
+KOVA_DESKTOP_KOVA_ROOT=/path/to/clone npm run dev
 HERMES_HOME=/tmp/throwaway npm run dev
 npm run dev:fake-boot   # exercise the startup overlay with deterministic delays
 ```
@@ -89,7 +89,7 @@ Installers are built and uploaded to GitHub Releases manually. macOS/Windows sig
 
 The packaged app ships the Electron shell and a native React chat surface. On
 first launch it can install the Kova Agent runtime into `HERMES_HOME`
-(`~/.hermes`, or `%LOCALAPPDATA%\hermes` on Windows), using the same layout as a
+(`~/.hermes`, or `%LOCALAPPDATA%\kova` on Windows), using the same layout as a
 CLI install.
 
 The app has three boundaries:
@@ -98,16 +98,16 @@ The app has three boundaries:
   filesystem/git/window capabilities, and exposes a narrow preload bridge.
 - **React** owns the Desktop routes, panes, interaction state, and
   `@assistant-ui/react` transcript.
-- **Kova Agent** runs as a headless `hermes serve` process and exposes the
+- **Kova Agent** runs as a headless `kova serve` process and exposes the
   `tui_gateway` JSON-RPC/WebSocket API. The renderer connects through
   [`apps/shared`](../shared/), which is also used by the browser dashboard.
 
 Backend resolution is an ordered ladder:
 
-1. `HERMES_DESKTOP_HERMES_ROOT`
+1. `KOVA_DESKTOP_KOVA_ROOT`
 2. the current source checkout during development
 3. a completed managed install
-4. `HERMES_DESKTOP_HERMES`, or `hermes` on `PATH`
+4. `KOVA_DESKTOP_BIN`, or `kova` on `PATH`
 5. a system Python that can import the Kova runtime
 6. the first-launch bootstrap installer
 
@@ -168,31 +168,31 @@ Boot logs land in `HERMES_HOME/logs/desktop.log` (includes backend output and re
 
 ```bash
 # Force a clean first-launch setup
-rm "$HOME/.hermes/hermes-agent/.hermes-bootstrap-complete"
+rm "$HOME/.hermes/kova-agent/.hermes-bootstrap-complete"
 # Rebuild a broken Python venv
 rm -rf "$HOME/.hermes/hermes-agent/venv"
 # Reset a stuck macOS microphone prompt (macOS only)
-tccutil reset Microphone com.nousresearch.hermes
+tccutil reset Microphone com.nousresearch.kova
 ```
 
 **Windows (PowerShell):**
 
 ```powershell
 # Force a clean first-launch setup
-Remove-Item "$env:LOCALAPPDATA\hermes\hermes-agent\.hermes-bootstrap-complete"
+Remove-Item "$env:LOCALAPPDATA\kova\kova-agent\.hermes-bootstrap-complete"
 # Rebuild a broken Python venv
-Remove-Item -Recurse -Force "$env:LOCALAPPDATA\hermes\hermes-agent\venv"
+Remove-Item -Recurse -Force "$env:LOCALAPPDATA\kova\kova-agent\venv"
 ```
 
-> The default Kova home on Windows is `%LOCALAPPDATA%\hermes`. Set the `HERMES_HOME` env var if you've relocated it.
+> The default Kova home on Windows is `%LOCALAPPDATA%\kova`. Set the `HERMES_HOME` env var if you've relocated it.
 
 ---
 
 ## Community
 
 - 💬 [Discord](https://discord.gg/openkova)
-- 📖 [Documentation](https://hermes-agent.kova.ai/docs/)
-- 🐛 [Issues](https://github.com/Kova/hermes-agent/issues)
+- 📖 [Documentation](https://kova-agent.kova.ai/docs/)
+- 🐛 [Issues](https://github.com/Kova/kova-agent/issues)
 
 ---
 

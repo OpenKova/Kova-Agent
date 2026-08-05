@@ -6,11 +6,11 @@ Covers the pieces added when boards became a first-class concept:
 * Path resolution for ``default`` (legacy ``<root>/kanban.db``) vs
   named boards (``<root>/kanban/boards/<slug>/kanban.db``).
 * Current-board persistence via ``<root>/kanban/current`` and
-  ``HERMES_KANBAN_BOARD`` env var.
+  ``KOVA_KANBAN_BOARD`` env var.
 * ``connect(board=)`` isolation — writes on one board don't leak.
 * ``create_board`` / ``list_boards`` / ``remove_board`` round trip.
 * CLI surface: ``kova kanban boards list/create/switch/rm``.
-* ``_default_spawn`` injects ``HERMES_KANBAN_BOARD`` into worker env.
+* ``_default_spawn`` injects ``KOVA_KANBAN_BOARD`` into worker env.
 """
 
 from __future__ import annotations
@@ -43,20 +43,20 @@ def fresh_home(tmp_path, monkeypatch):
     fixture layers a per-test HERMES_HOME plus a path-init cache reset
     so each test sees a truly empty board set.
     """
-    home = tmp_path / "hermes_home"
+    home = tmp_path / "kova_home"
     home.mkdir()
     monkeypatch.setenv("HERMES_HOME", str(home))
     for var in (
-        "HERMES_KANBAN_DB",
-        "HERMES_KANBAN_WORKSPACES_ROOT",
-        "HERMES_KANBAN_HOME",
-        "HERMES_KANBAN_BOARD",
+        "KOVA_KANBAN_DB",
+        "KOVA_KANBAN_WORKSPACES_ROOT",
+        "KOVA_KANBAN_HOME",
+        "KOVA_KANBAN_BOARD",
     ):
         monkeypatch.delenv(var, raising=False)
-    # Also reset kova_constants cache so get_default_hermes_root() re-reads.
+    # Also reset kova_constants cache so get_default_kova_root() re-reads.
     try:
         import kova_constants
-        kova_constants._cached_default_hermes_root = None  # type: ignore[attr-defined]
+        kova_constants._cached_default_kova_root = None  # type: ignore[attr-defined]
     except Exception:
         pass
     # Kanban module-level init cache must not leak between tests.
@@ -127,15 +127,15 @@ class TestPathResolution:
         )
 
     def test_env_var_db_override_still_wins(self, fresh_home, tmp_path, monkeypatch):
-        """``HERMES_KANBAN_DB`` pins the file regardless of board= arg."""
+        """``KOVA_KANBAN_DB`` pins the file regardless of board= arg."""
         forced = tmp_path / "custom.db"
-        monkeypatch.setenv("HERMES_KANBAN_DB", str(forced))
+        monkeypatch.setenv("KOVA_KANBAN_DB", str(forced))
         assert kb.kanban_db_path() == forced
         assert kb.kanban_db_path(board="ignored") == forced
 
     def test_env_var_workspaces_override(self, fresh_home, tmp_path, monkeypatch):
         forced = tmp_path / "ws"
-        monkeypatch.setenv("HERMES_KANBAN_WORKSPACES_ROOT", str(forced))
+        monkeypatch.setenv("KOVA_KANBAN_WORKSPACES_ROOT", str(forced))
         assert kb.workspaces_root(board="any") == forced
 
 
@@ -152,7 +152,7 @@ class TestCurrentBoard:
         # trusts env-var validity, but the resolution chain doesn't require
         # the board to exist; we just test that env trumps).
         kb.create_board("envboard")
-        monkeypatch.setenv("HERMES_KANBAN_BOARD", "envboard")
+        monkeypatch.setenv("KOVA_KANBAN_BOARD", "envboard")
         assert kb.get_current_board() == "envboard"
 
     def test_file_pointer_honoured(self, fresh_home):
@@ -180,17 +180,17 @@ class TestCurrentBoard:
         kb.create_board("a")
         kb.create_board("b")
         kb.set_current_board("a")
-        monkeypatch.setenv("HERMES_KANBAN_BOARD", "b")
+        monkeypatch.setenv("KOVA_KANBAN_BOARD", "b")
         assert kb.get_current_board() == "b"
 
     def test_stale_env_falls_through_to_file_pointer(self, fresh_home, monkeypatch):
         kb.create_board("persisted")
         kb.set_current_board("persisted")
-        monkeypatch.setenv("HERMES_KANBAN_BOARD", "missing-board")
+        monkeypatch.setenv("KOVA_KANBAN_BOARD", "missing-board")
         assert kb.get_current_board() == "persisted"
 
     def test_invalid_env_falls_through(self, fresh_home, monkeypatch):
-        monkeypatch.setenv("HERMES_KANBAN_BOARD", "!!bad!!")
+        monkeypatch.setenv("KOVA_KANBAN_BOARD", "!!bad!!")
         # Should not crash — falls through to default.
         assert kb.get_current_board() == "default"
 
@@ -350,7 +350,7 @@ class TestConnectionIsolation:
         kb.create_board("persist")
         kb.create_board("envwin")
         kb.set_current_board("persist")
-        monkeypatch.setenv("HERMES_KANBAN_BOARD", "envwin")
+        monkeypatch.setenv("KOVA_KANBAN_BOARD", "envwin")
         with kb.connect() as conn:
             kb.create_task(conn, title="via-env", assignee="x")
         with kb.connect(board="envwin") as conn:
@@ -365,7 +365,7 @@ class TestConnectionIsolation:
         kb.remove_board("ephemeral")
         kb.create_board("persist")
         kb.set_current_board("persist")
-        monkeypatch.setenv("HERMES_KANBAN_BOARD", "ephemeral")
+        monkeypatch.setenv("KOVA_KANBAN_BOARD", "ephemeral")
 
         with kb.connect() as conn:
             kb.create_task(conn, title="via-fallback", assignee="x")
@@ -380,7 +380,7 @@ class TestConnectionIsolation:
 # ---------------------------------------------------------------------------
 
 class TestWorkerSpawnEnv:
-    """Ensure the dispatcher pins ``HERMES_KANBAN_BOARD`` / DB / workspaces on spawn.
+    """Ensure the dispatcher pins ``KOVA_KANBAN_BOARD`` / DB / workspaces on spawn.
 
     We monkey-patch ``subprocess.Popen`` to capture the child env without
     actually spawning anything.
@@ -421,13 +421,13 @@ class TestWorkerSpawnEnv:
         kb._default_spawn(task, str(fresh_home / "ws"), board="spawntest")
 
         env = captured["env"]
-        assert env["HERMES_KANBAN_BOARD"] == "spawntest"
-        assert env["HERMES_KANBAN_TASK"] == "t_abc"
+        assert env["KOVA_KANBAN_BOARD"] == "spawntest"
+        assert env["KOVA_KANBAN_TASK"] == "t_abc"
         # DB path should match the per-board DB, not the legacy default.
         expected_db = fresh_home / "kanban" / "boards" / "spawntest" / "kanban.db"
-        assert env["HERMES_KANBAN_DB"] == str(expected_db)
+        assert env["KOVA_KANBAN_DB"] == str(expected_db)
         expected_ws = fresh_home / "kanban" / "boards" / "spawntest" / "workspaces"
-        assert env["HERMES_KANBAN_WORKSPACES_ROOT"] == str(expected_ws)
+        assert env["KOVA_KANBAN_WORKSPACES_ROOT"] == str(expected_ws)
 
     def test_default_board_spawn_keeps_legacy_paths(self, fresh_home, monkeypatch):
         captured = {}
@@ -459,8 +459,8 @@ class TestWorkerSpawnEnv:
         )
         kb._default_spawn(task, str(fresh_home / "ws"), board=None)
         env = captured["env"]
-        assert env["HERMES_KANBAN_BOARD"] == "default"
-        assert env["HERMES_KANBAN_DB"] == str(fresh_home / "kanban.db")
+        assert env["KOVA_KANBAN_BOARD"] == "default"
+        assert env["KOVA_KANBAN_DB"] == str(fresh_home / "kanban.db")
 
 
 # ---------------------------------------------------------------------------

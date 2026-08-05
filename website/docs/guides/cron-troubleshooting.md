@@ -147,7 +147,7 @@ If a job ran and failed, you may see error context in:
 The `script` path must be an absolute path (or relative to the Kova config directory). Verify:
 ```bash
 ls ~/.hermes/scripts/your-script.py   # Must exist
-hermes cron edit <job_id> --script ~/.hermes/scripts/your-script.py
+kova cron edit <job_id> --script ~/.hermes/scripts/your-script.py
 ```
 
 **"Skill not found" at job execution**
@@ -157,7 +157,7 @@ The skill must be installed on the machine running the scheduler. If you move be
 Likely a delivery target issue (see Delivery Failures above), no output, or a response containing the cron quiet marker `[SILENT]`.
 
 **Job hangs or times out**
-The scheduler uses an inactivity-based timeout (default 600s, configurable via `HERMES_CRON_TIMEOUT` env var, `0` for unlimited). The agent can run as long as it's actively calling tools — the timer only fires after sustained inactivity. Long-running jobs should use scripts to handle data collection and deliver only the result.
+The scheduler uses an inactivity-based timeout (default 600s, configurable via `KOVA_CRON_TIMEOUT` env var, `0` for unlimited). The agent can run as long as it's actively calling tools — the timer only fires after sustained inactivity. Long-running jobs should use scripts to handle data collection and deliver only the result.
 
 ### Check 3: Lock contention
 
@@ -214,7 +214,7 @@ If you've worked through this guide and the issue persists:
 
 1. Run the job with `kova cron run <job_id>` (fires on next gateway tick) and watch for errors in the chat output
 2. Check `~/.hermes/logs/agent.log` for scheduler messages and `~/.hermes/logs/errors.log` for warnings
-3. Open an issue at [github.com/NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent) with:
+3. Open an issue at [github.com/OpenKova/Kova-Agent](https://github.com/OpenKova/Kova-Agent) with:
    - The job ID and schedule
    - The delivery target
    - What you expected vs. what happened

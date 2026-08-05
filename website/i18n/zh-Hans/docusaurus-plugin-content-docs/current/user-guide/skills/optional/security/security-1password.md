@@ -103,9 +103,9 @@ Kova 终端命令默认为非交互式，且在多次调用之间可能丢失认
 注意：使用 `OP_SERVICE_ACCOUNT_TOKEN` 时**无需**此操作 — 令牌会在终端调用之间自动持久化。
 
 ```bash
-SOCKET_DIR="${TMPDIR:-/tmp}/hermes-tmux-sockets"
+SOCKET_DIR="${TMPDIR:-/tmp}/kova-tmux-sockets"
 mkdir -p "$SOCKET_DIR"
-SOCKET="$SOCKET_DIR/hermes-op.sock"
+SOCKET="$SOCKET_DIR/kova-op.sock"
 SESSION="op-auth-$(date +%Y%m%d-%H%M%S)"
 
 tmux -S "$SOCKET" new -d -s "$SESSION" -n shell

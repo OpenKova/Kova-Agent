@@ -6,7 +6,7 @@ author: Kova Agent
 license: MIT
 platforms: [linux, macos]
 metadata:
-  hermes:
+  kova:
     tags: [cron, polling, rss, github, http, automation, monitoring]
     category: devops
     requires_toolsets: [terminal]
@@ -66,7 +66,7 @@ Watch a GitHub repo (set `GITHUB_TOKEN` in `${HERMES_HOME:-~/.hermes}/.env` to a
 
 ```bash
 python $HERMES_HOME/skills/devops/watchers/scripts/watch_github.py \
-  --name hermes-issues --repo NousResearch/hermes-agent --scope issues
+  --name kova-issues --repo NousResearch/kova-agent --scope issues
 ```
 
 Poll an arbitrary JSON API:

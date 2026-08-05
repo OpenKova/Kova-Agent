@@ -30,12 +30,12 @@ import time
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from hermes_constants import get_hermes_home
+from kova_constants import get_kova_home
 from plugins.google_meet.node import protocol as _proto
 
 
 def _default_token_path() -> Path:
-    return Path(get_hermes_home()) / "workspace" / "meetings" / "node_token.json"
+    return Path(get_kova_home()) / "workspace" / "meetings" / "node_token.json"
 
 
 class NodeServer:
@@ -46,7 +46,7 @@ class NodeServer:
         host: str = "127.0.0.1",
         port: int = 18789,
         token_path: Optional[Path] = None,
-        display_name: str = "hermes-meet-node",
+        display_name: str = "kova-meet-node",
     ) -> None:
         self.host = host
         self.port = port

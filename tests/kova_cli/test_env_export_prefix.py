@@ -75,13 +75,13 @@ def test_skills_tool_load_env_strips_export_prefix(tmp_path, monkeypatch):
         "export SOME_SKILL_KEY=skillval\nPLAIN=plainval\n", encoding="utf-8"
     )
 
-    # skills_tool.load_env reads get_hermes_home()/.env directly.
+    # skills_tool.load_env reads get_kova_home()/.env directly.
     import importlib
 
     import tools.skills_tool as skills_tool
 
     importlib.reload(skills_tool)
-    with patch.object(skills_tool, "get_hermes_home", return_value=tmp_path):
+    with patch.object(skills_tool, "get_kova_home", return_value=tmp_path):
         env = skills_tool.load_env()
 
     assert env["SOME_SKILL_KEY"] == "skillval"
@@ -113,7 +113,7 @@ def test_has_any_provider_configured_with_export_prefix(tmp_path, monkeypatch):
     importlib.reload(hmain)
     # get_env_path() derives from HERMES_HOME (set above) → tmp_path/.env, so
     # no patching is needed. Re-clear os.environ provider keys that
-    # load_hermes_dotenv may have populated at import/reload time, forcing the
+    # load_kova_dotenv may have populated at import/reload time, forcing the
     # function down its .env-reading branch.
     for key in list(__import__("os").environ):
         if key.endswith(("_API_KEY", "_TOKEN")) and key != "BWS_ACCESS_TOKEN":

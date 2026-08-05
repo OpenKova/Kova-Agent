@@ -740,7 +740,7 @@ class TestXAIProviderOAuthPath:
         # Force the env-var fallback to fail so resolution must go via OAuth.
         monkeypatch.delenv("XAI_API_KEY", raising=False)
         monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-        monkeypatch.setenv("HERMES_XAI_BASE_URL", "https://proxy.x.ai/v1/")
+        monkeypatch.setenv("KOVA_XAI_BASE_URL", "https://proxy.x.ai/v1/")
         (tmp_path / "auth.json").write_text(json.dumps({
             "version": 1,
             "active_provider": "xai-oauth",
@@ -776,7 +776,7 @@ class TestXAIProviderOAuthPath:
         pair only to ``providers.xai-oauth`` leaves the manual row stale and
         breaks the next main-runtime load.
         """
-        from hermes_cli.runtime_provider import resolve_runtime_provider
+        from kova_cli.runtime_provider import resolve_runtime_provider
         from tools.xai_http import resolve_xai_http_credentials
 
         monkeypatch.setenv("HERMES_HOME", str(tmp_path))
@@ -824,7 +824,7 @@ class TestXAIProviderOAuthPath:
             }
 
         monkeypatch.setattr(
-            "hermes_cli.auth.refresh_xai_oauth_pure",
+            "kova_cli.auth.refresh_xai_oauth_pure",
             fake_refresh,
         )
 

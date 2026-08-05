@@ -15,10 +15,10 @@ description: >
 author: sprmn24
 # ``requires_env`` and ``optional_env`` entries are surfaced in the
 # ``kova config`` UI via the platform-plugin env var injector in
-# ``hermes_cli/config.py``.
+# ``kova_cli/config.py``.
 requires_env:
   - name: NTFY_TOPIC
-    description: "Topic name to subscribe to (e.g. hermes-in)"
+    description: "Topic name to subscribe to (e.g. kova-in)"
     prompt: "ntfy subscribe topic"
     password: false
 optional_env:

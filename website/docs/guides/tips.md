@@ -84,7 +84,7 @@ Create an `AGENTS.md` in your project root with architecture decisions, coding c
 
 Want Kova to have a stable default voice? Edit `~/.hermes/SOUL.md` (or `$HERMES_HOME/SOUL.md` if you use a custom Kova home). Kova now seeds a starter SOUL automatically and uses that global file as the instance-wide personality source.
 
-For a full walkthrough, see [Use SOUL.md with Kova](/guides/use-soul-with-hermes).
+For a full walkthrough, see [Use SOUL.md with Kova](/guides/use-soul-with-kova).
 
 ```markdown
 # Soul
@@ -186,7 +186,7 @@ When working with untrusted repositories or running unfamiliar code, use Docker 
 ```bash
 # In your .env:
 TERMINAL_ENV=docker
-TERMINAL_DOCKER_IMAGE=hermes-sandbox:latest
+TERMINAL_DOCKER_IMAGE=kova-sandbox:latest
 ```
 
 ### Avoid Windows Encoding Pitfalls

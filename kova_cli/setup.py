@@ -2,11 +2,11 @@
 Interactive setup wizard for Kova Agent.
 
 Modular wizard with independently-runnable sections:
-  1. Model & Provider â€” choose your AI provider and model
-  2. Terminal Backend â€” where your agent runs commands
-  3. Agent Settings â€” iterations, compression, session reset
-  4. Messaging Platforms â€” connect Telegram, Discord, etc.
-  5. Tools â€” configure TTS, web search, image generation, etc.
+  1. Model & Provider — choose your AI provider and model
+  2. Terminal Backend — where your agent runs commands
+  3. Agent Settings — iterations, compression, session reset
+  4. Messaging Platforms — connect Telegram, Discord, etc.
+  5. Tools — configure TTS, web search, image generation, etc.
 
 Config files are stored in ~/.hermes/ for easy access.
 """
@@ -68,7 +68,7 @@ def _supports_same_provider_pool_setup(provider: str) -> bool:
     return pconfig.auth_type in {"api_key", "oauth_device_code"}
 
 
-# Default model lists per provider â€” used as fallback when the live
+# Default model lists per provider — used as fallback when the live
 # /models endpoint can't be reached.
 _DEFAULT_PROVIDER_MODELS = {
     "copilot-acp": [
@@ -138,7 +138,7 @@ def _set_reasoning_effort(config: Dict[str, Any], effort: str) -> None:
 from kova_cli.config import (
     cfg_get,
     DEFAULT_CONFIG,
-    get_hermes_home,
+    get_kova_home,
     get_config_path,
     get_env_path,
     load_config,
@@ -146,9 +146,9 @@ from kova_cli.config import (
     save_env_value,
     remove_env_value,
     get_env_value,
-    ensure_hermes_home,
+    ensure_kova_home,
 )
-# display_hermes_home imported lazily at call sites (stale-module safety during kova update)
+# display_kova_home imported lazily at call sites (stale-module safety during kova update)
 
 from kova_cli.colors import Colors, color
 
@@ -156,7 +156,7 @@ from kova_cli.colors import Colors, color
 def print_header(title: str):
     """Print a section header."""
     print()
-    print(color(f"â—† {title}", Colors.CYAN, Colors.BOLD))
+    print(color(f"◆ {title}", Colors.CYAN, Colors.BOLD))
 
 
 from kova_cli.cli_output import (  # noqa: E402
@@ -182,7 +182,7 @@ def is_interactive_stdin() -> bool:
 def print_noninteractive_setup_guidance(reason: str | None = None) -> None:
     """Print guidance for headless/non-interactive setup flows."""
     print()
-    print(color("âš• Kova Setup â€” Non-interactive mode", Colors.CYAN, Colors.BOLD))
+    print(color("⚕ Kova Setup — Non-interactive mode", Colors.CYAN, Colors.BOLD))
     print()
     if reason:
         print_info(reason)
@@ -252,7 +252,7 @@ def prompt_choice(question: str, choices: list, default: int = 0, description: s
 
     print(color(question, Colors.YELLOW))
     for i, choice in enumerate(choices):
-        marker = "â—" if i == default else "â—‹"
+        marker = "●" if i == default else "○"
         if i == default:
             print(color(f"  {marker} {choice}", Colors.GREEN))
         else:
@@ -282,14 +282,14 @@ def is_noninteractive() -> bool:
     """True when no human is available to answer a prompt.
 
     The dashboard/desktop spawn CLI actions with ``stdin=DEVNULL`` and
-    ``HERMES_NONINTERACTIVE=1`` (see ``kova_cli/web_server.py``). In that
+    ``KOVA_NONINTERACTIVE=1`` (see ``kova_cli/web_server.py``). In that
     context an ``input()`` raises ``EOFError`` immediately, so a prompt that
-    aborts on EOF kills the spawned action â€” this is what made the desktop
+    aborts on EOF kills the spawned action — this is what made the desktop
     "restart gateway" fail when the Windows gateway service was not yet
     installed (the start path asks "Install it now?" with no one to answer).
     Honour the explicit env flag here so callers fall back to their default.
     """
-    return os.environ.get("HERMES_NONINTERACTIVE", "").strip().lower() in {
+    return os.environ.get("KOVA_NONINTERACTIVE", "").strip().lower() in {
         "1",
         "true",
         "yes",
@@ -300,7 +300,7 @@ def is_noninteractive() -> bool:
 def prompt_yes_no(question: str, default: bool = True) -> bool:
     """Prompt for yes/no. Ctrl+C exits, empty input returns default.
 
-    Non-interactive callers (``HERMES_NONINTERACTIVE=1`` or a closed/redirected
+    Non-interactive callers (``KOVA_NONINTERACTIVE=1`` or a closed/redirected
     stdin) have no one to answer, so fall back to ``default`` instead of
     aborting the whole process.
     """
@@ -340,9 +340,9 @@ def prompt_checklist(title: str, items: list, pre_selected: list = None) -> list
     Display a multi-select checklist and return the indices of selected items.
 
     Each item in `items` is a display string. `pre_selected` is a list of
-    indices that should be checked by default. A "Continue â†’" option is
-    appended at the end â€” the user toggles items with Space and confirms
-    with Enter on "Continue â†’".
+    indices that should be checked by default. A "Continue →" option is
+    appended at the end — the user toggles items with Space and confirms
+    with Enter on "Continue →".
 
     Falls back to a numbered toggle interface when curses is
     unavailable.
@@ -372,7 +372,7 @@ def _prompt_api_key(var: dict):
         tools_str += f", +{len(tools) - 3} more"
 
     print()
-    print(color(f"  â”€â”€â”€ {var.get('description', var['name'])} â”€â”€â”€", Colors.CYAN))
+    print(color(f"  ─── {var.get('description', var['name'])} ───", Colors.CYAN))
     print()
     if tools_str:
         print_info(f"  Enables: {tools_str}")
@@ -387,12 +387,12 @@ def _prompt_api_key(var: dict):
 
     if value:
         save_env_value(var["name"], value)
-        print_success("  âœ“ Saved")
+        print_success("  ✓ Saved")
     else:
         print_warning("  Skipped (configure later with 'kova setup')")
 
 
-def _print_setup_summary(config: dict, hermes_home):
+def _print_setup_summary(config: dict, kova_home):
     """Print the setup completion summary."""
     # Tool availability summary
     print()
@@ -401,7 +401,7 @@ def _print_setup_summary(config: dict, hermes_home):
     tool_status = []
     subscription_features = get_nous_subscription_features(config)
 
-    # Vision â€” use the same runtime resolver as the actual vision tools
+    # Vision — use the same runtime resolver as the actual vision tools
     try:
         from agent.auxiliary_client import get_available_vision_backends
 
@@ -456,7 +456,7 @@ def _print_setup_summary(config: dict, hermes_home):
             ("Browser Automation", False, missing_browser_hint)
         )
 
-    # Image generation â€” FAL (direct or via Nous), or any plugin-registered
+    # Image generation — FAL (direct or via Nous), or any plugin-registered
     # provider (OpenAI, etc.)
     if subscription_features.image_gen.managed_by_nous:
         tool_status.append(("Image Generation (Nous subscription)", True, None))
@@ -487,7 +487,7 @@ def _print_setup_summary(config: dict, hermes_home):
         else:
             tool_status.append(("Image Generation", False, "FAL_KEY or OPENAI_API_KEY"))
 
-    # Video generation â€” opt-in via `kova tools` â†’ Video Generation.
+    # Video generation — opt-in via `kova tools` → Video Generation.
     # Only show the row when a plugin reports available so we don't badger
     # users who don't care about video gen with a "missing" status line.
     if subscription_features.video_gen.managed_by_nous:
@@ -510,7 +510,7 @@ def _print_setup_summary(config: dict, hermes_home):
         if _video_backend:
             tool_status.append((f"Video Generation ({_video_backend})", True, None))
 
-    # TTS â€” show configured provider
+    # TTS — show configured provider
     tts_provider = cfg_get(config, "tts", "provider", default="edge")
     if subscription_features.tts.managed_by_nous:
         tool_status.append(("Text-to-Speech (OpenAI via Nous subscription)", True, None))
@@ -534,7 +534,7 @@ def _print_setup_summary(config: dict, hermes_home):
         if neutts_ok:
             tool_status.append(("Text-to-Speech (NeuTTS local)", True, None))
         else:
-            tool_status.append(("Text-to-Speech (NeuTTS â€” not installed)", False, "run 'kova setup tts'"))
+            tool_status.append(("Text-to-Speech (NeuTTS — not installed)", False, "run 'kova setup tts'"))
     elif tts_provider == "kittentts":
         try:
             kittentts_ok = importlib.util.find_spec("kittentts") is not None
@@ -543,7 +543,7 @@ def _print_setup_summary(config: dict, hermes_home):
         if kittentts_ok:
             tool_status.append(("Text-to-Speech (KittenTTS local)", True, None))
         else:
-            tool_status.append(("Text-to-Speech (KittenTTS â€” not installed)", False, "run 'kova setup tts'"))
+            tool_status.append(("Text-to-Speech (KittenTTS — not installed)", False, "run 'kova setup tts'"))
     else:
         tool_status.append(("Text-to-Speech (Edge TTS)", True, None))
 
@@ -561,7 +561,7 @@ def _print_setup_summary(config: dict, hermes_home):
     if get_env_value("HASS_TOKEN"):
         tool_status.append(("Smart Home (Home Assistant)", True, None))
 
-    # Spotify (OAuth via kova auth spotify â€” check auth.json, not env vars)
+    # Spotify (OAuth via kova auth spotify — check auth.json, not env vars)
     try:
         from kova_cli.auth import get_provider_auth_state
         _spotify_state = get_provider_auth_state("spotify") or {}
@@ -594,10 +594,10 @@ def _print_setup_summary(config: dict, hermes_home):
 
     for name, available, missing_var in tool_status:
         if available:
-            print(f"   {color('âœ“', Colors.GREEN)} {name}")
+            print(f"   {color('✓', Colors.GREEN)} {name}")
         else:
             print(
-                f"   {color('âœ—', Colors.RED)} {name} {color(f'(missing {missing_var})', Colors.DIM)}"
+                f"   {color('✗', Colors.RED)} {name} {color(f'(missing {missing_var})', Colors.DIM)}"
             )
 
     print()
@@ -607,7 +607,7 @@ def _print_setup_summary(config: dict, hermes_home):
         print_warning(
             "Some tools are disabled. Run 'kova setup tools' to configure them,"
         )
-        from kova_constants import display_hermes_home as _dhh
+        from kova_constants import display_kova_home as _dhh
         print_warning(f"or edit {_dhh()}/.env directly to add the missing API keys.")
         print()
 
@@ -615,35 +615,35 @@ def _print_setup_summary(config: dict, hermes_home):
     print()
     print(
         color(
-            "â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”", Colors.GREEN
+            "┌─────────────────────────────────────────────────────────┐", Colors.GREEN
         )
     )
     print(
         color(
-            "â”‚              âœ“ Setup Complete!                          â”‚", Colors.GREEN
+            "│              ✓ Setup Complete!                          │", Colors.GREEN
         )
     )
     print(
         color(
-            "â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜", Colors.GREEN
+            "└─────────────────────────────────────────────────────────┘", Colors.GREEN
         )
     )
     print()
 
     # Show file locations prominently
-    from kova_constants import display_hermes_home as _dhh
-    print(color(f"ðŸ“ All your files are in {_dhh()}/:", Colors.CYAN, Colors.BOLD))
+    from kova_constants import display_kova_home as _dhh
+    print(color(f"📁 All your files are in {_dhh()}/:", Colors.CYAN, Colors.BOLD))
     print()
     print(f"   {color('Settings:', Colors.YELLOW)}  {get_config_path()}")
     print(f"   {color('API Keys:', Colors.YELLOW)}  {get_env_path()}")
     print(
-        f"   {color('Data:', Colors.YELLOW)}      {hermes_home}/cron/, sessions/, logs/"
+        f"   {color('Data:', Colors.YELLOW)}      {kova_home}/cron/, sessions/, logs/"
     )
     print()
 
-    print(color("â”€" * 60, Colors.DIM))
+    print(color("─" * 60, Colors.DIM))
     print()
-    print(color("ðŸ“ To edit your configuration:", Colors.CYAN, Colors.BOLD))
+    print(color("📝 To edit your configuration:", Colors.CYAN, Colors.BOLD))
     print()
     print(f"   {color('kova setup', Colors.GREEN)}          Re-run the full wizard")
     print(f"   {color('kova setup model', Colors.GREEN)}    Change model/provider")
@@ -663,9 +663,9 @@ def _print_setup_summary(config: dict, hermes_home):
     print(f"   {color(f'nano {get_env_path()}', Colors.DIM)}")
     print()
 
-    print(color("â”€" * 60, Colors.DIM))
+    print(color("─" * 60, Colors.DIM))
     print()
-    print(color("ðŸš€ Ready to go!", Colors.CYAN, Colors.BOLD))
+    print(color("🚀 Ready to go!", Colors.CYAN, Colors.BOLD))
     print()
     print(f"   {color('kova', Colors.GREEN)}              Start chatting")
     print(f"   {color('kova gateway', Colors.GREEN)}      Start messaging gateway")
@@ -730,11 +730,11 @@ def setup_model_provider(config: dict, *, quick: bool = False):
 
     Delegates to ``cmd_model()`` (the same flow used by ``kova model``)
     for provider selection, credential prompting, and model picking.
-    This ensures a single code path for all provider setup â€” any new
+    This ensures a single code path for all provider setup — any new
     provider added to ``kova model`` is automatically available here.
 
     When *quick* is True, skips credential rotation, vision, and TTS
-    configuration â€” used by the streamlined first-time quick setup.
+    configuration — used by the streamlined first-time quick setup.
     """
     from kova_cli.config import load_config, save_config
 
@@ -743,7 +743,7 @@ def setup_model_provider(config: dict, *, quick: bool = False):
     print_info(f"   Guide: {_DOCS_BASE}/integrations/providers")
     print()
 
-    # Delegate to the shared kova model flow â€” handles provider picker,
+    # Delegate to the shared kova model flow — handles provider picker,
     # credential prompting, model selection, and config persistence.
     from kova_cli.main import select_provider_and_model
     try:
@@ -830,7 +830,7 @@ def _install_neutts_deps() -> bool:
     print_info("This will also download the TTS model (~300MB) on first use.")
     print()
 
-    # Route through the canonical uv â†’ pip â†’ ensurepip ladder so pip-less
+    # Route through the canonical uv → pip → ensurepip ladder so pip-less
     # venvs (Ubuntu 25.10 `python -m venv`, `uv venv`) work out of the box.
     from kova_cli.tools_config import _pip_install
 
@@ -966,7 +966,7 @@ def _setup_tts_provider(config: dict):
             "Edge TTS (free, cloud-based, no setup needed)",
             "ElevenLabs (premium quality, needs API key)",
             "OpenAI TTS (good quality, needs API key)",
-            "xAI TTS (Grok voices â€” OAuth login or API key)",
+            "xAI TTS (Grok voices — OAuth login or API key)",
             "MiniMax TTS (high quality with voice cloning, needs API key)",
             "Mistral Voxtral TTS (multilingual, native Opus, needs API key)",
             "Google Gemini TTS (30 prebuilt voices, prompt-controllable, needs API key)",
@@ -1004,8 +1004,8 @@ def _setup_tts_provider(config: dict):
         else:
             print()
             print_info("NeuTTS requires:")
-            print_info("  â€¢ Python package: neutts (~50MB install + ~300MB model on first use)")
-            print_info("  â€¢ System package: espeak-ng (phonemizer)")
+            print_info("  • Python package: neutts (~50MB install + ~300MB model on first use)")
+            print_info("  • System package: espeak-ng (phonemizer)")
             print()
             if prompt_yes_no("Install NeuTTS dependencies now?", True):
                 if not _install_neutts_deps():
@@ -1043,7 +1043,7 @@ def _setup_tts_provider(config: dict):
         # Resolution order: existing OAuth tokens (free for SuperGrok subscribers
         # via the Kova auth store) > existing XAI_API_KEY > prompt the user.
         # When neither is configured, offer both options instead of forcing the
-        # API-key path â€” xAI TTS works fine with OAuth bearer tokens too.
+        # API-key path — xAI TTS works fine with OAuth bearer tokens too.
         oauth_logged_in = _xai_oauth_logged_in_for_setup()
         existing_api_key = get_env_value("XAI_API_KEY")
 
@@ -1059,16 +1059,16 @@ def _setup_tts_provider(config: dict):
             choice_idx = prompt_choice(
                 "How do you want xAI TTS to authenticate?",
                 choices=[
-                    "Sign in with xAI Grok OAuth (SuperGrok / Premium+) â€” browser login",
+                    "Sign in with xAI Grok OAuth (SuperGrok / Premium+) — browser login",
                     "Paste an xAI API key (console.x.ai)",
-                    "Skip â†’ fallback to Edge TTS",
+                    "Skip → fallback to Edge TTS",
                 ],
                 default=0,
             )
             if choice_idx == 0:
                 if _run_xai_oauth_login_from_setup():
                     print_success(
-                        "Logged in â€” xAI TTS will use these OAuth credentials"
+                        "Logged in — xAI TTS will use these OAuth credentials"
                     )
                 else:
                     print_warning(
@@ -1082,7 +1082,7 @@ def _setup_tts_provider(config: dict):
                     save_env_value("XAI_API_KEY", api_key)
                     print_success("xAI TTS API key saved")
                 else:
-                    from kova_constants import display_hermes_home as _dhh
+                    from kova_constants import display_kova_home as _dhh
                     print_warning(
                         "No xAI API key provided for TTS. Configure XAI_API_KEY "
                         f"via kova setup model or {_dhh()}/.env to use xAI TTS. "
@@ -1321,7 +1321,7 @@ def setup_terminal_backend(config: dict):
                 if result.returncode == 0:
                     print_success("modal SDK installed")
                 else:
-                    print_warning("Install failed â€” run manually: uv pip install modal")
+                    print_warning("Install failed — run manually: uv pip install modal")
 
             # Modal token
             print()
@@ -1362,7 +1362,7 @@ def setup_terminal_backend(config: dict):
             if result.returncode == 0:
                 print_success("daytona SDK installed")
             else:
-                print_warning("Install failed â€” run manually: uv pip install daytona")
+                print_warning("Install failed — run manually: uv pip install daytona")
                 if result.stderr:
                     print_info(f"  Error: {result.stderr.strip().splitlines()[-1]}")
 
@@ -1454,10 +1454,10 @@ def _apply_default_agent_settings(config: dict):
     """Apply recommended defaults for all agent settings without prompting."""
     config.setdefault("agent", {})["max_turns"] = 150
     # config.yaml is the authoritative source for max_turns; the gateway
-    # bridges it into HERMES_MAX_ITERATIONS at startup. We no longer write
+    # bridges it into KOVA_MAX_ITERATIONS at startup. We no longer write
     # to .env to avoid the dual-source inconsistency that caused the
     # 60-vs-500 bug (stale .env entry silently shadowing config.yaml).
-    remove_env_value("HERMES_MAX_ITERATIONS")
+    remove_env_value("KOVA_MAX_ITERATIONS")
 
     config.setdefault("display", {})["tool_progress"] = "all"
 
@@ -1485,7 +1485,7 @@ def setup_agent_settings(config: dict):
     print_info(f"   Guide: {_DOCS_BASE}/user-guide/configuration")
     print()
 
-    # â”€â”€ Max Iterations â”€â”€
+    # ── Max Iterations ──
     # config.yaml is authoritative; read from there. If a legacy .env
     # entry is still around (from pre-PR#18413 setups), prefer the
     # config value so we don't surface a stale number to the user.
@@ -1501,25 +1501,25 @@ def setup_agent_settings(config: dict):
         max_iter = int(max_iter_str)
         if max_iter > 0:
             # Write to config.yaml (authoritative) only. Also clean up any
-            # stale .env entry from earlier setup runs â€” the gateway's
+            # stale .env entry from earlier setup runs — the gateway's
             # bridge in gateway/run.py now unconditionally derives
-            # HERMES_MAX_ITERATIONS from agent.max_turns at startup.
+            # KOVA_MAX_ITERATIONS from agent.max_turns at startup.
             config.setdefault("agent", {})["max_turns"] = max_iter
             config.pop("max_turns", None)
-            remove_env_value("HERMES_MAX_ITERATIONS")
+            remove_env_value("KOVA_MAX_ITERATIONS")
             print_success(f"Max iterations set to {max_iter}")
     except ValueError:
         print_warning("Invalid number, keeping current value")
 
-    # â”€â”€ Tool Progress Display â”€â”€
+    # ── Tool Progress Display ──
     print_info("")
     print_info("Tool Progress Display")
     print_info("Controls how much tool activity is shown (CLI and messaging).")
-    print_info("  off     â€” Silent, just the final response")
-    print_info("  new     â€” Show tool name only when it changes (less noise)")
-    print_info("  all     â€” Show every tool call with a short preview")
-    print_info("  verbose â€” Full args, results, and debug logs")
-    print_info("  log     â€” Silent in chat; write every tool call to ~/.hermes/logs/tool_calls.log (gateway only)")
+    print_info("  off     — Silent, just the final response")
+    print_info("  new     — Show tool name only when it changes (less noise)")
+    print_info("  all     — Show every tool call with a short preview")
+    print_info("  verbose — Full args, results, and debug logs")
+    print_info("  log     — Silent in chat; write every tool call to ~/.hermes/logs/tool_calls.log (gateway only)")
 
     current_mode = cfg_get(config, "display", "tool_progress", default="all")
     mode = prompt("Tool progress mode", current_mode)
@@ -1532,7 +1532,7 @@ def setup_agent_settings(config: dict):
     else:
         print_warning(f"Unknown mode '{mode}', keeping '{current_mode}'")
 
-    # â”€â”€ Context Compression â”€â”€
+    # ── Context Compression ──
     print_header("Context Compression")
     print_info("Automatically summarizes old messages when context gets too long.")
     print_info(
@@ -1554,7 +1554,7 @@ def setup_agent_settings(config: dict):
         f"Context compression threshold set to {config['compression'].get('threshold', 0.50)}"
     )
 
-    # â”€â”€ Session Reset Policy â”€â”€
+    # ── Session Reset Policy ──
     print_header("Session Reset Policy")
     print_info(
         "Messaging sessions (Telegram, Discord, etc.) accumulate context over time."
@@ -1570,7 +1570,7 @@ def setup_agent_settings(config: dict):
         "or at a fixed time each day. When a reset happens, the agent saves important"
     )
     print_info(
-        "things to its persistent memory first â€” but the conversation context is cleared."
+        "things to its persistent memory first — but the conversation context is cleared."
     )
     print_info("")
     print_info("You can also manually reset anytime by typing /reset in chat.")
@@ -1672,17 +1672,17 @@ def _setup_telegram_auto_result():
 
     profile_name: str | None = None
     try:
-        profile_name = _profile_name_from_hermes_home(Path(get_hermes_home()))
+        profile_name = _profile_name_from_kova_home(Path(get_kova_home()))
     except Exception:
         pass
 
     return auto_setup_telegram_bot_result(profile_name=profile_name)
 
 
-def _profile_name_from_hermes_home(hermes_home) -> str | None:
+def _profile_name_from_kova_home(kova_home) -> str | None:
     """Return the active profile name when HERMES_HOME is a profile dir."""
-    if hermes_home.parent.name == "profiles":
-        return hermes_home.name
+    if kova_home.parent.name == "profiles":
+        return kova_home.name
     return None
 
 
@@ -1716,7 +1716,7 @@ def _setup_telegram():
         if not prompt_yes_no("Reconfigure Telegram?", False):
             # Check missing allowlist on existing config
             if not get_env_value("TELEGRAM_ALLOWED_USERS"):
-                print_info("âš ï¸  Telegram has no user allowlist - anyone can use your bot!")
+                print_info("⚠️  Telegram has no user allowlist - anyone can use your bot!")
                 if prompt_yes_no("Add allowed users now?", True):
                     print_info("   To find your Telegram user ID: message @userinfobot")
                     allowed_users = prompt("Allowed user IDs (comma-separated)")
@@ -1728,7 +1728,7 @@ def _setup_telegram():
     print_info("How would you like to create your Telegram bot?")
     print()
     print_info("  [1] Automatic (recommended)")
-    print_info("      Scan a QR code â†’ confirm in Telegram â†’ done.")
+    print_info("      Scan a QR code → confirm in Telegram → done.")
     print_info("      No token copy-paste needed.")
     print()
     print_info("  [2] Manual")
@@ -1763,7 +1763,7 @@ def _setup_telegram():
     print_success("Telegram token saved")
 
     print()
-    print_info("ðŸ”’ Security: Restrict who can use your bot")
+    print_info("🔒 Security: Restrict who can use your bot")
     print_info("   To find your Telegram user ID:")
     print_info("   1. Message @userinfobot on Telegram")
     print_info("   2. It will reply with your numeric ID (e.g., 123456789)")
@@ -1794,10 +1794,10 @@ def _setup_telegram():
         save_env_value("TELEGRAM_ALLOWED_USERS", allowed_users)
         print_success("Telegram allowlist configured - only listed users can use the bot")
     else:
-        print_info("âš ï¸  No allowlist set - anyone who finds your bot can use it!")
+        print_info("⚠️  No allowlist set - anyone who finds your bot can use it!")
 
     print()
-    print_info("ðŸ“¬ Home Channel: where Kova delivers cron job results,")
+    print_info("📬 Home Channel: where Kova delivers cron job results,")
     print_info("   cross-platform messages, and notifications.")
     print_info("   For Telegram DMs, this is your user ID (same as above).")
 
@@ -1835,29 +1835,29 @@ def _setup_bluebubbles():
         if not prompt_yes_no("Reconfigure BlueBubbles?", False):
             return
 
-    print_info("Connects Kova to iMessage via BlueBubbles â€” a free, open-source")
+    print_info("Connects Kova to iMessage via BlueBubbles — a free, open-source")
     print_info("macOS server that bridges iMessage to any device.")
     print_info("   Requires a Mac running BlueBubbles Server v1.0.0+")
     print_info("   Download: https://bluebubbles.app/")
     print()
-    print_info("In BlueBubbles Server â†’ Settings â†’ API, note your Server URL and Password.")
+    print_info("In BlueBubbles Server → Settings → API, note your Server URL and Password.")
     print()
 
     server_url = prompt("BlueBubbles server URL (e.g. http://192.168.1.10:1234)")
     if not server_url:
-        print_warning("Server URL is required â€” skipping BlueBubbles setup")
+        print_warning("Server URL is required — skipping BlueBubbles setup")
         return
     save_env_value("BLUEBUBBLES_SERVER_URL", server_url.rstrip("/"))
 
     password = prompt("BlueBubbles server password", password=True)
     if not password:
-        print_warning("Password is required â€” skipping BlueBubbles setup")
+        print_warning("Password is required — skipping BlueBubbles setup")
         return
     save_env_value("BLUEBUBBLES_PASSWORD", password)
     print_success("BlueBubbles credentials saved")
 
     print()
-    print_info("ðŸ”’ Security: Restrict who can message your bot")
+    print_info("🔒 Security: Restrict who can message your bot")
     print_info("   Use iMessage addresses: email (user@icloud.com) or phone (+15551234567)")
     print()
     allowed_users = prompt("Allowed iMessage addresses (comma-separated, leave empty for open access)")
@@ -1865,10 +1865,10 @@ def _setup_bluebubbles():
         save_env_value("BLUEBUBBLES_ALLOWED_USERS", allowed_users.replace(" ", ""))
         print_success("BlueBubbles allowlist configured")
     else:
-        print_info("âš ï¸  No allowlist set â€” anyone who can iMessage you can use the bot!")
+        print_info("⚠️  No allowlist set — anyone who can iMessage you can use the bot!")
 
     print()
-    print_info("ðŸ“¬ Home Channel: phone or email for cron job delivery and notifications.")
+    print_info("📬 Home Channel: phone or email for cron job delivery and notifications.")
     print_info("   You can also set this later with /set-home in your iMessage chat.")
     home_channel = prompt("Home channel address (leave empty to set later)")
     if home_channel:
@@ -1907,7 +1907,7 @@ def _setup_webhooks():
             return
 
     print()
-    print_warning("âš   Webhook and SMS platforms require exposing gateway ports to the")
+    print_warning("⚠  Webhook and SMS platforms require exposing gateway ports to the")
     print_warning("   internet. For security, run the gateway in a sandboxed environment")
     print_warning("   (Docker, VM, etc.) to limit blast radius from prompt injection.")
     print()
@@ -1927,12 +1927,12 @@ def _setup_webhooks():
         save_env_value("WEBHOOK_SECRET", secret)
         print_success("Webhook secret saved")
     else:
-        print_warning("No secret set â€” you must configure per-route secrets in config.yaml")
+        print_warning("No secret set — you must configure per-route secrets in config.yaml")
 
     save_env_value("WEBHOOK_ENABLED", "true")
     print()
     print_success("Webhooks enabled! Next steps:")
-    from kova_constants import display_hermes_home as _dhh
+    from kova_constants import display_kova_home as _dhh
     print_info(f"   1. Define webhook routes in {_dhh()}/config.yaml")
     print_info("   2. Point your service (GitHub, GitLab, etc.) at:")
     print_info("      http://your-server:8644/webhooks/<route-name>")
@@ -1973,9 +1973,9 @@ def setup_gateway(config: dict):
     for idx in selected:
         _configure_platform(platforms[idx])
 
-    # â”€â”€ Gateway Service Setup â”€â”€
+    # ── Gateway Service Setup ──
     # Count any platform (built-in or plugin) the user configured during this
-    # setup pass â€” reuses ``_platform_status`` so plugin platforms like IRC
+    # setup pass — reuses ``_platform_status`` so plugin platforms like IRC
     # are picked up without another hard-coded env-var list.
     def _is_progress(status: str) -> bool:
         s = status.lower()
@@ -1990,7 +1990,7 @@ def setup_gateway(config: dict):
     )
     if any_messaging:
         print()
-        print_info("â”" * 50)
+        print_info("━" * 50)
         print_success("Messaging platforms configured!")
 
         # Check if any home channels are missing
@@ -2035,7 +2035,7 @@ def setup_gateway(config: dict):
             _is_service_running,
             supports_systemd_services,
             has_conflicting_systemd_units,
-            has_legacy_hermes_units,
+            has_legacy_kova_units,
             install_linux_gateway_from_setup,
             print_systemd_scope_conflict_warning,
             print_legacy_unit_warning,
@@ -2060,7 +2060,7 @@ def setup_gateway(config: dict):
             print_systemd_scope_conflict_warning()
             print()
 
-        if supports_systemd and has_legacy_hermes_units():
+        if supports_systemd and has_legacy_kova_units():
             print_legacy_unit_warning()
             print()
 
@@ -2077,7 +2077,7 @@ def setup_gateway(config: dict):
                         from kova_cli import gateway_windows
                         gateway_windows.restart()
                 except UserSystemdUnavailableError as e:
-                    print_error("  Restart failed â€” user systemd not reachable:")
+                    print_error("  Restart failed — user systemd not reachable:")
                     for line in str(e).splitlines():
                         print(f"  {line}")
                 except SystemScopeRequiresRootError as e:
@@ -2102,7 +2102,7 @@ def setup_gateway(config: dict):
                         from kova_cli import gateway_windows
                         gateway_windows.start()
                 except UserSystemdUnavailableError as e:
-                    print_error("  Start failed â€” user systemd not reachable:")
+                    print_error("  Start failed — user systemd not reachable:")
                     for line in str(e).splitlines():
                         print(f"  {line}")
                 except SystemScopeRequiresRootError as e:
@@ -2147,7 +2147,7 @@ def setup_gateway(config: dict):
                             elif _is_macos:
                                 launchd_start()
                         except UserSystemdUnavailableError as e:
-                            print_error("  Start failed â€” user systemd not reachable:")
+                            print_error("  Start failed — user systemd not reachable:")
                             for line in str(e).splitlines():
                                 print(f"  {line}")
                         except SystemScopeRequiresRootError as e:
@@ -2160,7 +2160,7 @@ def setup_gateway(config: dict):
                     print_info("  You can try manually: kova gateway install")
             else:
                 print_info("  You can install later: kova gateway install")
-                if supports_systemd and os.geteuid() == 0:  # windows-footgun: ok â€” guarded by supports_systemd (Linux only)
+                if supports_systemd and os.geteuid() == 0:  # windows-footgun: ok — guarded by supports_systemd (Linux only)
                     print_info("  Or as a boot-time service: kova gateway install --system")
                 print_info("  Or run in foreground:  kova gateway")
         else:
@@ -2176,7 +2176,7 @@ def setup_gateway(config: dict):
                 print_info("Start the gateway to bring your bots online:")
                 print_info("   kova gateway              # Run in foreground")
 
-        print_info("â”" * 50)
+        print_info("━" * 50)
 
 
 # =============================================================================
@@ -2185,10 +2185,10 @@ def setup_gateway(config: dict):
 
 
 def setup_tools(config: dict, first_install: bool = False):
-    """Configure tools â€” delegates to the unified tools_command() in tools_config.py.
+    """Configure tools — delegates to the unified tools_command() in tools_config.py.
 
     Both `kova setup tools` and `kova tools` use the same flow:
-    platform selection â†’ toolset toggles â†’ provider/API key configuration.
+    platform selection → toolset toggles → provider/API key configuration.
 
     Args:
         first_install: When True, uses the simplified first-install flow
@@ -2208,9 +2208,9 @@ def _model_section_has_credentials(config: dict) -> bool:
     """Return True when any known inference provider has usable credentials.
 
     Sources of truth:
-      * ``PROVIDER_REGISTRY`` in ``kova_cli.auth`` â€” lists every supported
+      * ``PROVIDER_REGISTRY`` in ``kova_cli.auth`` — lists every supported
         provider along with its ``api_key_env_vars``.
-      * ``active_provider`` in the auth store â€” covers OAuth device-code /
+      * ``active_provider`` in the auth store — covers OAuth device-code /
         external-OAuth providers (Nous, Codex, Qwen, Gemini CLI, ...).
       * The legacy OpenRouter aggregator env vars, which route generic
         ``OPENAI_API_KEY`` / ``OPENROUTER_API_KEY`` values through OpenRouter.
@@ -2230,7 +2230,7 @@ def _model_section_has_credentials(config: dict) -> bool:
     def _has_key(pconfig) -> bool:
         for env_var in pconfig.api_key_env_vars:
             # CLAUDE_CODE_OAUTH_TOKEN is set by Claude Code itself, not by
-            # the user â€” mirrors is_provider_explicitly_configured in auth.py.
+            # the user — mirrors is_provider_explicitly_configured in auth.py.
             if env_var == "CLAUDE_CODE_OAUTH_TOKEN":
                 continue
             if get_env_value(env_var):
@@ -2299,7 +2299,7 @@ def _get_section_config_summary(config: dict, section_key: str) -> Optional[str]
 
     elif section_key == "gateway":
         from kova_cli.gateway import _all_platforms, _platform_status
-        # Count any non-empty status other than the "not configured" sentinel â€”
+        # Count any non-empty status other than the "not configured" sentinel —
         # platforms like WhatsApp ("enabled, not paired"), Matrix ("configured
         # + E2EE"), and Signal ("partially configured") all indicate the user
         # has already started setup and we shouldn't force the section to rerun.
@@ -2310,7 +2310,7 @@ def _get_section_config_summary(config: dict, section_key: str) -> Optional[str]
         ]
         if configured:
             return ", ".join(configured)
-        return None  # No platforms configured â€” section must run
+        return None  # No platforms configured — section must run
 
     elif section_key == "tools":
         tools = []
@@ -2352,12 +2352,12 @@ _OPENCLAW_SCRIPT = (
     / "migration"
     / "openclaw-migration"
     / "scripts"
-    / "openclaw_to_hermes.py"
+    / "openclaw_to_kova.py"
 )
 
 
 def _load_openclaw_migration_module():
-    """Load the openclaw_to_hermes migration script as a module.
+    """Load the openclaw_to_kova migration script as a module.
 
     Returns the loaded module, or None if the script can't be loaded.
     """
@@ -2365,7 +2365,7 @@ def _load_openclaw_migration_module():
         return None
 
     spec = importlib.util.spec_from_file_location(
-        "openclaw_to_hermes", _OPENCLAW_SCRIPT
+        "openclaw_to_kova", _OPENCLAW_SCRIPT
     )
     if spec is None or spec.loader is None:
         return None
@@ -2388,15 +2388,15 @@ def _load_openclaw_migration_module():
 # Config values may have different semantics between OpenClaw and Kova.
 # Instruction/context files (.md) can contain incompatible setup procedures.
 _HIGH_IMPACT_KIND_KEYWORDS = {
-    "gateway": "âš  Gateway/messaging â€” this will configure Kova to use your OpenClaw messaging channels",
-    "telegram": "âš  Telegram â€” this will point Kova at your OpenClaw Telegram bot",
-    "slack": "âš  Slack â€” this will point Kova at your OpenClaw Slack workspace",
-    "discord": "âš  Discord â€” this will point Kova at your OpenClaw Discord bot",
-    "whatsapp": "âš  WhatsApp â€” this will point Kova at your OpenClaw WhatsApp connection",
-    "config": "âš  Config values â€” OpenClaw settings may not map 1:1 to Kova equivalents",
-    "soul": "âš  Instruction file â€” may contain OpenClaw-specific setup/restart procedures",
-    "memory": "âš  Memory/context file â€” may reference OpenClaw-specific infrastructure",
-    "context": "âš  Context file â€” may contain OpenClaw-specific instructions",
+    "gateway": "⚠ Gateway/messaging — this will configure Kova to use your OpenClaw messaging channels",
+    "telegram": "⚠ Telegram — this will point Kova at your OpenClaw Telegram bot",
+    "slack": "⚠ Slack — this will point Kova at your OpenClaw Slack workspace",
+    "discord": "⚠ Discord — this will point Kova at your OpenClaw Discord bot",
+    "whatsapp": "⚠ WhatsApp — this will point Kova at your OpenClaw WhatsApp connection",
+    "config": "⚠ Config values — OpenClaw settings may not map 1:1 to Kova equivalents",
+    "soul": "⚠ Instruction file — may contain OpenClaw-specific setup/restart procedures",
+    "memory": "⚠ Memory/context file — may reference OpenClaw-specific infrastructure",
+    "context": "⚠ Context file — may contain OpenClaw-specific instructions",
 }
 
 
@@ -2424,7 +2424,7 @@ def _print_migration_preview(report: dict):
             dest = item.get("destination", "")
             if dest:
                 dest_short = str(dest).replace(str(Path.home()), "~")
-                print(f"      {kind:<22s} â†’ {dest_short}")
+                print(f"      {kind:<22s} → {dest_short}")
             else:
                 print(f"      {kind}")
 
@@ -2454,17 +2454,17 @@ def _print_migration_preview(report: dict):
 
     # Print collected warnings
     if warnings_shown:
-        print(color("  â”€â”€ Warnings â”€â”€", Colors.YELLOW))
+        print(color("  ── Warnings ──", Colors.YELLOW))
         for warning in sorted(warnings_shown):
             print(color(f"    {warning}", Colors.YELLOW))
         print()
         print(color("  Note: OpenClaw config values may have different semantics in Kova.", Colors.YELLOW))
-        print(color("  For example, OpenClaw's tool_call_execution: \"auto\" â‰  Kova's yolo mode.", Colors.YELLOW))
+        print(color("  For example, OpenClaw's tool_call_execution: \"auto\" ≠ Kova's yolo mode.", Colors.YELLOW))
         print(color("  Instruction files (.md) from OpenClaw may contain incompatible procedures.", Colors.YELLOW))
         print()
 
 
-def _offer_openclaw_migration(hermes_home: Path) -> bool:
+def _offer_openclaw_migration(kova_home: Path) -> bool:
     """Detect ~/.openclaw and offer to migrate during first-time setup.
 
     Runs a dry-run first to show the user exactly what would be imported,
@@ -2507,13 +2507,13 @@ def _offer_openclaw_migration(hermes_home: Path) -> bool:
         logger.debug("OpenClaw migration module load error", exc_info=True)
         return False
 
-    # â”€â”€ Phase 1: Dry-run preview â”€â”€
+    # ── Phase 1: Dry-run preview ──
     try:
         selected = mod.resolve_selected_options(None, None, preset="full")
         dry_migrator = mod.Migrator(
             source_root=openclaw_dir.resolve(),
-            target_root=hermes_home.resolve(),
-            execute=False,  # dry-run â€” no files modified
+            target_root=kova_home.resolve(),
+            execute=False,  # dry-run — no files modified
             workspace_target=None,
             overwrite=True,  # show everything including conflicts
             migrate_secrets=True,
@@ -2537,12 +2537,12 @@ def _offer_openclaw_migration(hermes_home: Path) -> bool:
         return False
 
     print()
-    print_header(f"Migration Preview â€” {preview_count} item(s) would be imported")
+    print_header(f"Migration Preview — {preview_count} item(s) would be imported")
     print_info("No changes have been made yet. Review the list below:")
     print()
     _print_migration_preview(preview_report)
 
-    # â”€â”€ Phase 2: Confirm and execute â”€â”€
+    # ── Phase 2: Confirm and execute ──
     if not prompt_yes_no("Proceed with migration?", default=False):
         print_info(
             "Migration cancelled. You can run it later with: kova claw migrate"
@@ -2552,12 +2552,12 @@ def _offer_openclaw_migration(hermes_home: Path) -> bool:
         )
         return False
 
-    # Execute the migration â€” overwrite=False so existing Kova configs are
+    # Execute the migration — overwrite=False so existing Kova configs are
     # preserved. The user saw the preview; conflicts are skipped by default.
     try:
         migrator = mod.Migrator(
             source_root=openclaw_dir.resolve(),
-            target_root=hermes_home.resolve(),
+            target_root=kova_home.resolve(),
             execute=True,
             workspace_target=None,
             overwrite=False,  # preserve existing Kova config
@@ -2587,7 +2587,7 @@ def _offer_openclaw_migration(hermes_home: Path) -> bool:
     if skipped:
         print_info(f"Skipped {skipped} item(s) (not found or unchanged).")
     if errors:
-        print_warning(f"{errors} item(s) had errors â€” check the migration report.")
+        print_warning(f"{errors} item(s) had errors — check the migration report.")
 
     output_dir = report.get("output_dir")
     if output_dir:
@@ -2612,17 +2612,17 @@ SETUP_SECTIONS = [
 
 
 def _run_portal_one_shot(config: dict) -> None:
-    """One-shot Nous Portal setup â€” OAuth + model pick + provider + Tool Gateway.
+    """One-shot Nous Portal setup — OAuth + model pick + provider + Tool Gateway.
 
     Wired into ``kova setup --portal`` and ``kova portal``. This is the
     Nous-Portal slice of the first-time quick setup, collapsed into a single
     shareable command so a brand-new user goes from zero to a fully working
-    Kova session â€” model selected, provider set, and web/image/tts/browser
-    tools routed via their Portal sub â€” without being told to run
+    Kova session — model selected, provider set, and web/image/tts/browser
+    tools routed via their Portal sub — without being told to run
     ``kova setup`` and hunt for the quick-setup option.
 
     The login + model selection + provider switch + Tool Gateway opt-in are all
-    delegated to ``_model_flow_nous`` â€” the exact same flow quick setup uses
+    delegated to ``_model_flow_nous`` — the exact same flow quick setup uses
     (``_run_first_time_quick_setup``) and the same one ``kova model`` runs
     when you pick Nous. Routing through it (instead of hand-rolling the auth +
     provider write here) means ``kova portal`` always offers a model picker,
@@ -2633,21 +2633,21 @@ def _run_portal_one_shot(config: dict) -> None:
     print()
     print(
         color(
-            "â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”",
+            "┌─────────────────────────────────────────────────────────┐",
             Colors.MAGENTA,
         )
     )
-    print(color("â”‚     âš• Kova Setup â€” Nous Portal (one-shot)             â”‚", Colors.MAGENTA))
+    print(color("│     ⚕ Kova Setup — Nous Portal (one-shot)               │", Colors.MAGENTA))
     print(
         color(
-            "â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜",
+            "└─────────────────────────────────────────────────────────┘",
             Colors.MAGENTA,
         )
     )
     print()
     print_info("  One subscription, 300+ models, plus the Tool Gateway:")
     print_info("    web search, image generation, TTS, browser automation")
-    print_info("    â€” all routed through your Nous Portal sub.")
+    print_info("    — all routed through your Nous Portal sub.")
     print()
     print_info("  Sign up: https://portal.nousresearch.com/manage-subscription")
     print()
@@ -2678,7 +2678,7 @@ def _run_portal_one_shot(config: dict) -> None:
         print_info("  You can retry later with `kova portal`.")
         return
 
-    # Re-sync the in-memory config from disk â€” _model_flow_nous (and the
+    # Re-sync the in-memory config from disk — _model_flow_nous (and the
     # underlying login/model save) write via their own load/save cycle, so any
     # later save_config(config) by a caller must not clobber those values.
     try:
@@ -2699,19 +2699,19 @@ def run_setup_wizard(args):
     """Run the interactive setup wizard.
 
     Supports full, quick, and section-specific setup:
-      kova setup           â€” full or quick (auto-detected)
-      kova setup model     â€” just model/provider
-      kova setup tts       â€” just text-to-speech
-      kova setup terminal  â€” just terminal backend
-      kova setup gateway   â€” just messaging platforms
-      kova setup tools     â€” just tool configuration
-      kova setup agent     â€” just agent settings
+      kova setup           — full or quick (auto-detected)
+      kova setup model     — just model/provider
+      kova setup tts       — just text-to-speech
+      kova setup terminal  — just terminal backend
+      kova setup gateway   — just messaging platforms
+      kova setup tools     — just tool configuration
+      kova setup agent     — just agent settings
     """
     from kova_cli.config import is_managed, managed_error
     if is_managed():
         managed_error("run setup wizard")
         return
-    ensure_hermes_home()
+    ensure_kova_home()
 
     reset_requested = bool(getattr(args, "reset", False))
     if reset_requested:
@@ -2722,7 +2722,7 @@ def run_setup_wizard(args):
     quick_requested = bool(getattr(args, "quick", False))
 
     config = load_config()
-    hermes_home = get_hermes_home()
+    kova_home = get_kova_home()
 
     # Back up existing config before setup modifies it (#3522)
     config_path = get_config_path()
@@ -2763,14 +2763,14 @@ def run_setup_wizard(args):
                 print()
                 print(
                     color(
-                        "â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”",
+                        "┌─────────────────────────────────────────────────────────┐",
                         Colors.MAGENTA,
                     )
                 )
-                print(color(f"â”‚     âš• Kova Setup â€” {label:<34s} â”‚", Colors.MAGENTA))
+                print(color(f"│     ⚕ Kova Setup — {label:<34s} │", Colors.MAGENTA))
                 print(
                     color(
-                        "â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜",
+                        "└─────────────────────────────────────────────────────────┘",
                         Colors.MAGENTA,
                     )
                 )
@@ -2797,34 +2797,34 @@ def run_setup_wizard(args):
     print()
     print(
         color(
-            "â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”",
+            "┌─────────────────────────────────────────────────────────┐",
             Colors.MAGENTA,
         )
     )
     print(
         color(
-            "â”‚             âš• Kova Agent Setup Wizard                â”‚", Colors.MAGENTA
+            "│             ⚕ Kova Agent Setup Wizard                │", Colors.MAGENTA
         )
     )
     print(
         color(
-            "â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤",
+            "├─────────────────────────────────────────────────────────┤",
             Colors.MAGENTA,
         )
     )
     print(
         color(
-            "â”‚  Let's configure your Kova Agent installation.       â”‚", Colors.MAGENTA
+            "│  Let's configure your Kova Agent installation.       │", Colors.MAGENTA
         )
     )
     print(
         color(
-            "â”‚  Press Ctrl+C at any time to exit.                     â”‚", Colors.MAGENTA
+            "│  Press Ctrl+C at any time to exit.                     │", Colors.MAGENTA
         )
     )
     print(
         color(
-            "â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜",
+            "└─────────────────────────────────────────────────────────┘",
             Colors.MAGENTA,
         )
     )
@@ -2832,63 +2832,63 @@ def run_setup_wizard(args):
     migration_ran = False
 
     if is_existing:
-        # Existing install â€” default is the full-wizard reconfigure flow.
+        # Existing install — default is the full-wizard reconfigure flow.
         # Every prompt shows the current value as its default, so pressing
         # Enter keeps it.  Opt into `--quick` for the narrow "just fill in
         # missing items" flow (useful after a partial OpenClaw migration
         # or when a required API key got cleared).
         if quick_requested:
-            _run_quick_setup(config, hermes_home)
+            _run_quick_setup(config, kova_home)
             return
 
         print()
         print_header("Reconfigure")
         print_success("You already have Kova configured.")
-        print_info("Running the full wizard â€” each prompt shows your current value.")
+        print_info("Running the full wizard — each prompt shows your current value.")
         print_info("Press Enter to keep it, or type a new value to change it.")
         print_info("")
         print_info("Tip: jump straight to a section with 'kova setup model|terminal|")
         print_info("     gateway|tools|agent', or fill only missing items with --quick.")
-        # Fall through to the "Full Setup â€” run all sections" block below.
+        # Fall through to the "Full Setup — run all sections" block below.
         # --reconfigure is now the default on existing installs; the flag
         # is preserved for backwards compatibility but is a no-op here.
     else:
-        # â”€â”€ First-Time Setup â”€â”€
+        # ── First-Time Setup ──
         print()
 
-        # --reconfigure / --quick on a fresh install are meaningless â€” fall
+        # --reconfigure / --quick on a fresh install are meaningless — fall
         # through to the normal first-time flow.
         if reconfigure_requested or quick_requested:
-            print_info("No existing configuration found â€” running first-time setup.")
+            print_info("No existing configuration found — running first-time setup.")
             print()
 
         # Offer OpenClaw migration before configuration begins
-        migration_ran = _offer_openclaw_migration(hermes_home)
+        migration_ran = _offer_openclaw_migration(kova_home)
         if migration_ran:
             config = load_config()
 
         setup_mode = prompt_choice(
             "How would you like to set up Kova?",
             [
-                "Quick Setup (Nous Portal) â€” free OAuth login, no API keys, model + tools (recommended)",
-                "Full setup â€” configure every provider, tool & option yourself (bring your own keys)",
-                "Blank Slate â€” everything off except the bare minimum; opt in to each capability",
+                "Quick Setup (Nous Portal) — free OAuth login, no API keys, model + tools (recommended)",
+                "Full setup — configure every provider, tool & option yourself (bring your own keys)",
+                "Blank Slate — everything off except the bare minimum; opt in to each capability",
             ],
             0,
         )
 
         if setup_mode == 0:
-            _run_first_time_quick_setup(config, hermes_home, is_existing)
+            _run_first_time_quick_setup(config, kova_home, is_existing)
             return
         if setup_mode == 2:
-            _run_blank_slate_setup(config, hermes_home, is_existing)
+            _run_blank_slate_setup(config, kova_home, is_existing)
             return
 
-    # â”€â”€ Full Setup â€” run all sections â”€â”€
+    # ── Full Setup — run all sections ──
     print_header("Configuration Location")
     print_info(f"Config file:  {get_config_path()}")
     print_info(f"Secrets file: {get_env_path()}")
-    print_info(f"Data folder:  {hermes_home}")
+    print_info(f"Data folder:  {kova_home}")
     print_info(f"Install dir:  {PROJECT_ROOT}")
     print()
     print_info("You can edit these files directly or use 'kova config edit'")
@@ -2896,7 +2896,7 @@ def run_setup_wizard(args):
     if migration_ran:
         print()
         print_info("Settings were imported from OpenClaw.")
-        print_info("Each section below will show what was imported â€” press Enter to keep,")
+        print_info("Each section below will show what was imported — press Enter to keep,")
         print_info("or choose to reconfigure if needed.")
 
     # Section 1: Model & Provider
@@ -2907,7 +2907,7 @@ def run_setup_wizard(args):
     if not (migration_ran and _skip_configured_section(config, "terminal", "Terminal Backend")):
         setup_terminal_backend(config)
 
-    # Section 3: Agent Settings â€” no longer prompted. First installs get the
+    # Section 3: Agent Settings — no longer prompted. First installs get the
     # recommended defaults silently; existing installs keep whatever they have.
     # Tune later with `kova setup agent`.
     if not is_existing:
@@ -2927,13 +2927,13 @@ def run_setup_wizard(args):
         print_info(f"Previous config backed up to: {_backup_path}")
         print_info("If setup changed a value you customized, restore it with:")
         print_info(f"  cp {_backup_path} {config_path}")
-    _print_setup_summary(config, hermes_home)
+    _print_setup_summary(config, kova_home)
 
 
-def _run_first_time_quick_setup(config: dict, hermes_home, is_existing: bool):
+def _run_first_time_quick_setup(config: dict, kova_home, is_existing: bool):
     """Streamlined first-time setup via Nous Portal: OAuth, model, terminal & messaging.
 
-    Routes straight to the Nous Portal provider â€” runs the device-code OAuth
+    Routes straight to the Nous Portal provider — runs the device-code OAuth
     login, picks a Nous model, then configures the terminal backend and (optionally)
     a messaging platform. Applies sensible defaults for everything else (agent
     settings, tools); the user can customize later via ``kova setup <section>``
@@ -2941,7 +2941,7 @@ def _run_first_time_quick_setup(config: dict, hermes_home, is_existing: bool):
     """
     from kova_cli.config import load_config
 
-    # Step 1: Nous Portal â€” OAuth login + model selection.
+    # Step 1: Nous Portal — OAuth login + model selection.
     # _model_flow_nous() handles both the logged-out path (device-code OAuth,
     # which selects a model internally) and the already-logged-in path (curated
     # Nous model picker). Provider is set to "nous" by the login/model save.
@@ -2962,14 +2962,14 @@ def _run_first_time_quick_setup(config: dict, hermes_home, is_existing: bool):
         print_warning(f"Nous Portal setup encountered an error: {exc}")
         print_info("You can try again later with: kova model")
 
-    # Re-sync the wizard's config dict from disk â€” _model_flow_nous (and the
+    # Re-sync the wizard's config dict from disk — _model_flow_nous (and the
     # underlying login/model save) write via their own load/save cycle, and the
     # wizard's later save_config(config) must not clobber those values (#4172).
     _refreshed = load_config()
     config.clear()
     config.update(_refreshed)
 
-    # Step 2: Terminal Backend â€” where commands run is a core decision
+    # Step 2: Terminal Backend — where commands run is a core decision
     setup_terminal_backend(config)
 
     # Step 3: Apply defaults for everything else
@@ -2983,7 +2983,7 @@ def _run_first_time_quick_setup(config: dict, hermes_home, is_existing: bool):
         "Connect a messaging platform? (Telegram, Discord, etc.)",
         [
             "Set up messaging now (recommended)",
-            "Skip â€” set up later with 'kova setup gateway'",
+            "Skip — set up later with 'kova setup gateway'",
         ],
         0,
     )
@@ -3000,7 +3000,7 @@ def _run_first_time_quick_setup(config: dict, hermes_home, is_existing: bool):
         print_info("  Connect Telegram/Discord:  kova setup gateway")
     print()
 
-    _print_setup_summary(config, hermes_home)
+    _print_setup_summary(config, kova_home)
 
 
 def _blank_slate_minimal_toolsets(config: dict):
@@ -3008,10 +3008,10 @@ def _blank_slate_minimal_toolsets(config: dict):
 
     Only ``file`` and ``terminal`` are enabled. Two layers enforce this:
 
-    1. ``platform_toolsets["cli"] = ["file", "terminal"]`` â€” an explicit list of
+    1. ``platform_toolsets["cli"] = ["file", "terminal"]`` — an explicit list of
        configurable keys, which the resolver treats as authoritative
        (``has_explicit_config``) so default toolsets aren't re-expanded.
-    2. ``agent.disabled_toolsets`` â€” a global hard-suppression list (applied last
+    2. ``agent.disabled_toolsets`` — a global hard-suppression list (applied last
        in ``_get_platform_tools``, overriding every other path including the
        non-configurable platform-toolset recovery that would otherwise re-add
        toolsets like ``kanban``). We list every known toolset except the two we
@@ -3029,18 +3029,18 @@ def _blank_slate_minimal_toolsets(config: dict):
         all_keys = set()
         all_keys.update(k for k, _, _ in CONFIGURABLE_TOOLSETS)
         all_keys.update(_get_plugin_toolset_keys())
-        # Plain (non-composite) TOOLSETS entries â€” catches recovered toolsets
+        # Plain (non-composite) TOOLSETS entries — catches recovered toolsets
         # like ``kanban`` that aren't in CONFIGURABLE_TOOLSETS but get re-added.
         for k, tdef in TOOLSETS.items():
-            if k.startswith("hermes-"):
-                continue  # platform composites â€” not user-facing toolsets
+            if k.startswith("kova-"):
+                continue  # platform composites — not user-facing toolsets
             if isinstance(tdef, dict) and tdef.get("includes"):
                 continue  # composite groupings, not leaf toolsets
             if isinstance(tdef, dict) and tdef.get("posture"):
                 continue  # posture toolsets (e.g. coding) are session-level
-                # selections made by agent/coding_context.py â€” not permanent
+                # selections made by agent/coding_context.py — not permanent
                 # user-facing disables. Adding them here causes model_tools
-                # to subtract their tools (terminal, read_file, â€¦) from the
+                # to subtract their tools (terminal, read_file, …) from the
                 # minimal Blank Slate surface (#57315).
             all_keys.add(k)
 
@@ -3059,7 +3059,7 @@ def _blank_slate_minimize_config(config: dict):
     """
     config.setdefault("agent", {})["max_turns"] = 90
 
-    # Compression off â€” minimal footprint; user opts in if they want long sessions.
+    # Compression off — minimal footprint; user opts in if they want long sessions.
     config.setdefault("compression", {})["enabled"] = False
 
     # No automatic memory / user-profile capture.
@@ -3076,16 +3076,16 @@ def _blank_slate_minimize_config(config: dict):
     config.setdefault("display", {})["tool_progress"] = "all"
 
 
-def _run_blank_slate_setup(config: dict, hermes_home, is_existing: bool):
-    """Blank Slate setup â€” start with everything off except the bare minimum.
+def _run_blank_slate_setup(config: dict, kova_home, is_existing: bool):
+    """Blank Slate setup — start with everything off except the bare minimum.
 
     Forces only the essentials to run an agent (provider + model, the file and
     terminal toolsets) and turns every other tool/skill/plugin/MCP/config
     feature OFF. After applying that minimal baseline, the user chooses one of
     two paths:
 
-      1. Start with everything disabled â€” finish now with the minimal agent.
-      2. Walk through every configuration â€” opt each capability back in.
+      1. Start with everything disabled — finish now with the minimal agent.
+      2. Walk through every configuration — opt each capability back in.
 
     Either way nothing is enabled that the user did not explicitly choose.
     """
@@ -3095,23 +3095,23 @@ def _run_blank_slate_setup(config: dict, hermes_home, is_existing: bool):
     print_header("Blank Slate Setup")
     print_info("Everything starts OFF. First we force-enable only what's required")
     print_info("to run an agent, then you choose whether to stop there or walk")
-    print_info("through enabling more â€” opting in to exactly what you want.")
+    print_info("through enabling more — opting in to exactly what you want.")
     print_info("")
     print_info("Forced on: Provider & Model, File Operations, Terminal.")
     print_info("Everything else (web, browser, code exec, vision, memory,")
-    print_info("delegation, cron, skills, plugins, MCP, â€¦) starts disabled.")
+    print_info("delegation, cron, skills, plugins, MCP, …) starts disabled.")
     print()
 
-    # â”€â”€ Step 1: Provider & Model (REQUIRED â€” the agent cannot run without it) â”€â”€
-    print_header("Step 1 â€” Provider & Model (required)")
+    # ── Step 1: Provider & Model (REQUIRED — the agent cannot run without it) ──
+    print_header("Step 1 — Provider & Model (required)")
     setup_model_provider(config)
     save_config(config)
 
-    # â”€â”€ Step 2: Terminal backend (where commands run â€” a core decision) â”€â”€
-    print_header("Step 2 â€” Terminal Backend")
+    # ── Step 2: Terminal backend (where commands run — a core decision) ──
+    print_header("Step 2 — Terminal Backend")
     setup_terminal_backend(config)
 
-    # â”€â”€ Step 3: Lock in the minimal toolset + minimized config knobs â”€â”€
+    # ── Step 3: Lock in the minimal toolset + minimized config knobs ──
     _blank_slate_minimal_toolsets(config)
     _blank_slate_minimize_config(config)
     save_config(config)
@@ -3120,14 +3120,14 @@ def _run_blank_slate_setup(config: dict, hermes_home, is_existing: bool):
     print_info("  Toolsets: file, terminal (everything else off)")
     print_info("  Compression, memory, checkpoints, smart routing: off")
 
-    # â”€â”€ The fork: stop here, or walk through enabling things â”€â”€
+    # ── The fork: stop here, or walk through enabling things ──
     print()
     print_header("How far do you want to go?")
     path = prompt_choice(
         "Your minimal agent is ready. What next?",
         [
-            "Start with everything disabled â€” finish now (most minimal)",
-            "Walk through all configurations â€” opt in to tools, skills, plugins, MCP",
+            "Start with everything disabled — finish now (most minimal)",
+            "Walk through all configurations — opt in to tools, skills, plugins, MCP",
         ],
         0,
     )
@@ -3142,7 +3142,7 @@ def _run_blank_slate_setup(config: dict, hermes_home, is_existing: bool):
         except Exception as exc:
             logger.debug("blank-slate skill opt-out error: %s", exc)
         print()
-        print_success("Blank Slate setup complete â€” minimal agent ready.")
+        print_success("Blank Slate setup complete — minimal agent ready.")
         print_info("Enable anything later, on demand:")
         print_info("  Enable tools:        kova tools")
         print_info("  Seed skills:         kova skills opt-in --sync")
@@ -3150,18 +3150,18 @@ def _run_blank_slate_setup(config: dict, hermes_home, is_existing: bool):
         print_info("  Enable plugins:      kova plugins")
         print_info("  Tune agent settings: kova setup agent")
         print()
-        _print_setup_summary(config, hermes_home)
+        _print_setup_summary(config, kova_home)
         return
 
-    # â”€â”€ Walkthrough path â€” opt in to each capability â”€â”€
-    _blank_slate_walkthrough(config, hermes_home)
+    # ── Walkthrough path — opt in to each capability ──
+    _blank_slate_walkthrough(config, kova_home)
 
 
-def _blank_slate_walkthrough(config: dict, hermes_home):
+def _blank_slate_walkthrough(config: dict, kova_home):
     """Opt-in walkthrough for Blank Slate: skills, tools, plugins, MCP, gateway."""
     from kova_cli.config import load_config
 
-    # â”€â”€ Bundled skills â€” default to NONE, offer to seed all â”€â”€
+    # ── Bundled skills — default to NONE, offer to seed all ──
     print()
     print_header("Bundled Skills")
     print_info("Blank Slate ships with NO bundled skills by default.")
@@ -3186,7 +3186,7 @@ def _blank_slate_walkthrough(config: dict, hermes_home):
         logger.debug("blank-slate skill handling error: %s", exc)
         print_warning(f"Skill setup step encountered an error: {exc}")
 
-    # â”€â”€ Walk through enabling additional tools â”€â”€
+    # ── Walk through enabling additional tools ──
     print()
     print_header("Tools")
     print_info("Pick exactly which additional toolsets to turn on.")
@@ -3196,7 +3196,7 @@ def _blank_slate_walkthrough(config: dict, hermes_home):
         try:
             from kova_cli.tools_config import tools_command
             tools_command(first_install=False, config=config)
-            # tools_command saves via its own load/save cycle â€” re-sync.
+            # tools_command saves via its own load/save cycle — re-sync.
             _refreshed = load_config()
             config.clear()
             config.update(_refreshed)
@@ -3206,7 +3206,7 @@ def _blank_slate_walkthrough(config: dict, hermes_home):
     else:
         print_info("Keeping the minimal toolset. Add tools later with `kova tools`.")
 
-    # â”€â”€ Built-in plugins (off unless chosen) â”€â”€
+    # ── Built-in plugins (off unless chosen) ──
     print()
     print_header("Plugins")
     if prompt_yes_no("Review and enable built-in plugins now?", default=False):
@@ -3214,7 +3214,7 @@ def _blank_slate_walkthrough(config: dict, hermes_home):
     else:
         print_info("No plugins enabled. Add later with `kova plugins`.")
 
-    # â”€â”€ MCP servers (off unless chosen) â”€â”€
+    # ── MCP servers (off unless chosen) ──
     print()
     print_header("MCP Servers")
     if prompt_yes_no("Add an MCP server now?", default=False):
@@ -3222,26 +3222,26 @@ def _blank_slate_walkthrough(config: dict, hermes_home):
     else:
         print_info("No MCP servers configured. Add later with `kova mcp add`.")
 
-    # â”€â”€ Optional messaging gateway â”€â”€
+    # ── Optional messaging gateway ──
     print()
-    if prompt_yes_no("Connect a messaging platform (Telegram, Discord, â€¦)?", default=False):
+    if prompt_yes_no("Connect a messaging platform (Telegram, Discord, …)?", default=False):
         setup_gateway(config)
 
     save_config(config)
 
     print()
-    print_success("Blank Slate setup complete â€” minimal agent ready.")
+    print_success("Blank Slate setup complete — minimal agent ready.")
     print_info("  Enable more tools:   kova tools")
     print_info("  Seed skills:         kova skills opt-in --sync")
     print_info("  Add MCP servers:     kova mcp add")
     print_info("  Tune agent settings: kova setup agent")
     print()
 
-    _print_setup_summary(config, hermes_home)
+    _print_setup_summary(config, kova_home)
 
 
-def _run_quick_setup(config: dict, hermes_home):
-    """Quick setup â€” only configure items that are missing."""
+def _run_quick_setup(config: dict, kova_home):
+    """Quick setup — only configure items that are missing."""
     from kova_cli.config import (
         get_missing_env_vars,
         get_missing_config_fields,
@@ -3249,7 +3249,7 @@ def _run_quick_setup(config: dict, hermes_home):
     )
 
     print()
-    print_header("Quick Setup â€” Missing Items Only")
+    print_header("Quick Setup — Missing Items Only")
 
     # Check what's missing
     missing_required = [
@@ -3280,7 +3280,7 @@ def _run_quick_setup(config: dict, hermes_home):
         print()
         print_info(f"{len(missing_required)} required setting(s) missing:")
         for var in missing_required:
-            print(f"     â€¢ {var['name']}")
+            print(f"     • {var['name']}")
         print()
 
         for var in missing_required:
@@ -3309,7 +3309,7 @@ def _run_quick_setup(config: dict, hermes_home):
         if v.get("category") == "messaging" and not v.get("advanced")
     ]
 
-    # â”€â”€ Tool API keys (checklist) â”€â”€
+    # ── Tool API keys (checklist) ──
     if missing_tools:
         print()
         print_header("Tool API Keys")
@@ -3317,7 +3317,7 @@ def _run_quick_setup(config: dict, hermes_home):
         checklist_labels = []
         for var in missing_tools:
             tools = var.get("tools", [])
-            tools_str = f" â†’ {', '.join(tools[:2])}" if tools else ""
+            tools_str = f" → {', '.join(tools[:2])}" if tools else ""
             checklist_labels.append(f"{var.get('description', var['name'])}{tools_str}")
 
         selected_indices = prompt_checklist(
@@ -3329,7 +3329,7 @@ def _run_quick_setup(config: dict, hermes_home):
             var = missing_tools[idx]
             _prompt_api_key(var)
 
-    # â”€â”€ Messaging platforms (checklist then prompt for selected) â”€â”€
+    # ── Messaging platforms (checklist then prompt for selected) ──
     if missing_messaging:
         print()
         print_header("Messaging Platforms")
@@ -3355,9 +3355,9 @@ def _run_quick_setup(config: dict, hermes_home):
 
         platform_labels = [
             {
-                "Telegram": "ðŸ“± Telegram",
-                "Discord": "ðŸ’¬ Discord",
-                "Slack": "ðŸ’¼ Slack",
+                "Telegram": "📱 Telegram",
+                "Discord": "💬 Discord",
+                "Slack": "💼 Slack",
             }.get(p, p)
             for p in platform_order
         ]
@@ -3370,9 +3370,9 @@ def _run_quick_setup(config: dict, hermes_home):
         for idx in selected_indices:
             plat = platform_order[idx]
             vars_list = platforms[plat]
-            emoji = {"Telegram": "ðŸ“±", "Discord": "ðŸ’¬", "Slack": "ðŸ’¼"}.get(plat, "")
+            emoji = {"Telegram": "📱", "Discord": "💬", "Slack": "💼"}.get(plat, "")
             print()
-            print(color(f"  â”€â”€â”€ {emoji} {plat} â”€â”€â”€", Colors.CYAN))
+            print(color(f"  ─── {emoji} {plat} ───", Colors.CYAN))
             print()
             for var in vars_list:
                 print_info(f"  {var.get('description', '')}")
@@ -3384,7 +3384,7 @@ def _run_quick_setup(config: dict, hermes_home):
                     value = prompt(f"  {var.get('prompt', var['name'])}")
                 if value:
                     save_env_value(var["name"], value)
-                    print_success("  âœ“ Saved")
+                    print_success("  ✓ Saved")
                 else:
                     print_warning("  Skipped")
                 print()
@@ -3403,4 +3403,4 @@ def _run_quick_setup(config: dict, hermes_home):
         save_config(config)
 
     # Jump to summary
-    _print_setup_summary(config, hermes_home)
+    _print_setup_summary(config, kova_home)

@@ -8,11 +8,11 @@ platforms: [linux, macos, windows]
 prerequisites:
   commands: [python3]
 metadata:
-  hermes:
+  kova:
     tags: [privacy, data-broker, opt-out, ccpa, gdpr, security, doxxing]
     category: security
     related_skills: [google-workspace, agentmail, himalaya, scrapling, osint-investigation]
-    homepage: https://github.com/NousResearch/hermes-agent
+    homepage: https://github.com/OpenKova/Kova-Agent
 ---
 
 # unbroker

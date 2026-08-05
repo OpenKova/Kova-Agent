@@ -28,11 +28,11 @@ const buildUiState = (): UiState => ({
   sessionTitle: '',
   showReasoning: false,
   sid: null,
-  status: 'summoning hermes…',
+  status: 'summoning kova…',
   statusBar: 'top',
   streaming: true,
   // Last session's resolved theme paints frame one (flash-free boot, like
-  // the desktop's hermes-boot-* keys); DEFAULT_THEME only on first launch.
+  // the desktop's kova-boot-* keys); DEFAULT_THEME only on first launch.
   theme: bootTheme ?? DEFAULT_THEME,
   usage: ZERO
 })

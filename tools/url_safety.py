@@ -205,7 +205,7 @@ def _global_allow_private_urls() -> bool:
     """Return True when the user has opted out of private-IP blocking.
 
     Checks (in priority order):
-    1. ``HERMES_ALLOW_PRIVATE_URLS`` env var  (``true``/``1``/``yes``)
+    1. ``KOVA_ALLOW_PRIVATE_URLS`` env var  (``true``/``1``/``yes``)
     2. ``security.allow_private_urls`` in config.yaml
     3. ``browser.allow_private_urls`` in config.yaml  (legacy / backward compat)
 
@@ -219,7 +219,7 @@ def _global_allow_private_urls() -> bool:
     _cached_allow_private = False  # safe default
 
     # 1. Env var override (highest priority)
-    env_val = os.getenv("HERMES_ALLOW_PRIVATE_URLS", "").strip().lower()
+    env_val = os.getenv("KOVA_ALLOW_PRIVATE_URLS", "").strip().lower()
     if env_val in {"true", "1", "yes"}:
         _cached_allow_private = True
         return _cached_allow_private
@@ -229,7 +229,7 @@ def _global_allow_private_urls() -> bool:
 
     # 2. Config file
     try:
-        from hermes_cli.config import read_raw_config
+        from kova_cli.config import read_raw_config
         cfg = read_raw_config()
         # security.allow_private_urls (preferred)
         sec = cfg.get("security", {})
@@ -392,7 +392,7 @@ def is_safe_url(url: str) -> bool:
     Fails closed: DNS errors and unexpected exceptions block the request.
 
     When ``security.allow_private_urls`` is enabled (or the env var
-    ``HERMES_ALLOW_PRIVATE_URLS=true``), private-IP blocking is skipped.
+    ``KOVA_ALLOW_PRIVATE_URLS=true``), private-IP blocking is skipped.
     Cloud metadata endpoints (169.254.169.254, metadata.google.internal)
     remain blocked regardless — they are never legitimate agent targets.
     """
@@ -661,7 +661,7 @@ def ssrf_safe_async_http_transport(**kwargs: Any) -> Any:
     import contextvars
     import httpx
 
-    schemes_by_origin_var = contextvars.ContextVar("hermes_ssrf_async_origin_schemes")
+    schemes_by_origin_var = contextvars.ContextVar("kova_ssrf_async_origin_schemes")
 
     class _Transport(httpx.AsyncHTTPTransport):
         def __init__(self, **transport_kwargs: Any):
@@ -685,7 +685,7 @@ def ssrf_safe_http_transport(**kwargs: Any) -> Any:
     import contextvars
     import httpx
 
-    schemes_by_origin_var = contextvars.ContextVar("hermes_ssrf_origin_schemes")
+    schemes_by_origin_var = contextvars.ContextVar("kova_ssrf_origin_schemes")
 
     class _Transport(httpx.HTTPTransport):
         def __init__(self, **transport_kwargs: Any):
@@ -706,7 +706,7 @@ def ssrf_safe_http_transport(**kwargs: Any) -> Any:
 
 def _install_ssrf_guard_on_async_transport(transport: Any, schemes_by_origin_var: Any) -> None:
     state = getattr(transport, "__dict__", {}) if transport is not None else {}
-    if transport is None or state.get("_hermes_ssrf_guarded", False):
+    if transport is None or state.get("_kova_ssrf_guarded", False):
         return
 
     pool = state.get("_pool")
@@ -726,12 +726,12 @@ def _install_ssrf_guard_on_async_transport(transport: Any, schemes_by_origin_var
             schemes_by_origin_var.reset(token)
 
     transport.handle_async_request = guarded_handle_async_request
-    transport._hermes_ssrf_guarded = True
+    transport._kova_ssrf_guarded = True
 
 
 def _install_ssrf_guard_on_transport(transport: Any, schemes_by_origin_var: Any) -> None:
     state = getattr(transport, "__dict__", {}) if transport is not None else {}
-    if transport is None or state.get("_hermes_ssrf_guarded", False):
+    if transport is None or state.get("_kova_ssrf_guarded", False):
         return
 
     pool = state.get("_pool")
@@ -751,13 +751,13 @@ def _install_ssrf_guard_on_transport(transport: Any, schemes_by_origin_var: Any)
             schemes_by_origin_var.reset(token)
 
     transport.handle_request = guarded_handle_request
-    transport._hermes_ssrf_guarded = True
+    transport._kova_ssrf_guarded = True
 
 
 def _install_ssrf_guard_on_async_client(client: Any) -> None:
     import contextvars
 
-    schemes_by_origin_var = contextvars.ContextVar("hermes_ssrf_async_origin_schemes")
+    schemes_by_origin_var = contextvars.ContextVar("kova_ssrf_async_origin_schemes")
     state = getattr(client, "__dict__", {})
     _install_ssrf_guard_on_async_transport(
         state.get("_transport"), schemes_by_origin_var
@@ -767,7 +767,7 @@ def _install_ssrf_guard_on_async_client(client: Any) -> None:
 def _install_ssrf_guard_on_client(client: Any) -> None:
     import contextvars
 
-    schemes_by_origin_var = contextvars.ContextVar("hermes_ssrf_origin_schemes")
+    schemes_by_origin_var = contextvars.ContextVar("kova_ssrf_origin_schemes")
     state = getattr(client, "__dict__", {})
     _install_ssrf_guard_on_transport(
         state.get("_transport"), schemes_by_origin_var

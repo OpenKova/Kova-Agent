@@ -6,8 +6,8 @@ from kova_cli.main import cmd_update
 from tools.skills_hub import OptionalSkillSource
 
 
-def test_recommended_update_command_defaults_to_hermes_update(monkeypatch):
-    monkeypatch.delenv("HERMES_MANAGED", raising=False)
+def test_recommended_update_command_defaults_to_kova_update(monkeypatch):
+    monkeypatch.delenv("KOVA_MANAGED", raising=False)
 
     # Also short-circuit the .managed marker path — CI runners may have an
     # ambient ~/.hermes/.managed if a prior test left HERMES_HOME pointing
@@ -22,7 +22,7 @@ def test_recommended_update_command_defaults_to_hermes_update(monkeypatch):
 def test_optional_skill_source_honors_env_override(monkeypatch, tmp_path):
     optional_dir = tmp_path / "optional-skills"
     optional_dir.mkdir()
-    monkeypatch.setenv("HERMES_OPTIONAL_SKILLS", str(optional_dir))
+    monkeypatch.setenv("KOVA_OPTIONAL_SKILLS", str(optional_dir))
 
     source = OptionalSkillSource()
 

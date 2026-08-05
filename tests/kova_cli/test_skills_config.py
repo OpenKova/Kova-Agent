@@ -120,19 +120,19 @@ class TestSaveDisabledSkills:
 # ---------------------------------------------------------------------------
 
 class TestIsSkillDisabled:
-    @patch("hermes_cli.config.load_config")
+    @patch("kova_cli.config.load_config")
     def test_globally_disabled(self, mock_load):
         mock_load.return_value = {"skills": {"disabled": ["bad-skill"]}}
         from tools.skills_tool import _is_skill_disabled
         assert _is_skill_disabled("bad-skill") is True
 
-    @patch("hermes_cli.config.load_config")
+    @patch("kova_cli.config.load_config")
     def test_globally_enabled(self, mock_load):
         mock_load.return_value = {"skills": {"disabled": ["other"]}}
         from tools.skills_tool import _is_skill_disabled
         assert _is_skill_disabled("good-skill") is False
 
-    @patch("hermes_cli.config.load_config")
+    @patch("kova_cli.config.load_config")
     def test_platform_disabled(self, mock_load):
         mock_load.return_value = {"skills": {
             "disabled": [],
@@ -141,7 +141,7 @@ class TestIsSkillDisabled:
         from tools.skills_tool import _is_skill_disabled
         assert _is_skill_disabled("tg-skill", platform="telegram") is True
 
-    @patch("hermes_cli.config.load_config")
+    @patch("kova_cli.config.load_config")
     def test_globally_disabled_stays_disabled_on_platform(self, mock_load):
         mock_load.return_value = {"skills": {
             "disabled": ["skill-a"],
@@ -153,7 +153,7 @@ class TestIsSkillDisabled:
         assert _is_skill_disabled("skill-a", platform="telegram") is True
         assert _is_skill_disabled("tg-skill", platform="telegram") is True
 
-    @patch("hermes_cli.config.load_config")
+    @patch("kova_cli.config.load_config")
     def test_empty_platform_list_keeps_global_disabled(self, mock_load):
         mock_load.return_value = {"skills": {
             "disabled": ["skill-a"],
@@ -164,27 +164,27 @@ class TestIsSkillDisabled:
         # skill — global disables hold on every platform.
         assert _is_skill_disabled("skill-a", platform="telegram") is True
 
-    @patch("hermes_cli.config.load_config")
+    @patch("kova_cli.config.load_config")
     def test_platform_falls_back_to_global(self, mock_load):
         mock_load.return_value = {"skills": {"disabled": ["skill-a"]}}
         from tools.skills_tool import _is_skill_disabled
         # no platform_disabled for cli -> global
         assert _is_skill_disabled("skill-a", platform="cli") is True
 
-    @patch("hermes_cli.config.load_config")
+    @patch("kova_cli.config.load_config")
     def test_empty_config(self, mock_load):
         mock_load.return_value = {}
         from tools.skills_tool import _is_skill_disabled
         assert _is_skill_disabled("any-skill") is False
 
-    @patch("hermes_cli.config.load_config")
+    @patch("kova_cli.config.load_config")
     def test_exception_returns_false(self, mock_load):
         mock_load.side_effect = Exception("config error")
         from tools.skills_tool import _is_skill_disabled
         assert _is_skill_disabled("any-skill") is False
 
-    @patch("hermes_cli.config.load_config")
-    @patch.dict("os.environ", {"HERMES_PLATFORM": "discord"})
+    @patch("kova_cli.config.load_config")
+    @patch.dict("os.environ", {"KOVA_PLATFORM": "discord"})
     def test_env_var_platform(self, mock_load):
         mock_load.return_value = {"skills": {
             "platform_disabled": {"discord": ["discord-skill"]}
@@ -212,15 +212,15 @@ class TestGetDisabledSkillNames:
             "      - tg-only-skill\n"
         )
         monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-        monkeypatch.delenv("HERMES_PLATFORM", raising=False)
-        monkeypatch.delenv("HERMES_SESSION_PLATFORM", raising=False)
+        monkeypatch.delenv("KOVA_PLATFORM", raising=False)
+        monkeypatch.delenv("KOVA_SESSION_PLATFORM", raising=False)
 
         from agent.skill_utils import get_disabled_skill_names
         result = get_disabled_skill_names(platform="telegram")
         assert result == {"tg-only-skill", "global-skill"}
 
     def test_session_platform_env_var(self, tmp_path, monkeypatch):
-        """HERMES_SESSION_PLATFORM should be used when HERMES_PLATFORM is unset."""
+        """KOVA_SESSION_PLATFORM should be used when KOVA_PLATFORM is unset."""
         config = tmp_path / "config.yaml"
         config.write_text(
             "skills:\n"
@@ -231,15 +231,15 @@ class TestGetDisabledSkillNames:
             "      - discord-skill\n"
         )
         monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-        monkeypatch.delenv("HERMES_PLATFORM", raising=False)
-        monkeypatch.setenv("HERMES_SESSION_PLATFORM", "discord")
+        monkeypatch.delenv("KOVA_PLATFORM", raising=False)
+        monkeypatch.setenv("KOVA_SESSION_PLATFORM", "discord")
 
         from agent.skill_utils import get_disabled_skill_names
         result = get_disabled_skill_names()
         assert result == {"discord-skill", "global-skill"}
 
-    def test_hermes_platform_takes_precedence(self, tmp_path, monkeypatch):
-        """HERMES_PLATFORM should win over HERMES_SESSION_PLATFORM."""
+    def test_kova_platform_takes_precedence(self, tmp_path, monkeypatch):
+        """KOVA_PLATFORM should win over KOVA_SESSION_PLATFORM."""
         config = tmp_path / "config.yaml"
         config.write_text(
             "skills:\n"
@@ -250,8 +250,8 @@ class TestGetDisabledSkillNames:
             "      - discord-skill\n"
         )
         monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-        monkeypatch.setenv("HERMES_PLATFORM", "telegram")
-        monkeypatch.setenv("HERMES_SESSION_PLATFORM", "discord")
+        monkeypatch.setenv("KOVA_PLATFORM", "telegram")
+        monkeypatch.setenv("KOVA_SESSION_PLATFORM", "discord")
 
         from agent.skill_utils import get_disabled_skill_names
         result = get_disabled_skill_names()
@@ -269,8 +269,8 @@ class TestGetDisabledSkillNames:
             "      - slack-skill\n"
         )
         monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-        monkeypatch.setenv("HERMES_PLATFORM", "telegram")
-        monkeypatch.setenv("HERMES_SESSION_PLATFORM", "telegram")
+        monkeypatch.setenv("KOVA_PLATFORM", "telegram")
+        monkeypatch.setenv("KOVA_SESSION_PLATFORM", "telegram")
 
         from agent.skill_utils import get_disabled_skill_names
         result = get_disabled_skill_names(platform="slack")
@@ -288,8 +288,8 @@ class TestGetDisabledSkillNames:
             "      - tg-skill\n"
         )
         monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-        monkeypatch.delenv("HERMES_PLATFORM", raising=False)
-        monkeypatch.delenv("HERMES_SESSION_PLATFORM", raising=False)
+        monkeypatch.delenv("KOVA_PLATFORM", raising=False)
+        monkeypatch.delenv("KOVA_SESSION_PLATFORM", raising=False)
 
         from agent.skill_utils import get_disabled_skill_names
         result = get_disabled_skill_names()

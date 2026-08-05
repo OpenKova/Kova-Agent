@@ -17,8 +17,8 @@ description: "如何为 Kova Agent 构建网页搜索/提取/爬取后端插件"
 Kova 在三个位置扫描网页搜索后端：
 
 1. **内置** — `<repo>/plugins/web/<name>/`（以 `kind: backend` 自动加载，始终可用）
-2. **用户** — `~/.hermes/plugins/web/<name>/`（通过 `plugins.enabled` 或 `hermes plugins enable <name>` 按需启用）
-3. **Pip** — 声明了 `hermes_agent.plugins` 入口点的包
+2. **用户** — `~/.hermes/plugins/web/<name>/`（通过 `plugins.enabled` 或 `kova plugins enable <name>` 按需启用）
+3. **Pip** — 声明了 `kova_agent.plugins` 入口点的包
 
 每个插件的 `register(ctx)` 函数调用 `ctx.register_web_search_provider(...)` ——将实例注册到 `agent/web_search_registry.py` 中的注册表。各能力的活跃提供商由配置决定：
 
@@ -247,7 +247,7 @@ web:
 
 ```toml
 # pyproject.toml
-[project.entry-points."hermes_agent.plugins"]
+[project.entry-points."kova_agent.plugins"]
 my-backend-web = "my_backend_web_package"
 ```
 

@@ -21,7 +21,7 @@ def _ns(**kw):
         source=False,
         fake_boot=False,
         ignore_existing=False,
-        hermes_root=None,
+        kova_root=None,
         cwd=None,
     )
     defaults.update(kw)
@@ -91,14 +91,14 @@ def test_gui_install_env_prepends_managed_node_on_bare_path(tmp_path, monkeypatc
     """
     import os
 
-    from kova_constants import iter_hermes_node_dirs
+    from kova_constants import iter_kova_node_dirs
 
     root = _make_desktop_tree(tmp_path)
     monkeypatch.setattr(cli_main, "PROJECT_ROOT", root)
     _make_packaged_executable(root, monkeypatch, platform="win32")
 
-    # A managed Node tree on disk so with_hermes_node_path() actually prepends it.
-    home = tmp_path / "hermes-home"
+    # A managed Node tree on disk so with_kova_node_path() actually prepends it.
+    home = tmp_path / "kova-home"
     (home / "node" / "bin").mkdir(parents=True)
     monkeypatch.setenv("HERMES_HOME", str(home))
     # Simulate the stripped PATH the desktop updater chain hands us.
@@ -115,7 +115,7 @@ def test_gui_install_env_prepends_managed_node_on_bare_path(tmp_path, monkeypatc
          pytest.raises(SystemExit):
         cli_main.cmd_gui(_ns(skip_build=False))
 
-    managed_dirs = [str(p) for p in iter_hermes_node_dirs() if p.is_dir()]
+    managed_dirs = [str(p) for p in iter_kova_node_dirs() if p.is_dir()]
     assert managed_dirs, "managed node tree not discovered"
     install_env = mock_install.call_args.kwargs["env"]
     path_parts = install_env["PATH"].split(os.pathsep)
@@ -125,9 +125,9 @@ def test_gui_install_env_prepends_managed_node_on_bare_path(tmp_path, monkeypatc
 
 def test_gui_forwards_desktop_environment_overrides(tmp_path, monkeypatch):
     root = _make_desktop_tree(tmp_path)
-    hermes_root = tmp_path / "custom-hermes"
+    kova_root = tmp_path / "custom-kova"
     cwd = tmp_path / "project"
-    hermes_root.mkdir()
+    kova_root.mkdir()
     cwd.mkdir()
     monkeypatch.setattr(cli_main, "PROJECT_ROOT", root)
     _make_packaged_executable(root, monkeypatch)
@@ -144,15 +144,15 @@ def test_gui_forwards_desktop_environment_overrides(tmp_path, monkeypatch):
         cli_main.cmd_gui(_ns(
             fake_boot=True,
             ignore_existing=True,
-            hermes_root=str(hermes_root),
+            kova_root=str(kova_root),
             cwd=str(cwd),
         ))
 
     launch_env = mock_run.call_args_list[1].kwargs["env"]
-    assert launch_env["HERMES_DESKTOP_BOOT_FAKE"] == "1"
-    assert launch_env["HERMES_DESKTOP_IGNORE_EXISTING"] == "1"
-    assert launch_env["HERMES_DESKTOP_HERMES_ROOT"] == str(hermes_root)
-    assert launch_env["HERMES_DESKTOP_CWD"] == str(cwd)
+    assert launch_env["KOVA_DESKTOP_BOOT_FAKE"] == "1"
+    assert launch_env["KOVA_DESKTOP_IGNORE_EXISTING"] == "1"
+    assert launch_env["KOVA_DESKTOP_KOVA_ROOT"] == str(kova_root)
+    assert launch_env["KOVA_DESKTOP_CWD"] == str(cwd)
 
 
 def test_gui_exits_when_npm_missing(tmp_path, monkeypatch, capsys):
@@ -756,7 +756,7 @@ def test_gui_does_not_retry_after_packaged_executable_exists(tmp_path, monkeypat
     Electron-download problem the cache purge + mirror retries exist to repair.
 
     Regression for #40187: a late failure such as macOS code signing leaves
-    Hermes.app/Contents/MacOS/Hermes in place. Re-downloading Electron can't
+    Kova.app/Contents/MacOS/Kova in place. Re-downloading Electron can't
     repair a signing failure, so the destructive purge + slow mirror retry must
     be skipped — we fail directly instead of grinding through an identical retry.
     """

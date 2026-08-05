@@ -11,7 +11,7 @@ import subprocess
 import time
 from dataclasses import dataclass, field
 
-from kova_constants import get_hermes_home
+from kova_constants import get_kova_home
 
 logger = logging.getLogger(__name__)
 
@@ -126,7 +126,7 @@ def get_chrome_debug_candidates(system: str) -> list[str]:
 
 
 def chrome_debug_data_dir() -> str:
-    return str(get_hermes_home() / "chrome-debug")
+    return str(get_kova_home() / "chrome-debug")
 
 
 def _chrome_debug_args(port: int) -> list[str]:

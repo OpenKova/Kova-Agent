@@ -105,7 +105,7 @@ def _cmd_select(args) -> int:
     if not slug:
         pets = store.installed_pets()
         if not pets:
-            _err("✗ no pets installed — run: hermes pets install boba")
+            _err("✗ no pets installed — run: kova pets install boba")
             return 1
         slug = _interactive_pick(pets)
         if not slug:
@@ -113,7 +113,7 @@ def _cmd_select(args) -> int:
 
     pet = store.load_pet(slug)
     if pet is None or not pet.exists:
-        _err(f"✗ '{slug}' is not installed — run: hermes pets install {slug}")
+        _err(f"✗ '{slug}' is not installed — run: kova pets install {slug}")
         return 1
 
     _set_active(slug)
@@ -154,7 +154,7 @@ def _cmd_show(args) -> int:
     slug = (getattr(args, "slug", "") or "").strip() or str(cfg.get("slug", "") or "")
     pet = store.resolve_active_pet(slug)
     if pet is None:
-        _err("✗ no pet to show — run: hermes pets install boba")
+        _err("✗ no pet to show — run: kova pets install boba")
         return 1
 
     mode_cfg = getattr(args, "mode", None) or str(cfg.get("render_mode", "auto") or "auto")

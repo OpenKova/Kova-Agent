@@ -419,16 +419,16 @@ def test_explicit_only_filters_ambient_credentials_but_keeps_current_and_custom_
     rows = [
         {"slug": "openai-codex", "name": "OpenAI Codex", "models": ["gpt-5.4"],
          "total_models": 1, "is_current": True, "is_user_defined": False,
-         "source": "hermes"},
+         "source": "kova"},
         {"slug": "gemini", "name": "Gemini", "models": ["gemini-2.5-pro"],
          "total_models": 1, "is_current": False, "is_user_defined": False,
          "source": "built-in"},
         {"slug": "copilot", "name": "Copilot", "models": ["gpt-5.4"],
          "total_models": 1, "is_current": False, "is_user_defined": False,
-         "source": "hermes"},
+         "source": "kova"},
         {"slug": "nous", "name": "Nous", "models": ["anthropic/claude-sonnet-5"],
          "total_models": 1, "is_current": False, "is_user_defined": False,
-         "source": "hermes"},
+         "source": "kova"},
         {"slug": "custom:lab", "name": "Lab", "models": ["lab-1"],
          "total_models": 1, "is_current": False, "is_user_defined": True,
          "source": "user-config"},
@@ -948,7 +948,7 @@ def test_build_models_payload_keeps_static_provider_models_from_providers_dict()
     with (
         patch("kova_cli.config.load_config", return_value=cfg),
         patch("agent.models_dev.fetch_models_dev", return_value={}),
-        patch("kova_cli.providers.HERMES_OVERLAYS", {}),
+        patch("kova_cli.providers.KOVA_OVERLAYS", {}),
         patch(
             "kova_cli.models.fetch_api_models",
             side_effect=AssertionError("fetch_api_models must not be called"),

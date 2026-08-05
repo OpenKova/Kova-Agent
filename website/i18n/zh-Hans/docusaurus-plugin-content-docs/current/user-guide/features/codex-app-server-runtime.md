@@ -62,7 +62,7 @@ Kova 将自身注册为 MCP server，以便 Codex 能够回调获取 Codex 自�
 - **`skill_view` / `skills_list`** — 读取 Kova 的技能库。
 - **`text_to_speech`** — 通过 Kova 配置的提供商进行 TTS。
 
-当模型需要其中某个工具时，Codex 通过 stdio MCP 生成 `hermes_tools_mcp_server` 子进程，调用通过 `model_tools.handle_function_call()` 分发（与 Kova 默认运行时的代码路径相同），结果像其他 MCP 响应一样返回给 Codex。
+当模型需要其中某个工具时，Codex 通过 stdio MCP 生成 `kova_tools_mcp_server` 子进程，调用通过 `model_tools.handle_function_call()` 分发（与 Kova 默认运行时的代码路径相同），结果像其他 MCP 响应一样返回给 Codex。
 
 ### 此运行时上不可用的工具
 
@@ -91,11 +91,11 @@ Codex 运行时 worker 内可用的功能：
 - 用于 browser_*、vision、image_gen、技能、TTS 的 Kova 工具回调
 
 通过 MCP 回调同样可用的功能：
-- **`kanban_complete` / `kanban_block` / `kanban_comment` / `kanban_heartbeat`** — worker 交接工具。这些工具从环境变量中读取 `HERMES_KANBAN_TASK`（由分发器设置），正确进行访问控制，并写入由 `HERMES_KANBAN_DB` 固定的每个看板 SQLite 数据库。若回调中没有这些工具，此运行时上的 worker 可以完成任务但无法汇报，会一直挂起直到分发器超时。
+- **`kanban_complete` / `kanban_block` / `kanban_comment` / `kanban_heartbeat`** — worker 交接工具。这些工具从环境变量中读取 `KOVA_KANBAN_TASK`（由分发器设置），正确进行访问控制，并写入由 `KOVA_KANBAN_DB` 固定的每个看板 SQLite 数据库。若回调中没有这些工具，此运行时上的 worker 可以完成任务但无法汇报，会一直挂起直到分发器超时。
 - **`kanban_show` / `kanban_list`** — 只读看板查询，供 worker 检查自身上下文。
 - **`kanban_create` / `kanban_unblock` / `kanban_link`** — 仅限编排器的操作。供运行在 Codex 运行时上、需要分发新任务的编排器 agent 使用。
 
-Kanban 工具通过分发器设置的 `HERMES_KANBAN_TASK` 环境变量进行访问控制——该变量会传播到 Codex 子进程（Codex 继承环境变量），再从那里传播到生成的 `hermes-tools` MCP server 子进程。因此工具能看到正确的任务 id 并正确进行访问控制。对于 Codex app-server worker，当 `HERMES_KANBAN_TASK` 存在时，Kova 还会传入精细的 app-server 沙箱覆盖配置：保持 `workspace-write` 沙箱，将**看板数据库目录以及分发器固定的所有 Kanban 路径**作为额外可写根目录添加（`HERMES_KANBAN_WORKSPACES_ROOT`、`HERMES_KANBAN_WORKSPACE`、旧版 `HERMES_KANBAN_ROOT`——去重，数据库目录优先），并默认禁用网络。这避免了脆弱的 `:danger-no-sandbox` 变通方案，同时允许 `kanban_complete` / `kanban_block` 更新看板数据库，**并且**允许 worker 在数据库目录之外的工作区挂载点下写入报告/产物（例如独立驱动器上的 `/media/.../kanban-workspaces/...`——[issue #27941](https://github.com/NousResearch/hermes-agent/issues/27941)）。
+Kanban 工具通过分发器设置的 `KOVA_KANBAN_TASK` 环境变量进行访问控制——该变量会传播到 Codex 子进程（Codex 继承环境变量），再从那里传播到生成的 `kova-tools` MCP server 子进程。因此工具能看到正确的任务 id 并正确进行访问控制。对于 Codex app-server worker，当 `KOVA_KANBAN_TASK` 存在时，Kova 还会传入精细的 app-server 沙箱覆盖配置：保持 `workspace-write` 沙箱，将**看板数据库目录以及分发器固定的所有 Kanban 路径**作为额外可写根目录添加（`KOVA_KANBAN_WORKSPACES_ROOT`、`KOVA_KANBAN_WORKSPACE`、旧版 `KOVA_KANBAN_ROOT`——去重，数据库目录优先），并默认禁用网络。这避免了脆弱的 `:danger-no-sandbox` 变通方案，同时允许 `kanban_complete` / `kanban_block` 更新看板数据库，**并且**允许 worker 在数据库目录之外的工作区挂载点下写入报告/产物（例如独立驱动器上的 `/media/.../kanban-workspaces/...`——[issue #27941](https://github.com/OpenKova/Kova-Agent/issues/27941)）。
 
 ### Cron 任务
 
@@ -139,7 +139,7 @@ Kanban 工具通过分发器设置的 `HERMES_KANBAN_TASK` 环境变量进行访
    ```bash
    codex login                  # 将 token 写入 ~/.codex/auth.json
    ```
-   Kova 自己的 `hermes auth login codex` 写入 `~/.hermes/auth.json`——那是独立的会话。**如果你还没有运行过 `codex login`，请单独运行它。**
+   Kova 自己的 `kova auth login codex` 写入 `~/.hermes/auth.json`——那是独立的会话。**如果你还没有运行过 `codex login`，请单独运行它。**
 
 3. **（可选）安装你想要的 Codex 插件。** 启用运行时时，Kova 会自动迁移你已通过 Codex CLI 安装的所有精选插件：
    ```bash
@@ -238,7 +238,7 @@ Codex 有三个内置权限配置文件：
 default_permissions = ":read-only"
 ```
 
-（只要你的覆盖配置位于 `# managed by hermes-agent` 标记之外，Kova 在重新迁移时会保留它。）
+（只要你的覆盖配置位于 `# managed by kova-agent` 标记之外，Kova 在重新迁移时会保留它。）
 
 ## 辅助任务与 ChatGPT 订阅 token 消耗
 
@@ -271,13 +271,13 @@ auxiliary:
 Kova 将其管理的所有内容包裹在两个标记注释之间：
 
 ```toml
-# managed by hermes-agent — `hermes codex-runtime migrate` regenerates this section
+# managed by kova-agent — `kova codex-runtime migrate` regenerates this section
 default_permissions = ":workspace"
 [mcp_servers.filesystem]
 ...
 [plugins."github@openai-curated"]
 ...
-# end hermes-agent managed section
+# end kova-agent managed section
 ```
 
 该块**之外**的内容归你所有。重新运行迁移（通过 `/codex-runtime codex_app_server` 或每次切换运行时时）会原地替换管理块，但完整保留其上下方的用户内容。这意味着你可以：
@@ -296,8 +296,8 @@ default_permissions = ":workspace"
 如果你需要按配置文件隔离 Codex（独立的认证、独立的已安装插件、独立的配置），请为每个配置文件显式设置 `CODEX_HOME`。最简洁的方式是指向你 `HERMES_HOME` 下的某个目录：
 
 ```bash
-# 在 work 配置文件中，你可以这样包装 hermes：
-CODEX_HOME=~/.hermes/profiles/work/codex hermes chat
+# 在 work 配置文件中，你可以这样包装 kova：
+CODEX_HOME=~/.hermes/profiles/work/codex kova chat
 ```
 
 你需要在设置了该 `CODEX_HOME` 的情况下重新运行一次 `codex login`，以便 OAuth token 落入配置文件范围的位置。之后，`kova -p work` 将在隔离的 Codex 状态下运行。
@@ -347,15 +347,15 @@ Kova 的 `mcp_servers` 配置会自动转换为 Codex 所需的 TOML 格式。�
 Codex 的内置工具集涵盖 shell/文件操作/patch，但没有网络搜索、浏览器自动化、视觉、图像生成等功能。为了在 Codex 轮次中保持这些工具可用，Kova 在 `~/.codex/config.toml` 中将自身注册为 MCP server：
 
 ```toml
-[mcp_servers.hermes-tools]
+[mcp_servers.kova-tools]
 command = "/path/to/python"
-args = ["-m", "agent.transports.hermes_tools_mcp_server"]
-env = { HERMES_HOME = "/your/.hermes", PYTHONPATH = "...", HERMES_QUIET = "1" }
+args = ["-m", "agent.transports.kova_tools_mcp_server"]
+env = { HERMES_HOME = "/your/.hermes", PYTHONPATH = "...", KOVA_QUIET = "1" }
 startup_timeout_sec = 30.0
 tool_timeout_sec = 600.0
 ```
 
-当模型调用 `web_search`（或其他暴露的 Kova 工具）时，Codex 通过 stdio 生成 `hermes_tools_mcp_server` 子进程，请求通过 `model_tools.handle_function_call()` 分发，结果像其他 MCP 响应一样投影回 Codex。
+当模型调用 `web_search`（或其他暴露的 Kova 工具）时，Codex 通过 stdio 生成 `kova_tools_mcp_server` 子进程，请求通过 `model_tools.handle_function_call()` 分发，结果像其他 MCP 响应一样投影回 Codex。
 
 **通过回调可用的工具：** `web_search`、`web_extract`、`browser_navigate`、`browser_click`、`browser_type`、`browser_press`、`browser_snapshot`、`browser_scroll`、`browser_back`、`browser_get_images`、`browser_console`、`browser_vision`、`vision_analyze`、`image_generate`、`skill_view`、`skills_list`、`text_to_speech`。
 
@@ -377,7 +377,7 @@ tool_timeout_sec = 600.0
 
 - 多轮对话
 - 通过 Kova UI 进行 `commandExecution` 和 `fileChange`（apply_patch）审批
-- MCP 工具调用（已针对 `@modelcontextprotocol/server-filesystem` 和新的 `hermes-tools` 回调验证）
+- MCP 工具调用（已针对 `@modelcontextprotocol/server-filesystem` 和新的 `kova-tools` 回调验证）
 - 原生 Codex 插件迁移（已针对 Linear / GitHub / Calendar 清单验证）
 - 拒绝/取消路径
 - 开关切换循环
@@ -391,7 +391,7 @@ tool_timeout_sec = 600.0
 - **当 Codex 未跟踪变更集时，审批提示中没有内联 patch 预览。** Codex 的 `fileChange` 审批参数并不总是携带变更集。Kova 会尽可能从对应的 `item/started` 通知中缓存数据，但如果审批在事件项流式传输完成之前到达，提示会回退到 Codex 提供的 `reason`。
 - **亚秒级取消无法保证。** 流式传输中途的中断（Codex 响应时按 Ctrl+C）通过 `turn/interrupt` 发送，但如果 Codex 已经刷新了最终消息，你仍会收到该响应。
 
-如果你发现 bug，请[提交 issue](https://github.com/NousResearch/hermes-agent/issues)，附上 `hermes logs --since 5m` 的输出。在标题中注明 `codex-runtime` 以便于分类处理。
+如果你发现 bug，请[提交 issue](https://github.com/OpenKova/Kova-Agent/issues)，附上 `kova logs --since 5m` 的输出。在标题中注明 `codex-runtime` 以便于分类处理。
 
 ## 架构
 
@@ -423,7 +423,7 @@ tool_timeout_sec = 600.0
         │   │  │   (linear, github,   │     │
         │   │  │    gmail, calendar,  │     │
         │   │  │    canva, ...)       │     │
-        │   │  └─ hermes-tools ───────┼─────────────────┐
+        │   │  └─ kova-tools ───────┼─────────────────┐
         │   │       (callback to     │     │           │
         │   │        Kova' richer  │     │           │
         │   │        tools)          │     │           │
@@ -432,10 +432,10 @@ tool_timeout_sec = 600.0
                                                         │
                                                         ▼
         ┌──────────────────────────────────────────────────────────┐
-        │  hermes_tools_mcp_server.py (subprocess on demand)        │
+        │  kova_tools_mcp_server.py (subprocess on demand)        │
         │   web_search, web_extract, browser_*, vision_analyze,    │
         │   image_generate, skill_view, skills_list, text_to_speech│
         └──────────────────────────────────────────────────────────┘
 ```
 
-有关实现细节，请参阅 [PR #24182](https://github.com/NousResearch/hermes-agent/pull/24182) 和 [Codex app-server 协议 README](https://github.com/openai/codex/blob/main/codex-rs/app-server/README.md)。
+有关实现细节，请参阅 [PR #24182](https://github.com/OpenKova/Kova-Agent/pull/24182) 和 [Codex app-server 协议 README](https://github.com/openai/codex/blob/main/codex-rs/app-server/README.md)。

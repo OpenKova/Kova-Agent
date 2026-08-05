@@ -18,7 +18,7 @@ Kova 在三个位置扫描图像生成后端：
 
 1. **内置** — `<repo>/plugins/image_gen/<name>/`（以 `kind: backend` 自动加载，始终可用）
 2. **用户** — `~/.hermes/plugins/image_gen/<name>/`（通过 `plugins.enabled` 选择启用）
-3. **Pip** — 声明了 `hermes_agent.plugins` 入口点的包
+3. **Pip** — 声明了 `kova_agent.plugins` 入口点的包
 
 每个插件的 `register(ctx)` 函数调用 `ctx.register_image_gen_provider(...)` — 将其注册到 `agent/image_gen_registry.py` 中的注册表。活跃 provider 由 `config.yaml` 中的 `image_gen.provider` 指定；`kova tools` 会引导用户完成选择。
 
@@ -32,7 +32,7 @@ plugins/image_gen/my-backend/
 └── plugin.yaml      # 包含 kind: backend 的清单文件
 ```
 
-内置插件到此即完整。位于 `~/.hermes/plugins/image_gen/<name>/` 的用户插件需要在 `config.yaml` 的 `plugins.enabled` 中添加（或运行 `hermes plugins enable <name>`）。
+内置插件到此即完整。位于 `~/.hermes/plugins/image_gen/<name>/` 的用户插件需要在 `config.yaml` 的 `plugins.enabled` 中添加（或运行 `kova plugins enable <name>`）。
 
 ## ImageGenProvider ABC
 
@@ -243,12 +243,12 @@ error_response(
 
 ## 用户覆盖
 
-在 `~/.hermes/plugins/image_gen/<name>/` 放置一个用户插件，使其 `name` 属性与某个内置插件相同，并通过 `hermes plugins enable <name>` 启用——注册表采用后写入优先策略，你的版本将替换内置版本。适用于将 `openai` 插件指向私有代理，或替换自定义模型目录等场景。
+在 `~/.hermes/plugins/image_gen/<name>/` 放置一个用户插件，使其 `name` 属性与某个内置插件相同，并通过 `kova plugins enable <name>` 启用——注册表采用后写入优先策略，你的版本将替换内置版本。适用于将 `openai` 插件指向私有代理，或替换自定义模型目录等场景。
 
 ## 测试
 
 ```bash
-export HERMES_HOME=/tmp/hermes-imggen-test
+export HERMES_HOME=/tmp/kova-imggen-test
 mkdir -p $HERMES_HOME/plugins/image_gen/my-backend
 # …copy __init__.py + plugin.yaml into that dir…
 
@@ -275,7 +275,7 @@ kova -z "Generate an image of a corgi in a spacesuit"
 
 ```toml
 # pyproject.toml
-[project.entry-points."hermes_agent.plugins"]
+[project.entry-points."kova_agent.plugins"]
 my-backend-imggen = "my_backend_imggen_package"
 ```
 

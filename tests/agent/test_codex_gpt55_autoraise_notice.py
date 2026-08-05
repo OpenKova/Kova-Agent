@@ -22,8 +22,8 @@ from pathlib import Path
 
 import pytest
 
-from hermes_constants import get_hermes_home
-from hermes_state import SessionDB
+from kova_constants import get_kova_home
+from kova_state import SessionDB
 from run_agent import AIAgent
 
 from agent.agent_init import (
@@ -56,7 +56,7 @@ def _config(*, show_notice: bool) -> dict:
 
 def _make_codex_agent(monkeypatch, tmp_path: Path, *, show_notice: bool):
     """Construct a real Codex gpt-5.5 agent under an isolated config."""
-    from hermes_cli import config as config_mod
+    from kova_cli import config as config_mod
 
     monkeypatch.setattr(config_mod, "load_config", lambda: _config(show_notice=show_notice))
     db = SessionDB(db_path=tmp_path / "state.db")
@@ -124,9 +124,9 @@ def test_codex_gpt55_autoraise_notice_deduped_across_agent_inits(monkeypatch, tm
 # ── per-profile dedupe marker (#54432) ───────────────────────────────────────
 
 
-def test_marker_lives_under_hermes_home() -> None:
+def test_marker_lives_under_kova_home() -> None:
     marker = _codex_gpt55_autoraise_notice_marker()
-    assert marker.parent == get_hermes_home()
+    assert marker.parent == get_kova_home()
     assert marker.name == ".codex_gpt55_autoraise_notice"
 
 

@@ -73,9 +73,9 @@ def _patch_managed_uv(request):
 
 class TestCmdUpdateNpmLockfileCache:
     @staticmethod
-    def _cache_file(hermes_root, project_root):
+    def _cache_file(kova_root, project_root):
         cache_key = hashlib.sha256(str(project_root).encode()).hexdigest()[:12]
-        return hermes_root / f".npm_lock_hash_{cache_key}"
+        return kova_root / f".npm_lock_hash_{cache_key}"
 
     def test_npm_lockfile_changed_no_cache(self, tmp_path, monkeypatch):
         from kova_cli import main as hm
@@ -230,7 +230,7 @@ class TestCmdUpdateNpmLockfileCache:
         checkout = tmp_path / "checkout"
         checkout.mkdir()
         (checkout / "package.json").write_text("{}")
-        shared_root = tmp_path / ".hermes"
+        shared_root = tmp_path / ".kova"
         named_profile = shared_root / "profiles" / "work"
         named_profile.mkdir(parents=True)
 

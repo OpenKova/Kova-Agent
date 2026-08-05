@@ -80,11 +80,11 @@ def test_build_gateway_argv_keeps_venv_console_python_for_uv_venv(monkeypatch, t
     project = tmp_path / "project"
     scripts = project / "venv" / "Scripts"
     site_packages = project / "venv" / "Lib" / "site-packages"
-    hermes_home = tmp_path / "hermes-home"
+    kova_home = tmp_path / "kova-home"
     base = tmp_path / "uv" / "python" / "cpython-3.11-windows-x86_64-none"
     scripts.mkdir(parents=True)
     site_packages.mkdir(parents=True)
-    hermes_home.mkdir()
+    kova_home.mkdir()
     base.mkdir(parents=True)
 
     venv_python = scripts / "python.exe"
@@ -102,35 +102,35 @@ def test_build_gateway_argv_keeps_venv_console_python_for_uv_venv(monkeypatch, t
     monkeypatch.setattr(gateway_windows.sys, "platform", "win32")
     monkeypatch.setattr(gateway, "PROJECT_ROOT", project)
     monkeypatch.setattr(gateway, "get_python_path", lambda: str(venv_python))
-    monkeypatch.setattr(gateway, "_profile_arg", lambda hermes_home: "")
-    monkeypatch.setattr("kova_cli.config.get_hermes_home", lambda: str(hermes_home))
+    monkeypatch.setattr(gateway, "_profile_arg", lambda kova_home: "")
+    monkeypatch.setattr("kova_cli.config.get_kova_home", lambda: str(kova_home))
 
     argv, cwd, env_overlay = gateway_windows._build_gateway_argv()
 
     assert argv[:3] == [str(venv_python), "-m", "kova_cli.main"]
-    assert cwd == str(hermes_home.resolve())
+    assert cwd == str(kova_home.resolve())
     assert env_overlay["VIRTUAL_ENV"] == str(project / "venv")
     assert str(project) in env_overlay["PYTHONPATH"].split(gateway_windows.os.pathsep)
 
 
 class TestStableWindowsGatewayWorkingDir:
-    def test_stable_gateway_working_dir_uses_hermes_home(self, tmp_path, monkeypatch):
-        home = tmp_path / ".hermes"
+    def test_stable_gateway_working_dir_uses_kova_home(self, tmp_path, monkeypatch):
+        home = tmp_path / ".kova"
         home.mkdir()
-        monkeypatch.setattr("kova_cli.config.get_hermes_home", lambda: home)
+        monkeypatch.setattr("kova_cli.config.get_kova_home", lambda: home)
         assert gateway_windows._stable_gateway_working_dir(tmp_path / "checkout") == str(home.resolve())
 
     def test_stable_gateway_working_dir_falls_back_to_project_root(self, tmp_path, monkeypatch):
-        missing = tmp_path / "missing" / ".hermes"
+        missing = tmp_path / "missing" / ".kova"
         project = tmp_path / "checkout"
-        monkeypatch.setattr("kova_cli.config.get_hermes_home", lambda: missing)
+        monkeypatch.setattr("kova_cli.config.get_kova_home", lambda: missing)
         assert gateway_windows._stable_gateway_working_dir(project) == str(project)
 
 
-def test_write_task_script_anchors_cmd_cd_at_hermes_home(monkeypatch, tmp_path):
+def test_write_task_script_anchors_cmd_cd_at_kova_home(monkeypatch, tmp_path):
     project = tmp_path / "project"
-    hermes_home = tmp_path / "hermes-home"
-    hermes_home.mkdir()
+    kova_home = tmp_path / "kova-home"
+    kova_home.mkdir()
     python_exe = project / "venv" / "Scripts" / "python.exe"
     python_exe.parent.mkdir(parents=True)
     python_exe.write_text("", encoding="utf-8")
@@ -139,15 +139,15 @@ def test_write_task_script_anchors_cmd_cd_at_hermes_home(monkeypatch, tmp_path):
     monkeypatch.setattr(gateway_windows, "_assert_windows", lambda: None)
     monkeypatch.setattr(gateway, "PROJECT_ROOT", project)
     monkeypatch.setattr(gateway, "get_python_path", lambda: str(python_exe))
-    monkeypatch.setattr(gateway, "_profile_arg", lambda hermes_home: "")
-    monkeypatch.setattr("kova_cli.config.get_hermes_home", lambda: str(hermes_home))
+    monkeypatch.setattr(gateway, "_profile_arg", lambda kova_home: "")
+    monkeypatch.setattr("kova_cli.config.get_kova_home", lambda: str(kova_home))
     monkeypatch.setattr(gateway_windows, "get_task_script_path", lambda: script_path)
 
     written = gateway_windows._write_task_script()
     content = script_path.read_text(encoding="utf-8")
 
     assert written == script_path
-    assert f"cd /d {gateway_windows._quote_cmd_script_arg(str(hermes_home.resolve()))}" in content
+    assert f"cd /d {gateway_windows._quote_cmd_script_arg(str(kova_home.resolve()))}" in content
     assert f"cd /d {gateway_windows._quote_cmd_script_arg(str(project))}" not in content
 
 
@@ -202,7 +202,7 @@ def test_gateway_cmd_script_uses_console_python_without_replace_or_start_churn(m
     content = gateway_windows._build_gateway_cmd_script(
         r"C:\\Kova\\kova-agent\\venv\\Scripts\\python.exe",
         r"C:\\Kova\\kova-agent",
-        r"C:\\HermesHome\\profiles\\alice",
+        r"C:\\KovaHome\\profiles\\alice",
         "--profile alice",
     )
 
@@ -226,11 +226,11 @@ def test_gateway_launcher_scripts_keep_console_python_for_uv_venv(monkeypatch, t
     project = tmp_path / "project"
     scripts = project / "venv" / "Scripts"
     site_packages = project / "venv" / "Lib" / "site-packages"
-    hermes_home = tmp_path / "hermes-home"
+    kova_home = tmp_path / "kova-home"
     base = tmp_path / "uv" / "python" / "cpython-3.11-windows-x86_64-none"
     scripts.mkdir(parents=True)
     site_packages.mkdir(parents=True)
-    hermes_home.mkdir()
+    kova_home.mkdir()
     base.mkdir(parents=True)
 
     venv_python = scripts / "python.exe"
@@ -245,8 +245,8 @@ def test_gateway_launcher_scripts_keep_console_python_for_uv_venv(monkeypatch, t
 
     content = gateway_windows._build_gateway_cmd_script(
         str(venv_python),
-        str(hermes_home),
-        str(hermes_home),
+        str(kova_home),
+        str(kova_home),
         "",
     )
 
@@ -272,7 +272,7 @@ def test_elevated_gateway_command_uses_hidden_console_python(monkeypatch):
 
     monkeypatch.setattr(gateway_windows, "_assert_windows", lambda: None)
     monkeypatch.setattr(gateway_windows, "_current_profile_cli_args", lambda: ["--profile", "alice"])
-    monkeypatch.setattr(gateway_windows.sys, "executable", r"C:\Hermes\venv\Scripts\python.exe")
+    monkeypatch.setattr(gateway_windows.sys, "executable", r"C:\Kova\venv\Scripts\python.exe")
     monkeypatch.setattr(gateway_windows.ctypes, "windll", FakeWindll(), raising=False)
 
     assert gateway_windows._launch_elevated_gateway_command("install", ["--start-now", "--elevated-handoff"])
@@ -280,7 +280,7 @@ def test_elevated_gateway_command_uses_hidden_console_python(monkeypatch):
     assert len(calls) == 1
     _hwnd, verb, executable, params, cwd, show = calls[0]
     assert verb == "runas"
-    assert executable == r"C:\Hermes\venv\Scripts\python.exe"
+    assert executable == r"C:\Kova\venv\Scripts\python.exe"
     assert "--profile alice gateway install --start-now --elevated-handoff" in params
     assert show == 0
     assert cwd
@@ -340,8 +340,8 @@ def test_gateway_vbs_script_is_console_less(monkeypatch):
     )
     content = gateway_windows._build_gateway_vbs_script(
         r"C:\venv\Scripts\python.exe",
-        r"C:\Hermes",
-        r"C:\Hermes",
+        r"C:\Kova",
+        r"C:\Kova",
         "--profile work",
     )
     assert "cmd.exe" not in content.lower()
@@ -350,7 +350,7 @@ def test_gateway_vbs_script_is_console_less(monkeypatch):
     assert "kova_cli.main" in content
     assert "gateway run" in content
     assert ", 0, False" in content  # hidden window, detached/async
-    for var in ("HERMES_HOME", "PYTHONIOENCODING", "HERMES_GATEWAY_DETACHED", "VIRTUAL_ENV", "PYTHONPATH"):
+    for var in ("HERMES_HOME", "PYTHONIOENCODING", "KOVA_GATEWAY_DETACHED", "VIRTUAL_ENV", "PYTHONPATH"):
         assert var in content
     assert "--profile" in content and "work" in content
     assert content.endswith("\r\n")

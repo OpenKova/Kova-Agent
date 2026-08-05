@@ -6,7 +6,7 @@ author: Kova Agent
 license: MIT
 platforms: [macos]
 metadata:
-  hermes:
+  kova:
     tags: [FindMy, AirTag, location, tracking, macOS, Apple]
 ---
 

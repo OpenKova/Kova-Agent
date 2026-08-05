@@ -65,10 +65,10 @@ def _read_message_body(
                 "message *body* (logs, reports, markdown).\n"
                 "To send an image/document/audio file as a native attachment, "
                 "reference it with MEDIA: in the message text instead:\n"
-                f'  hermes send --to telegram "MEDIA:{file_path}"\n'
-                f'  hermes send --to telegram "optional caption MEDIA:{file_path}"\n'
+                f'  kova send --to telegram "MEDIA:{file_path}"\n'
+                f'  kova send --to telegram "optional caption MEDIA:{file_path}"\n'
                 "Add [[as_document]] to deliver an image as an uncompressed file:\n"
-                f'  hermes send --to telegram "[[as_document]] MEDIA:{file_path}"',
+                f'  kova send --to telegram "[[as_document]] MEDIA:{file_path}"',
                 file=sys.stderr,
             )
             sys.exit(_USAGE_EXIT)
@@ -208,7 +208,7 @@ def _list_targets(platform_filter: Optional[str], *, json_mode: bool) -> int:
     return _SUCCESS_EXIT
 
 
-def _load_hermes_env() -> None:
+def _load_kova_env() -> None:
     """Populate ``os.environ`` from ``~/.hermes/.env`` AND bridge top-level
     ``config.yaml`` keys into the environment so the underlying gateway
     config loader sees platform credentials and home channel IDs.
@@ -234,8 +234,8 @@ def _load_hermes_env() -> None:
         load_dotenv = None  # type: ignore[assignment]
 
     try:
-        from kova_cli.config import get_hermes_home
-        home = get_hermes_home()
+        from kova_cli.config import get_kova_home
+        home = get_kova_home()
     except Exception:
         return
 
@@ -301,7 +301,7 @@ def cmd_send(args: argparse.Namespace) -> None:
     # Bridge ~/.hermes/.env and ~/.hermes/config.yaml into os.environ so the
     # gateway config loader (invoked downstream by send_message_tool and by
     # the channel directory) can see platform credentials and home channels.
-    _load_hermes_env()
+    _load_kova_env()
 
     # --list short-circuits everything else.
     if getattr(args, "list_targets", False):
@@ -316,9 +316,9 @@ def cmd_send(args: argparse.Namespace) -> None:
         print(
             "kova send: --to PLATFORM[:channel[:thread]] is required\n"
             "Examples:\n"
-            "  hermes send --to telegram \"hello\"\n"
-            "  hermes send --to discord:#ops --file report.md\n"
-            "  hermes send --list      # list available targets",
+            "  kova send --to telegram \"hello\"\n"
+            "  kova send --to discord:#ops --file report.md\n"
+            "  kova send --list      # list available targets",
             file=sys.stderr,
         )
         sys.exit(_USAGE_EXIT)
@@ -384,13 +384,13 @@ def register_send_subparser(subparsers) -> argparse.ArgumentParser:
         ),
         epilog=(
             "Examples:\n"
-            "  hermes send --to telegram \"deploy finished\"\n"
-            "  echo \"RAM 92%\" | hermes send --to telegram:-1001234567890\n"
-            "  hermes send --to discord:#ops --file /tmp/report.md\n"
-            "  hermes send --to slack:#eng --subject \"[CI]\" --file build.log\n"
-            "  hermes send --to telegram \"MEDIA:/tmp/chart.png\"   # send a media attachment\n"
-            "  hermes send --list                  # all platforms\n"
-            "  hermes send --list telegram         # filter by platform\n"
+            "  kova send --to telegram \"deploy finished\"\n"
+            "  echo \"RAM 92%\" | kova send --to telegram:-1001234567890\n"
+            "  kova send --to discord:#ops --file /tmp/report.md\n"
+            "  kova send --to slack:#eng --subject \"[CI]\" --file build.log\n"
+            "  kova send --to telegram \"MEDIA:/tmp/chart.png\"   # send a media attachment\n"
+            "  kova send --list                  # all platforms\n"
+            "  kova send --list telegram         # filter by platform\n"
             "\n"
             "Exit codes: 0 ok, 1 delivery/backend error, 2 usage error."
         ),

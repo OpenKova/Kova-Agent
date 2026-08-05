@@ -4,7 +4,7 @@ This file is the canary. If anyone removes a guard or weakens it, these
 tests fail. If anyone adds a NEW kill primitive to the codebase without
 adding it to the guard, the corresponding test added here will fail too.
 
-The guard exists to protect the developer's live ``hermes-gateway`` process
+The guard exists to protect the developer's live ``kova-gateway`` process
 from being SIGTERMed by tests. See PR #23397 for the original incident
 (5+ live gateway kills in 3 days). Per Teknium 2026-05-10:
 
@@ -151,12 +151,12 @@ def test_subprocess_run_env_systemctl_blocked():
 def test_subprocess_run_bash_c_systemctl_blocked():
     """``bash -c "systemctl ..."`` must also be caught."""
     with pytest.raises(RuntimeError, match="live-system guard"):
-        subprocess.run(["bash", "-c", "systemctl --user restart hermes-gateway"])
+        subprocess.run(["bash", "-c", "systemctl --user restart kova-gateway"])
 
 
 def test_subprocess_run_sh_c_systemctl_blocked():
     with pytest.raises(RuntimeError, match="live-system guard"):
-        subprocess.run(["sh", "-c", "systemctl --user stop hermes-gateway"])
+        subprocess.run(["sh", "-c", "systemctl --user stop kova-gateway"])
 
 
 def test_subprocess_run_setsid_systemctl_blocked():
@@ -167,7 +167,7 @@ def test_subprocess_run_setsid_systemctl_blocked():
 def test_subprocess_run_string_shell_true_blocked():
     with pytest.raises(RuntimeError, match="live-system guard"):
         subprocess.run(
-            "systemctl --user restart hermes-gateway",
+            "systemctl --user restart kova-gateway",
             shell=True,
         )
 
@@ -194,12 +194,12 @@ def test_subprocess_check_output_systemctl_blocked():
 
 def test_subprocess_getoutput_systemctl_blocked():
     with pytest.raises(RuntimeError, match="live-system guard"):
-        subprocess.getoutput("systemctl --user restart hermes-gateway")
+        subprocess.getoutput("systemctl --user restart kova-gateway")
 
 
 def test_subprocess_getstatusoutput_systemctl_blocked():
     with pytest.raises(RuntimeError, match="live-system guard"):
-        subprocess.getstatusoutput("systemctl --user restart hermes-gateway")
+        subprocess.getstatusoutput("systemctl --user restart kova-gateway")
 
 
 # ──────────────────── os.system / os.popen ────────────────────
@@ -207,12 +207,12 @@ def test_subprocess_getstatusoutput_systemctl_blocked():
 
 def test_os_system_systemctl_blocked():
     with pytest.raises(RuntimeError, match="live-system guard"):
-        os.system("systemctl --user restart hermes-gateway")
+        os.system("systemctl --user restart kova-gateway")
 
 
 def test_os_popen_systemctl_blocked():
     with pytest.raises(RuntimeError, match="live-system guard"):
-        os.popen("systemctl --user restart hermes-gateway")
+        os.popen("systemctl --user restart kova-gateway")
 
 
 # ──────────────────── pty.spawn ────────────────────────────────
@@ -244,7 +244,7 @@ def test_asyncio_create_subprocess_shell_systemctl_blocked():
 
     async def _attempt():
         await asyncio.create_subprocess_shell(
-            "systemctl --user restart hermes-gateway"
+            "systemctl --user restart kova-gateway"
         )
 
     with pytest.raises(RuntimeError, match="live-system guard"):
@@ -254,25 +254,25 @@ def test_asyncio_create_subprocess_shell_systemctl_blocked():
 # ──────────────────── pkill / killall / taskkill ───────────────
 
 
-def test_subprocess_pkill_hermes_blocked():
+def test_subprocess_pkill_kova_blocked():
     with pytest.raises(RuntimeError, match="live-system guard"):
-        subprocess.run(["pkill", "-f", "hermes"])
+        subprocess.run(["pkill", "-f", "kova"])
 
 
-def test_subprocess_pkill_hermes_gateway_blocked():
+def test_subprocess_pkill_kova_gateway_blocked():
     with pytest.raises(RuntimeError, match="live-system guard"):
         subprocess.run(["pkill", "-f", "kova-gateway"])
 
 
 def test_subprocess_pkill_python_dash_f_blocked():
-    """``pkill -f python`` matches the gateway's "python -m hermes_cli.main"."""
+    """``pkill -f python`` matches the gateway's "python -m kova_cli.main"."""
     with pytest.raises(RuntimeError, match="live-system guard"):
         subprocess.run(["pkill", "-f", "python"])
 
 
-def test_subprocess_killall_hermes_blocked():
+def test_subprocess_killall_kova_blocked():
     with pytest.raises(RuntimeError, match="live-system guard"):
-        subprocess.run(["killall", "hermes"])
+        subprocess.run(["killall", "kova"])
 
 
 # ──────────────────── pass-through cases (must NOT raise) ──────
@@ -311,7 +311,7 @@ def test_systemctl_list_units_passes_through():
 
 
 def test_systemctl_unrelated_unit_passes_through():
-    """systemctl restart of a non-hermes unit is allowed (we only protect hermes)."""
+    """systemctl restart of a non-kova unit is allowed (we only protect kova)."""
     # Use --dry-run so we don't actually try to restart anything; just
     # verify the guard doesn't block the call. systemctl supports
     # --dry-run via the privileged API; on user scope it usually fails
@@ -337,7 +337,7 @@ def test_kill_own_subtree_passes_through():
 
 
 def test_subprocess_pkill_with_unrelated_pattern_passes_through():
-    """``pkill -f some-unrelated-pattern`` (no hermes/python) is fine."""
+    """``pkill -f some-unrelated-pattern`` (no kova/python) is fine."""
     # We don't actually run pkill — just verify the guard would let it
     # through by inspecting the matcher. Re-implementing the check here
     # would duplicate the guard; instead spawn a noop to confirm no raise.

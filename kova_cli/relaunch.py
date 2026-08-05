@@ -52,7 +52,7 @@ _INHERITED_FLAGS_TABLE = _build_inherited_flag_table()
 
 
 def _extract_inherited_flags(argv: Sequence[str]) -> list[str]:
-    """Pull out flags that should carry over into a self-relaunched hermes."""
+    """Pull out flags that should carry over into a self-relaunched kova."""
     flags: list[str] = []
     i = 0
     while i < len(argv):
@@ -77,12 +77,12 @@ def _extract_inherited_flags(argv: Sequence[str]) -> list[str]:
     return flags
 
 
-def resolve_hermes_bin() -> Optional[str]:
-    """Find the hermes entry point.
+def resolve_kova_bin() -> Optional[str]:
+    """Find the kova entry point.
 
     Priority:
       1. ``sys.argv[0]`` if it resolves to a real executable.
-      2. ``shutil.which("kova") or shutil.which("hermes")`` on PATH.
+      2. ``shutil.which("kova") or shutil.which("kova")`` on PATH.
       3. ``None`` → caller should fall back to ``python -m kova_cli.main``.
 
     Windows note: ``os.access(path, os.X_OK)`` returns True for ``.py`` and
@@ -92,7 +92,7 @@ def resolve_hermes_bin() -> Optional[str]:
     directly — CreateProcessW needs a real .exe, not a script associated
     with the Python launcher.  On Windows we therefore skip the argv[0]
     fast-path when it points at a .py file and fall through to either
-    ``hermes.exe`` on PATH or the ``sys.executable -m kova_cli.main``
+    ``kova.exe`` on PATH or the ``sys.executable -m kova_cli.main``
     fallback.
     """
     argv0 = sys.argv[0]
@@ -114,7 +114,7 @@ def resolve_hermes_bin() -> Optional[str]:
                 return abs_path
 
     # PATH lookup
-    path_bin = shutil.which("kova") or shutil.which("hermes")
+    path_bin = shutil.which("kova") or shutil.which("kova")
     if path_bin:
         return path_bin
 
@@ -127,7 +127,7 @@ def build_relaunch_argv(
     preserve_inherited: bool = True,
     original_argv: Optional[Sequence[str]] = None,
 ) -> list[str]:
-    """Construct an argv list for replacing the current process with hermes.
+    """Construct an argv list for replacing the current process with kova.
 
     Args:
         extra_args: Arguments to append (e.g. ``["--resume", id]``).
@@ -136,7 +136,7 @@ def build_relaunch_argv(
         original_argv: The original argv to scan for flags (defaults to
             ``sys.argv[1:]``).
     """
-    bin_path = resolve_hermes_bin()
+    bin_path = resolve_kova_bin()
 
     if bin_path:
         argv = [bin_path]
@@ -158,17 +158,17 @@ def relaunch(
     preserve_inherited: bool = True,
     original_argv: Optional[Sequence[str]] = None,
 ) -> None:
-    """Replace the current process with a fresh hermes invocation.
+    """Replace the current process with a fresh kova invocation.
 
     On POSIX we use ``os.execvp`` which replaces the running process with
     the new one in place — same PID, no double-fork.  That's what the
-    relaunch contract wants: "run hermes again as if the user had typed
+    relaunch contract wants: "run kova again as if the user had typed
     the new argv".
 
     Windows has no native exec semantics — ``os.execvp`` on Windows
     *emulates* exec by spawning the child and exiting the parent, but
     only works when the target is a real Win32 executable.  Our target
-    is usually ``hermes.exe`` (a Python console-script shim that wraps
+    is usually ``kova.exe`` (a Python console-script shim that wraps
     ``python -m kova_cli.main``) or a ``.cmd`` batch file, and both
     raise ``OSError(8, "Exec format error")`` on Windows' execvp.
 
@@ -176,7 +176,7 @@ def relaunch(
     (which routes through ``cmd.exe`` via ``shell=False`` + PATHEXT resolution),
     wait for it to exit, then propagate its exit code via ``sys.exit``.
     That's functionally equivalent — the user sees "kova exited, then
-    new hermes started" — just with two PIDs in play instead of one.
+    new kova started" — just with two PIDs in play instead of one.
     """
     new_argv = build_relaunch_argv(
         extra_args, preserve_inherited=preserve_inherited, original_argv=original_argv
@@ -195,9 +195,9 @@ def relaunch(
             # cryptic.  Common causes: ``kova`` not on PATH yet (install
             # hasn't propagated User PATH into this shell) or a stale shim.
             print(
-                f"\nHermes relaunch failed: {exc}\n"
+                f"\nKova relaunch failed: {exc}\n"
                 f"Command: {' '.join(new_argv)}\n"
-                f"Fix: open a new terminal so PATH picks up, then re-run hermes.",
+                f"Fix: open a new terminal so PATH picks up, then re-run kova.",
                 file=sys.stderr,
             )
             sys.exit(1)

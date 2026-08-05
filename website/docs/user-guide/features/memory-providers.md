@@ -70,7 +70,7 @@ kova memory setup        # select "honcho" — runs the Honcho-specific post-set
 
 The legacy `kova honcho setup` command still works (it now redirects to `kova memory setup`), but is only registered after Honcho is selected as the active memory provider.
 
-**Config:** `$HERMES_HOME/honcho.json` (profile-local) or `~/.honcho/config.json` (global). Resolution order: `$HERMES_HOME/honcho.json` > `~/.hermes/honcho.json` > `~/.honcho/config.json`. See the [config reference](https://github.com/NousResearch/hermes-agent/blob/main/plugins/memory/honcho/README.md) and the [Honcho integration guide](https://docs.honcho.dev/v3/guides/integrations/hermes).
+**Config:** `$HERMES_HOME/honcho.json` (profile-local) or `~/.honcho/config.json` (global). Resolution order: `$HERMES_HOME/honcho.json` > `~/.hermes/honcho.json` > `~/.honcho/config.json`. See the [config reference](https://github.com/OpenKova/Kova-Agent/blob/main/plugins/memory/honcho/README.md) and the [Honcho integration guide](https://docs.honcho.dev/v3/guides/integrations/kova).
 
 <details>
 <summary>Full config reference</summary>
@@ -110,11 +110,11 @@ The legacy `kova honcho setup` command still works (it now redirects to `kova me
 {
   "apiKey": "your-key-from-app.honcho.dev",
   "hosts": {
-    "hermes": {
+    "kova": {
       "enabled": true,
-      "aiPeer": "hermes",
+      "aiPeer": "kova",
       "peerName": "your-name",
-      "workspace": "hermes"
+      "workspace": "kova"
     }
   }
 }
@@ -129,11 +129,11 @@ The legacy `kova honcho setup` command still works (it now redirects to `kova me
 {
   "baseUrl": "http://localhost:8000",
   "hosts": {
-    "hermes": {
+    "kova": {
       "enabled": true,
-      "aiPeer": "hermes",
+      "aiPeer": "kova",
       "peerName": "your-name",
-      "workspace": "hermes"
+      "workspace": "kova"
     }
   }
 }
@@ -155,7 +155,7 @@ The mapping:
 |---------|-----------|
 | **Workspace** | Shared environment. All Kova profiles under one workspace see the same user identity. |
 | **User peer** (`peerName`) | The human. Shared across profiles in the workspace. |
-| **AI peer** (`aiPeer`) | One per Kova profile. Host key `kova` → default; `hermes.<profile>` for others. |
+| **AI peer** (`aiPeer`) | One per Kova profile. Host key `kova` → default; `kova.<profile>` for others. |
 | **Observation** | Per-peer toggles controlling what Honcho models from whose messages. `directional` (default, all four on) or `unified` (single-observer pool). |
 
 ### New profile, fresh Honcho peer
@@ -164,7 +164,7 @@ The mapping:
 kova profile create coder --clone
 ```
 
-`--clone` creates a `hermes.coder` host block in `honcho.json` with `aiPeer: "coder"`, shared `workspace`, inherited `peerName`, `recallMode`, `writeFrequency`, `observation`, etc. The AI peer is eagerly created in Honcho so it exists before the first message.
+`--clone` creates a `kova.coder` host block in `honcho.json` with `aiPeer: "coder"`, shared `workspace`, inherited `peerName`, `recallMode`, `writeFrequency`, `observation`, etc. The AI peer is eagerly created in Honcho so it exists before the first message.
 
 ### Existing profiles, backfill Honcho peers
 
@@ -179,7 +179,7 @@ Scans every Kova profile, creates host blocks for any profile without one, inher
 Each host block can override the observation config independently. Example: a code-focused profile where the AI peer observes the user but doesn't self-model:
 
 ```json
-"hermes.coder": {
+"kova.coder": {
   "aiPeer": "coder",
   "observation": {
     "user": { "observeMe": true, "observeOthers": true },
@@ -222,13 +222,13 @@ Off-gateway these keys do nothing. `kova memory setup` only prompts for them whe
 ```json
 {
   "apiKey": "your-key",
-  "workspace": "hermes",
+  "workspace": "kova",
   "peerName": "eri",
   "hosts": {
-    "hermes": {
+    "kova": {
       "enabled": true,
-      "aiPeer": "hermes",
-      "workspace": "hermes",
+      "aiPeer": "kova",
+      "workspace": "kova",
       "peerName": "eri",
       "recallMode": "hybrid",
       "writeFrequency": "async",
@@ -246,10 +246,10 @@ Off-gateway these keys do nothing. `kova memory setup` only prompts for them whe
       "messageMaxChars": 25000,
       "saveMessages": true
     },
-    "hermes.coder": {
+    "kova.coder": {
       "enabled": true,
       "aiPeer": "coder",
-      "workspace": "hermes",
+      "workspace": "kova",
       "peerName": "eri",
       "recallMode": "tools",
       "observation": {
@@ -257,10 +257,10 @@ Off-gateway these keys do nothing. `kova memory setup` only prompts for them whe
         "ai": { "observeMe": true, "observeOthers": true }
       }
     },
-    "hermes.writer": {
+    "kova.writer": {
       "enabled": true,
       "aiPeer": "writer",
-      "workspace": "hermes",
+      "workspace": "kova",
       "peerName": "eri"
     }
   },
@@ -272,7 +272,7 @@ Off-gateway these keys do nothing. `kova memory setup` only prompts for them whe
 
 </details>
 
-See the [config reference](https://github.com/NousResearch/hermes-agent/blob/main/plugins/memory/honcho/README.md) and [Honcho integration guide](https://docs.honcho.dev/v3/guides/integrations/hermes).
+See the [config reference](https://github.com/OpenKova/Kova-Agent/blob/main/plugins/memory/honcho/README.md) and [Honcho integration guide](https://docs.honcho.dev/v3/guides/integrations/kova).
 
 
 ---
@@ -393,7 +393,7 @@ The plugin authenticates with `X-API-Key` and uses the server's `/search` / `/me
 |-----|---------|-------------|
 | `mode` | `platform` | `platform` (Mem0 Cloud) or `oss` (self-managed, in-process) |
 | `host` | — | Self-hosted Mem0 server URL (Docker dashboard). Routes over HTTP with `X-API-Key`; don't combine with `mode: oss` |
-| `user_id` | `hermes-user` | User identifier |
+| `user_id` | `kova-user` | User identifier |
 | `agent_id` | `kova` | Agent identifier |
 | `rerank` | `false` | Rerank search results for relevance (platform mode only) |
 
@@ -452,7 +452,7 @@ The setup wizard installs dependencies automatically and only installs what's ne
 | `retain_assistant_prefix` | `Assistant` | Label used before assistant turns in auto-retained transcripts |
 | `recall_tags` | — | Tags to filter on recall |
 
-See [plugin README](https://github.com/NousResearch/hermes-agent/blob/main/plugins/memory/hindsight/README.md) for the full configuration reference.
+See [plugin README](https://github.com/OpenKova/Kova-Agent/blob/main/plugins/memory/hindsight/README.md) for the full configuration reference.
 
 ---
 
@@ -476,7 +476,7 @@ kova memory setup    # select "holographic"
 kova config set memory.provider holographic
 ```
 
-**Config:** `config.yaml` under `plugins.hermes-memory-store`
+**Config:** `config.yaml` under `plugins.kova-memory-store`
 
 | Key | Default | Description |
 |-----|---------|-------------|
@@ -553,7 +553,7 @@ Semantic long-term memory with profile recall, semantic search, explicit memory 
 | | |
 |---|---|
 | **Best for** | Semantic recall with user profiling and session-level graph building |
-| **Requires** | `pip install supermemory` + [cloud API key](http://app.supermemory.ai/integrations?connect=hermes), or a [self-hosted server](https://supermemory.ai/docs/self-hosting/overview) |
+| **Requires** | `pip install supermemory` + [cloud API key](http://app.supermemory.ai/integrations?connect=kova), or a [self-hosted server](https://supermemory.ai/docs/self-hosting/overview) |
 | **Data storage** | Supermemory Cloud or self-hosted |
 | **Cost** | Supermemory pricing (cloud) / free (self-hosted) |
 
@@ -610,7 +610,7 @@ Base URL precedence is `supermemory.json` → `SUPERMEMORY_BASE_URL` → `https:
 - Session-end conversation ingest (to `/v4/conversations`) for richer profile + graph building in Supermemory
 - End-to-end self-hosted routing — SDK, probe, and conversation-ingest requests use the same configured endpoint
 - Profile facts injected on first turn and at configurable intervals
-- **Profile-scoped containers** — use `{identity}` in `container_tag` (e.g. `hermes-{identity}` → `hermes-coder`) to isolate memories per Kova profile
+- **Profile-scoped containers** — use `{identity}` in `container_tag` (e.g. `kova-{identity}` → `kova-coder`) to isolate memories per Kova profile
 - **Multi-container mode** — enable `enable_custom_container_tags` with a `custom_containers` list to let the agent read/write across named containers. Automatic operations stay on the primary container.
 
 <details>
@@ -618,7 +618,7 @@ Base URL precedence is `supermemory.json` → `SUPERMEMORY_BASE_URL` → `https:
 
 ```json
 {
-  "container_tag": "hermes",
+  "container_tag": "kova",
   "enable_custom_container_tags": true,
   "custom_containers": ["project-alpha", "shared-knowledge"],
   "custom_container_instructions": "Use project-alpha for coding context."
@@ -636,7 +636,7 @@ Structured long-term memory using Memori Cloud, with background completed-turn c
 | | |
 |---|---|
 | **Best for** | Agent-controlled recall with structured project and session attribution |
-| **Requires** | `pip install hermes-memori` + `hermes-memori install` + [Memori API key](https://app.memorilabs.ai/signup) |
+| **Requires** | `pip install kova-memori` + `kova-memori install` + [Memori API key](https://app.memorilabs.ai/signup) |
 | **Data storage** | Memori Cloud |
 | **Cost** | Memori pricing |
 
@@ -644,8 +644,8 @@ Structured long-term memory using Memori Cloud, with background completed-turn c
 
 **Setup:**
 ```bash
-pip install hermes-memori
-hermes-memori install
+pip install kova-memori
+kova-memori install
 kova config set memory.provider memori
 kova memory setup
 ```
@@ -664,7 +664,7 @@ kova memory setup
 | **RetainDB** | Cloud | $20/mo | 5 | `requests` | Delta compression |
 | **ByteRover** | Local/Cloud | Free/Paid | 3 | `brv` CLI | Pre-compression extraction |
 | **Supermemory** | Cloud/Self-hosted | Free/Paid | 4 | `supermemory` | Context fencing + session graph ingest + multi-container |
-| **Memori** | Cloud | Free/Paid | 5 | `hermes-memori` | Tool-aware memory + structured recall |
+| **Memori** | Cloud | Free/Paid | 5 | `kova-memori` | Tool-aware memory + structured recall |
 
 ## Profile Isolation
 

@@ -10,7 +10,7 @@ description: "Kova Agent MCP 配置键、过滤语义及工具策略参考"
 
 概念说明请参阅：
 - [MCP（Model Context Protocol）](/user-guide/features/mcp)
-- [在 Kova 中使用 MCP](/guides/use-mcp-with-hermes)
+- [在 Kova 中使用 MCP](/guides/use-mcp-with-kova)
 
 ## 根配置结构
 

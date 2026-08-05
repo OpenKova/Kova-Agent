@@ -9,13 +9,13 @@ import os
 from pathlib import Path
 
 
-def hermes_home() -> Path:
-    return Path(os.environ.get("HERMES_HOME") or (Path.home() / ".hermes"))
+def kova_home() -> Path:
+    return Path(os.environ.get("HERMES_HOME") or (Path.home() / ".kova"))
 
 
 def data_dir() -> Path:
     override = os.environ.get("PDD_DATA_DIR")
-    return Path(override) if override else hermes_home() / "unbroker"
+    return Path(override) if override else kova_home() / "unbroker"
 
 
 def config_path() -> Path:

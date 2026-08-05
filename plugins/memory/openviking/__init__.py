@@ -13,7 +13,7 @@ or a linked OpenViking CLI config:
   OPENVIKING_API_KEY   — API key (required for authenticated servers)
   OPENVIKING_ACCOUNT   — Tenant account for local/trusted mode (default: default)
   OPENVIKING_USER      — Tenant user for local/trusted mode (default: default)
-  OPENVIKING_AGENT     — Kova peer ID in OpenViking (default: hermes)
+  OPENVIKING_AGENT     — Kova peer ID in OpenViking (default: kova)
 
 Capabilities:
   - Automatic memory extraction on session commit (6 categories)
@@ -61,7 +61,7 @@ logger = logging.getLogger(__name__)
 
 _DEFAULT_ENDPOINT = "http://127.0.0.1:1933"
 _OPENVIKING_SERVICE_ENDPOINT = "https://api.vikingdb.cn-beijing.volces.com/openviking"
-_DEFAULT_AGENT = "hermes"
+_DEFAULT_AGENT = "kova"
 _AGENT_PROMPT_LABEL = "Kova peer ID in OpenViking"
 _OVCLI_CONFIG_ENV = "OPENVIKING_CLI_CONFIG_FILE"
 _OVCLI_DEFAULT_RELATIVE_PATH = ".openviking/ovcli.conf"
@@ -78,7 +78,7 @@ _SESSION_DRAIN_TIMEOUT = 10.0
 _DEFERRED_COMMIT_TIMEOUT = (_TIMEOUT * 2) + 5.0
 _SESSION_MESSAGE_BATCH_LIMIT = 100
 _REMOTE_RESOURCE_PREFIXES = ("http://", "https://", "git@", "ssh://", "git://")
-_SYNC_TRACE_ENV = "HERMES_OPENVIKING_SYNC_TRACE"
+_SYNC_TRACE_ENV = "KOVA_OPENVIKING_SYNC_TRACE"
 _DEFAULT_RECALL_LIMIT = 6
 _DEFAULT_RECALL_SCORE_THRESHOLD = 0.15
 _DEFAULT_RECALL_MAX_INJECTED_CHARS = 4000
@@ -878,9 +878,9 @@ def _is_local_openviking_url(value: str) -> bool:
     return scheme == "http" and (parsed.hostname or "").lower() in _LOCAL_OPENVIKING_HOSTS
 
 
-def _load_hermes_openviking_config() -> dict:
+def _load_kova_openviking_config() -> dict:
     try:
-        from hermes_cli.config import load_config
+        from kova_cli.config import load_config
 
         config = load_config()
         memory_config = config.get("memory", {}) if isinstance(config, dict) else {}
@@ -1174,10 +1174,10 @@ def _local_openviking_bind(endpoint: str) -> tuple[str, int]:
 
 def _openviking_server_log_path() -> Path:
     try:
-        from hermes_constants import get_hermes_home
-        home = get_hermes_home()
+        from kova_constants import get_kova_home
+        home = get_kova_home()
     except Exception:
-        home = Path(os.environ.get("HERMES_HOME", "")).expanduser() if os.environ.get("HERMES_HOME") else Path.home() / ".hermes"
+        home = Path(os.environ.get("HERMES_HOME", "")).expanduser() if os.environ.get("HERMES_HOME") else Path.home() / ".kova"
     return home / _OPENVIKING_SERVER_LOG_RELATIVE_PATH
 
 
@@ -1602,7 +1602,7 @@ def _link_ovcli_profile(
         os.environ.pop(key, None)
 
 
-def _save_hermes_only_config(
+def _save_kova_only_config(
     *,
     config: dict,
     provider_config: dict,
@@ -1787,7 +1787,7 @@ def _run_create_profile_setup(
         _print_openviking_ready("Created and linked OpenViking profile.", ovcli_path)
         return True
 
-    _save_hermes_only_config(
+    _save_kova_only_config(
         config=config,
         provider_config=provider_config,
         env_path=env_path,
@@ -1826,7 +1826,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
         self._agent = ""
         self._session_id = ""
         self._turn_count = 0
-        self._hermes_home = ""
+        self._kova_home = ""
         self._run_id = uuid.uuid4().hex
         self._run_lock_file: Optional[Any] = None
         self._run_lock_path: Optional[Path] = None
@@ -1834,7 +1834,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
         # MemoryManager's background sync executor while on_session_end /
         # on_session_switch run on the caller's thread, so the snapshot+reset
         # of the turn counter and the session-id rotation must be atomic
-        # against a concurrent increment. See hermes-agent#28296 review.
+        # against a concurrent increment. See kova-agent#28296 review.
         self._session_state_lock = threading.Lock()
         # Commit only after session writes drain. The set is keyed by the sid
         # the writer is POSTing under (snapshotted at spawn), so on_session_end
@@ -1865,7 +1865,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
         """Check if OpenViking endpoint is configured. No network calls."""
         if os.environ.get("OPENVIKING_ENDPOINT"):
             return True
-        provider_config = _load_hermes_openviking_config()
+        provider_config = _load_kova_openviking_config()
         if not provider_config.get("use_ovcli_config"):
             return False
         try:
@@ -1905,7 +1905,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
                     "Kova peer ID in OpenViking, sent as the actor peer and "
                     "used for peer-scoped memories"
                 ),
-                "default": "hermes",
+                "default": "kova",
                 "env_var": "OPENVIKING_AGENT",
             },
             {
@@ -1998,13 +1998,13 @@ class OpenVikingMemoryProvider(MemoryProvider):
                 display[key] = "(set)"
         return display
 
-    def post_setup(self, hermes_home: str, config: dict) -> None:
+    def post_setup(self, kova_home: str, config: dict) -> None:
         """Custom setup that can reuse OpenViking's shared CLI config."""
-        from hermes_cli.config import save_config
-        from hermes_cli.memory_setup import _CANCELLED, _curses_select, _print_cancelled_setup, _prompt
+        from kova_cli.config import save_config
+        from kova_cli.memory_setup import _CANCELLED, _curses_select, _print_cancelled_setup, _prompt
 
-        hermes_home_path = Path(hermes_home)
-        env_path = hermes_home_path / ".env"
+        kova_home_path = Path(kova_home)
+        env_path = kova_home_path / ".env"
         if not isinstance(config.get("memory"), dict):
             config["memory"] = {}
         provider_config = config["memory"].get("openviking", {})
@@ -2170,7 +2170,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
         )
 
     def initialize(self, session_id: str, **kwargs) -> None:
-        settings = _resolve_connection_settings(_load_hermes_openviking_config())
+        settings = _resolve_connection_settings(_load_kova_openviking_config())
         self._endpoint = settings["endpoint"]
         self._api_key = settings["api_key"]
         self._account = settings["account"]
@@ -2178,14 +2178,14 @@ class OpenVikingMemoryProvider(MemoryProvider):
         self._agent = settings["agent"]
         self._session_id = session_id
         self._turn_count = 0
-        hermes_home = str(kwargs.get("hermes_home") or "").strip()
-        if not hermes_home:
+        kova_home = str(kwargs.get("kova_home") or "").strip()
+        if not kova_home:
             try:
-                from hermes_constants import get_hermes_home
-                hermes_home = str(get_hermes_home())
+                from kova_constants import get_kova_home
+                kova_home = str(get_kova_home())
             except Exception:
-                hermes_home = str(Path.home() / ".hermes")
-        self._hermes_home = hermes_home
+                kova_home = str(Path.home() / ".kova")
+        self._kova_home = kova_home
         self._acquire_run_lock()
         self._profile_prefetched_sessions.clear()
         warning_callback = (
@@ -2484,9 +2484,9 @@ class OpenVikingMemoryProvider(MemoryProvider):
             self._committed_session_ids.add(sid)
 
     def _pending_session_dir(self) -> Optional[Path]:
-        if not self._hermes_home:
+        if not self._kova_home:
             return None
-        return Path(self._hermes_home) / _PENDING_SESSIONS_RELATIVE_DIR
+        return Path(self._kova_home) / _PENDING_SESSIONS_RELATIVE_DIR
 
     def _pending_session_marker_path(self, sid: str) -> Optional[Path]:
         sid = str(sid or "").strip()
@@ -2496,9 +2496,9 @@ class OpenVikingMemoryProvider(MemoryProvider):
         return directory / f"{quote(sid, safe='')}.json"
 
     def _run_lock_dir(self) -> Optional[Path]:
-        if not self._hermes_home:
+        if not self._kova_home:
             return None
-        return Path(self._hermes_home) / _RUN_LOCKS_RELATIVE_DIR
+        return Path(self._kova_home) / _RUN_LOCKS_RELATIVE_DIR
 
     def _run_lock_path_for(self, run_id: str) -> Optional[Path]:
         run_id = str(run_id or "").strip()
@@ -3906,7 +3906,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
         ``initialize()`` cached, so subsequent ``sync_turn()`` writes land in
         the already-closed old session and ``on_session_end()`` tries to
         commit it a second time. The new session never accumulates messages,
-        and memory extraction never fires for it. See hermes-agent#28296.
+        and memory extraction never fires for it. See kova-agent#28296.
 
         Flushes any in-flight sync under the old session_id, commits the old
         session if it has pending turns (same extraction semantics as
@@ -4162,7 +4162,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
     ) -> Dict[str, Any]:
         summary_level = level in {"abstract", "overview"}
         # OpenViking expects directory URIs for pseudo summary files
-        # (e.g. viking://user/hermes/.overview.md).
+        # (e.g. viking://user/kova/.overview.md).
         resolved_uri = self._normalize_summary_uri(uri) if summary_level else uri
         used_fallback = False
 

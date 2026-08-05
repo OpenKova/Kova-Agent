@@ -17,7 +17,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from hermes_cli.model_switch import ModelSwitchResult
+from kova_cli.model_switch import ModelSwitchResult
 
 
 def _make_result(*, base_url="https://api.minimax.io/v1", api_mode="chat_completions", provider_changed=True):
@@ -70,12 +70,12 @@ def _run_switch(monkeypatch, result, cmd="/model MiniMax-M3 --global"):
         saved[key] = value
 
     monkeypatch.setattr(cli_mod, "save_config_value", _fake_save)
-    monkeypatch.setattr("hermes_cli.model_switch.switch_model", lambda **kw: result)
+    monkeypatch.setattr("kova_cli.model_switch.switch_model", lambda **kw: result)
     monkeypatch.setattr(
-        "hermes_cli.inventory.load_picker_context",
+        "kova_cli.inventory.load_picker_context",
         lambda: (_ for _ in ()).throw(RuntimeError("no picker context in test")),
     )
-    cli_mod.HermesCLI._handle_model_switch(_StubCLI(), cmd)
+    cli_mod.KovaCLI._handle_model_switch(_StubCLI(), cmd)
     return saved
 
 
@@ -115,13 +115,13 @@ def test_session_only_switch_does_not_touch_config(monkeypatch):
     monkeypatch.setattr(cli_mod, "_cprint", lambda *a, **k: None)
     save_calls = []
     monkeypatch.setattr(cli_mod, "save_config_value", lambda *a, **k: save_calls.append(a))
-    monkeypatch.setattr("hermes_cli.model_switch.switch_model", lambda **kw: _make_result())
+    monkeypatch.setattr("kova_cli.model_switch.switch_model", lambda **kw: _make_result())
     monkeypatch.setattr(
-        "hermes_cli.inventory.load_picker_context",
+        "kova_cli.inventory.load_picker_context",
         lambda: (_ for _ in ()).throw(RuntimeError("no picker context in test")),
     )
 
-    cli_mod.HermesCLI._handle_model_switch(_StubCLI(), "/model MiniMax-M3 --session")
+    cli_mod.KovaCLI._handle_model_switch(_StubCLI(), "/model MiniMax-M3 --session")
 
     assert save_calls == []
 
@@ -141,7 +141,7 @@ def _run_apply(monkeypatch, result, persist_global=True):
         saved[key] = value
 
     monkeypatch.setattr(cli_mod, "save_config_value", _fake_save)
-    cli_mod.HermesCLI._apply_model_switch_result(_StubCLI(), result, persist_global)
+    cli_mod.KovaCLI._apply_model_switch_result(_StubCLI(), result, persist_global)
     return saved
 
 

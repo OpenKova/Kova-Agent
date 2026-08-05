@@ -257,9 +257,9 @@ def slack_manifest_command(args) -> int:
         if isinstance(write_target, bool) and write_target:
             # --write with no value → default location
             try:
-                from kova_constants import get_hermes_home
+                from kova_constants import get_kova_home
 
-                target = Path(get_hermes_home()) / "slack-manifest.json"
+                target = Path(get_kova_home()) / "slack-manifest.json"
             except Exception:
                 target = Path(os.environ.get("HERMES_HOME") or str(Path.home() / ".kova")) / "slack-manifest.json"
         else:

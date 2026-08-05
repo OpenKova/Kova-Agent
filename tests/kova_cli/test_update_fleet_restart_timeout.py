@@ -1,6 +1,6 @@
 """Regression for #68523 — one systemctl timeout must not abort fleet restarts.
 
-On hosts with many profile-backed ``hermes-gateway*.service`` units,
+On hosts with many profile-backed ``kova-gateway*.service`` units,
 ``kova update`` used to wrap the entire per-scope unit loop in a single
 ``except subprocess.TimeoutExpired``. A timeout on unit N skipped units
 N+1…, leaving later gateways on pre-update in-memory modules while the
@@ -26,13 +26,13 @@ def _list_units_stdout(names: list[str]) -> str:
 class TestFleetRestartTimeoutIsolation:
     def test_timeout_on_middle_unit_continues_remaining_units(self):
         units = [
-            "hermes-gateway-xiaomo1",
-            "hermes-gateway-xiaomo2",
-            "hermes-gateway-xiaomo3",
-            "hermes-gateway-xiaomo4",
-            "hermes-gateway-xiaomo5",
-            "hermes-gateway-xiaomo6",
-            "hermes-gateway-xiaomo7",
+            "kova-gateway-xiaomo1",
+            "kova-gateway-xiaomo2",
+            "kova-gateway-xiaomo3",
+            "kova-gateway-xiaomo4",
+            "kova-gateway-xiaomo5",
+            "kova-gateway-xiaomo6",
+            "kova-gateway-xiaomo7",
             "kova-gateway",
         ]
         restarted: list[str] = []
@@ -40,7 +40,7 @@ class TestFleetRestartTimeoutIsolation:
         timeout_cmds: list = []
 
         def process_unit(svc_name: str) -> None:
-            if svc_name == "hermes-gateway-xiaomo5":
+            if svc_name == "kova-gateway-xiaomo5":
                 raise subprocess.TimeoutExpired(
                     cmd=["systemctl", "--user", "--no-ask-password", "restart", svc_name],
                     timeout=15,
@@ -57,19 +57,19 @@ class TestFleetRestartTimeoutIsolation:
             on_unit_timeout=on_unit_timeout,
         )
 
-        assert failed == ["hermes-gateway-xiaomo5"]
+        assert failed == ["kova-gateway-xiaomo5"]
         assert restarted == [
-            "hermes-gateway-xiaomo1",
-            "hermes-gateway-xiaomo2",
-            "hermes-gateway-xiaomo3",
-            "hermes-gateway-xiaomo4",
-            "hermes-gateway-xiaomo6",
-            "hermes-gateway-xiaomo7",
+            "kova-gateway-xiaomo1",
+            "kova-gateway-xiaomo2",
+            "kova-gateway-xiaomo3",
+            "kova-gateway-xiaomo4",
+            "kova-gateway-xiaomo6",
+            "kova-gateway-xiaomo7",
             "kova-gateway",
         ]
         assert set(restarted) | set(failed) == set(units)
         assert timeout_cmds == [
-            ["systemctl", "--user", "--no-ask-password", "restart", "hermes-gateway-xiaomo5"]
+            ["systemctl", "--user", "--no-ask-password", "restart", "kova-gateway-xiaomo5"]
         ]
 
     def test_non_gateway_units_in_list_output_are_ignored(self):
@@ -105,12 +105,12 @@ class TestFleetRestartTimeoutIsolation:
 class TestIncompleteFleetRestartWarning:
     def test_warns_with_exact_unrestarted_units(self, capsys):
         _warn_incomplete_gateway_fleet_restart(
-            ["hermes-gateway-xiaomo5", "hermes-gateway-xiaomo6", "hermes-gateway-xiaomo5"]
+            ["kova-gateway-xiaomo5", "kova-gateway-xiaomo6", "kova-gateway-xiaomo5"]
         )
         out = capsys.readouterr().out
         assert "Update incomplete" in out
-        assert out.count("hermes-gateway-xiaomo5") == 1
-        assert "hermes-gateway-xiaomo6" in out
+        assert out.count("kova-gateway-xiaomo5") == 1
+        assert "kova-gateway-xiaomo6" in out
         assert "pre-update code" in out
 
     def test_noop_when_no_failures(self, capsys):

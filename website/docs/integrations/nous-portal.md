@@ -200,7 +200,7 @@ Manage your plan, view usage, or upgrade/cancel at any time:
 
 ## Configuration reference
 
-After `hermes setup --portal`, `~/.hermes/config.yaml` will look like:
+After `kova setup --portal`, `~/.hermes/config.yaml` will look like:
 
 ```yaml
 model:
@@ -257,7 +257,7 @@ The Portal proxies through OpenRouter, so any model that OpenRouter supports is 
 /model anthropic/claude-opus-4.6
 ```
 
-If a model is genuinely missing, [open an issue](https://github.com/NousResearch/hermes-agent/issues) — we surface the Portal's catalog to Kova Agent and gaps usually mean a routing config we can update.
+If a model is genuinely missing, [open an issue](https://github.com/OpenKova/Kova-Agent/issues) — we surface the Portal's catalog to Kova Agent and gaps usually mean a routing config we can update.
 
 ### Bills not appearing on my Portal account
 

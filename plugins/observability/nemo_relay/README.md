@@ -41,14 +41,14 @@ Enable the plugin before setting export options:
 kova plugins enable observability/nemo_relay
 ```
 
-The `HERMES_NEMO_RELAY_*` environment variables below only configure an
+The `KOVA_NEMO_RELAY_*` environment variables below only configure an
 already-enabled plugin. They do not enable plugin discovery by themselves.
 
 For isolated test homes, enable the plugin in the same `HERMES_HOME` that the
 agent run will use:
 
 ```bash
-env HERMES_HOME=/tmp/hermes-nemo-relay-test \
+env HERMES_HOME=/tmp/kova-nemo-relay-test \
   kova plugins enable observability/nemo_relay
 ```
 
@@ -63,7 +63,7 @@ tests, choose any writable temporary directory and use the same value for every
 command in that test:
 
 ```bash
-export HERMES_HOME=/tmp/hermes-nemo-relay-test
+export HERMES_HOME=/tmp/kova-nemo-relay-test
 kova plugins enable observability/nemo_relay
 kova chat --query 'Reply exactly ok' --provider custom --model qwen3.6:35b
 ```
@@ -83,7 +83,7 @@ wheel from this checkout, then install the official NeMo Relay runtime extra:
 
 ```bash
 uv build --wheel
-python -m pip install --force-reinstall dist/hermes_agent-*.whl
+python -m pip install --force-reinstall dist/kova_agent-*.whl
 python -m pip install "nemo-relay>=0.5,<1.0"
 kova plugins enable observability/nemo_relay
 ```
@@ -97,7 +97,7 @@ pip install "nemo-relay>=0.5,<1.0"
 
 ## Export Configuration
 
-The plugin can configure exporters directly from `HERMES_NEMO_RELAY_*`
+The plugin can configure exporters directly from `KOVA_NEMO_RELAY_*`
 environment variables, or delegate exporter setup to a NeMo Relay
 `plugins.toml` component config.
 
@@ -111,21 +111,21 @@ OpenInference.
 Useful local export settings after the plugin is enabled:
 
 ```bash
-export HERMES_NEMO_RELAY_ATOF_ENABLED=1
-export HERMES_NEMO_RELAY_ATOF_OUTPUT_DIRECTORY=.nemo-relay/atof
-export HERMES_NEMO_RELAY_ATIF_ENABLED=1
-export HERMES_NEMO_RELAY_ATIF_OUTPUT_DIRECTORY=.nemo-relay/atif
+export KOVA_NEMO_RELAY_ATOF_ENABLED=1
+export KOVA_NEMO_RELAY_ATOF_OUTPUT_DIRECTORY=.nemo-relay/atof
+export KOVA_NEMO_RELAY_ATIF_ENABLED=1
+export KOVA_NEMO_RELAY_ATIF_OUTPUT_DIRECTORY=.nemo-relay/atif
 ```
 
 Optional overrides:
 
-- `HERMES_NEMO_RELAY_ATOF_FILENAME`
-- `HERMES_NEMO_RELAY_ATOF_MODE` (`append` or `overwrite`)
-- `HERMES_NEMO_RELAY_ATIF_FILENAME_TEMPLATE`
-- `HERMES_NEMO_RELAY_ATIF_AGENT_NAME`
-- `HERMES_NEMO_RELAY_ATIF_AGENT_VERSION`
-- `HERMES_NEMO_RELAY_ATIF_MODEL_NAME`
-- `HERMES_NEMO_RELAY_ATIF_SUBAGENT_EXPORT_MODE` (`embedded` by default; set `all` to also write standalone child files)
+- `KOVA_NEMO_RELAY_ATOF_FILENAME`
+- `KOVA_NEMO_RELAY_ATOF_MODE` (`append` or `overwrite`)
+- `KOVA_NEMO_RELAY_ATIF_FILENAME_TEMPLATE`
+- `KOVA_NEMO_RELAY_ATIF_AGENT_NAME`
+- `KOVA_NEMO_RELAY_ATIF_AGENT_VERSION`
+- `KOVA_NEMO_RELAY_ATIF_MODEL_NAME`
+- `KOVA_NEMO_RELAY_ATIF_SUBAGENT_EXPORT_MODE` (`embedded` by default; set `all` to also write standalone child files)
 
 ### NeMo Relay Component Config
 
@@ -133,7 +133,7 @@ To initialize NeMo Relay from a component config, create a `plugins.toml` file
 and point Kova at it:
 
 ```bash
-export HERMES_NEMO_RELAY_PLUGINS_TOML=.nemo-relay/plugins.toml
+export KOVA_NEMO_RELAY_PLUGINS_TOML=.nemo-relay/plugins.toml
 ```
 
 Minimal ATOF and ATIF config:
@@ -162,11 +162,11 @@ agent_name = "Kova Agent"
 agent_version = "local"
 ```
 
-When `HERMES_NEMO_RELAY_PLUGINS_TOML` is set and initializes successfully, NeMo
+When `KOVA_NEMO_RELAY_PLUGINS_TOML` is set and initializes successfully, NeMo
 Relay owns exporter lifecycle through that config. The direct
-`HERMES_NEMO_RELAY_ATOF_*` fallback setup is skipped. If the same
+`KOVA_NEMO_RELAY_ATOF_*` fallback setup is skipped. If the same
 `plugins.toml` observability config enables `atif`, the direct
-`HERMES_NEMO_RELAY_ATIF_*` fallback setup is also skipped so Kova does not
+`KOVA_NEMO_RELAY_ATIF_*` fallback setup is also skipped so Kova does not
 double-export trajectories on teardown. If `plugins.toml` initialization fails,
 Kova keeps the direct env-var fallbacks active for that run.
 
@@ -260,7 +260,7 @@ OpenAI-compatible API.
 ```bash
 pip install "nemo-relay>=0.5,<1.0"
 
-export HERMES_HOME=/tmp/hermes-nemo-relay-docs/hermes-home
+export HERMES_HOME=/tmp/kova-nemo-relay-docs/kova-home
 mkdir -p "$HERMES_HOME"
 
 cat > "$HERMES_HOME/config.yaml" <<'YAML'
@@ -289,16 +289,16 @@ This run starts a parent Kova session, delegates to a child subagent, has the
 child call `terminal`, and writes both ATOF and ATIF.
 
 ```bash
-export HERMES_NEMO_RELAY_ATOF_ENABLED=1
-export HERMES_NEMO_RELAY_ATOF_OUTPUT_DIRECTORY=/tmp/hermes-nemo-relay-docs/subagent/atof
-export HERMES_NEMO_RELAY_ATOF_FILENAME=nested-subagent-atof.jsonl
-export HERMES_NEMO_RELAY_ATOF_MODE=overwrite
-export HERMES_NEMO_RELAY_ATIF_ENABLED=1
-export HERMES_NEMO_RELAY_ATIF_OUTPUT_DIRECTORY=/tmp/hermes-nemo-relay-docs/subagent/atif
-export HERMES_NEMO_RELAY_ATIF_FILENAME_TEMPLATE='nested-subagent-atif-{session_id}.json'
-export HERMES_NEMO_RELAY_ATIF_AGENT_NAME='Kova Agent E2E'
-export HERMES_NEMO_RELAY_ATIF_AGENT_VERSION=docs-example
-export HERMES_NEMO_RELAY_ATIF_SUBAGENT_EXPORT_MODE=all
+export KOVA_NEMO_RELAY_ATOF_ENABLED=1
+export KOVA_NEMO_RELAY_ATOF_OUTPUT_DIRECTORY=/tmp/kova-nemo-relay-docs/subagent/atof
+export KOVA_NEMO_RELAY_ATOF_FILENAME=nested-subagent-atof.jsonl
+export KOVA_NEMO_RELAY_ATOF_MODE=overwrite
+export KOVA_NEMO_RELAY_ATIF_ENABLED=1
+export KOVA_NEMO_RELAY_ATIF_OUTPUT_DIRECTORY=/tmp/kova-nemo-relay-docs/subagent/atif
+export KOVA_NEMO_RELAY_ATIF_FILENAME_TEMPLATE='nested-subagent-atif-{session_id}.json'
+export KOVA_NEMO_RELAY_ATIF_AGENT_NAME='Kova Agent E2E'
+export KOVA_NEMO_RELAY_ATIF_AGENT_VERSION=docs-example
+export KOVA_NEMO_RELAY_ATIF_SUBAGENT_EXPORT_MODE=all
 
 kova chat \
   --query 'Use delegate_task exactly once. Ask the child subagent to use the terminal tool exactly once to run printf docs_nested_leaf_function. After the child returns, reply with exactly: parent received nested subagent result.' \
@@ -321,7 +321,7 @@ Sanitized ATOF excerpt:
 
 ```jsonl
 {"kind":"scope","category":"tool","name":"delegate_task","scope_category":"start","metadata":{"session_id":"docs-parent-session","tool_call_id":"call_delegate"},"data":{"goal":"Run the command `printf docs_nested_leaf_function` using the terminal tool.","toolsets":["terminal"]}}
-{"kind":"mark","name":"hermes.subagent.start","metadata":{"parent_session_id":"docs-parent-session","session_id":"docs-child-session","subagent_id":"sa-0-docs","child_role":"leaf"}}
+{"kind":"mark","name":"kova.subagent.start","metadata":{"parent_session_id":"docs-parent-session","session_id":"docs-child-session","subagent_id":"sa-0-docs","child_role":"leaf"}}
 {"kind":"scope","category":"tool","name":"terminal","scope_category":"end","metadata":{"session_id":"docs-child-session","tool_call_id":"call_terminal","status":"ok"},"data":"{\"output\":\"docs_nested_leaf_function\",\"exit_code\":0,\"error\":null}"}
 {"kind":"scope","category":"tool","name":"delegate_task","scope_category":"end","metadata":{"session_id":"docs-parent-session","tool_call_id":"call_delegate","status":"ok"}}
 ```
@@ -370,20 +370,20 @@ message. Kova dispatches the read-only tools as one batch, and NeMo Relay
 records both tool invocations.
 
 ```bash
-mkdir -p /tmp/hermes-nemo-relay-docs/workdir
-printf 'docs_parallel_alpha_function\n' > /tmp/hermes-nemo-relay-docs/workdir/alpha.txt
-printf 'docs_parallel_beta_function\n' > /tmp/hermes-nemo-relay-docs/workdir/beta.txt
-cd /tmp/hermes-nemo-relay-docs/workdir
+mkdir -p /tmp/kova-nemo-relay-docs/workdir
+printf 'docs_parallel_alpha_function\n' > /tmp/kova-nemo-relay-docs/workdir/alpha.txt
+printf 'docs_parallel_beta_function\n' > /tmp/kova-nemo-relay-docs/workdir/beta.txt
+cd /tmp/kova-nemo-relay-docs/workdir
 
-export HERMES_NEMO_RELAY_ATOF_ENABLED=1
-export HERMES_NEMO_RELAY_ATOF_OUTPUT_DIRECTORY=/tmp/hermes-nemo-relay-docs/parallel/atof
-export HERMES_NEMO_RELAY_ATOF_FILENAME=parallel-tools-atof.jsonl
-export HERMES_NEMO_RELAY_ATOF_MODE=overwrite
-export HERMES_NEMO_RELAY_ATIF_ENABLED=1
-export HERMES_NEMO_RELAY_ATIF_OUTPUT_DIRECTORY=/tmp/hermes-nemo-relay-docs/parallel/atif
-export HERMES_NEMO_RELAY_ATIF_FILENAME_TEMPLATE='parallel-tools-atif-{session_id}.json'
-export HERMES_NEMO_RELAY_ATIF_AGENT_NAME='Kova Agent E2E'
-export HERMES_NEMO_RELAY_ATIF_AGENT_VERSION=docs-example
+export KOVA_NEMO_RELAY_ATOF_ENABLED=1
+export KOVA_NEMO_RELAY_ATOF_OUTPUT_DIRECTORY=/tmp/kova-nemo-relay-docs/parallel/atof
+export KOVA_NEMO_RELAY_ATOF_FILENAME=parallel-tools-atof.jsonl
+export KOVA_NEMO_RELAY_ATOF_MODE=overwrite
+export KOVA_NEMO_RELAY_ATIF_ENABLED=1
+export KOVA_NEMO_RELAY_ATIF_OUTPUT_DIRECTORY=/tmp/kova-nemo-relay-docs/parallel/atif
+export KOVA_NEMO_RELAY_ATIF_FILENAME_TEMPLATE='parallel-tools-atif-{session_id}.json'
+export KOVA_NEMO_RELAY_ATIF_AGENT_NAME='Kova Agent E2E'
+export KOVA_NEMO_RELAY_ATIF_AGENT_VERSION=docs-example
 
 kova chat \
   --query 'Use exactly two read_file tool calls in the same assistant message. Read alpha.txt and beta.txt. Do not call terminal. After both tool results are available, reply with exactly: parallel tools complete.' \
@@ -476,7 +476,7 @@ mode = "observe_only"
 Enable it for Kova:
 
 ```bash
-export HERMES_NEMO_RELAY_PLUGINS_TOML=/tmp/hermes-middleware-test/plugins.toml
+export KOVA_NEMO_RELAY_PLUGINS_TOML=/tmp/kova-middleware-test/plugins.toml
 ```
 
 When the adaptive component is enabled and the installed NeMo Relay runtime
@@ -508,8 +508,8 @@ supports `[components.config.tool_parallelism]`, as provided by the supported
 0.x release range beginning with 0.5.
 
 ```bash
-export HERMES_HOME=/tmp/hermes-middleware-test/hermes-home
-mkdir -p "$HERMES_HOME" /tmp/hermes-middleware-test/nemo-relay
+export HERMES_HOME=/tmp/kova-middleware-test/kova-home
+mkdir -p "$HERMES_HOME" /tmp/kova-middleware-test/nemo-relay
 
 cat > "$HERMES_HOME/config.yaml" <<'YAML'
 model:
@@ -522,7 +522,7 @@ plugins:
     - observability/nemo_relay
 YAML
 
-cat > /tmp/hermes-middleware-test/nemo-relay/plugins.toml <<'TOML'
+cat > /tmp/kova-middleware-test/nemo-relay/plugins.toml <<'TOML'
 version = 1
 
 [[components]]
@@ -534,13 +534,13 @@ version = 1
 
 [components.config.atof]
 enabled = true
-output_directory = "/tmp/hermes-middleware-test/atof"
+output_directory = "/tmp/kova-middleware-test/atof"
 filename = "middleware-events.jsonl"
 mode = "overwrite"
 
 [components.config.atif]
 enabled = true
-output_directory = "/tmp/hermes-middleware-test/atif"
+output_directory = "/tmp/kova-middleware-test/atif"
 filename_template = "middleware-trajectory-{session_id}.json"
 agent_name = "Kova Middleware E2E"
 agent_version = "local"
@@ -553,7 +553,7 @@ enabled = true
 mode = "observe_only"
 TOML
 
-export HERMES_NEMO_RELAY_PLUGINS_TOML=/tmp/hermes-middleware-test/nemo-relay/plugins.toml
+export KOVA_NEMO_RELAY_PLUGINS_TOML=/tmp/kova-middleware-test/nemo-relay/plugins.toml
 
 kova chat \
   --query 'Use the terminal tool exactly once to run printf middleware_execution_ok. Then reply with exactly the command output.' \

@@ -41,7 +41,7 @@ description: "Kova Agent 内部结构——主要子系统、执行路径、数�
 ┌───────────────────┐              ┌──────────────────────┐
 │ Session Storage   │              │ Tool Backends         │
 │ (SQLite + FTS5)   │              │ Terminal (7 backends) │
-│ hermes_state.py   │              │ Browser (5 backends)  │
+│ kova_state.py   │              │ Browser (5 backends)  │
 │ gateway/session.py│              │ Web (4 backends)      │
 └───────────────────┘              │ MCP (dynamic)         │
                                    │ File, Vision, etc.    │
@@ -51,13 +51,13 @@ description: "Kova Agent 内部结构——主要子系统、执行路径、数�
 ## 目录结构
 
 ```text
-hermes-agent/
+kova-agent/
 ├── run_agent.py              # AIAgent — 核心对话循环（大文件）
-├── cli.py                    # HermesCLI — 交互式终端 UI（大文件）
+├── cli.py                    # KovaCLI — 交互式终端 UI（大文件）
 ├── model_tools.py            # 工具发现、schema 收集、分发
 ├── toolsets.py               # 工具分组与平台预设
-├── hermes_state.py           # 带 FTS5 的 SQLite 会话/状态数据库
-├── hermes_constants.py       # HERMES_HOME、感知 profile 的路径
+├── kova_state.py           # 带 FTS5 的 SQLite 会话/状态数据库
+├── kova_constants.py       # HERMES_HOME、感知 profile 的路径
 ├── batch_runner.py           # 批量轨迹生成
 │
 ├── agent/                    # Agent 内部模块
@@ -75,7 +75,7 @@ hermes-agent/
 │   ├── memory_provider.py   # 记忆提供者 ABC
 │   └── trajectory.py         # 轨迹保存辅助函数
 │
-├── hermes_cli/               # CLI 子命令与设置
+├── kova_cli/               # CLI 子命令与设置
 │   ├── main.py               # 入口点——所有 `kova` 子命令（大文件）
 │   ├── config.py             # DEFAULT_CONFIG、OPTIONAL_ENV_VARS、迁移
 │   ├── commands.py           # COMMAND_REGISTRY——斜杠命令中央定义
@@ -138,7 +138,7 @@ hermes-agent/
 ### CLI 会话
 
 ```text
-用户输入 → HermesCLI.process_input()
+用户输入 → KovaCLI.process_input()
   → AIAgent.run_conversation()
     → prompt_builder.build_system_prompt()
     → runtime_provider.resolve_runtime_provider()
@@ -229,7 +229,7 @@ CLI、gateway、cron、ACP 及辅助调用共用的运行时解析器。将 `(pr
 
 ### 插件系统
 
-三种发现来源：`~/.hermes/plugins/`（用户级）、`.hermes/plugins/`（项目级）和 pip entry point。插件通过上下文 API 注册工具、hook 和 CLI 命令。存在两种专用插件类型：记忆提供者（`plugins/memory/`）和上下文引擎（`plugins/context_engine/`）。两者均为单选——每种同时只能激活一个，通过 `hermes plugins` 或 `config.yaml` 配置。
+三种发现来源：`~/.hermes/plugins/`（用户级）、`.kova/plugins/`（项目级）和 pip entry point。插件通过上下文 API 注册工具、hook 和 CLI 命令。存在两种专用插件类型：记忆提供者（`plugins/memory/`）和上下文引擎（`plugins/context_engine/`）。两者均为单选——每种同时只能激活一个，通过 `kova plugins` 或 `config.yaml` 配置。
 
 → [插件指南](/developer-guide/plugins)，[记忆提供者插件](./memory-provider-plugin.md)
 

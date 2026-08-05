@@ -6,7 +6,7 @@ author: Kova Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  hermes:
+  kova:
     tags: [jupyter, notebook, repl, data-science, exploration, iterative]
     category: data-science
 ---

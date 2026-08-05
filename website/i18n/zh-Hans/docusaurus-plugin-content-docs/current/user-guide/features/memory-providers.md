@@ -68,7 +68,7 @@ kova memory setup        # 选择 "honcho" — 运行 Honcho 专属的安装后�
 
 旧版 `kova honcho setup` 命令仍然有效（现在会重定向到 `kova memory setup`），但只有在 Honcho 被选为激活记忆提供者后才会注册。
 
-**配置：** `$HERMES_HOME/honcho.json`（profile 本地）或 `~/.honcho/config.json`（全局）。解析顺序：`$HERMES_HOME/honcho.json` > `~/.hermes/honcho.json` > `~/.honcho/config.json`。参见[配置参考](https://github.com/hermes-ai/hermes-agent/blob/main/plugins/memory/honcho/README.md)和 [Honcho 集成指南](https://docs.honcho.dev/v3/guides/integrations/hermes)。
+**配置：** `$HERMES_HOME/honcho.json`（profile 本地）或 `~/.honcho/config.json`（全局）。解析顺序：`$HERMES_HOME/honcho.json` > `~/.hermes/honcho.json` > `~/.honcho/config.json`。参见[配置参考](https://github.com/kova-ai/kova-agent/blob/main/plugins/memory/honcho/README.md)和 [Honcho 集成指南](https://docs.honcho.dev/v3/guides/integrations/kova)。
 
 <details>
 <summary>完整配置参考</summary>
@@ -105,11 +105,11 @@ kova memory setup        # 选择 "honcho" — 运行 Honcho 专属的安装后�
 {
   "apiKey": "your-key-from-app.honcho.dev",
   "hosts": {
-    "hermes": {
+    "kova": {
       "enabled": true,
-      "aiPeer": "hermes",
+      "aiPeer": "kova",
       "peerName": "your-name",
-      "workspace": "hermes"
+      "workspace": "kova"
     }
   }
 }
@@ -124,11 +124,11 @@ kova memory setup        # 选择 "honcho" — 运行 Honcho 专属的安装后�
 {
   "baseUrl": "http://localhost:8000",
   "hosts": {
-    "hermes": {
+    "kova": {
       "enabled": true,
-      "aiPeer": "hermes",
+      "aiPeer": "kova",
       "peerName": "your-name",
-      "workspace": "hermes"
+      "workspace": "kova"
     }
   }
 }
@@ -150,7 +150,7 @@ Honcho 将对话建模为 peer 之间的消息交换——每个 Kova profile �
 |---------|-----------|
 | **Workspace** | 共享环境。同一 workspace 下的所有 Kova profile 共享同一用户身份。 |
 | **用户 peer**（`peerName`） | 人类用户。在 workspace 内跨 profile 共享。 |
-| **AI peer**（`aiPeer`） | 每个 Kova profile 一个。host key `kova` → 默认；其他 profile 使用 `hermes.<profile>`。 |
+| **AI peer**（`aiPeer`） | 每个 Kova profile 一个。host key `kova` → 默认；其他 profile 使用 `kova.<profile>`。 |
 | **Observation** | 每个 peer 的开关，控制 Honcho 从哪些消息中建模。`directional`（默认，全部开启）或 `unified`（单一观察者池）。 |
 
 ### 新建 profile，创建新 Honcho peer
@@ -159,7 +159,7 @@ Honcho 将对话建模为 peer 之间的消息交换——每个 Kova profile �
 kova profile create coder --clone
 ```
 
-`--clone` 在 `honcho.json` 中创建一个 `hermes.coder` host 块，包含 `aiPeer: "coder"`、共享的 `workspace`、继承的 `peerName`、`recallMode`、`writeFrequency`、`observation` 等。AI peer 会在 Honcho 中提前创建，确保在第一条消息之前就已存在。
+`--clone` 在 `honcho.json` 中创建一个 `kova.coder` host 块，包含 `aiPeer: "coder"`、共享的 `workspace`、继承的 `peerName`、`recallMode`、`writeFrequency`、`observation` 等。AI peer 会在 Honcho 中提前创建，确保在第一条消息之前就已存在。
 
 ### 为现有 profile 补充 Honcho peer
 
@@ -174,7 +174,7 @@ kova honcho sync
 每个 host 块可以独立覆盖 observation 配置。示例：一个以代码为中心的 profile，AI peer 观察用户但不自我建模：
 
 ```json
-"hermes.coder": {
+"kova.coder": {
   "aiPeer": "coder",
   "observation": {
     "user": { "observeMe": true, "observeOthers": true },
@@ -205,13 +205,13 @@ kova honcho sync
 ```json
 {
   "apiKey": "your-key",
-  "workspace": "hermes",
+  "workspace": "kova",
   "peerName": "eri",
   "hosts": {
-    "hermes": {
+    "kova": {
       "enabled": true,
-      "aiPeer": "hermes",
-      "workspace": "hermes",
+      "aiPeer": "kova",
+      "workspace": "kova",
       "peerName": "eri",
       "recallMode": "hybrid",
       "writeFrequency": "async",
@@ -229,10 +229,10 @@ kova honcho sync
       "messageMaxChars": 25000,
       "saveMessages": true
     },
-    "hermes.coder": {
+    "kova.coder": {
       "enabled": true,
       "aiPeer": "coder",
-      "workspace": "hermes",
+      "workspace": "kova",
       "peerName": "eri",
       "recallMode": "tools",
       "observation": {
@@ -240,10 +240,10 @@ kova honcho sync
         "ai": { "observeMe": true, "observeOthers": true }
       }
     },
-    "hermes.writer": {
+    "kova.writer": {
       "enabled": true,
       "aiPeer": "writer",
-      "workspace": "hermes",
+      "workspace": "kova",
       "peerName": "eri"
     }
   },
@@ -255,7 +255,7 @@ kova honcho sync
 
 </details>
 
-参见[配置参考](https://github.com/hermes-ai/hermes-agent/blob/main/plugins/memory/honcho/README.md)和 [Honcho 集成指南](https://docs.honcho.dev/v3/guides/integrations/hermes)。
+参见[配置参考](https://github.com/kova-ai/kova-agent/blob/main/plugins/memory/honcho/README.md)和 [Honcho 集成指南](https://docs.honcho.dev/v3/guides/integrations/kova)。
 
 
 ---
@@ -318,7 +318,7 @@ echo "MEM0_API_KEY=your-key" >> ~/.hermes/.env
 
 | 键 | 默认值 | 描述 |
 |-----|---------|-------------|
-| `user_id` | `hermes-user` | 用户标识符 |
+| `user_id` | `kova-user` | 用户标识符 |
 | `agent_id` | `kova` | Agent 标识符 |
 
 ---
@@ -366,7 +366,7 @@ echo "HINDSIGHT_API_KEY=your-key" >> ~/.hermes/.env
 | `retain_assistant_prefix` | `Assistant` | 自动保留的对话记录中助手轮次前的标签 |
 | `recall_tags` | — | 召回时用于过滤的标签 |
 
-完整配置参考参见[插件 README](https://github.com/NousResearch/hermes-agent/blob/main/plugins/memory/hindsight/README.md)。
+完整配置参考参见[插件 README](https://github.com/OpenKova/Kova-Agent/blob/main/plugins/memory/hindsight/README.md)。
 
 ---
 
@@ -390,7 +390,7 @@ kova memory setup    # 选择 "holographic"
 kova config set memory.provider holographic
 ```
 
-**配置：** `plugins.hermes-memory-store` 下的 `config.yaml`
+**配置：** `plugins.kova-memory-store` 下的 `config.yaml`
 
 | 键 | 默认值 | 描述 |
 |-----|---------|-------------|
@@ -467,7 +467,7 @@ kova config set memory.provider byterover
 | | |
 |---|---|
 | **适合场景** | 带用户 profile 和会话级图谱构建的语义召回 |
-| **依赖** | `pip install supermemory` + [云端 API key](http://app.supermemory.ai/integrations?connect=hermes)，或[自托管服务器](https://supermemory.ai/docs/self-hosting/overview) |
+| **依赖** | `pip install supermemory` + [云端 API key](http://app.supermemory.ai/integrations?connect=kova)，或[自托管服务器](https://supermemory.ai/docs/self-hosting/overview) |
 | **数据存储** | Supermemory 云端或自托管 |
 | **费用** | 云端按 Supermemory 定价 / 自托管免费 |
 
@@ -522,7 +522,7 @@ Base URL 优先级为 `supermemory.json` → `SUPERMEMORY_BASE_URL` → `https:/
 - 会话结束时同时导入到对话端点（`/v4/conversations`），用于 Supermemory 的 profile 和图谱构建
 - 端到端自托管路由——SDK、探测和会话导入请求使用同一配置端点
 - 在第一轮及可配置间隔注入 profile 事实
-- **Profile 范围容器**——在 `container_tag` 中使用 `{identity}`（例如 `hermes-{identity}` → `hermes-coder`），按 Kova profile 隔离记忆
+- **Profile 范围容器**——在 `container_tag` 中使用 `{identity}`（例如 `kova-{identity}` → `kova-coder`），按 Kova profile 隔离记忆
 - **多容器模式**——启用 `enable_custom_container_tags` 并配置 `custom_containers` 列表，让 Agent 跨命名容器读写。自动操作（同步、预取）保持在主容器上。
 
 <details>
@@ -530,7 +530,7 @@ Base URL 优先级为 `supermemory.json` → `SUPERMEMORY_BASE_URL` → `https:/
 
 ```json
 {
-  "container_tag": "hermes",
+  "container_tag": "kova",
   "enable_custom_container_tags": true,
   "custom_containers": ["project-alpha", "shared-knowledge"],
   "custom_container_instructions": "Use project-alpha for coding context."

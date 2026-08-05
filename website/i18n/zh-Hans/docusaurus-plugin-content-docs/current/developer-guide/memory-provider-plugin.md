@@ -43,7 +43,7 @@ class MyMemoryProvider(MemoryProvider):
         """在 agent 启动时调用一次。
 
         kwargs 始终包含：
-          hermes_home (str): 当前活跃的 HERMES_HOME 路径。用于存储数据。
+          kova_home (str): 当前活跃的 HERMES_HOME 路径。用于存储数据。
         """
         self._api_key = os.environ.get("MY_API_KEY", "")
         self._session_id = session_id
@@ -68,7 +68,7 @@ class MyMemoryProvider(MemoryProvider):
 | 方法 | 用途 | 是否必须实现？ |
 |--------|---------|-----------------|
 | `get_config_schema()` | 为 `kova memory setup` 声明配置字段 | **是** |
-| `save_config(values, hermes_home)` | 将非敏感配置写入原生位置 | **是**（除非仅使用环境变量） |
+| `save_config(values, kova_home)` | 将非敏感配置写入原生位置 | **是**（除非仅使用环境变量） |
 
 ### 可选 Hook
 
@@ -107,7 +107,7 @@ def get_config_schema(self):
         {
             "key": "project",
             "description": "Project identifier",
-            "default": "hermes",
+            "default": "kova",
         },
     ]
 ```
@@ -121,11 +121,11 @@ def get_config_schema(self):
 ## 保存配置
 
 ```python
-def save_config(self, values: dict, hermes_home: str) -> None:
+def save_config(self, values: dict, kova_home: str) -> None:
     """将非敏感配置写入原生位置。"""
     import json
     from pathlib import Path
-    config_path = Path(hermes_home) / "my-provider.json"
+    config_path = Path(kova_home) / "my-provider.json"
     config_path.write_text(json.dumps(values, indent=2))
 ```
 
@@ -169,12 +169,12 @@ def sync_turn(self, user_content, assistant_content):
 
 ## Profile 隔离
 
-所有存储路径**必须**使用 `initialize()` 中的 `hermes_home` kwarg，而不是硬编码的 `~/.hermes`：
+所有存储路径**必须**使用 `initialize()` 中的 `kova_home` kwarg，而不是硬编码的 `~/.hermes`：
 
 ```python
 # 正确 — 按 profile 隔离
-from hermes_constants import get_hermes_home
-data_dir = get_hermes_home() / "my-provider"
+from kova_constants import get_kova_home
+data_dir = get_kova_home() / "my-provider"
 
 # 错误 — 所有 profile 共享
 data_dir = Path("~/.hermes/my-provider").expanduser()

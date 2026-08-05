@@ -6,9 +6,9 @@ author: Matt Maximo (MattMaximo), Kova Agent
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  hermes:
+  kova:
     tags: [Coding-Agent, Grok, xAI, Code-Review, Refactoring, Automation]
-    related_skills: [codex, claude-code, hermes-agent]
+    related_skills: [codex, claude-code, kova-agent]
 ---
 
 # Grok Build CLI — Kova Orchestration Guide

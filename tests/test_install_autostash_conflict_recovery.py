@@ -88,8 +88,8 @@ def test_install_sh_repository_stage_recovers_from_autostash_conflict(
 ) -> None:
     managed = _make_conflicted_managed_checkout(tmp_path)
     env = os.environ | {
-        "HERMES_HOME": str(tmp_path / "hermes-home"),
-        "HERMES_INSTALL_DIR": str(managed),
+        "HERMES_HOME": str(tmp_path / "kova-home"),
+        "KOVA_INSTALL_DIR": str(managed),
     }
 
     result = subprocess.run(
@@ -124,8 +124,8 @@ def test_install_ps1_repository_stage_recovers_from_autostash_conflict(
             "-NonInteractive",
             "-InstallDir",
             str(managed),
-            "-HermesHome",
-            str(tmp_path / "hermes-home"),
+            "-KovaHome",
+            str(tmp_path / "kova-home"),
         ],
         cwd=tmp_path,
         capture_output=True,
@@ -175,8 +175,8 @@ def test_install_sh_repository_stage_clean_apply_drops_stash(
     _git(upstream, "push", "origin", "main")
 
     env = os.environ | {
-        "HERMES_HOME": str(tmp_path / "hermes-home"),
-        "HERMES_INSTALL_DIR": str(managed),
+        "HERMES_HOME": str(tmp_path / "kova-home"),
+        "KOVA_INSTALL_DIR": str(managed),
     }
     result = subprocess.run(
         ["bash", str(INSTALL_SH), "--stage", "repository", "--non-interactive"],

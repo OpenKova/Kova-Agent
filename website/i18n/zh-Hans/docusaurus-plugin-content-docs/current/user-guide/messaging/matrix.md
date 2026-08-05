@@ -100,12 +100,12 @@ MATRIX_REACTIONS=true          # 默认：true——处理过程中发送 emoji 
 register_new_matrix_user -c /etc/synapse/homeserver.yaml http://localhost:8008
 ```
 
-2. 选择一个用户名，例如 `kova`——完整的用户 ID 将是 `@hermes:your-server.org`。
+2. 选择一个用户名，例如 `kova`——完整的用户 ID 将是 `@kova:your-server.org`。
 
 ### 方式 B：使用 matrix.org 或其他公共 Homeserver
 
 1. 前往 [Element Web](https://app.element.io) 创建新账户。
-2. 为机器人选择一个用户名（例如 `hermes-bot`）。
+2. 为机器人选择一个用户名（例如 `kova-bot`）。
 
 ### 方式 C：使用你自己的账户
 
@@ -132,7 +132,7 @@ curl -X POST https://your-server/_matrix/client/v3/login \
   -H "Content-Type: application/json" \
   -d '{
     "type": "m.login.password",
-    "user": "@hermes:your-server.org",
+    "user": "@kova:your-server.org",
     "password": "your-password"
   }'
 ```
@@ -148,7 +148,7 @@ curl -X POST https://your-server/_matrix/client/v3/login \
 你可以不提供访问令牌，而是提供机器人的用户 ID 和密码。Kova 会在启动时自动登录。这种方式更简单，但密码会存储在你的 `.env` 文件中。
 
 ```bash
-MATRIX_USER_ID=@hermes:your-server.org
+MATRIX_USER_ID=@kova:your-server.org
 MATRIX_PASSWORD=your-password
 ```
 
@@ -190,7 +190,7 @@ MATRIX_HOMESERVER=https://matrix.example.org
 MATRIX_ACCESS_TOKEN=***
 
 # 可选：用户 ID（如省略则从令牌自动检测）
-# MATRIX_USER_ID=@hermes:matrix.example.org
+# MATRIX_USER_ID=@kova:matrix.example.org
 
 # 安全：限制可与机器人交互的用户
 MATRIX_ALLOWED_USERS=@alice:matrix.example.org
@@ -204,7 +204,7 @@ MATRIX_ALLOWED_USERS=@alice:matrix.example.org
 ```bash
 # 必填
 MATRIX_HOMESERVER=https://matrix.example.org
-MATRIX_USER_ID=@hermes:matrix.example.org
+MATRIX_USER_ID=@kova:matrix.example.org
 MATRIX_PASSWORD=***
 
 # 安全
@@ -246,7 +246,7 @@ E2EE 需要带有加密扩展的 `mautrix` 库以及 `libolm` C 库：
 pip install 'mautrix[encryption]'
 
 # 或通过 kova extras 安装
-cd ~/.hermes/hermes-agent && uv pip install -e ".[matrix]"
+cd ~/.hermes/kova-agent && uv pip install -e ".[matrix]"
 ```
 
 你还需要在系统上安装 `libolm`：
@@ -302,10 +302,10 @@ Kova 在启动时会检测到此情况并拒绝启用 E2EE，日志显示：`dev
    ```bash
    sudo systemctl stop matrix-synapse
    sudo sqlite3 /var/lib/matrix-synapse/homeserver.db "
-     DELETE FROM e2e_device_keys_json WHERE device_id = 'DEVICE_ID' AND user_id = '@hermes:your-server';
-     DELETE FROM e2e_one_time_keys_json WHERE device_id = 'DEVICE_ID' AND user_id = '@hermes:your-server';
-     DELETE FROM e2e_fallback_keys_json WHERE device_id = 'DEVICE_ID' AND user_id = '@hermes:your-server';
-     DELETE FROM devices WHERE device_id = 'DEVICE_ID' AND user_id = '@hermes:your-server';
+     DELETE FROM e2e_device_keys_json WHERE device_id = 'DEVICE_ID' AND user_id = '@kova:your-server';
+     DELETE FROM e2e_one_time_keys_json WHERE device_id = 'DEVICE_ID' AND user_id = '@kova:your-server';
+     DELETE FROM e2e_fallback_keys_json WHERE device_id = 'DEVICE_ID' AND user_id = '@kova:your-server';
+     DELETE FROM devices WHERE device_id = 'DEVICE_ID' AND user_id = '@kova:your-server';
    "
    sudo systemctl start matrix-synapse
    ```
@@ -386,7 +386,7 @@ MATRIX_ALLOWED_ROOMS="!abc123def456:matrix.example.org,!opsroom789:matrix.exampl
 
 ### 机器人加入房间但静默丢弃所有消息（时钟偏差）
 
-**原因**：主机系统时钟超前于实际时间。Matrix 适配器应用了 5 秒启动宽限过滤器（`event_ts < startup_ts - 5`）以忽略初始同步中重放的事件。当系统时钟超前时，每个传入事件看起来都"早于启动时间"，在到达消息处理器之前就被丢弃——机器人看起来已连接但从不回复。参见 [#12614](https://github.com/NousResearch/hermes-agent/issues/12614)。
+**原因**：主机系统时钟超前于实际时间。Matrix 适配器应用了 5 秒启动宽限过滤器（`event_ts < startup_ts - 5`）以忽略初始同步中重放的事件。当系统时钟超前时，每个传入事件看起来都"早于启动时间"，在到达消息处理器之前就被丢弃——机器人看起来已连接但从不回复。参见 [#12614](https://github.com/OpenKova/Kova-Agent/issues/12614)。
 
 **症状**：Gateway 日志显示 `Matrix: dropped N live events as 'too old' more than 30s after startup`。
 
@@ -427,7 +427,7 @@ pip install 'mautrix[encryption]'
 或通过 Kova extras：
 
 ```bash
-cd ~/.hermes/hermes-agent && uv pip install -e ".[matrix]"
+cd ~/.hermes/kova-agent && uv pip install -e ".[matrix]"
 ```
 
 ### 加密错误/"无法解密事件"
@@ -461,7 +461,7 @@ cd ~/.hermes/hermes-agent && uv pip install -e ".[matrix]"
      -H "Content-Type: application/json" \
      -d '{
        "type": "m.login.password",
-       "identifier": {"type": "m.id.user", "user": "@hermes:your-server.org"},
+       "identifier": {"type": "m.id.user", "user": "@kova:your-server.org"},
        "password": "***",
        "initial_device_display_name": "Kova Agent"
      }'
@@ -508,7 +508,7 @@ cd ~/.hermes/hermes-agent && uv pip install -e ".[matrix]"
 
 ## 代理模式（macOS 上的 E2EE）
 
-Matrix E2EE 需要 `libolm`，而该库无法在 macOS ARM64（Apple Silicon）上编译。`hermes-agent[matrix]` extra 仅限 Linux。如果你在 macOS 上，代理模式允许你在 Linux 虚拟机的 Docker 容器中运行 E2EE，而实际的 agent 在 macOS 上原生运行，可完整访问你的本地文件、记忆和技能。
+Matrix E2EE 需要 `libolm`，而该库无法在 macOS ARM64（Apple Silicon）上编译。`kova-agent[matrix]` extra 仅限 Linux。如果你在 macOS 上，代理模式允许你在 Linux 虚拟机的 Docker 容器中运行 E2EE，而实际的 agent 在 macOS 上原生运行，可完整访问你的本地文件、记忆和技能。
 
 ### 工作原理
 
@@ -566,7 +566,7 @@ curl http://<mac-ip>:8642/health
 
 ```yaml
 services:
-  hermes-matrix:
+  kova-matrix:
     build: .
     environment:
       # Matrix 凭据
@@ -574,7 +574,7 @@ services:
       MATRIX_ACCESS_TOKEN: "syt_..."
       MATRIX_ALLOWED_USERS: "@you:matrix.example.org"
       MATRIX_ENCRYPTION: "true"
-      MATRIX_DEVICE_ID: "HERMES_BOT"
+      MATRIX_DEVICE_ID: "KOVA_BOT"
 
       # 代理模式——转发到主机 agent
       GATEWAY_PROXY_URL: "http://192.168.1.100:8642"
@@ -589,9 +589,9 @@ services:
 FROM python:3.11-slim
 
 RUN apt-get update && apt-get install -y libolm-dev && rm -rf /var/lib/apt/lists/*
-RUN cd ~/.hermes/hermes-agent && uv pip install -e ".[matrix]"
+RUN cd ~/.hermes/kova-agent && uv pip install -e ".[matrix]"
 
-CMD ["hermes", "gateway"]
+CMD ["kova", "gateway"]
 ```
 
 这就是整个容器。无需 OpenRouter、Anthropic 或任何推理提供商的 API 密钥。
@@ -634,7 +634,7 @@ CMD ["hermes", "gateway"]
 代理模式不限于 Matrix。任何平台适配器都可以使用它——在任意 gateway 实例上设置 `GATEWAY_PROXY_URL`，它将转发到远程 agent 而不是在本地运行。这适用于平台适配器需要在与 agent 不同的环境中运行的任何部署场景（网络隔离、E2EE 要求、资源限制）。
 
 :::tip
-会话连续性通过 `X-Hermes-Session-Id` 请求头维护。主机的 API 服务器按此 ID 跟踪会话，因此对话在消息之间持续存在，就像使用本地 agent 一样。
+会话连续性通过 `X-Kova-Session-Id` 请求头维护。主机的 API 服务器按此 ID 跟踪会话，因此对话在消息之间持续存在，就像使用本地 agent 一样。
 :::
 
 :::note

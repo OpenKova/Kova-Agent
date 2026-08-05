@@ -96,7 +96,7 @@ class TestPoolEntryForAnthropic:
         class _Entry:
             access_token = "sk-ant-oat01-pool"
             runtime_api_key = "sk-ant-oat01-pool"
-            source = "manual:hermes_pkce"
+            source = "manual:kova_pkce"
             base_url = "https://api.anthropic.com"
 
         resolved = rp._resolve_runtime_from_pool_entry(
@@ -117,7 +117,7 @@ class TestPoolEntryForAnthropic:
         class _Entry:
             access_token = "sk-ant-oat01-pool"
             runtime_api_key = "sk-ant-oat01-pool"
-            source = "manual:hermes_pkce"
+            source = "manual:kova_pkce"
             base_url = "https://api.anthropic.com"
 
         resolved = rp._resolve_runtime_from_pool_entry(

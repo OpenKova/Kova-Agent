@@ -36,7 +36,7 @@ from typing import Any, Dict, List, Optional
 
 import yaml
 
-from kova_constants import get_hermes_home, get_optional_mcps_dir
+from kova_constants import get_kova_home, get_optional_mcps_dir
 from kova_cli.colors import Colors, color
 from kova_cli.config import (
     load_config,
@@ -367,7 +367,7 @@ def is_enabled(name: str) -> bool:
 
 def _install_root() -> Path:
     """Where git-bootstrapped MCPs are cloned. Per-user, profile-aware."""
-    root = get_hermes_home() / "mcp-installs"
+    root = get_kova_home() / "mcp-installs"
     root.mkdir(parents=True, exist_ok=True)
     return root
 

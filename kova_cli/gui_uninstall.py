@@ -10,7 +10,7 @@ the Python agent or the user's config/data:
        - ``apps/desktop/dist``      (compiled renderer)
        - ``apps/desktop/release``   (electron-builder unpacked app + installers)
        - ``apps/desktop/node_modules`` and the workspace-root ``node_modules``
-         (Electron itself, ~200MB) â€” only removed on a GUI uninstall because
+         (Electron itself, ~200MB) — only removed on a GUI uninstall because
          the agent does not need them.
        - ``$HERMES_HOME/desktop-build-stamp.json`` (the build freshness stamp)
 
@@ -28,7 +28,7 @@ the app name ("Kova"), separate from ``$HERMES_HOME``:
   - Linux:   ``$XDG_CONFIG_HOME/Kova`` (default ``~/.config/Kova``)
 
 This holds the desktop's own ``connection.json`` / ``updates.json`` and
-Chromium cache â€” pure GUI state, safe to remove on a GUI uninstall.
+Chromium cache — pure GUI state, safe to remove on a GUI uninstall.
 
 The functions here are deliberately import-light and side-effect-free at
 import time so the Electron main process can shell out to
@@ -40,21 +40,21 @@ import shutil
 import sys
 from pathlib import Path
 
-from kova_constants import get_hermes_home
+from kova_constants import get_kova_home
 
 from kova_cli.colors import Colors, color
 
 
 def log_info(msg: str):
-    print(f"{color('â†’', Colors.CYAN)} {msg}")
+    print(f"{color('→', Colors.CYAN)} {msg}")
 
 
 def log_success(msg: str):
-    print(f"{color('âœ“', Colors.GREEN)} {msg}")
+    print(f"{color('✓', Colors.GREEN)} {msg}")
 
 
 def log_warn(msg: str):
-    print(f"{color('âš ', Colors.YELLOW)} {msg}")
+    print(f"{color('⚠', Colors.YELLOW)} {msg}")
 
 
 # ---------------------------------------------------------------------------
@@ -62,9 +62,16 @@ def log_warn(msg: str):
 # ---------------------------------------------------------------------------
 
 
-def _agent_root(hermes_home: Path) -> Path:
-    """The agent checkout root â€” same layout install.sh / install.ps1 use."""
-    return hermes_home / "kova-agent"
+def _agent_root(kova_home: Path) -> Path:
+    """The agent checkout root — same layout install.sh / install.ps1 use.
+
+    Prefers the current ``kova-agent`` checkout dir name, falling back to
+    the legacy pre-rebrand ``kova-agent`` name for older installs.
+    """
+    kova = kova_home / "kova-agent"
+    if kova.is_dir():
+        return kova
+    return kova_home / "kova-agent"
 
 
 def desktop_userdata_dir() -> Path:
@@ -81,20 +88,20 @@ def desktop_userdata_dir() -> Path:
         appdata = os.environ.get("APPDATA")
         base = Path(appdata) if appdata else (home / "AppData" / "Roaming")
         return base / "Kova"
-    # Linux / other POSIX â€” XDG config home.
+    # Linux / other POSIX — XDG config home.
     xdg = os.environ.get("XDG_CONFIG_HOME")
     base = Path(xdg) if xdg else (home / ".config")
     return base / "Kova"
 
 
-def source_built_gui_artifacts(hermes_home: Path) -> "list[Path]":
+def source_built_gui_artifacts(kova_home: Path) -> "list[Path]":
     """GUI build artifacts produced by ``kova desktop`` inside the checkout.
 
     These are removable on a GUI uninstall without harming the agent: the
     Python agent runs from ``kova-agent/`` source + ``venv/`` and never
     needs the Electron build output or node_modules.
     """
-    agent_root = _agent_root(hermes_home)
+    agent_root = _agent_root(kova_home)
     desktop_dir = agent_root / "apps" / "desktop"
     return [
         desktop_dir / "dist",
@@ -102,9 +109,9 @@ def source_built_gui_artifacts(hermes_home: Path) -> "list[Path]":
         desktop_dir / "node_modules",
         # Workspace-root node_modules carries Electron (devDependency of the
         # desktop workspace, ~200MB). The agent does not use any npm package,
-        # so this is GUI tooling â€” safe to drop on a GUI uninstall.
+        # so this is GUI tooling — safe to drop on a GUI uninstall.
         agent_root / "node_modules",
-        hermes_home / "desktop-build-stamp.json",
+        kova_home / "desktop-build-stamp.json",
     ]
 
 
@@ -112,7 +119,7 @@ def packaged_gui_app_paths() -> "list[Path]":
     """Standard install locations of the packaged desktop distributable.
 
     Returns every candidate for the current OS; the caller filters to those
-    that actually exist. We never glob system-wide â€” only the well-known
+    that actually exist. We never glob system-wide — only the well-known
     electron-builder output locations for the "Kova" product.
     """
     home = Path.home()
@@ -126,10 +133,10 @@ def packaged_gui_app_paths() -> "list[Path]":
         local = os.environ.get("LOCALAPPDATA")
         local_base = Path(local) if local else (home / "AppData" / "Local")
         paths += [
-            # NSIS per-user install (perMachine=false â†’ Programs\Kova).
+            # NSIS per-user install (perMachine=false → Programs\Kova).
             local_base / "Programs" / "Kova",
             # Older / alternate layout some builds used.
-            local_base / "hermes-desktop",
+            local_base / "kova-desktop",
         ]
         program_files = os.environ.get("ProgramFiles")
         if program_files:
@@ -140,27 +147,27 @@ def packaged_gui_app_paths() -> "list[Path]":
         # only reliably clean the desktop entry + icon we know the name of.
         # The AppImage itself lives wherever the user put it, so we surface a
         # hint rather than guessing. deb/rpm installs are owned by the system
-        # package manager and must be removed via apt/dnf â€” see the message in
+        # package manager and must be removed via apt/dnf — see the message in
         # ``uninstall_gui``.
         data = os.environ.get("XDG_DATA_HOME")
         data_base = Path(data) if data else (home / ".local" / "share")
         paths += [
-            data_base / "applications" / "hermes.desktop",
+            data_base / "applications" / "kova.desktop",
             data_base / "applications" / "Kova.desktop",
         ]
     return paths
 
 
-def agent_is_installed(hermes_home: Path) -> bool:
+def agent_is_installed(kova_home: Path) -> bool:
     """Return True when a usable Python agent install exists under HERMES_HOME.
 
     Used by the desktop UI to decide which uninstall options to offer: if the
     agent isn't present (a future "lite" GUI-only client), the "remove agent"
     options are hidden.
     """
-    agent_root = _agent_root(hermes_home)
+    agent_root = _agent_root(kova_home)
     # A real install has the package source + a venv. Either signal alone is
-    # enough â€” a source checkout without a venv is still "the agent is here".
+    # enough — a source checkout without a venv is still "the agent is here".
     if (agent_root / "kova_cli").is_dir():
         return True
     if (agent_root / "venv").is_dir() or (agent_root / ".venv").is_dir():
@@ -168,9 +175,9 @@ def agent_is_installed(hermes_home: Path) -> bool:
     return False
 
 
-def gui_is_installed(hermes_home: Path) -> bool:
+def gui_is_installed(kova_home: Path) -> bool:
     """Return True when any desktop GUI artifact exists (built or packaged)."""
-    for p in source_built_gui_artifacts(hermes_home):
+    for p in source_built_gui_artifacts(kova_home):
         if p.exists():
             return True
     for p in packaged_gui_app_paths():
@@ -181,21 +188,21 @@ def gui_is_installed(hermes_home: Path) -> bool:
     return False
 
 
-def gui_install_summary(hermes_home: "Path | None" = None) -> dict:
+def gui_install_summary(kova_home: "Path | None" = None) -> dict:
     """Structured snapshot of what's installed, for the desktop UI to render.
 
     Returns JSON-serializable primitives so the Electron main process can
     forward it to the renderer via IPC (paths as strings, booleans for the
     high-level questions the UI gates options on).
     """
-    home: Path = hermes_home if hermes_home is not None else get_hermes_home()
+    home: Path = kova_home if kova_home is not None else get_kova_home()
 
     source_artifacts = [p for p in source_built_gui_artifacts(home) if p.exists()]
     packaged = [p for p in packaged_gui_app_paths() if p.exists()]
     userdata = desktop_userdata_dir()
 
     return {
-        "hermes_home": str(home),
+        "kova_home": str(home),
         "agent_installed": agent_is_installed(home),
         "gui_installed": gui_is_installed(home),
         "source_built_artifacts": [str(p) for p in source_artifacts],
@@ -225,7 +232,7 @@ def _remove_path(path: Path) -> bool:
     return False
 
 
-def uninstall_gui(hermes_home: "Path | None" = None, *, remove_userdata: bool = True) -> "list[Path]":
+def uninstall_gui(kova_home: "Path | None" = None, *, remove_userdata: bool = True) -> "list[Path]":
     """Remove the desktop GUI's artifacts, leaving the agent + user data intact.
 
     Removes:
@@ -239,7 +246,7 @@ def uninstall_gui(hermes_home: "Path | None" = None, *, remove_userdata: bool = 
 
     Returns the list of paths actually removed.
     """
-    home: Path = hermes_home if hermes_home is not None else get_hermes_home()
+    home: Path = kova_home if kova_home is not None else get_kova_home()
 
     removed: list[Path] = []
 
@@ -277,8 +284,8 @@ def uninstall_gui(hermes_home: "Path | None" = None, *, remove_userdata: bool = 
     if sys.platform.startswith("linux"):
         log_info(
             "If you installed the desktop via a .deb / .rpm package, remove it "
-            "with your package manager (e.g. 'sudo apt remove hermes' or "
-            "'sudo dnf remove hermes'). AppImage builds are a single file you "
+            "with your package manager (e.g. 'sudo apt remove kova' or "
+            "'sudo dnf remove kova'). AppImage builds are a single file you "
             "can delete from wherever you saved it."
         )
 

@@ -53,8 +53,8 @@ MAX_TEXT_LENGTH = 4000
 # group mention gating without custom aliases, use conservative Kova wake
 # words so `require_mention: true` is a one-line enablement path.
 DEFAULT_MENTION_PATTERNS = [
-    r"(?<![\w@])@?hermes\s+agent\b[,:\-]?",
-    r"(?<![\w@])@?hermes\b[,:\-]?",
+    r"(?<![\w@])@?kova\s+agent\b[,:\-]?",
+    r"(?<![\w@])@?kova\b[,:\-]?",
 ]
 
 # Tapback reaction codes (BlueBubbles associatedMessageType values)

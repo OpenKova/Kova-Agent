@@ -6,7 +6,7 @@ author: Ben Barclay (benbarclay), Kova Agent
 license: MIT
 platforms: [linux, macos]
 metadata:
-  hermes:
+  kova:
     tags: [MCP, OAuth, PKCE, Remote-Deployment]
     related_skills: [native-mcp, mcporter, fastmcp]
 ---
@@ -98,11 +98,11 @@ platforms inject it into the environment — grep for it rather than making the
 user hunt:
 
 ```bash
-env | grep -iE "HERMES_DASHBOARD_PUBLIC_URL|RAILWAY_PUBLIC_DOMAIN|RAILWAY_STATIC_URL|RAILWAY_SERVICE_.*_URL|PUBLIC_URL|BASE_URL|DOMAIN" \
+env | grep -iE "KOVA_DASHBOARD_PUBLIC_URL|RAILWAY_PUBLIC_DOMAIN|RAILWAY_STATIC_URL|RAILWAY_SERVICE_.*_URL|PUBLIC_URL|BASE_URL|DOMAIN" \
   | sed -E 's/(TOKEN|SECRET|KEY|PASSWORD)=.*/\1=***REDACTED***/I'
 ```
 
-`HERMES_DASHBOARD_PUBLIC_URL` is authoritative when present. On Railway also check
+`KOVA_DASHBOARD_PUBLIC_URL` is authoritative when present. On Railway also check
 `RAILWAY_PUBLIC_DOMAIN` / `RAILWAY_STATIC_URL` (the `*.up.railway.app` host) and
 `RAILWAY_SERVICE_*_URL` vars, which sometimes carry a friendlier custom domain.
 Hand the user the full `https://` URL and point them at the Connectors/MCP
@@ -117,7 +117,7 @@ are out of the dashboard's scope regardless.
 ## The Workaround
 
 Do the OAuth dance manually, then write the resulting tokens into the exact files
-Kova' `HermesTokenStorage` would have written, so on `/reload-mcp` Kova finds
+Kova' `KovaTokenStorage` would have written, so on `/reload-mcp` Kova finds
 cached tokens and skips the browser flow entirely.
 
 Run the shell commands below through the `terminal` tool on the gateway host and
@@ -128,7 +128,7 @@ the SAME code block as the token exchange (see pitfall 16).
 ### 1. Confirm it's a remote gateway
 
 ```bash
-env | grep -iE "HERMES|RAILWAY|CONTAINER"
+env | grep -iE "KOVA|RAILWAY|CONTAINER"
 echo "$DISPLAY $WAYLAND_DISPLAY $SSH_CLIENT"
 ```
 
@@ -139,7 +139,7 @@ built-in flow won't work.
 ### 2. Find HERMES_HOME and the config path
 
 ```bash
-HERMES_HOME=$(python3 -c 'from hermes_constants import get_hermes_home; print(get_hermes_home())')
+HERMES_HOME=$(python3 -c 'from kova_constants import get_kova_home; print(get_kova_home())')
 echo "config: $HERMES_HOME/config.yaml"
 echo "tokens: $HERMES_HOME/mcp-tokens/"
 ```
@@ -242,7 +242,7 @@ When the user pastes the callback URL:
 
 ### 8. Write tokens in Kova' exact schema
 
-`tools/mcp_oauth.py::HermesTokenStorage` expects two files under
+`tools/mcp_oauth.py::KovaTokenStorage` expects two files under
 `$HERMES_HOME/mcp-tokens/` (create dir with `0o700`, files with `0o600`):
 
 **`<server_name>.json`** — the `OAuthToken` pydantic model:
@@ -296,7 +296,7 @@ body = json.dumps({
     "params": {
         "protocolVersion": "2025-06-18",
         "capabilities": {},
-        "clientInfo": {"name": "hermes-debug", "version": "1.0"},
+        "clientInfo": {"name": "kova-debug", "version": "1.0"},
     },
 }).encode()
 # POST to the MCP URL with:
@@ -314,7 +314,7 @@ UA** — Cloudflare will 403 you even though Kova (which uses httpx) will succee
 
 ### 11. Tell the user to run `/reload-mcp`
 
-On reload, Kova sees `auth: oauth`, calls `HermesTokenStorage.get_tokens()`,
+On reload, Kova sees `auth: oauth`, calls `KovaTokenStorage.get_tokens()`,
 finds your cached tokens, skips the browser flow, and registers `mcp_<name>_*`
 tools. Refresh happens automatically before `expires_in` elapses.
 

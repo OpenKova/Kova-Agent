@@ -31,8 +31,8 @@ Design summary
 
 The atomic-write / ``0600`` / TTL cache mechanics are shared with the other
 backends via :mod:`agent.secret_sources._cache` — successful, complete pulls
-are cached in-process and on disk under ``<hermes_home>/cache/op_cache.json``
-so back-to-back short-lived ``hermes`` invocations don't re-shell ``op`` for
+are cached in-process and on disk under ``<kova_home>/cache/op_cache.json``
+so back-to-back short-lived ``kova`` invocations don't re-shell ``op`` for
 every reference.  The disk file holds only resolved secret *values*; auth
 material is fingerprinted, never stored.
 """
@@ -384,7 +384,7 @@ def fetch_onepassword_secrets(
 
 
 # ---------------------------------------------------------------------------
-# Public entry point — called from hermes_cli.env_loader
+# Public entry point — called from kova_cli.env_loader
 # ---------------------------------------------------------------------------
 
 
@@ -401,7 +401,7 @@ def apply_onepassword_secrets(
 ) -> FetchResult:
     """Resolve configured ``op://`` references and set them on ``os.environ``.
 
-    Called by ``load_hermes_dotenv()`` after the .env files have loaded.
+    Called by ``load_kova_dotenv()`` after the .env files have loaded.
     Intentionally defensive — any failure returns a :class:`FetchResult` with
     ``error`` set (or surfaces warnings); it never raises.
 

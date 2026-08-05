@@ -4,7 +4,7 @@ Covers three layers:
 
 1. DB: goal_mode / goal_max_turns persist through create_task + from_row,
    and a legacy DB (without the columns) migrates cleanly.
-2. Spawn: _default_spawn sets the HERMES_KANBAN_GOAL_MODE env vars only
+2. Spawn: _default_spawn sets the KOVA_KANBAN_GOAL_MODE env vars only
    when the card opts in.
 3. Loop: goals.run_kanban_goal_loop continuation / completion / budget
    behaviour, driven entirely through injected callbacks (no live model).
@@ -23,7 +23,7 @@ from kova_cli import goals
 
 @pytest.fixture
 def kanban_home(tmp_path, monkeypatch):
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".kova"
     home.mkdir()
     monkeypatch.setenv("HERMES_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -69,7 +69,7 @@ def test_goal_mode_without_max_turns(kanban_home):
 
 def test_legacy_db_migrates_goal_columns(tmp_path, monkeypatch):
     """A tasks table created without goal columns must gain them on init."""
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".kova"
     home.mkdir()
     monkeypatch.setenv("HERMES_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -145,8 +145,8 @@ def test_spawn_sets_goal_env_only_when_enabled(kanban_home, monkeypatch):
 
     kb._default_spawn(task, str(kanban_home))
     env = captured["env"]
-    assert env.get("HERMES_KANBAN_GOAL_MODE") == "1"
-    assert env.get("HERMES_KANBAN_GOAL_MAX_TURNS") == "5"
+    assert env.get("KOVA_KANBAN_GOAL_MODE") == "1"
+    assert env.get("KOVA_KANBAN_GOAL_MAX_TURNS") == "5"
 
 
 def test_spawn_no_goal_env_for_plain_task(kanban_home, monkeypatch):
@@ -167,8 +167,8 @@ def test_spawn_no_goal_env_for_plain_task(kanban_home, monkeypatch):
 
     kb._default_spawn(task, str(kanban_home))
     env = captured["env"]
-    assert "HERMES_KANBAN_GOAL_MODE" not in env
-    assert "HERMES_KANBAN_GOAL_MAX_TURNS" not in env
+    assert "KOVA_KANBAN_GOAL_MODE" not in env
+    assert "KOVA_KANBAN_GOAL_MAX_TURNS" not in env
 
 
 # ---------------------------------------------------------------------------
@@ -299,11 +299,11 @@ def test_loop_stops_if_task_reclaimed(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# CLI judge gate tests (hermes kanban complete bypass fix)
+# CLI judge gate tests (kova kanban complete bypass fix)
 # ---------------------------------------------------------------------------
 
 class TestCLIJudgeGate:
-    """hermes kanban complete must apply the same goal_mode judge gate as the
+    """kova kanban complete must apply the same goal_mode judge gate as the
     kanban_complete tool (Issue #38367 sibling gap).
 
     Uses mocks for kb.get_task and kb.complete_task to avoid depending on the

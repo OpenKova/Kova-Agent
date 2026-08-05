@@ -55,7 +55,12 @@ _FALLBACK_PATTERNS = re.compile(
 )
 _ACCESS_DENIED_PATTERN = re.compile(r"(access is denied|acceso denegado)", re.IGNORECASE)
 
-_TASK_NAME_DEFAULT = "Hermes_Gateway"
+_TASK_NAME_DEFAULT = "Kova_Gateway"
+# Legacy name from before the Kova rename. Installs registered under this
+# name (e.g. older desktop app versions) must still be found by status /
+# start / stop / uninstall — hence the dual lookup in is_task_registered()
+# and query_task_status().
+_TASK_NAME_LEGACY = "Hermes_Gateway"
 _TASK_DESCRIPTION = "Kova Agent Gateway - Messaging Platform Integration"
 _TASK_LOGON_DELAY = "PT30S"
 _TASK_RESTART_INTERVAL = "PT1M"
@@ -85,7 +90,7 @@ def _assert_windows() -> None:
         raise RuntimeError("gateway_windows is Windows-only")
 
 
-def _preserve_hermes_home_path(path: str | Path) -> str:
+def _preserve_kova_home_path(path: str | Path) -> str:
     """Render Kova-owned paths under the configured HERMES_HOME spelling.
 
     Windows installs may keep ``%LOCALAPPDATA%\\kova`` as a symlink/junction to
@@ -95,9 +100,9 @@ def _preserve_hermes_home_path(path: str | Path) -> str:
     """
     candidate = Path(path)
     try:
-        from kova_cli.config import get_hermes_home
+        from kova_cli.config import get_kova_home
 
-        home = Path(get_hermes_home())
+        home = Path(get_kova_home())
         resolved_home = home.resolve()
         resolved_candidate = candidate.resolve()
         home_key = os.path.normcase(str(resolved_home))
@@ -249,15 +254,15 @@ def _launch_elevated_install(
     start_on_login: bool | None = None,
 ) -> bool:
     """Launch an elevated gateway install via UAC and return True on handoff."""
-    old_start_now = os.environ.get("HERMES_GATEWAY_INSTALL_START_NOW")
-    old_start_on_login = os.environ.get("HERMES_GATEWAY_INSTALL_START_ON_LOGIN")
-    old_handoff = os.environ.get("HERMES_GATEWAY_ELEVATED_HANDOFF")
+    old_start_now = os.environ.get("KOVA_GATEWAY_INSTALL_START_NOW")
+    old_start_on_login = os.environ.get("KOVA_GATEWAY_INSTALL_START_ON_LOGIN")
+    old_handoff = os.environ.get("KOVA_GATEWAY_ELEVATED_HANDOFF")
     try:
         if start_now is not None:
-            os.environ["HERMES_GATEWAY_INSTALL_START_NOW"] = "1" if start_now else "0"
+            os.environ["KOVA_GATEWAY_INSTALL_START_NOW"] = "1" if start_now else "0"
         if start_on_login is not None:
-            os.environ["HERMES_GATEWAY_INSTALL_START_ON_LOGIN"] = "1" if start_on_login else "0"
-        os.environ["HERMES_GATEWAY_ELEVATED_HANDOFF"] = "1"
+            os.environ["KOVA_GATEWAY_INSTALL_START_ON_LOGIN"] = "1" if start_on_login else "0"
+        os.environ["KOVA_GATEWAY_ELEVATED_HANDOFF"] = "1"
         extra_args = ["--elevated-handoff"]
         if force:
             extra_args.append("--force")
@@ -268,9 +273,9 @@ def _launch_elevated_install(
         return _launch_elevated_gateway_command("install", extra_args)
     finally:
         for key, old in (
-            ("HERMES_GATEWAY_INSTALL_START_NOW", old_start_now),
-            ("HERMES_GATEWAY_INSTALL_START_ON_LOGIN", old_start_on_login),
-            ("HERMES_GATEWAY_ELEVATED_HANDOFF", old_handoff),
+            ("KOVA_GATEWAY_INSTALL_START_NOW", old_start_now),
+            ("KOVA_GATEWAY_INSTALL_START_ON_LOGIN", old_start_on_login),
+            ("KOVA_GATEWAY_ELEVATED_HANDOFF", old_handoff),
         ):
             if old is None:
                 os.environ.pop(key, None)
@@ -290,8 +295,8 @@ def _launch_elevated_uninstall() -> bool:
 def get_task_name() -> str:
     """Scheduled Task name, scoped per profile.
 
-    Default profile: ``Hermes_Gateway``
-    Named profile X: ``Hermes_Gateway_<X>``
+    Default profile: ``Kova_Gateway``
+    Named profile X: ``Kova_Gateway_<X>``
     """
     _assert_windows()
     # Local import to avoid circular module initialization during kova_cli boot.
@@ -301,6 +306,22 @@ def get_task_name() -> str:
     if not suffix:
         return _TASK_NAME_DEFAULT
     return f"{_TASK_NAME_DEFAULT}_{suffix}"
+
+
+def _task_name_candidates() -> list[str]:
+    """Current + legacy task names, most-recent first.
+
+    The current name is ``Kova_Gateway[_<profile>]``; the legacy name
+    ``Hermes_Gateway[_<profile>]`` matches registrations made by older
+    installs. Lookup/status sites iterate this list so both are found.
+    """
+    _assert_windows()
+    from kova_cli.gateway import _profile_suffix
+
+    suffix = _profile_suffix()
+    if suffix:
+        return [f"{_TASK_NAME_DEFAULT}_{suffix}", f"{_TASK_NAME_LEGACY}_{suffix}"]
+    return [_TASK_NAME_DEFAULT, _TASK_NAME_LEGACY]
 
 
 def _sanitize_filename(value: str) -> str:
@@ -316,9 +337,9 @@ def get_task_script_path() -> Path:
     Kova installs stay self-contained).
     """
     _assert_windows()
-    from kova_cli.config import get_hermes_home
+    from kova_cli.config import get_kova_home
 
-    script_dir = Path(get_hermes_home()) / "gateway-service"
+    script_dir = Path(get_kova_home()) / "gateway-service"
     script_dir.mkdir(parents=True, exist_ok=True)
     return script_dir / f"{_sanitize_filename(get_task_name())}.cmd"
 
@@ -366,10 +387,10 @@ def _stable_gateway_working_dir(project_root: Path) -> str:
     configured spelling instead of resolving symlinks so AppData installs backed
     by a junction/symlink still identify themselves as AppData.
     """
-    from kova_cli.config import get_hermes_home
+    from kova_cli.config import get_kova_home
 
     try:
-        home = get_hermes_home()
+        home = get_kova_home()
         if home:
             home_path = Path(home)
             if home_path.is_dir():
@@ -386,7 +407,7 @@ def _stable_gateway_working_dir(project_root: Path) -> str:
 def _build_gateway_cmd_script(
     python_path: str,
     working_dir: str,
-    hermes_home: str,
+    kova_home: str,
     profile_arg: str,
 ) -> str:
     """Build the ``gateway.cmd`` wrapper content (CRLF-terminated).
@@ -408,16 +429,16 @@ def _build_gateway_cmd_script(
     """
     lines = ["@echo off", f"rem {_TASK_DESCRIPTION}"]
     lines.append(f"cd /d {_quote_cmd_script_arg(working_dir)}")
-    lines.append(f'set "HERMES_HOME={hermes_home}"')
+    lines.append(f'set "HERMES_HOME={kova_home}"')
     lines.append('set "PYTHONIOENCODING=utf-8"')
-    lines.append('set "HERMES_GATEWAY_DETACHED=1"')
+    lines.append('set "KOVA_GATEWAY_DETACHED=1"')
     python_exe_path, venv_dir, extra_pythonpath = _resolve_detached_python(python_path)
     # VIRTUAL_ENV lets the gateway's own python detection find the venv
     # if someone imports kova_constants-based logic during startup.
-    lines.append(f'set "VIRTUAL_ENV={_preserve_hermes_home_path(venv_dir)}"')
+    lines.append(f'set "VIRTUAL_ENV={_preserve_kova_home_path(venv_dir)}"')
     pythonpath_entries = [
-        _preserve_hermes_home_path(Path(__file__).resolve().parent.parent),
-        *[_preserve_hermes_home_path(entry) for entry in extra_pythonpath],
+        _preserve_kova_home_path(Path(__file__).resolve().parent.parent),
+        *[_preserve_kova_home_path(entry) for entry in extra_pythonpath],
     ]
     lines.append(f'set "PYTHONPATH={";".join([*pythonpath_entries, "%PYTHONPATH%"])}"')
 
@@ -448,7 +469,7 @@ def _quote_vbs_string(value: str) -> str:
 def _build_gateway_vbs_script(
     python_path: str,
     working_dir: str,
-    hermes_home: str,
+    kova_home: str,
     profile_arg: str,
 ) -> str:
     """Build a hidden-console ``gateway.vbs`` launcher (CRLF-terminated).
@@ -482,9 +503,9 @@ def _build_gateway_vbs_script(
     # list2cmdline gives CreateProcess-correct quoting for WScript.Shell.Run.
     command_line = subprocess.list2cmdline(prog_args)
 
-    repo_root = _preserve_hermes_home_path(Path(__file__).resolve().parent.parent)
+    repo_root = _preserve_kova_home_path(Path(__file__).resolve().parent.parent)
     static_pythonpath = os.pathsep.join(
-        [repo_root, *[_preserve_hermes_home_path(entry) for entry in extra_pythonpath]]
+        [repo_root, *[_preserve_kova_home_path(entry) for entry in extra_pythonpath]]
     )
 
     lines = [
@@ -493,10 +514,10 @@ def _build_gateway_vbs_script(
         "Dim sh, env, existing_pp",
         'Set sh = CreateObject("WScript.Shell")',
         'Set env = sh.Environment("PROCESS")',
-        f"env.Item({_quote_vbs_string('HERMES_HOME')}) = {_quote_vbs_string(hermes_home)}",
+        f"env.Item({_quote_vbs_string('HERMES_HOME')}) = {_quote_vbs_string(kova_home)}",
         f"env.Item({_quote_vbs_string('PYTHONIOENCODING')}) = {_quote_vbs_string('utf-8')}",
-        f"env.Item({_quote_vbs_string('HERMES_GATEWAY_DETACHED')}) = {_quote_vbs_string('1')}",
-        f"env.Item({_quote_vbs_string('VIRTUAL_ENV')}) = {_quote_vbs_string(_preserve_hermes_home_path(venv_dir))}",
+        f"env.Item({_quote_vbs_string('KOVA_GATEWAY_DETACHED')}) = {_quote_vbs_string('1')}",
+        f"env.Item({_quote_vbs_string('VIRTUAL_ENV')}) = {_quote_vbs_string(_preserve_kova_home_path(venv_dir))}",
         # Mirror the cmd wrapper's ``PYTHONPATH=<static>;%PYTHONPATH%``: chain onto
         # whatever PYTHONPATH the task environment already carries, at runtime.
         f"existing_pp = env.Item({_quote_vbs_string('PYTHONPATH')})",
@@ -542,19 +563,19 @@ def _write_task_script() -> Path:
     """Generate and write the gateway.cmd wrapper. Return its absolute path."""
     _assert_windows()
     # Local imports to avoid circular-init at module load time.
-    from kova_cli.config import get_hermes_home
+    from kova_cli.config import get_kova_home
     from kova_cli.gateway import (
         PROJECT_ROOT,
         _profile_arg,
         get_python_path,
     )
 
-    python_path = _preserve_hermes_home_path(get_python_path())
+    python_path = _preserve_kova_home_path(get_python_path())
     working_dir = _stable_gateway_working_dir(PROJECT_ROOT)
-    hermes_home = str(Path(get_hermes_home()))
-    profile_arg = _profile_arg(hermes_home)
+    kova_home = str(Path(get_kova_home()))
+    profile_arg = _profile_arg(kova_home)
 
-    content = _build_gateway_cmd_script(python_path, working_dir, hermes_home, profile_arg)
+    content = _build_gateway_cmd_script(python_path, working_dir, kova_home, profile_arg)
     script_path = get_task_script_path()
     tmp = script_path.with_suffix(".tmp")
     tmp.write_text(content, encoding="utf-8", newline="")
@@ -563,7 +584,7 @@ def _write_task_script() -> Path:
     # Also render the console-less .vbs launcher used by Scheduled Task and the
     # Startup-folder fallback via wscript.exe (issue #45599 fix A). The .cmd
     # wrapper stays as a generated helper/compatibility artifact.
-    vbs_content = _build_gateway_vbs_script(python_path, working_dir, hermes_home, profile_arg)
+    vbs_content = _build_gateway_vbs_script(python_path, working_dir, kova_home, profile_arg)
     vbs_path = script_path.with_suffix(".vbs")
     vbs_tmp = vbs_path.with_name(vbs_path.name + ".tmp")
     vbs_tmp.write_text(vbs_content, encoding="utf-8", newline="")
@@ -664,6 +685,11 @@ def _install_scheduled_task(task_name: str, script_path: Path) -> tuple[bool, st
     """
     delete_code, delete_out, delete_err = _exec_schtasks(["/Delete", "/F", "/TN", task_name])
     delete_detail = (delete_err or delete_out or "").strip()
+    # Also drop any legacy Kova-named task so a pre-rename install can't
+    # leave an orphaned duplicate that double-launches the gateway.
+    for legacy in _task_name_candidates():
+        if legacy != task_name:
+            _exec_schtasks(["/Delete", "/F", "/TN", legacy])
     if delete_code != 0 and delete_detail and "cannot find" not in delete_detail.lower():
         if _is_access_denied(delete_detail):
             return (False, f"schtasks /Delete failed (code {delete_code}): {delete_detail}")
@@ -768,7 +794,7 @@ def _build_gateway_argv() -> tuple[list[str], str, dict[str, str]]:
     layer in between.
     """
     _assert_windows()
-    from kova_cli.config import get_hermes_home
+    from kova_cli.config import get_kova_home
     from kova_cli.gateway import (
         PROJECT_ROOT,
         _profile_arg,
@@ -776,12 +802,12 @@ def _build_gateway_argv() -> tuple[list[str], str, dict[str, str]]:
     )
 
     python_exe, venv_dir, extra_pythonpath = _resolve_detached_python(
-        _preserve_hermes_home_path(get_python_path())
+        _preserve_kova_home_path(get_python_path())
     )
-    project_root = _preserve_hermes_home_path(PROJECT_ROOT)
+    project_root = _preserve_kova_home_path(PROJECT_ROOT)
     working_dir = _stable_gateway_working_dir(PROJECT_ROOT)
-    hermes_home = str(Path(get_hermes_home()))
-    profile_arg = _profile_arg(hermes_home)
+    kova_home = str(Path(get_kova_home()))
+    profile_arg = _profile_arg(kova_home)
 
     argv = [python_exe, "-m", "kova_cli.main"]
     if profile_arg:
@@ -789,14 +815,14 @@ def _build_gateway_argv() -> tuple[list[str], str, dict[str, str]]:
     argv.extend(["gateway", "run"])
 
     env_overlay = {
-        "HERMES_HOME": hermes_home,
+        "HERMES_HOME": kova_home,
         "PYTHONIOENCODING": "utf-8",
-        "HERMES_GATEWAY_DETACHED": "1",
-        "VIRTUAL_ENV": _preserve_hermes_home_path(venv_dir),
+        "KOVA_GATEWAY_DETACHED": "1",
+        "VIRTUAL_ENV": _preserve_kova_home_path(venv_dir),
     }
     _prepend_pythonpath(
         env_overlay,
-        [project_root, *[_preserve_hermes_home_path(entry) for entry in extra_pythonpath]]
+        [project_root, *[_preserve_kova_home_path(entry) for entry in extra_pythonpath]]
         if extra_pythonpath
         else [project_root],
     )
@@ -831,7 +857,7 @@ def windowless_gateway_restart_spec(
     if sys.platform != "win32":
         return run_argv, "", {}
 
-    from kova_cli.config import get_hermes_home
+    from kova_cli.config import get_kova_home
     from kova_cli.gateway import PROJECT_ROOT
 
     python_exe = run_argv[0]
@@ -852,17 +878,17 @@ def windowless_gateway_restart_spec(
     working_dir = _stable_gateway_working_dir(PROJECT_ROOT)
     project_root = str(PROJECT_ROOT)
     try:
-        hermes_home = str(Path(get_hermes_home()).resolve())
+        kova_home = str(Path(get_kova_home()).resolve())
     except Exception:
-        hermes_home = ""
+        kova_home = ""
 
     env_overlay: dict[str, str] = {
         "PYTHONIOENCODING": "utf-8",
-        "HERMES_GATEWAY_DETACHED": "1",
+        "KOVA_GATEWAY_DETACHED": "1",
         "VIRTUAL_ENV": str(venv_dir),
     }
-    if hermes_home:
-        env_overlay["HERMES_HOME"] = hermes_home
+    if kova_home:
+        env_overlay["HERMES_HOME"] = kova_home
     _prepend_pythonpath(
         env_overlay,
         [project_root, *extra_pythonpath] if extra_pythonpath else [project_root],
@@ -913,9 +939,9 @@ def _spawn_detached(script_path: Path | None = None) -> int:
     # logging module writes to gateway.log through a FileHandler, so the
     # real gateway logs still land there — this just captures anything
     # that goes to print() or native stderr.
-    from kova_cli.config import get_hermes_home
+    from kova_cli.config import get_kova_home
 
-    log_dir = Path(get_hermes_home()) / "logs"
+    log_dir = Path(get_kova_home()) / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
     stray_log = log_dir / "gateway-stdio.log"
 
@@ -969,8 +995,8 @@ def _prompt_install_choices(
     start_on_login: bool | None = None,
 ) -> tuple[bool, bool]:
     """Return (start_now, start_on_login), asking before any UAC escalation."""
-    env_start_now = _install_choice_from_env("HERMES_GATEWAY_INSTALL_START_NOW")
-    env_start_on_login = _install_choice_from_env("HERMES_GATEWAY_INSTALL_START_ON_LOGIN")
+    env_start_now = _install_choice_from_env("KOVA_GATEWAY_INSTALL_START_NOW")
+    env_start_on_login = _install_choice_from_env("KOVA_GATEWAY_INSTALL_START_ON_LOGIN")
     if start_now is None:
         start_now = env_start_now
     if start_on_login is None:
@@ -1167,19 +1193,19 @@ def _report_gateway_start(via: str) -> None:
     else:
         print(f"⚠ Launched gateway via {via}, but no process detected after 6s.")
         print("  Check the log for startup errors:")
-        from kova_cli.config import get_hermes_home
-        print(f"    type {Path(get_hermes_home())}\\logs\\gateway.log")
-        print(f"    type {Path(get_hermes_home())}\\logs\\gateway-stdio.log")
+        from kova_cli.config import get_kova_home
+        print(f"    type {Path(get_kova_home())}\\logs\\gateway.log")
+        print(f"    type {Path(get_kova_home())}\\logs\\gateway-stdio.log")
 
 
 def _print_next_steps() -> None:
-    from kova_cli.config import get_hermes_home
+    from kova_cli.config import get_kova_home
 
-    hermes_home = Path(get_hermes_home())
+    kova_home = Path(get_kova_home())
     print()
     print("Next steps:")
     print("  kova gateway status                      # Check status")
-    print(f"  type {hermes_home}\\logs\\gateway.log       # View logs")
+    print(f"  type {kova_home}\\logs\\gateway.log       # View logs")
 
 
 def uninstall() -> None:
@@ -1192,12 +1218,16 @@ def uninstall() -> None:
     legacy_startup_entry = _legacy_startup_entry_path()
 
     scheduled_task_removed = False
-    if is_task_registered():
-        code, _out, err = _exec_schtasks(["/Delete", "/F", "/TN", task_name])
+    # Delete both the current (Kova_Gateway) and legacy (Hermes_Gateway)
+    # registrations so a pre-rename install is fully cleaned up.
+    for task_candidate in _task_name_candidates():
+        if not _task_registered_by_name(task_candidate):
+            continue
+        code, _out, err = _exec_schtasks(["/Delete", "/F", "/TN", task_candidate])
         detail = err.strip()
         if code == 0:
             scheduled_task_removed = True
-            print(f"✓ Removed Scheduled Task {task_name!r}")
+            print(f"✓ Removed Scheduled Task {task_candidate!r}")
         elif _is_access_denied(detail) and not _is_running_as_admin():
             from kova_cli.setup import prompt_yes_no
 
@@ -1227,16 +1257,28 @@ def uninstall() -> None:
             pass
 
     if is_task_registered() and not scheduled_task_removed:
-        print(f"⚠ Scheduled Task still registered: {task_name}")
+        still_registered = next(
+            (c for c in _task_name_candidates() if _task_registered_by_name(c)), None
+        )
+        print(f"⚠ Scheduled Task still registered: {still_registered or task_name}")
 
 
 # ---------------------------------------------------------------------------
 # Status / start / stop / restart
 # ---------------------------------------------------------------------------
 
-def is_task_registered() -> bool:
-    code, _out, _err = _exec_schtasks(["/Query", "/TN", get_task_name()])
+def _task_registered_by_name(task_name: str) -> bool:
+    code, _out, _err = _exec_schtasks(["/Query", "/TN", task_name])
     return code == 0
+
+
+def is_task_registered() -> bool:
+    # Dual lookup: current Kova_Gateway first, then legacy Hermes_Gateway
+    # so installs registered before the rename are still detected.
+    for candidate in _task_name_candidates():
+        if _task_registered_by_name(candidate):
+            return True
+    return False
 
 
 def is_startup_entry_installed() -> bool:
@@ -1250,24 +1292,27 @@ def is_installed() -> bool:
 
 def query_task_status() -> dict[str, str]:
     """Parse ``schtasks /Query /V /FO LIST`` and pull the interesting keys."""
-    code, out, err = _exec_schtasks(["/Query", "/TN", get_task_name(), "/V", "/FO", "LIST"])
-    if code != 0:
-        return {}
-    info: dict[str, str] = {}
-    for raw in out.splitlines():
-        line = raw.strip()
-        if not line or ":" not in line:
+    # Dual lookup: try Kova_Gateway first, fall back to legacy Hermes_Gateway.
+    for candidate in _task_name_candidates():
+        code, out, err = _exec_schtasks(["/Query", "/TN", candidate, "/V", "/FO", "LIST"])
+        if code != 0:
             continue
-        key, _, value = line.partition(":")
-        key = key.strip().lower()
-        value = value.strip()
-        # Some Windows locales emit "Last Result" instead of "Last Run Result".
-        if key in {"status", "last run time", "last run result", "last result"}:
-            if key == "last result":
-                info.setdefault("last run result", value)
-            else:
-                info[key] = value
-    return info
+        info: dict[str, str] = {}
+        for raw in out.splitlines():
+            line = raw.strip()
+            if not line or ":" not in line:
+                continue
+            key, _, value = line.partition(":")
+            key = key.strip().lower()
+            value = value.strip()
+            # Some Windows locales emit "Last Result" instead of "Last Run Result".
+            if key in {"status", "last run time", "last run result", "last result"}:
+                if key == "last result":
+                    info.setdefault("last run result", value)
+                else:
+                    info[key] = value
+        return info
+    return {}
 
 
 def _gateway_pids() -> list[int]:
@@ -1296,9 +1341,9 @@ def _print_deep_probes() -> None:
     import json
     from datetime import datetime, timezone
 
-    from kova_cli.config import get_hermes_home
+    from kova_cli.config import get_kova_home
 
-    home = Path(get_hermes_home())
+    home = Path(get_kova_home())
     pid_path = home / "gateway.pid"
     lock_path = home / "gateway.lock"
     state_path = home / "gateway_state.json"
@@ -1413,13 +1458,15 @@ def _print_deep_probes() -> None:
 def status(deep: bool = False) -> None:
     """Print a status report for the Windows gateway service."""
     _assert_windows()
-    task_name = get_task_name()
     task_installed = is_task_registered()
     startup_installed = is_startup_entry_installed()
     pids = _gateway_pids()
 
     if task_installed:
-        print(f"✓ Scheduled Task registered: {task_name}")
+        registered = next(
+            (c for c in _task_name_candidates() if _task_registered_by_name(c)), None
+        )
+        print(f"✓ Scheduled Task registered: {registered or get_task_name()}")
         info = query_task_status()
         if info:
             for key in ("status", "last run time", "last run result"):
@@ -1601,8 +1648,11 @@ def stop() -> None:
         drained = _drain_gateway_pid(pid, _windows_stop_drain_timeout())
 
     stopped_any = drained
-    if is_task_registered():
-        code, _out, err = _exec_schtasks(["/End", "/TN", get_task_name()])
+    # End both current and legacy task names so a pre-rename install stops too.
+    for task_candidate in _task_name_candidates():
+        if not _task_registered_by_name(task_candidate):
+            continue
+        code, _out, err = _exec_schtasks(["/End", "/TN", task_candidate])
         # schtasks returns nonzero when the task isn't currently running — don't treat that as an error.
         if code == 0:
             stopped_any = True

@@ -9,7 +9,7 @@ from typing import Any
 
 import yaml
 
-from hermes_constants import get_hermes_home
+from kova_constants import get_kova_home
 
 
 _DISK_DEGRADED_PERCENT = 90.0
@@ -95,7 +95,7 @@ def collect_runtime_readiness(
     status and counts only: never config values, credentials, paths, commands,
     queue payloads, or exception messages.
     """
-    home = get_hermes_home()
+    home = get_kova_home()
     runtime = runtime_status if isinstance(runtime_status, dict) else {}
     checks = {
         "state_db": _probe_state_db(home),

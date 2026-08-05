@@ -14,8 +14,8 @@ Configuration in config.yaml::
           extra:
             server: irc.libera.chat
             port: 6697
-            nickname: hermes-bot
-            channel: "#hermes"
+            nickname: kova-bot
+            channel: "#kova"
             use_tls: true
             server_password: ""       # optional server password
             nickserv_password: ""     # optional NickServ identification
@@ -111,7 +111,7 @@ class IRCAdapter(BasePlatformAdapter):
             self.port = int(os.getenv("IRC_PORT") or extra.get("port", 6697))
         except (ValueError, TypeError):
             self.port = 6697
-        self.nickname = os.getenv("IRC_NICKNAME") or extra.get("nickname", "hermes-bot")
+        self.nickname = os.getenv("IRC_NICKNAME") or extra.get("nickname", "kova-bot")
         self.channel = os.getenv("IRC_CHANNEL") or extra.get("channel", "")
         self.use_tls = (
             os.getenv("IRC_USE_TLS", "").lower() in {"1", "true", "yes"}
@@ -413,7 +413,7 @@ class IRCAdapter(BasePlatformAdapter):
 
         # ERR_NICKNAMEINUSE (433) — nick collision during registration
         if command == "433":
-            # Retry with incrementing suffix: hermes_, hermes_1, hermes_2...
+            # Retry with incrementing suffix: hermes_, kova_1, kova_2...
             base = self.nickname.rstrip("_0123456789")
             suffix_match = re.search(r"_(\d+)$", self._current_nick)
             if suffix_match:
@@ -523,7 +523,7 @@ def check_requirements() -> bool:
     channel = os.getenv("IRC_CHANNEL", "")
     # Also accept config.yaml-only configuration (no env vars).
     # The gateway passes PlatformConfig; we just check env for the
-    # hermes setup / requirements check path.
+    # kova setup / requirements check path.
     return bool(server and channel)
 
 
@@ -538,10 +538,10 @@ def validate_config(config) -> bool:
 def interactive_setup() -> None:
     """Interactive `kova gateway setup` flow for the IRC platform.
 
-    Lazy-imports ``hermes_cli.setup`` helpers so the plugin stays importable
+    Lazy-imports ``kova_cli.setup`` helpers so the plugin stays importable
     in non-CLI contexts (gateway runtime, tests).
     """
-    from hermes_cli.setup import (
+    from kova_cli.setup import (
         prompt,
         prompt_yes_no,
         save_env_value,
@@ -584,7 +584,7 @@ def interactive_setup() -> None:
         save_env_value("IRC_PORT", "")
 
     nickname = prompt(
-        "Bot nickname (e.g. hermes-bot)",
+        "Bot nickname (e.g. kova-bot)",
         default=get_env_value("IRC_NICKNAME") or "",
     )
     if not nickname:
@@ -593,7 +593,7 @@ def interactive_setup() -> None:
     save_env_value("IRC_NICKNAME", nickname.strip())
 
     channel = prompt(
-        "Channel to join (e.g. #hermes — comma-separate for multiple)",
+        "Channel to join (e.g. #kova — comma-separate for multiple)",
         default=get_env_value("IRC_CHANNEL") or "",
     )
     if not channel:
@@ -755,7 +755,7 @@ async def _standalone_send(
     except (TypeError, ValueError):
         return {"error": f"IRC standalone send: invalid port {port_value!r}"}
 
-    nickname = os.getenv("IRC_NICKNAME") or extra.get("nickname", "hermes-bot")
+    nickname = os.getenv("IRC_NICKNAME") or extra.get("nickname", "kova-bot")
     use_tls_env = os.getenv("IRC_USE_TLS")
     if use_tls_env is not None:
         use_tls = use_tls_env.lower() in {"1", "true", "yes"}
@@ -775,7 +775,7 @@ async def _standalone_send(
     # that may already be holding the configured nickname.  Cap to 24 chars
     # so subsequent collision retries do not overflow the 30-char NICKLEN
     # most networks enforce.
-    nick_base = nickname.rstrip("_0123456789-")[:24] or "hermes-bot"
+    nick_base = nickname.rstrip("_0123456789-")[:24] or "kova-bot"
     standalone_nick = f"{nick_base}-cron"[:30]
     plain = IRCAdapter._strip_markdown(message)
 

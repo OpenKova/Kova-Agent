@@ -8,18 +8,18 @@ description: "与 Kova Agent 进行实时语音对话 — CLI、Telegram、Disco
 
 Kova Agent 支持在 CLI 和消息平台上进行完整的语音交互。通过麦克风与 Agent 对话，听取语音回复，并在 Discord 语音频道中进行实时语音对话。
 
-如需包含推荐配置和实际使用模式的实践指南，请参阅 [使用 Kova 的语音模式](/guides/use-voice-mode-with-hermes)。
+如需包含推荐配置和实际使用模式的实践指南，请参阅 [使用 Kova 的语音模式](/guides/use-voice-mode-with-kova)。
 
 ## 前提条件
 
 使用语音功能前，请确保已完成以下准备：
 
 1. **已安装 Kova Agent** — 通过安装脚本（参见 [安装](/getting-started/installation)）
-2. **已配置 LLM 提供商** — 运行 `hermes model` 或在 `~/.hermes/.env` 中设置首选提供商的凭据
+2. **已配置 LLM 提供商** — 运行 `kova model` 或在 `~/.hermes/.env` 中设置首选提供商的凭据
 3. **基础设置正常** — 运行 `kova` 验证 Agent 能够响应文字消息，再启用语音功能
 
 :::tip
-`~/.hermes/` 目录和默认的 `config.yaml` 会在首次运行 `hermes` 时自动创建。只需手动创建 `~/.hermes/.env` 来存放 API 密钥。
+`~/.hermes/` 目录和默认的 `config.yaml` 会在首次运行 `kova` 时自动创建。只需手动创建 `~/.hermes/.env` 来存放 API 密钥。
 :::
 
 :::tip Nous Portal 同时覆盖两项
@@ -40,19 +40,19 @@ Kova Agent 支持在 CLI 和消息平台上进行完整的语音交互。通过�
 
 ```bash
 # CLI 语音模式（麦克风 + 音频播放）
-cd ~/.hermes/hermes-agent && uv pip install -e ".[voice]"
+cd ~/.hermes/kova-agent && uv pip install -e ".[voice]"
 
 # Discord + Telegram 消息（包含 discord.py[voice] 以支持语音频道）
-cd ~/.hermes/hermes-agent && uv pip install -e ".[messaging]"
+cd ~/.hermes/kova-agent && uv pip install -e ".[messaging]"
 
 # 高级 TTS（ElevenLabs）
-cd ~/.hermes/hermes-agent && uv pip install -e ".[tts-premium]"
+cd ~/.hermes/kova-agent && uv pip install -e ".[tts-premium]"
 
 # 本地 TTS（NeuTTS，可选）
 python -m pip install -U neutts[all]
 
 # 一次性安装所有内容
-cd ~/.hermes/hermes-agent && uv pip install -e ".[all]"
+cd ~/.hermes/kova-agent && uv pip install -e ".[all]"
 ```
 
 | 扩展包 | 包含的包 | 用途 |
@@ -109,7 +109,7 @@ ELEVENLABS_API_KEY=***           # ElevenLabs — 高级音质
 
 ## CLI 语音模式
 
-语音模式在**经典 CLI**（`hermes chat`）和 **TUI**（`hermes --tui`）中均可使用。两者行为完全一致 — 相同的斜杠命令、相同的 VAD（语音活动检测）静音检测、相同的流式 TTS、相同的幻觉过滤器。TUI 额外将崩溃诊断日志转发至 `~/.hermes/logs/`，以便在异常音频后端出现按键录音失败时提供完整堆栈跟踪，而非静默消失。
+语音模式在**经典 CLI**（`kova chat`）和 **TUI**（`kova --tui`）中均可使用。两者行为完全一致 — 相同的斜杠命令、相同的 VAD（语音活动检测）静音检测、相同的流式 TTS、相同的幻觉过滤器。TUI 额外将崩溃诊断日志转发至 `~/.hermes/logs/`，以便在异常音频后端出现按键录音失败时提供完整堆栈跟踪，而非静默消失。
 
 ### 快速开始
 

@@ -61,7 +61,7 @@ openrouter (2 credentials):
   #2  backup-key           api_key manual
 
 anthropic (3 credentials):
-  #1  hermes_pkce          oauth   hermes_pkce ←
+  #1  kova_pkce          oauth   kova_pkce ←
   #2  claude_code          oauth   claude_code
   #3  ANTHROPIC_API_KEY    api_key env:ANTHROPIC_API_KEY
 ```
@@ -203,8 +203,8 @@ Kova 在启动时自动从多个来源发现凭证并初始化池：
 凭证池集成于提供商解析层：
 
 1. **`agent/credential_pool.py`** — 池管理器：存储、选择、轮换、冷却时间
-2. **`hermes_cli/auth_commands.py`** — CLI 命令和交互式向导
-3. **`hermes_cli/runtime_provider.py`** — 感知池的凭证解析
+2. **`kova_cli/auth_commands.py`** — CLI 命令和交互式向导
+3. **`kova_cli/runtime_provider.py`** — 感知池的凭证解析
 4. **`run_agent.py`** — 错误恢复：429/402/401 → 池轮换 → 备用
 
 ## 存储

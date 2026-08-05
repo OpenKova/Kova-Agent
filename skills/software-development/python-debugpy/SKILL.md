@@ -6,9 +6,9 @@ author: Kova Agent
 license: MIT
 platforms: [linux, macos]
 metadata:
-  hermes:
+  kova:
     tags: [debugging, python, pdb, debugpy, breakpoints, dap, post-mortem]
-    related_skills: [systematic-debugging, node-inspect-debugger, debugging-hermes-tui-commands]
+    related_skills: [systematic-debugging, node-inspect-debugger, debugging-kova-tui-commands]
 ---
 
 # Python Debugger (pdb + debugpy)
@@ -29,7 +29,7 @@ Three tools, picked by situation:
 
 - A test fails and the traceback doesn't reveal why a value is wrong
 - You need to step through a function and watch a collection mutate
-- A long-running process (hermes gateway, tui_gateway) misbehaves and you can't restart it
+- A long-running process (kova gateway, tui_gateway) misbehaves and you can't restart it
 - Post-mortem: an exception fired in prod-ish code and you want to inspect locals at the crash site
 - A subprocess / child (Python `_SlashWorker`, PTY bridge worker) is the actual bug site
 
@@ -94,7 +94,7 @@ python -m pdb path/to/script.py arg1 arg2
 
 ## Recipe 3: Debug a pytest test
 
-The hermes test runner and pytest both support this:
+The kova test runner and pytest both support this:
 
 ```bash
 # Drop to pdb on failure (or on any raised exception):
@@ -151,7 +151,7 @@ For long-lived processes: Kova gateway, tui_gateway, a daemon, a process that's 
 ### Setup
 
 ```bash
-source /home/bb/hermes-agent/.venv/bin/activate
+source /home/bb/kova-agent/.venv/bin/activate
 pip install debugpy
 ```
 
@@ -248,7 +248,7 @@ This is fine for one-off automation but painful as an interactive UX.
   "connect": { "host": "127.0.0.1", "port": 5678 },
   "justMyCode": false,
   "pathMappings": [
-    { "localRoot": "${workspaceFolder}", "remoteRoot": "/home/bb/hermes-agent" }
+    { "localRoot": "${workspaceFolder}", "remoteRoot": "/home/bb/kova-agent" }
   ]
 }
 ```

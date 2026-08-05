@@ -8,7 +8,7 @@ description: "通过 Telegram、Discord、Slack、WhatsApp、Signal、SMS、Emai
 
 通过 Telegram、Discord、Slack、WhatsApp、Signal、SMS、Email、Home Assistant、Mattermost、Matrix、DingTalk、Feishu/Lark、WeCom、Weixin、BlueBubbles（iMessage）、QQ、Yuanbao、Microsoft Teams、LINE、ntfy 或浏览器与 Kova 对话。网关是一个单一后台进程，连接所有已配置的平台，管理会话，运行 cron 任务，并传递语音消息。
 
-完整的语音功能集——包括 CLI 麦克风模式、消息中的语音回复以及 Discord 语音频道对话——请参阅 [Voice Mode](/user-guide/features/voice-mode) 和 [Use Voice Mode with Kova](/guides/use-voice-mode-with-hermes)。
+完整的语音功能集——包括 CLI 麦克风模式、消息中的语音回复以及 Discord 语音频道对话——请参阅 [Voice Mode](/user-guide/features/voice-mode) 和 [Use Voice Mode with Kova](/guides/use-voice-mode-with-kova)。
 
 ## 平台对比
 
@@ -355,7 +355,7 @@ display:
 也可通过环境变量设置：
 
 ```bash
-HERMES_BACKGROUND_NOTIFICATIONS=result
+KOVA_BACKGROUND_NOTIFICATIONS=result
 ```
 
 ### 使用场景
@@ -378,7 +378,7 @@ kova gateway install               # 安装为用户服务
 kova gateway start                 # 启动服务
 kova gateway stop                  # 停止服务
 kova gateway status                # 检查状态
-journalctl --user -u hermes-gateway -f  # 查看日志
+journalctl --user -u kova-gateway -f  # 查看日志
 
 # 启用 lingering（注销后保持运行）
 sudo loginctl enable-linger $USER
@@ -387,7 +387,7 @@ sudo loginctl enable-linger $USER
 sudo kova gateway install --system
 sudo kova gateway start --system
 sudo kova gateway status --system
-journalctl -u hermes-gateway -f
+journalctl -u kova-gateway -f
 ```
 
 笔记本和开发机使用用户服务。VPS 或无头主机（需要开机自动启动而不依赖 systemd linger）使用系统服务。
@@ -395,7 +395,7 @@ journalctl -u hermes-gateway -f
 除非你确实有此需要，否则避免同时安装用户和系统网关单元。Kova 检测到两者同时存在时会发出警告，因为 start/stop/status 行为会变得不明确。
 
 :::info 多个安装
-如果你在同一台机器上运行多个 Kova 安装（使用不同的 `HERMES_HOME` 目录），每个安装都有自己的 systemd 服务名称。默认的 `~/.hermes` 使用 `hermes-gateway`；其他安装使用 `hermes-gateway-<hash>`。`hermes gateway` 命令会自动针对当前 `HERMES_HOME` 对应的正确服务。
+如果你在同一台机器上运行多个 Kova 安装（使用不同的 `HERMES_HOME` 目录），每个安装都有自己的 systemd 服务名称。默认的 `~/.hermes` 使用 `kova-gateway`；其他安装使用 `kova-gateway-<hash>`。`kova gateway` 命令会自动针对当前 `HERMES_HOME` 对应的正确服务。
 :::
 
 ### macOS（launchd）
@@ -408,7 +408,7 @@ kova gateway status                # 检查状态
 tail -f ~/.hermes/logs/gateway.log   # 查看日志
 ```
 
-生成的 plist 文件位于 `~/Library/LaunchAgents/ai.hermes.gateway.plist`。它包含三个环境变量：
+生成的 plist 文件位于 `~/Library/LaunchAgents/ai.kova.gateway.plist`。它包含三个环境变量：
 
 - **PATH** — 安装时你的完整 shell PATH，并在前面添加了 venv `bin/` 和 `node_modules/.bin`。这确保用户安装的工具（Node.js、ffmpeg 等）可供网关子进程（如 WhatsApp 桥接）使用。
 - **VIRTUAL_ENV** — 指向 Python 虚拟环境，使工具能正确解析包。
@@ -419,7 +419,7 @@ launchd plist 是静态的——如果你在配置网关后安装了新工具（
 :::
 
 :::info 多个安装
-与 Linux systemd 服务类似，每个 `HERMES_HOME` 目录都有自己的 launchd 标签。默认的 `~/.hermes` 使用 `ai.hermes.gateway`；其他安装使用 `ai.hermes.gateway-<suffix>`。
+与 Linux systemd 服务类似，每个 `HERMES_HOME` 目录都有自己的 launchd 标签。默认的 `~/.hermes` 使用 `ai.kova.gateway`；其他安装使用 `ai.kova.gateway-<suffix>`。
 :::
 
 ## 平台专属工具集
@@ -428,29 +428,29 @@ launchd plist 是静态的——如果你在配置网关后安装了新工具（
 
 | 平台 | 工具集 | 功能 |
 |----------|---------|--------------|
-| CLI | `hermes-cli` | 完全访问 |
-| Telegram | `hermes-telegram` | 完整工具，包括终端 |
-| Discord | `hermes-discord` | 完整工具，包括终端 |
-| WhatsApp | `hermes-whatsapp` | 完整工具，包括终端 |
-| Slack | `hermes-slack` | 完整工具，包括终端 |
-| Google Chat | `hermes-google_chat` | 完整工具，包括终端 |
-| Signal | `hermes-signal` | 完整工具，包括终端 |
-| SMS | `hermes-sms` | 完整工具，包括终端 |
-| Email | `hermes-email` | 完整工具，包括终端 |
-| Home Assistant | `hermes-homeassistant` | 完整工具 + HA 设备控制（ha_list_entities、ha_get_state、ha_call_service、ha_list_services） |
-| Mattermost | `hermes-mattermost` | 完整工具，包括终端 |
-| Matrix | `hermes-matrix` | 完整工具，包括终端 |
-| DingTalk | `hermes-dingtalk` | 完整工具，包括终端 |
-| Feishu/Lark | `hermes-feishu` | 完整工具，包括终端 |
-| WeCom | `hermes-wecom` | 完整工具，包括终端 |
-| WeCom Callback | `hermes-wecom-callback` | 完整工具，包括终端 |
-| Weixin | `hermes-weixin` | 完整工具，包括终端 |
-| BlueBubbles | `hermes-bluebubbles` | 完整工具，包括终端 |
-| QQBot | `hermes-qqbot` | 完整工具，包括终端 |
-| Yuanbao | `hermes-yuanbao` | 完整工具，包括终端 |
-| Microsoft Teams | `hermes-teams` | 完整工具，包括终端 |
-| API Server | `hermes-api-server` | 完整工具（去除 `clarify`、`send_message`、`text_to_speech`——程序化访问没有交互用户） |
-| Webhooks | `hermes-webhook` | 完整工具，包括终端 |
+| CLI | `kova-cli` | 完全访问 |
+| Telegram | `kova-telegram` | 完整工具，包括终端 |
+| Discord | `kova-discord` | 完整工具，包括终端 |
+| WhatsApp | `kova-whatsapp` | 完整工具，包括终端 |
+| Slack | `kova-slack` | 完整工具，包括终端 |
+| Google Chat | `kova-google_chat` | 完整工具，包括终端 |
+| Signal | `kova-signal` | 完整工具，包括终端 |
+| SMS | `kova-sms` | 完整工具，包括终端 |
+| Email | `kova-email` | 完整工具，包括终端 |
+| Home Assistant | `kova-homeassistant` | 完整工具 + HA 设备控制（ha_list_entities、ha_get_state、ha_call_service、ha_list_services） |
+| Mattermost | `kova-mattermost` | 完整工具，包括终端 |
+| Matrix | `kova-matrix` | 完整工具，包括终端 |
+| DingTalk | `kova-dingtalk` | 完整工具，包括终端 |
+| Feishu/Lark | `kova-feishu` | 完整工具，包括终端 |
+| WeCom | `kova-wecom` | 完整工具，包括终端 |
+| WeCom Callback | `kova-wecom-callback` | 完整工具，包括终端 |
+| Weixin | `kova-weixin` | 完整工具，包括终端 |
+| BlueBubbles | `kova-bluebubbles` | 完整工具，包括终端 |
+| QQBot | `kova-qqbot` | 完整工具，包括终端 |
+| Yuanbao | `kova-yuanbao` | 完整工具，包括终端 |
+| Microsoft Teams | `kova-teams` | 完整工具，包括终端 |
+| API Server | `kova-api-server` | 完整工具（去除 `clarify`、`send_message`、`text_to_speech`——程序化访问没有交互用户） |
+| Webhooks | `kova-webhook` | 完整工具，包括终端 |
 
 ## 运营多平台网关
 

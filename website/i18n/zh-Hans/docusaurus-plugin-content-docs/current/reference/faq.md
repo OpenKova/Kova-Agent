@@ -26,7 +26,7 @@ Kova Agent 可与任何兼容 OpenAI 的 API 配合使用。支持的提供商�
 - **MiniMax** — 全球及中国区端点
 - **本地模型** — 通过 [Ollama](https://ollama.com/)、[vLLM](https://docs.vllm.ai/)、[llama.cpp](https://github.com/ggerganov/llama.cpp)、[SGLang](https://github.com/sgl-project/sglang) 或任何兼容 OpenAI 的服务器
 
-使用 `hermes model` 设置提供商，或直接编辑 `~/.hermes/.env`。所有提供商 key 请参阅[环境变量](./environment-variables.md)参考文档。
+使用 `kova model` 设置提供商，或直接编辑 `~/.hermes/.env`。所有提供商 key 请参阅[环境变量](./environment-variables.md)参考文档。
 
 ### 支持 Windows 吗？
 
@@ -51,7 +51,7 @@ curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
 
 参见：
 
-- [在 Kova 中使用 MCP](../guides/use-mcp-with-hermes.md#wsl2-bridge-hermes-in-wsl-to-windows-chrome)
+- [在 Kova 中使用 MCP](../guides/use-mcp-with-kova.md#wsl2-bridge-kova-in-wsl-to-windows-chrome)
 - [浏览器自动化](../user-guide/features/browser.md#wsl2--windows-chrome-prefer-mcp-over-browser-connect)
 
 ### 支持 Android / Termux 吗？
@@ -103,7 +103,7 @@ Kova 会将端点、提供商和 base URL 持久化到 `config.yaml`，重启后
 :::
 
 :::tip 本地模型超时问题
-Kova 会自动检测本地端点并放宽流式传输超时（读取超时从 120s 提升至 1800s，禁用停滞流检测）。如果在非常大的上下文下仍然超时，请在 `.env` 中设置 `HERMES_STREAM_READ_TIMEOUT=1800`。详情请参阅[本地 LLM 指南](../guides/local-llm-on-mac.md#timeouts)。
+Kova 会自动检测本地端点并放宽流式传输超时（读取超时从 120s 提升至 1800s，禁用停滞流检测）。如果在非常大的上下文下仍然超时，请在 `.env` 中设置 `KOVA_STREAM_READ_TIMEOUT=1800`。详情请参阅[本地 LLM 指南](../guides/local-llm-on-mac.md#timeouts)。
 :::
 
 ### 费用是多少？
@@ -140,7 +140,7 @@ response = agent.chat("Explain quantum computing briefly")
 
 ### 安装问题
 
-#### 安装后出现 `hermes: command not found`
+#### 安装后出现 `kova: command not found`
 
 **原因：** Shell 未重新加载更新后的 PATH。
 
@@ -156,7 +156,7 @@ source ~/.zshrc     # zsh
 如果仍然无效，请验证安装位置：
 ```bash
 which kova
-ls ~/.local/bin/hermes
+ls ~/.local/bin/kova
 ```
 
 :::tip
@@ -223,7 +223,7 @@ source ~/.bashrc
 ```bash
 # 不要对安装程序使用 sudo — 它安装到 ~/.local/bin
 # 如果之前使用 sudo 安装，请先清理：
-sudo rm /usr/local/bin/hermes
+sudo rm /usr/local/bin/kova
 # 然后重新运行标准安装程序
 curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
 ```
@@ -288,7 +288,7 @@ kova config set OPENROUTER_API_KEY sk-or-v1-xxxxxxxxxxxx
 kova model
 
 # 设置有效的模型
-kova config set HERMES_MODEL anthropic/claude-opus-4.7
+kova config set KOVA_MODEL anthropic/claude-opus-4.7
 
 # 或按会话指定
 kova chat --model openrouter/meta-llama/llama-3.1-70b-instruct
@@ -437,7 +437,7 @@ cat ~/.hermes/logs/gateway.log | tail -50
 **解决方案：**
 ```bash
 # 安装核心消息网关依赖项
-cd ~/.hermes/hermes-agent && uv pip install -e ".[messaging]"  # Telegram、Discord、Slack 及共享网关依赖
+cd ~/.hermes/kova-agent && uv pip install -e ".[messaging]"  # Telegram、Discord、Slack 及共享网关依赖
 
 # 检查端口冲突
 lsof -i :8080
@@ -461,7 +461,7 @@ tmux new -s kova 'kova gateway run'
 # 稍后重新连接：tmux attach -t kova
 
 # 方案三：通过 nohup 后台运行
-nohup hermes gateway run > ~/.hermes/logs/gateway.log 2>&1 &
+nohup kova gateway run > ~/.hermes/logs/gateway.log 2>&1 &
 ```
 
 如果仍想尝试 systemd，请确保已启用：
@@ -496,7 +496,7 @@ kova gateway start      # 检测到更新的 plist 并重新加载
 您可以验证 plist 中的 PATH 是否正确：
 ```bash
 /usr/libexec/PlistBuddy -c "Print :EnvironmentVariables:PATH" \
-  ~/Library/LaunchAgents/ai.hermes.gateway.plist
+  ~/Library/LaunchAgents/ai.kova.gateway.plist
 ```
 
 ---
@@ -557,7 +557,7 @@ kova chat --continue
 **解决方案：**
 ```bash
 # 确保 MCP 依赖项已安装（标准安装中已包含）
-cd ~/.hermes/hermes-agent && uv pip install -e ".[mcp]"
+cd ~/.hermes/kova-agent && uv pip install -e ".[mcp]"
 
 # 对于基于 npm 的服务器，确保 Node.js 可用
 node --version
@@ -596,7 +596,7 @@ kova chat
 
 另请参阅：
 - [MCP（模型上下文协议）](/user-guide/features/mcp)
-- [在 Kova 中使用 MCP](/guides/use-mcp-with-hermes)
+- [在 Kova 中使用 MCP](/guides/use-mcp-with-kova)
 - [MCP 配置参考](/reference/mcp-config-reference)
 
 #### MCP 超时错误
@@ -618,7 +618,7 @@ kova chat
 
 ### Profiles 与直接设置 HERMES_HOME 有何不同？
 
-Profiles 是构建在 `HERMES_HOME` 之上的托管层。您*可以*在每次命令前手动设置 `HERMES_HOME=/some/path`，但 profiles 会为您处理所有底层工作：创建目录结构、生成 shell 别名（`hermes-work`）、在 `~/.hermes/active_profile` 中跟踪活动 profile，以及自动跨所有 profiles 同步技能更新。它们还与 tab 补全集成，让您无需记忆路径。
+Profiles 是构建在 `HERMES_HOME` 之上的托管层。您*可以*在每次命令前手动设置 `HERMES_HOME=/some/path`，但 profiles 会为您处理所有底层工作：创建目录结构、生成 shell 别名（`kova-work`）、在 `~/.hermes/active_profile` 中跟踪活动 profile，以及自动跨所有 profiles 同步技能更新。它们还与 tab 补全集成，让您无需记忆路径。
 
 ### 两个 profiles 可以共享同一个 bot token 吗？
 
@@ -757,15 +757,15 @@ skills:
    ```bash
    kova backup
    ```
-   这会将您整个 `~/.hermes/` 目录（配置、API key、记忆、技能、会话和 profiles）打包为 zip 文件，保存到主目录 `~/hermes-backup-<timestamp>.zip`。
+   这会将您整个 `~/.hermes/` 目录（配置、API key、记忆、技能、会话和 profiles）打包为 zip 文件，保存到主目录 `~/kova-backup-<timestamp>.zip`。
 
 3. 将 zip 文件复制到新机器并导入：
    ```bash
    # 在源机器上
-   scp ~/hermes-backup-<timestamp>.zip newmachine:~/
+   scp ~/kova-backup-<timestamp>.zip newmachine:~/
 
    # 在新机器上
-   hermes import ~/hermes-backup-<timestamp>.zip
+   kova import ~/kova-backup-<timestamp>.zip
    ```
 
 4. 在新机器上运行 `kova setup` 以验证 API key 和提供商配置是否正常工作。
@@ -796,7 +796,7 @@ kova profile import ./work-backup.tar.gz work
 
 **手动备选方案（rsync）：** 如果您倾向于直接复制文件，请排除代码仓库：
 ```bash
-rsync -av --exclude='hermes-agent' ~/.hermes/ newmachine:~/.hermes/
+rsync -av --exclude='kova-agent' ~/.hermes/ newmachine:~/.hermes/
 ```
 
 :::tip
@@ -854,6 +854,6 @@ kova chat -q "hello" --model anthropic/claude-opus-4.7
 
 如果您的问题未在此处涵盖：
 
-1. **搜索现有 issue：** [GitHub Issues](https://github.com/NousResearch/hermes-agent/issues)
+1. **搜索现有 issue：** [GitHub Issues](https://github.com/OpenKova/Kova-Agent/issues)
 2. **向社区提问：** [Nous Research Discord](https://discord.gg/nousresearch)
 3. **提交 bug 报告：** 请包含您的操作系统、Python 版本（`python3 --version`）、Kova 版本（`kova --version`）以及完整的错误信息

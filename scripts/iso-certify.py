@@ -8,11 +8,11 @@ responsive (p99 < 1s) with zero event-loop stalls.
 
 What it does
 ------------
-1. Spawns a SCRATCH dashboard (``hermes dashboard``) bound to loopback on a
+1. Spawns a SCRATCH dashboard (``kova dashboard``) bound to loopback on a
    free port, with an ISOLATED ``HERMES_HOME`` (temp dir, minimal seeded state).
-   It NEVER touches the live :9119 dashboard / ai.hermes.dashboard / live
+   It NEVER touches the live :9119 dashboard / ai.kova.dashboard / live
    state.db. Loopback bind ⇒ no auth gate (web_server.should_require_auth).
-2. Arms the synthetic GIL-heavy turn seam (``HERMES_ISO_CERTIFY_SYNTH_TURN=1``,
+2. Arms the synthetic GIL-heavy turn seam (``KOVA_ISO_CERTIFY_SYNTH_TURN=1``,
    see ``tui_gateway/synthetic_turn.py``) so 6 concurrent turns reproduce the
    ``take_gil`` interpreter-contention regime WITHOUT real model calls. A
    network/sleep stub would release the GIL and NOT reproduce the incident, so
@@ -62,7 +62,7 @@ except Exception as exc:  # pragma: no cover - dependency guard
     raise
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-_READY_RE = re.compile(r"HERMES_(?:DASHBOARD|BACKEND)_READY port=(\d+)")
+_READY_RE = re.compile(r"KOVA_(?:DASHBOARD|BACKEND)_READY port=(\d+)")
 _STALL_LOG_RE = re.compile(r"event loop stalled|ws write slow \(loop stalled")
 
 
@@ -171,9 +171,9 @@ class ScratchDashboard:
         env["HOME"] = str(self.home.parent) if str(self.home.parent) else env.get("HOME", "")
         env["HERMES_HOME"] = str(self.home)
         env["PYTHONPATH"] = str(REPO_ROOT) + os.pathsep + env.get("PYTHONPATH", "")
-        env["HERMES_ISO_CERTIFY_SYNTH_TURN"] = "1"
+        env["KOVA_ISO_CERTIFY_SYNTH_TURN"] = "1"
         cmd = [
-            python, "-m", "hermes_cli.main", "dashboard",
+            python, "-m", "kova_cli.main", "dashboard",
             "--no-open", "--host", "127.0.0.1", "--port", str(self.port),
         ]
         self.proc = subprocess.Popen(
@@ -429,7 +429,7 @@ def run_certify(args: argparse.Namespace) -> dict[str, Any]:
     import secrets
     token = secrets.token_urlsafe(24)
     parent_tmp = Path(tempfile.mkdtemp(prefix="iso-certify-"))
-    home = parent_tmp / "hermes-home"
+    home = parent_tmp / "kova-home"
     seed_scratch_home(
         home,
         isolation=args.isolation,
@@ -463,7 +463,7 @@ def run_certify(args: argparse.Namespace) -> dict[str, Any]:
     try:
         with ScratchDashboard(
             home=home, port=port, isolation=args.isolation,
-            env_extra={"HERMES_DASHBOARD_SESSION_TOKEN": token},
+            env_extra={"KOVA_DASHBOARD_SESSION_TOKEN": token},
         ) as dash:
             actual_port = dash.actual_port
             result["port"] = actual_port

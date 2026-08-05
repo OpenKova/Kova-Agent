@@ -77,12 +77,12 @@ class CachedFetch:
 def resolve_cache_home(home_path: Optional[Path] = None) -> Path:
     """Resolve the Kova home used for cache paths.
 
-    ``home_path`` is whatever ``load_hermes_dotenv()`` already resolved;
+    ``home_path`` is whatever ``load_kova_dotenv()`` already resolved;
     falling back to ``$HERMES_HOME`` / ``~/.hermes`` keeps direct callers
     (and tests that don't thread a home through) working.
     """
     if home_path is None:
-        home_path = Path(os.getenv("HERMES_HOME", Path.home() / ".hermes"))
+        home_path = Path(os.getenv("HERMES_HOME", Path.home() / ".kova"))
     return home_path
 
 
@@ -92,7 +92,7 @@ K = TypeVar("K")
 class DiskCache(Generic[K]):
     """Best-effort, profile-aware on-disk cache for fetched secret values.
 
-    One JSON object per backend lives at ``<hermes_home>/cache/<basename>``::
+    One JSON object per backend lives at ``<kova_home>/cache/<basename>``::
 
         {"key": "<serialized cache key>", "secrets": {...}, "fetched_at": 1.0}
 

@@ -21,12 +21,12 @@ Key implementation files:
 ## Boot flow
 
 ```text
-kova acp / hermes-acp / python -m acp_adapter
+kova acp / kova-acp / python -m acp_adapter
   -> acp_adapter.entry.main()
   -> parse --version / --check / --setup before server startup
   -> load ~/.hermes/.env
   -> configure stderr logging
-  -> construct HermesACPAgent
+  -> construct KovaACPAgent
   -> acp.run_agent(agent, use_unstable_protocol=True)
 ```
 
@@ -34,7 +34,7 @@ Stdout is reserved for ACP JSON-RPC transport. Human-readable logs go to stderr.
 
 ## Major components
 
-### `HermesACPAgent`
+### `KovaACPAgent`
 
 `acp_adapter/server.py` implements the ACP agent protocol.
 
@@ -113,7 +113,7 @@ Examples:
 ```text
 new_session(cwd)
   -> create SessionState
-  -> create AIAgent(platform="acp", enabled_toolsets=["hermes-acp"])
+  -> create AIAgent(platform="acp", enabled_toolsets=["kova-acp"])
   -> bind task_id/session_id to cwd override
 
 prompt(..., session_id)
@@ -144,9 +144,9 @@ ACP does not implement its own auth store.
 Instead it reuses Kova' runtime resolver:
 
 - `acp_adapter/auth.py`
-- `hermes_cli/runtime_provider.py`
+- `kova_cli/runtime_provider.py`
 
-So ACP advertises and uses the currently configured Kova provider/credentials. It also always advertises a terminal setup auth method (`hermes-setup`, args `--setup`) so first-run ACP clients can open Kova' interactive model/provider configuration before starting a normal ACP session.
+So ACP advertises and uses the currently configured Kova provider/credentials. It also always advertises a terminal setup auth method (`kova-setup`, args `--setup`) so first-run ACP clients can open Kova' interactive model/provider configuration before starting a normal ACP session.
 
 ## Working directory binding
 
@@ -176,6 +176,6 @@ ACP temporarily installs an approval callback on the terminal tool during prompt
 ## Related files
 
 - `tests/acp/` — ACP test suite
-- `toolsets.py` — `hermes-acp` toolset definition
-- `hermes_cli/main.py` — `hermes acp` CLI subcommand
-- `pyproject.toml` — `[acp]` optional dependency + `hermes-acp` script
+- `toolsets.py` — `kova-acp` toolset definition
+- `kova_cli/main.py` — `kova acp` CLI subcommand
+- `pyproject.toml` — `[acp]` optional dependency + `kova-acp` script

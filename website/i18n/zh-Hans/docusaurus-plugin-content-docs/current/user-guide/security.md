@@ -50,7 +50,7 @@ YOLO 模式会绕过当前会话中**所有**危险命令审批提示。可通�
 
 1. **CLI 标志**：使用 `kova --yolo` 或 `kova chat --yolo` 启动会话
 2. **斜杠命令**：在会话中输入 `/yolo` 以切换开/关
-3. **环境变量**：设置 `HERMES_YOLO_MODE=1`
+3. **环境变量**：设置 `KOVA_YOLO_MODE=1`
 
 `/yolo` 命令是一个**切换开关**——每次使用都会翻转模式的开/关状态：
 
@@ -62,7 +62,7 @@ YOLO 模式会绕过当前会话中**所有**危险命令审批提示。可通�
   ⚠ YOLO mode OFF — dangerous commands will require approval.
 ```
 
-YOLO 模式在 CLI 和 gateway 会话中均可使用。在内部，它会设置 `HERMES_YOLO_MODE` 环境变量，该变量在每次命令执行前都会被检查。
+YOLO 模式在 CLI 和 gateway 会话中均可使用。在内部，它会设置 `KOVA_YOLO_MODE` 环境变量，该变量在每次命令执行前都会被检查。
 
 当 YOLO 激活时，Kova 会显示两个持久的视觉提醒，以确保用户不会忘记审批提示已被绕过：
 
@@ -140,7 +140,7 @@ approvals:
 | `find -exec rm` / `find -delete` | find 配合破坏性操作 |
 | `cp`/`mv`/`install` 写入 `/etc/` | 复制/移动文件到系统配置目录 |
 | `sed -i` / `sed --in-place` 作用于 `/etc/` | 就地编辑系统配置 |
-| `pkill`/`killall` hermes/gateway | 防止自我终止 |
+| `pkill`/`killall` kova/gateway | 防止自我终止 |
 | `gateway run` 配合 `&`/`disown`/`nohup`/`setsid` | 防止在服务管理器外启动 gateway |
 
 :::info
@@ -174,7 +174,7 @@ approvals:
 - 回复 **yes**、**y**、**approve**、**ok** 或 **go** 以批准
 - 回复 **no**、**n**、**deny** 或 **cancel** 以拒绝
 
-运行 gateway 时，`HERMES_EXEC_ASK=1` 环境变量会自动设置。
+运行 gateway 时，`KOVA_EXEC_ASK=1` 环境变量会自动设置。
 
 ### 永久允许列表
 
@@ -489,7 +489,7 @@ security:
       - "*.internal.company.com"
       - "admin.example.com"
     shared_files:
-      - "/etc/hermes/blocked-sites.txt"
+      - "/etc/kova/blocked-sites.txt"
 ```
 
 当请求被阻止的 URL 时，工具会返回一条错误，说明该域名已被策略阻止。黑名单在 `web_search`、`web_extract`、`browser_navigate` 及所有支持 URL 的工具中均强制执行。
@@ -602,14 +602,14 @@ terminal:
 # ~/.hermes/.env
 TERMINAL_SSH_HOST=agent-worker.local
 TERMINAL_SSH_USER=kova
-TERMINAL_SSH_KEY=~/.ssh/hermes_agent_key
+TERMINAL_SSH_KEY=~/.ssh/kova_agent_key
 ```
 
 SSH 连接详情保存在 `.env`（而非 `config.yaml`）中，以避免随 profile 导出时被检入或共享。这样可以将 gateway 的消息连接与 Agent 的命令执行分离。
 
 ## 供应链安全公告检查
 
-Kova 内置了一个公告扫描器，用于标记活跃 venv 中与已知受损版本目录匹配的 Python 包（例如 2026 年 5 月的 `mistralai 2.4.6` 供应链投毒事件）。实现位于 `hermes_cli/security_advisories.py`。
+Kova 内置了一个公告扫描器，用于标记活跃 venv 中与已知受损版本目录匹配的 Python 包（例如 2026 年 5 月的 `mistralai 2.4.6` 供应链投毒事件）。实现位于 `kova_cli/security_advisories.py`。
 
 运行方式：
 
@@ -629,7 +629,7 @@ kova doctor --ack <advisory-id>
 
 ### 可选依赖的懒加载安装
 
-许多功能（Mistral TTS、ElevenLabs、Honcho 记忆、Bedrock、Slack、Matrix 等）依赖并非每个用户都需要的 Python 包。Kova 在首次使用时**懒加载**安装这些包，而非在 `hermes-agent[all]` 下急切安装。实现位于 `tools/lazy_deps.py`。
+许多功能（Mistral TTS、ElevenLabs、Honcho 记忆、Bedrock、Slack、Matrix 等）依赖并非每个用户都需要的 Python 包。Kova 在首次使用时**懒加载**安装这些包，而非在 `kova-agent[all]` 下急切安装。实现位于 `tools/lazy_deps.py`。
 
 此方案解决的权衡问题：
 

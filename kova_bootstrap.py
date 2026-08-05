@@ -3,18 +3,18 @@
 Python on Windows has two long-standing text-encoding footguns:
 
 1. ``sys.stdout`` / ``sys.stderr`` are bound to the console code page
-   (``cp1252`` on US-locale installs), so ``print("cafÃƒÆ’Ã‚Â©")`` crashes with
+   (``cp1252`` on US-locale installs), so ``print("café")`` crashes with
    ``UnicodeEncodeError: 'charmap' codec can't encode character``.
 
 2. Child processes spawned via ``subprocess`` don't know to use UTF-8
    unless ``PYTHONUTF8`` and/or ``PYTHONIOENCODING`` are set in their
-   environment ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â so any Python subprocess (the execute_code sandbox,
+   environment — so any Python subprocess (the execute_code sandbox,
    delegation children, linter subprocesses, etc.) inherits the same
    cp1252 defaults and hits the same UnicodeEncodeError.
 
-This module fixes both on Windows *only* ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â POSIX is untouched.  It
+This module fixes both on Windows *only* — POSIX is untouched.  It
 should be imported at the very top of every Kova entry point
-(``hermes``, ``kova-agent``, ``hermes-acp``, ``python -m gateway.run``,
+(``kova``, ``kova-agent``, ``kova-acp``, ``python -m gateway.run``,
 ``batch_runner.py``, ``cron/scheduler.py``) before any other imports
 that might do file I/O or print to stdout.
 
@@ -23,11 +23,11 @@ What this module does on Windows:
   - Sets ``os.environ["PYTHONUTF8"] = "1"`` (PEP 540 UTF-8 mode) so
     every child process we spawn uses UTF-8 for ``open()`` and stdio.
   - Sets ``os.environ["PYTHONIOENCODING"] = "utf-8"`` for belt-and-
-    suspenders ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â some tools read this instead of / in addition to
+    suspenders — some tools read this instead of / in addition to
     ``PYTHONUTF8``.
   - Reconfigures ``sys.stdout`` / ``sys.stderr`` to UTF-8 in the current
     process, using the ``reconfigure()`` API (Python 3.7+).  This fixes
-    ``print("cafÃƒÆ’Ã‚Â©")`` in the parent without a re-exec.
+    ``print("café")`` in the parent without a re-exec.
 
 What this module does NOT do:
 
@@ -41,7 +41,7 @@ What this module does on POSIX:
   - Nothing.  POSIX systems are already UTF-8 by default in 99% of cases,
     and we don't want to touch ``LANG``/``LC_*`` behavior that users may
     have configured intentionally.  If someone hits a C/POSIX locale on
-    Linux, they can export ``PYTHONUTF8=1`` themselves ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â we won't override.
+    Linux, they can export ``PYTHONUTF8=1`` themselves — we won't override.
 
 Idempotent: safe to call multiple times.  ``_bootstrap_once`` guards
 against double-reconfigure.
@@ -61,7 +61,7 @@ def apply_windows_utf8_bootstrap() -> bool:
 
     Returns True if bootstrap was applied (i.e. we're on Windows and
     haven't already done this), False otherwise.  The return value is
-    advisory ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â callers normally don't need it, but tests may want to
+    advisory — callers normally don't need it, but tests may want to
     assert the path was taken.
 
     Idempotent: subsequent calls after the first are a no-op.
@@ -82,7 +82,7 @@ def apply_windows_utf8_bootstrap() -> bool:
 
     # 2. Reconfigure the current process's stdio to UTF-8.  Needed
     #    because os.environ changes don't retroactively rebind sys.stdout
-    #    ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â those were bound at interpreter startup based on the console
+    #    — those were bound at interpreter startup based on the console
     #    code page.  ``reconfigure`` is a TextIOWrapper method since 3.7.
     #
     #    errors="replace" means that if we ever *read* something from
@@ -97,7 +97,7 @@ def apply_windows_utf8_bootstrap() -> bool:
         if reconfigure is None:
             # Not a TextIOWrapper (could be redirected to a BytesIO in
             # tests, or a non-standard stream in some embedded cases).
-            # Skip silently ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â the env-var fix is still in effect for
+            # Skip silently — the env-var fix is still in effect for
             # child processes, which is the bigger win.
             continue
         try:
@@ -107,7 +107,7 @@ def apply_windows_utf8_bootstrap() -> bool:
             # non-reconfigurable.  Non-fatal.
             pass
 
-    # stdin is reconfigured separately with errors="replace" too ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â input
+    # stdin is reconfigured separately with errors="replace" too — input
     # from a legacy pipe shouldn't crash the process.
     stdin = getattr(sys, "stdin", None)
     if stdin is not None:
@@ -140,14 +140,14 @@ def harden_import_path(src_root: str | None = None) -> None:
         adds itself to ``PYTHONPATH`` puts the directory there explicitly.
 
     We drop the relative forms outright, then force the real Kova source root
-    to the front ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â relocating it ahead of any absolute cwd entry rather than
+    to the front — relocating it ahead of any absolute cwd entry rather than
     only inserting when absent, so an absolute cwd path can't keep winning.
 
     ``src_root`` defaults to the directory this module lives in, which is the
     repository root for every shipped entry point, so the guard is
     self-sufficient and does not depend on the spawner exporting an env var.
     """
-    root = src_root or os.environ.get("HERMES_PYTHON_SRC_ROOT") or os.path.dirname(
+    root = src_root or os.environ.get("KOVA_PYTHON_SRC_ROOT") or os.path.dirname(
         os.path.abspath(__file__)
     )
 
@@ -163,16 +163,16 @@ def activate_durable_lazy_target() -> None:
 
     On immutable Docker images the agent venv is sealed and lazy installs
     are redirected to a writable dir on the data volume
-    (``HERMES_LAZY_INSTALL_TARGET``, e.g. ``/opt/data/lazy-packages``).
+    (``KOVA_LAZY_INSTALL_TARGET``, e.g. ``/opt/data/lazy-packages``).
     Packages installed there on a previous run must be importable on this
-    run, so we activate the dir here ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â at the very first import, before any
+    run, so we activate the dir here — at the very first import, before any
     backend module imports its SDK.
 
     The activation appends to the END of ``sys.path`` so the core venv
     always wins name collisions (see ``tools.lazy_deps`` for the full
     security rationale). Never raises; a missing/empty target is a no-op.
     """
-    if not os.environ.get("HERMES_LAZY_INSTALL_TARGET", "").strip():
+    if not os.environ.get("KOVA_LAZY_INSTALL_TARGET", "").strip():
         return
     try:
         from tools import lazy_deps
@@ -183,7 +183,7 @@ def activate_durable_lazy_target() -> None:
         pass
 
 
-# Apply on import ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â entry points just need ``import kova_bootstrap``
+# Apply on import — entry points just need ``import kova_bootstrap``
 # (or ``from kova_bootstrap import apply_windows_utf8_bootstrap``) at
 # the very top of their module, before importing anything else.  The
 # import side effect does the right thing.

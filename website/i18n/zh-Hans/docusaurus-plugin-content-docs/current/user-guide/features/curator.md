@@ -12,7 +12,7 @@ Curator 是针对 **agent 创建的技能**的后台维护流程。它跟踪每�
 
 默认情况下（`prune_builtins: true`），Curator 在 `archive_after_days` 天未使用后，可以归档**未使用的捆绑内置技能**（随仓库附带），与它主要管理的 agent 自创技能一并处理。通过 [agentskills.io](https://agentskills.io) 安装的 hub 技能始终不受影响。设置 `curator.prune_builtins: false` 可恢复旧的“仅 agent 自创”行为，此时捆绑技能绝不会被触碰。Curator 也**绝不自动删除**——最坏的结果是归档到 `~/.hermes/skills/.archive/`，这是可恢复的。
 
-跟踪 [issue #7816](https://github.com/NousResearch/hermes-agent/issues/7816)。
+跟踪 [issue #7816](https://github.com/OpenKova/Kova-Agent/issues/7816)。
 
 ## 运行方式
 
@@ -87,7 +87,7 @@ kova curator status         # last run, counts, pinned list, LRU top 5
 kova curator run            # trigger a review now (blocks until the LLM pass finishes)
 kova curator run --background  # fire-and-forget: start the LLM pass in a background thread
 kova curator run --dry-run  # preview only — report without any mutations
-hermes curator backup         # take a manual snapshot of ~/.hermes/skills/
+kova curator backup         # take a manual snapshot of ~/.hermes/skills/
 kova curator rollback       # restore from the newest snapshot
 kova curator rollback --list     # list available snapshots
 kova curator rollback --id <ts>  # restore a specific snapshot
@@ -133,7 +133,7 @@ curator:
 若技能名称**不在**以下列表中，则视为 agent 创建：
 
 - `~/.hermes/skills/.bundled_manifest`（安装时从仓库复制的技能），以及
-- `~/.hermes/skills/.hub/lock.json`（通过 `hermes skills install` 安装的技能）。
+- `~/.hermes/skills/.hub/lock.json`（通过 `kova skills install` 安装的技能）。
 
 `~/.hermes/skills/` 中的其他所有内容均在 curator 的处理范围内，包括：
 
@@ -245,4 +245,4 @@ Curator 在 `min_idle_hours` 未经过时也会拒绝运行，因此在活跃的
 - [技能系统](/user-guide/features/skills)——技能的总体工作原理及创建技能的自我改进循环
 - [内存](/user-guide/features/memory)——维护长期记忆的并行后台审查
 - [捆绑技能目录](/reference/skills-catalog)
-- [Issue #7816](https://github.com/NousResearch/hermes-agent/issues/7816)——原始提案与设计讨论
+- [Issue #7816](https://github.com/OpenKova/Kova-Agent/issues/7816)——原始提案与设计讨论

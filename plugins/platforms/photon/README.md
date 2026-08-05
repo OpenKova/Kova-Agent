@@ -37,7 +37,7 @@ talks to it over loopback.
   drops; the sidecar owns the gRPC reconnect to Photon.
 - **Outbound**: `send` / `send_typing` / reaction tapbacks are loopback POSTs
   to the sidecar (`/send`, `/send-attachment`, `/typing`, `/react`,
-  `/unreact`), authenticated with a shared `X-Hermes-Sidecar-Token`.
+  `/unreact`), authenticated with a shared `X-Kova-Sidecar-Token`.
 
 ## First-time setup
 

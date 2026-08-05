@@ -17,8 +17,8 @@ Kova 随仓库附带了一小组插件。它们位于 `<repo>/plugins/<name>/`�
 
 1. **内置（Bundled）** — `<repo>/plugins/<name>/`（本页所记录的内容）
 2. **用户（User）** — `~/.hermes/plugins/<name>/`
-3. **项目（Project）** — `./.hermes/plugins/<name>/`（需要 `HERMES_ENABLE_PROJECT_PLUGINS=1`）
-4. **Pip 入口点（Entry points）** — `hermes_agent.plugins`
+3. **项目（Project）** — `./.hermes/plugins/<name>/`（需要 `KOVA_ENABLE_PROJECT_PLUGINS=1`）
+4. **Pip 入口点（Entry points）** — `kova_agent.plugins`
 
 名称冲突时，后面的来源优先——名为 `disk-cleanup` 的用户插件会替换内置版本。
 
@@ -62,7 +62,7 @@ kova plugins disable disk-cleanup
 | `image_gen/openai` | 图像后端 | OpenAI `gpt-image-2` 图像生成后端（FAL 的替代方案） |
 | `image_gen/openai-codex` | 图像后端 | 通过 Codex OAuth 使用 OpenAI 图像生成 |
 | `image_gen/xai` | 图像后端 | xAI `grok-2-image` 后端 |
-| `hermes-achievements` | 仪表盘标签页 | Steam 风格的可收集徽章，根据你真实的 Kova 会话历史生成 |
+| `kova-achievements` | 仪表盘标签页 | Steam 风格的可收集徽章，根据你真实的 Kova 会话历史生成 |
 | `kanban/dashboard` | 仪表盘标签页 | 多智能体调度器的看板（Kanban）UI——任务、评论、扇出、切换看板。参见 [Kanban 多智能体](./kanban.md)。 |
 
 内存提供者（`plugins/memory/*`）和上下文引擎（`plugins/context_engine/*`）在 [内存提供者](./memory-providers.md) 中单独列出——它们分别通过 `kova memory` 和 `kova plugins` 管理。以下是两个长期运行的基于 hook 的插件的详细说明。
@@ -75,7 +75,7 @@ kova plugins disable disk-cleanup
 
 | Hook | 行为 |
 |---|---|
-| `post_tool_call` | 当 `write_file` / `terminal` / `patch` 在 `HERMES_HOME` 或 `/tmp/hermes-*` 内创建匹配 `test_*`、`tmp_*` 或 `*.test.*` 的文件时，静默追踪为 `test` / `temp` / `cron-output`。 |
+| `post_tool_call` | 当 `write_file` / `terminal` / `patch` 在 `HERMES_HOME` 或 `/tmp/kova-*` 内创建匹配 `test_*`、`tmp_*` 或 `*.test.*` 的文件时，静默追踪为 `test` / `temp` / `cron-output`。 |
 | `on_session_end` | 如果本轮中有任何测试文件被自动追踪，则执行安全的 `quick` 清理并记录一行摘要。否则保持静默。 |
 
 **删除规则：**
@@ -109,7 +109,7 @@ kova plugins disable disk-cleanup
 | `tracked.json.bak` | 上述文件的原子写入备份 |
 | `cleanup.log` | 每次追踪 / 跳过 / 拒绝 / 删除操作的仅追加审计日志 |
 
-**安全性** — 清理操作仅涉及 `HERMES_HOME` 或 `/tmp/hermes-*` 下的路径。Windows 挂载点（`/mnt/c/...`）会被拒绝。已知的顶级状态目录（`logs/`、`memories/`、`sessions/`、`cron/`、`cache/`、`skills/`、`plugins/`、`disk-cleanup/` 本身）即使为空也不会被删除——全新安装不会在第一次会话结束时被清空。
+**安全性** — 清理操作仅涉及 `HERMES_HOME` 或 `/tmp/kova-*` 下的路径。Windows 挂载点（`/mnt/c/...`）会被拒绝。已知的顶级状态目录（`logs/`、`memories/`、`sessions/`、`cron/`、`cache/`、`skills/`、`plugins/`、`disk-cleanup/` 本身）即使为空也不会被删除——全新安装不会在第一次会话结束时被清空。
 
 **启用：** `kova plugins enable disk-cleanup`（或在 `kova plugins` 中勾选复选框）。
 
@@ -128,12 +128,12 @@ pip install langfuse
 kova plugins enable observability/langfuse
 ```
 
-或在交互式 `hermes plugins` UI 中勾选复选框。然后将凭据写入 `~/.hermes/.env`：
+或在交互式 `kova plugins` UI 中勾选复选框。然后将凭据写入 `~/.hermes/.env`：
 
 ```bash
-HERMES_LANGFUSE_PUBLIC_KEY=pk-lf-...
-HERMES_LANGFUSE_SECRET_KEY=sk-lf-...
-HERMES_LANGFUSE_BASE_URL=https://cloud.langfuse.com   # 或你的自托管 URL
+KOVA_LANGFUSE_PUBLIC_KEY=pk-lf-...
+KOVA_LANGFUSE_SECRET_KEY=sk-lf-...
+KOVA_LANGFUSE_BASE_URL=https://cloud.langfuse.com   # 或你的自托管 URL
 ```
 
 **工作原理：**
@@ -143,7 +143,7 @@ HERMES_LANGFUSE_BASE_URL=https://cloud.langfuse.com   # 或你的自托管 URL
 | `pre_api_request` / `pre_llm_call` | 打开（或复用）每轮的根 span "Kova turn"。为本次 API 调用启动一个 `generation` 子 observation，将最近的消息序列化为输入。 |
 | `post_api_request` / `post_llm_call` | 关闭 generation，附加 `usage_details`、`cost_details`、`finish_reason`、助手输出和工具调用。如果没有工具调用且内容非空，则关闭本轮。 |
 | `pre_tool_call` | 启动一个带有经过清理的 `args` 的 `tool` 子 observation。 |
-| `post_tool_call` | 关闭 tool observation，附加经过清理的 `result`。`read_file` 的内容会被摘要化（头部 + 尾部 + 省略行数），以使大文件读取保持在 `HERMES_LANGFUSE_MAX_CHARS` 以内。 |
+| `post_tool_call` | 关闭 tool observation，附加经过清理的 `result`。`read_file` 的内容会被摘要化（头部 + 尾部 + 省略行数），以使大文件读取保持在 `KOVA_LANGFUSE_MAX_CHARS` 以内。 |
 
 会话分组基于 Kova 会话 ID（或子 agent 的任务 ID），通过 `langfuse.propagate_attributes` 实现，因此单次 `kova chat` 会话中的所有内容都归属于同一个 Langfuse session。
 
@@ -158,11 +158,11 @@ kova chat -q "hello"              # 在 Langfuse UI 中检查是否有 "Kova tur
 
 | 变量 | 默认值 | 用途 |
 |---|---|---|
-| `HERMES_LANGFUSE_ENV` | — | trace 上的环境标签（`production`、`staging` 等） |
-| `HERMES_LANGFUSE_RELEASE` | — | 发布/版本标签 |
-| `HERMES_LANGFUSE_SAMPLE_RATE` | `1.0` | 传递给 SDK 的采样率（0.0–1.0） |
-| `HERMES_LANGFUSE_MAX_CHARS` | `12000` | 消息内容 / 工具参数 / 工具结果的单字段截断长度 |
-| `HERMES_LANGFUSE_DEBUG` | `false` | 向 `agent.log` 输出详细插件日志 |
+| `KOVA_LANGFUSE_ENV` | — | trace 上的环境标签（`production`、`staging` 等） |
+| `KOVA_LANGFUSE_RELEASE` | — | 发布/版本标签 |
+| `KOVA_LANGFUSE_SAMPLE_RATE` | `1.0` | 传递给 SDK 的采样率（0.0–1.0） |
+| `KOVA_LANGFUSE_MAX_CHARS` | `12000` | 消息内容 / 工具参数 / 工具结果的单字段截断长度 |
+| `KOVA_LANGFUSE_DEBUG` | `false` | 向 `agent.log` 输出详细插件日志 |
 
 Kova 前缀的环境变量和标准 SDK 环境变量（`LANGFUSE_PUBLIC_KEY`、`LANGFUSE_SECRET_KEY`、`LANGFUSE_BASE_URL`）均被接受——两者同时设置时，Kova 前缀的优先。
 
@@ -198,9 +198,9 @@ agent 会启动会议加入流程，在通话进行时将转录内容流式传�
 
 **适用场景：** 需要机器人转录并为异步参与者总结的定期站会；需要结构化笔记的访谈式会议；任何原本需要 Fireflies / Otter / Grain 的场景。如果你不希望有 AI 在旁监听——请勿启用。
 
-**禁用：** `hermes plugins disable google_meet`。已缓存的转录和录音保留在 `~/.hermes/cache/google_meet/`，直到你手动删除。
+**禁用：** `kova plugins disable google_meet`。已缓存的转录和录音保留在 `~/.hermes/cache/google_meet/`，直到你手动删除。
 
-### hermes-achievements
+### kova-achievements
 
 在仪表盘中添加一个 **Steam 风格的成就标签页**——60 多个可收集的分级徽章，根据你真实的 Kova 会话历史生成。工具链成就、调试模式、vibe-coding 连击、技能/内存使用、模型/提供者多样性、生活方式特征（周末和夜间会话）。最初由 [@PCinkusz](https://github.com/PCinkusz) 作为外部插件编写；已并入仓库，以便与 Kova 功能变更保持同步。
 
@@ -209,7 +209,7 @@ agent 会启动会议加入流程，在通话进行时将转录内容流式传�
 - 在仪表盘后端扫描你的整个 `~/.hermes/state.db` 会话历史
 - 每个会话的统计数据按 `(started_at, last_active)` 指纹缓存，因此后续扫描只重新分析新增或变更的会话
 - 首次扫描在后台线程中运行——即使数据库有数千个会话，仪表盘也不会阻塞等待
-- 解锁状态持久化到 `$HERMES_HOME/plugins/hermes-achievements/state.json`
+- 解锁状态持久化到 `$HERMES_HOME/plugins/kova-achievements/state.json`
 
 **等级进阶：** 铜 → 银 → 金 → 钻石 → 奥林匹斯。每张卡片都有"计算方式"部分，列出所追踪的确切指标。
 
@@ -221,7 +221,7 @@ agent 会启动会议加入流程，在通话进行时将转录内容流式传�
 | 已发现 | 已知成就，进度可见，尚未获得 |
 | 隐藏 | 在 Kova 检测到你历史中的第一个相关信号之前保持隐藏 |
 
-**API** — 路由挂载在 `/api/plugins/hermes-achievements/` 下：
+**API** — 路由挂载在 `/api/plugins/kova-achievements/` 下：
 
 | 端点 | 用途 |
 |---|---|
@@ -232,7 +232,7 @@ agent 会启动会议加入流程，在通话进行时将转录内容流式传�
 | `POST /rescan` | 手动同步重新扫描（阻塞；在用户点击重新扫描按钮时使用） |
 | `POST /reset-state` | 清除解锁历史和缓存快照 |
 
-**状态文件** — 位于 `$HERMES_HOME/plugins/hermes-achievements/`：
+**状态文件** — 位于 `$HERMES_HOME/plugins/kova-achievements/`：
 
 | 文件 | 内容 |
 |---|---|
@@ -247,9 +247,9 @@ agent 会启动会议加入流程，在通话进行时将转录内容流式传�
 - 热重扫描对每个 `started_at` + `last_active` 指纹与检查点匹配的会话复用每会话统计——即使在大型历史记录上也能在几秒内完成。
 - 内存快照 TTL 为 120 秒；过期请求立即提供旧快照并触发后台刷新。不会因为 TTL 过期就让你等待加载动画。
 
-**启用：** 无需启用——`hermes-achievements` 是一个仅限仪表盘的插件（无生命周期 hook，无模型可见工具）。它在 `kova dashboard` 首次启动时自动注册为标签页。`plugins.enabled` 配置仅控制生命周期/工具插件；仪表盘插件完全通过其 `dashboard/manifest.json` 发现。
+**启用：** 无需启用——`kova-achievements` 是一个仅限仪表盘的插件（无生命周期 hook，无模型可见工具）。它在 `kova dashboard` 首次启动时自动注册为标签页。`plugins.enabled` 配置仅控制生命周期/工具插件；仪表盘插件完全通过其 `dashboard/manifest.json` 发现。
 
-**退出：** 删除或重命名 `plugins/hermes-achievements/dashboard/manifest.json`，或在 `~/.hermes/plugins/hermes-achievements/` 中用同名用户插件覆盖它（该插件不包含仪表盘）。`$HERMES_HOME/plugins/hermes-achievements/` 下的插件状态文件会保留——重新安装后你的解锁历史依然存在。
+**退出：** 删除或重命名 `plugins/kova-achievements/dashboard/manifest.json`，或在 `~/.hermes/plugins/kova-achievements/` 中用同名用户插件覆盖它（该插件不包含仪表盘）。`$HERMES_HOME/plugins/kova-achievements/` 下的插件状态文件会保留——重新安装后你的解锁历史依然存在。
 
 ## 添加内置插件
 

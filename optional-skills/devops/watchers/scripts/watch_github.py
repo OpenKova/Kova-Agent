@@ -3,10 +3,10 @@
 
 Usage (via cron with --no-agent):
 
-    hermes cron create hermes-issues \\
+    kova cron create kova-issues \\
       --schedule "*/5 * * * *" --no-agent \\
       --script "$HERMES_HOME/skills/devops/watchers/scripts/watch_github.py" \\
-      --script-args "--name hermes-issues --repo NousResearch/hermes-agent --scope issues"
+      --script-args "--name kova-issues --repo NousResearch/kova-agent --scope issues"
 
 Set GITHUB_TOKEN (or GH_TOKEN) in the Kova .env file
 (``${HERMES_HOME:-~/.hermes}/.env``) to avoid the 60 req/hr

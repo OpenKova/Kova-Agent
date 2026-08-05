@@ -12,7 +12,7 @@ import pytest
 import asyncio
 
 from tools.mcp_oauth import (
-    HermesTokenStorage,
+    KovaTokenStorage,
     OAuthNonInteractiveError,
     build_oauth_auth,
     remove_oauth_tokens,
@@ -33,13 +33,13 @@ def _set_interactive_stdin(monkeypatch, *, is_tty: bool = True) -> None:
 
 
 # ---------------------------------------------------------------------------
-# HermesTokenStorage
+# KovaTokenStorage
 # ---------------------------------------------------------------------------
 
-class TestHermesTokenStorage:
+class TestKovaTokenStorage:
     def test_roundtrip_tokens(self, tmp_path, monkeypatch):
         monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-        storage = HermesTokenStorage("test-server")
+        storage = KovaTokenStorage("test-server")
 
         import asyncio
 
@@ -71,7 +71,7 @@ class TestHermesTokenStorage:
         the fix shipped for ``agent/google_oauth.py`` in #19673.
         """
         monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-        storage = HermesTokenStorage("perm-test-server")
+        storage = KovaTokenStorage("perm-test-server")
 
         import asyncio
         mock_token = MagicMock()
@@ -94,14 +94,14 @@ class TestHermesTokenStorage:
 
     def test_roundtrip_client_info(self, tmp_path, monkeypatch):
         monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-        storage = HermesTokenStorage("test-server")
+        storage = KovaTokenStorage("test-server")
         import asyncio
 
         assert asyncio.run(storage.get_client_info()) is None
 
         mock_client = MagicMock()
         mock_client.model_dump.return_value = {
-            "client_id": "hermes-123",
+            "client_id": "kova-123",
             "client_secret": "secret",
         }
         asyncio.run(storage.set_client_info(mock_client))
@@ -111,7 +111,7 @@ class TestHermesTokenStorage:
 
     def test_remove_cleans_up(self, tmp_path, monkeypatch):
         monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-        storage = HermesTokenStorage("test-server")
+        storage = KovaTokenStorage("test-server")
 
         # Create files
         d = tmp_path / "mcp-tokens"
@@ -125,7 +125,7 @@ class TestHermesTokenStorage:
 
     def test_has_cached_tokens(self, tmp_path, monkeypatch):
         monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-        storage = HermesTokenStorage("my-server")
+        storage = KovaTokenStorage("my-server")
 
         assert not storage.has_cached_tokens()
 
@@ -137,7 +137,7 @@ class TestHermesTokenStorage:
 
     def test_corrupt_tokens_returns_none(self, tmp_path, monkeypatch):
         monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-        storage = HermesTokenStorage("bad-server")
+        storage = KovaTokenStorage("bad-server")
 
         d = tmp_path / "mcp-tokens"
         d.mkdir(parents=True)
@@ -148,7 +148,7 @@ class TestHermesTokenStorage:
 
     def test_corrupt_client_info_returns_none(self, tmp_path, monkeypatch):
         monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-        storage = HermesTokenStorage("bad-server")
+        storage = KovaTokenStorage("bad-server")
 
         d = tmp_path / "mcp-tokens"
         d.mkdir(parents=True)
@@ -366,7 +366,7 @@ class TestPathTraversal:
 
     def test_path_traversal_blocked(self, tmp_path, monkeypatch):
         monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-        storage = HermesTokenStorage("../../.ssh/config")
+        storage = KovaTokenStorage("../../.ssh/config")
         path = storage._tokens_path()
         # Should stay within mcp-tokens directory
         assert "mcp-tokens" in str(path)
@@ -374,19 +374,19 @@ class TestPathTraversal:
 
     def test_dots_and_slashes_sanitized(self, tmp_path, monkeypatch):
         monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-        storage = HermesTokenStorage("../../../etc/passwd")
+        storage = KovaTokenStorage("../../../etc/passwd")
         path = storage._tokens_path()
         resolved = path.resolve()
         assert resolved.is_relative_to((tmp_path / "mcp-tokens").resolve())
 
     def test_normal_name_unchanged(self, tmp_path, monkeypatch):
         monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-        storage = HermesTokenStorage("my-mcp-server")
+        storage = KovaTokenStorage("my-mcp-server")
         assert "my-mcp-server.json" in str(storage._tokens_path())
 
     def test_special_chars_sanitized(self, tmp_path, monkeypatch):
         monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-        storage = HermesTokenStorage("server@host:8080/path")
+        storage = KovaTokenStorage("server@host:8080/path")
         path = storage._tokens_path()
         assert "@" not in path.name
         assert ":" not in path.name
@@ -853,7 +853,7 @@ class TestNonInteractiveFailFastAtCallbackBoundary:
         err = capsys.readouterr().err
         assert "https://idp.example.com/authorize" not in err
 
-    def test_boundary_errors_point_at_hermes_mcp_login(self, monkeypatch):
+    def test_boundary_errors_point_at_kova_mcp_login(self, monkeypatch):
         """Both boundaries emit an actionable next step."""
         import tools.mcp_oauth as mod
         import asyncio
@@ -1057,7 +1057,7 @@ def test_maybe_preregister_client_persists_configured_redirect_uri(tmp_path, mon
     pytest.importorskip("mcp")
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
     from tools.mcp_oauth import (
-        HermesTokenStorage,
+        KovaTokenStorage,
         _build_client_metadata,
         _configure_callback_port,
         _maybe_preregister_client,
@@ -1065,7 +1065,7 @@ def test_maybe_preregister_client_persists_configured_redirect_uri(tmp_path, mon
 
     cfg = {"client_id": "preset-client", "redirect_uri": _PROXY_REDIRECT}
     _configure_callback_port(cfg)
-    storage = HermesTokenStorage("proxy-srv")
+    storage = KovaTokenStorage("proxy-srv")
     _maybe_preregister_client(storage, cfg, _build_client_metadata(cfg))
 
     written = json.loads(storage._client_info_path().read_text())
@@ -1077,7 +1077,7 @@ def test_maybe_preregister_client_redirect_uri_defaults_to_localhost(tmp_path, m
     pytest.importorskip("mcp")
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
     from tools.mcp_oauth import (
-        HermesTokenStorage,
+        KovaTokenStorage,
         _build_client_metadata,
         _configure_callback_port,
         _maybe_preregister_client,
@@ -1085,7 +1085,7 @@ def test_maybe_preregister_client_redirect_uri_defaults_to_localhost(tmp_path, m
 
     cfg = {"client_id": "preset-client"}
     port = _configure_callback_port(cfg)
-    storage = HermesTokenStorage("loopback-srv")
+    storage = KovaTokenStorage("loopback-srv")
     _maybe_preregister_client(storage, cfg, _build_client_metadata(cfg))
 
     written = json.loads(storage._client_info_path().read_text())
@@ -1099,7 +1099,7 @@ def test_configure_callback_port_reuses_cached_client_redirect_port(tmp_path, mo
     from tools.mcp_oauth import _configure_callback_port
 
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    storage = HermesTokenStorage("summ")
+    storage = KovaTokenStorage("summ")
     token_dir = tmp_path / "mcp-tokens"
     token_dir.mkdir(parents=True)
     (token_dir / "summ.client.json").write_text(json.dumps({
@@ -1117,12 +1117,12 @@ def test_configure_callback_port_reuses_cached_client_redirect_port(tmp_path, mo
 def test_configure_callback_reuses_cached_https_redirect_uri(tmp_path, monkeypatch):
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
     from tools.mcp_oauth import (
-        HermesTokenStorage,
+        KovaTokenStorage,
         _build_client_metadata,
         _configure_callback_port,
     )
 
-    storage = HermesTokenStorage("hosted")
+    storage = KovaTokenStorage("hosted")
     storage._client_info_path().parent.mkdir(parents=True)
     storage._client_info_path().write_text(json.dumps({
         "client_id": "client-123",
@@ -1143,7 +1143,7 @@ def test_configure_callback_port_explicit_overrides_cached_client_port(tmp_path,
     from tools.mcp_oauth import _configure_callback_port
 
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    storage = HermesTokenStorage("summ")
+    storage = KovaTokenStorage("summ")
     token_dir = tmp_path / "mcp-tokens"
     token_dir.mkdir(parents=True)
     (token_dir / "summ.client.json").write_text(json.dumps({
@@ -1180,7 +1180,7 @@ def test_build_oauth_auth_preserves_server_url_path():
          patch.object(mcp_oauth, "OAuthClientProvider", _FakeProvider), \
          patch.object(mcp_oauth, "_is_interactive", return_value=True), \
          patch.object(mcp_oauth, "_maybe_preregister_client"), \
-         patch.object(mcp_oauth, "HermesTokenStorage") as mock_storage_cls:
+         patch.object(mcp_oauth, "KovaTokenStorage") as mock_storage_cls:
         mock_storage_cls.return_value = MagicMock(has_cached_tokens=lambda: True)
         build_oauth_auth(
             server_name="notion",
@@ -1206,7 +1206,7 @@ def test_build_oauth_auth_wires_configured_redirect_uri_into_handler(monkeypatch
          patch.object(mcp_oauth, "OAuthClientProvider", _FakeProvider), \
          patch.object(mcp_oauth, "_is_interactive", return_value=True), \
          patch.object(mcp_oauth, "_maybe_preregister_client"), \
-         patch.object(mcp_oauth, "HermesTokenStorage") as mock_storage_cls:
+         patch.object(mcp_oauth, "KovaTokenStorage") as mock_storage_cls:
         mock_storage_cls.return_value = MagicMock(has_cached_tokens=lambda: True)
         build_oauth_auth(
             server_name="proxy",
@@ -1243,7 +1243,7 @@ def test_build_oauth_auth_handler_redirect_uri_none_when_unset(monkeypatch, caps
          patch.object(mcp_oauth, "OAuthClientProvider", _FakeProvider), \
          patch.object(mcp_oauth, "_is_interactive", return_value=True), \
          patch.object(mcp_oauth, "_maybe_preregister_client"), \
-         patch.object(mcp_oauth, "HermesTokenStorage") as mock_storage_cls:
+         patch.object(mcp_oauth, "KovaTokenStorage") as mock_storage_cls:
         mock_storage_cls.return_value = MagicMock(has_cached_tokens=lambda: True)
         build_oauth_auth(
             server_name="loopback",
@@ -1284,7 +1284,7 @@ def test_maybe_preregister_client_skips_when_no_client_id(tmp_path, monkeypatch)
     pytest.importorskip("mcp")
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
     from tools.mcp_oauth import (
-        HermesTokenStorage,
+        KovaTokenStorage,
         _build_client_metadata,
         _configure_callback_port,
         _maybe_preregister_client,
@@ -1292,7 +1292,7 @@ def test_maybe_preregister_client_skips_when_no_client_id(tmp_path, monkeypatch)
 
     cfg = {"redirect_uri": _PROXY_REDIRECT}  # no client_id
     _configure_callback_port(cfg)
-    storage = HermesTokenStorage("no-client-id-srv")
+    storage = KovaTokenStorage("no-client-id-srv")
     _maybe_preregister_client(storage, cfg, _build_client_metadata(cfg))
 
     assert not storage._client_info_path().exists()
@@ -1303,7 +1303,7 @@ def test_maybe_preregister_client_redirect_uri_with_secret(tmp_path, monkeypatch
     pytest.importorskip("mcp")
     monkeypatch.setenv("HERMES_HOME", str(tmp_path))
     from tools.mcp_oauth import (
-        HermesTokenStorage,
+        KovaTokenStorage,
         _build_client_metadata,
         _configure_callback_port,
         _maybe_preregister_client,
@@ -1315,7 +1315,7 @@ def test_maybe_preregister_client_redirect_uri_with_secret(tmp_path, monkeypatch
         "redirect_uri": _PROXY_REDIRECT,
     }
     _configure_callback_port(cfg)
-    storage = HermesTokenStorage("secret-proxy-srv")
+    storage = KovaTokenStorage("secret-proxy-srv")
     _maybe_preregister_client(storage, cfg, _build_client_metadata(cfg))
 
     written = json.loads(storage._client_info_path().read_text())
@@ -1560,7 +1560,7 @@ class TestWaitForCallbackSkipIntegration:
 class TestPoisonClientRegistration:
     def test_poison_backs_up_and_removes_client_and_meta(self, tmp_path, monkeypatch):
         monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-        storage = HermesTokenStorage("srv")
+        storage = KovaTokenStorage("srv")
         d = tmp_path / "mcp-tokens"
         d.mkdir(parents=True)
         (d / "srv.json").write_text('{"access_token": "keep-me"}')
@@ -1580,7 +1580,7 @@ class TestPoisonClientRegistration:
 
     def test_poison_noop_when_no_client_file(self, tmp_path, monkeypatch):
         monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-        storage = HermesTokenStorage("srv")
+        storage = KovaTokenStorage("srv")
         assert storage.poison_client_registration() is False
 
 

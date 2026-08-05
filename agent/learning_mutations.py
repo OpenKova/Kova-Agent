@@ -2,7 +2,7 @@
 
 The journey graph (``agent.learning_graph``) gives every node a stable id:
 
-- **skills** → the skill name (e.g. ``"debugging-hermes-desktop"``)
+- **skills** → the skill name (e.g. ``"debugging-kova-desktop"``)
 - **memories** → ``memory:<source>:<index>`` where ``source`` is ``memory``
   (``MEMORY.md``) or ``profile`` (``USER.md``) and ``index`` is the node's
   position in the combined card list (``MEMORY.md`` cards first, then
@@ -28,9 +28,9 @@ def parse_node_kind(node_id: str) -> str:
 
 
 def _memories_dir() -> Path:
-    from hermes_constants import get_hermes_home
+    from kova_constants import get_kova_home
 
-    return get_hermes_home() / "memories"
+    return get_kova_home() / "memories"
 
 
 def _parse_memory_id(node_id: str) -> tuple[str, int]:

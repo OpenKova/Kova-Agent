@@ -52,16 +52,16 @@ updates:
 
 `updates.pre_update_backup` 是单一开关，有三种模式：`quick`（默认 — 上述轻量级状态快照）、`full`（快速快照加上完整的 `HERMES_HOME` zip 备份；在大型 home 目录上可能增加数分钟）、`off`（完全不做更新前备份 — `--no-backup` 对单次运行有相同效果）。旧版布尔值仍然有效：`true` 等同于 `full`，`false` 等同于 `off`。
 
-### Windows：另一个 `hermes.exe` 正在运行
+### Windows：另一个 `kova.exe` 正在运行
 
-在 Windows 上，如果 `hermes update` 检测到另一个 `hermes.exe` 进程持有 venv 入口点可执行文件的句柄，它将拒绝运行 — 最常见的情况是 Kova Desktop 应用启动的后端进程、另一个终端中打开的 `hermes` REPL，或正在运行的 gateway：
+在 Windows 上，如果 `kova update` 检测到另一个 `kova.exe` 进程持有 venv 入口点可执行文件的句柄，它将拒绝运行 — 最常见的情况是 Kova Desktop 应用启动的后端进程、另一个终端中打开的 `kova` REPL，或正在运行的 gateway：
 
 ```
 $ kova update
-✗ Another hermes.exe is running:
-    PID 12345  hermes.exe
+✗ Another kova.exe is running:
+    PID 12345  kova.exe
 
-  Updating now would fail to overwrite ...\venv\Scripts\hermes.exe because
+  Updating now would fail to overwrite ...\venv\Scripts\kova.exe because
   Windows blocks REPLACE on a running executable.
 
   Close Kova Desktop, exit any open `kova` REPLs, and
@@ -123,7 +123,7 @@ tail -f ~/.hermes/logs/update.log
 kova version
 ```
 
-与 [GitHub releases 页面](https://github.com/NousResearch/hermes-agent/releases) 上的最新版本进行比较。
+与 [GitHub releases 页面](https://github.com/OpenKova/Kova-Agent/releases) 上的最新版本进行比较。
 
 ### 从消息平台更新
 
@@ -140,7 +140,7 @@ kova version
 如果你是手动安装的（未使用快速安装脚本）：
 
 ```bash
-cd /path/to/hermes-agent
+cd /path/to/kova-agent
 export VIRTUAL_ENV="$(pwd)/venv"
 
 # Pull latest code
@@ -159,7 +159,7 @@ kova config migrate   # Interactively add any missing options
 如果更新引入了问题，可以回滚到之前的版本：
 
 ```bash
-cd /path/to/hermes-agent
+cd /path/to/kova-agent
 
 # List recent versions
 git log --oneline -10
@@ -189,10 +189,10 @@ uv pip install -e ".[all]"
 
 ```bash
 # Update the flake input
-nix flake update hermes-agent
+nix flake update kova-agent
 
 # Or rebuild with the latest
-nix profile upgrade hermes-agent
+nix profile upgrade kova-agent
 ```
 
 Nix 安装是不可变的 — 回滚由 Nix 的 generation 系统处理：
@@ -216,8 +216,8 @@ kova uninstall
 ### 手动卸载
 
 ```bash
-rm -f ~/.local/bin/hermes
-rm -rf /path/to/hermes-agent
+rm -f ~/.local/bin/kova
+rm -rf /path/to/kova-agent
 rm -rf ~/.hermes            # 可选 — 如计划重新安装则保留
 ```
 
@@ -225,7 +225,7 @@ rm -rf ~/.hermes            # 可选 — 如计划重新安装则保留
 如果你将 gateway 安装为系统服务，请先停止并禁用它：
 ```bash
 kova gateway stop
-# Linux: systemctl --user disable hermes-gateway
-# macOS: launchctl remove ai.hermes.gateway
+# Linux: systemctl --user disable kova-gateway
+# macOS: launchctl remove ai.kova.gateway
 ```
 :::

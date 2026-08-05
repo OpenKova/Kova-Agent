@@ -39,7 +39,7 @@ def default_profile() -> Path:
     Chrome refuses remote-debugging on a profile that is already open in another Chrome instance,
     so we isolate the debug session in its own user-data-dir under HERMES_HOME.
     """
-    return paths.hermes_home() / "chrome-debug"
+    return paths.kova_home() / "chrome-debug"
 
 
 def _mac_candidates() -> list[str]:

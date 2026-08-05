@@ -118,10 +118,10 @@ SECTIONS: list[tuple[str, list[tuple[str, str, str | None]]]] = [
         ("guides/daily-briefing-bot", "Daily Briefing Bot", None),
         ("guides/team-telegram-assistant", "Team Telegram Assistant", None),
         ("guides/python-library", "Use Kova as a Python Library", None),
-        ("guides/use-mcp-with-hermes", "Use MCP with Kova", None),
-        ("guides/use-voice-mode-with-hermes", "Use Voice Mode with Kova", None),
-        ("guides/use-soul-with-hermes", "Use SOUL.md with Kova", None),
-        ("guides/build-a-hermes-plugin", "Build a Kova Plugin", None),
+        ("guides/use-mcp-with-kova", "Use MCP with Kova", None),
+        ("guides/use-voice-mode-with-kova", "Use Voice Mode with Kova", None),
+        ("guides/use-soul-with-kova", "Use SOUL.md with Kova", None),
+        ("guides/build-a-kova-plugin", "Build a Kova Plugin", None),
         ("guides/automate-with-cron", "Automate with Cron", None),
         ("guides/work-with-skills", "Work with Skills", None),
         ("guides/delegation-patterns", "Delegation Patterns", None),
@@ -211,11 +211,11 @@ def emit_llms_index() -> str:
     lines.append("")
     lines.append(
         "Install: `curl -fsSL https://raw.githubusercontent.com/NousResearch/"
-        "hermes-agent/main/scripts/install.sh | bash`  "
+        "kova-agent/main/scripts/install.sh | bash`  "
         "(Linux, macOS, WSL2, Termux)"
     )
     lines.append("")
-    lines.append("Repo: https://github.com/NousResearch/hermes-agent")
+    lines.append("Repo: https://github.com/OpenKova/Kova-Agent")
     lines.append("")
 
     for section, items in SECTIONS:

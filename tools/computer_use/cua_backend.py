@@ -75,7 +75,7 @@ def _action_result_from(
     ``structuredContent`` (or any individual field) leaves the corresponding
     ActionResult attribute ``None``, so callers and tests see unchanged
     behavior on old drivers. See the action response shape in
-    cua-driver's mcp-tool-notes and NousResearch/hermes-agent#67052.
+    cua-driver's mcp-tool-notes and NousResearch/kova-agent#67052.
     """
     sc = structured if isinstance(structured, dict) else {}
 
@@ -134,11 +134,11 @@ def _action_result_from(
 # hardcoded version floor, which would rot and can't know what "latest" is.
 #
 # There is intentionally no version *pin* knob: the upstream installer always
-# fetches the latest release, so a `HERMES_CUA_DRIVER_VERSION` env var would
+# fetches the latest release, so a `KOVA_CUA_DRIVER_VERSION` env var would
 # only have *looked* like it pinned. For a reproducible version, point
-# `HERMES_CUA_DRIVER_CMD` at a specific binary instead.
+# `KOVA_CUA_DRIVER_CMD` at a specific binary instead.
 
-_CUA_DRIVER_CMD_ENV = "HERMES_CUA_DRIVER_CMD"
+_CUA_DRIVER_CMD_ENV = "KOVA_CUA_DRIVER_CMD"
 _CUA_DRIVER_DEFAULT_CMD = "cua-driver"
 _CUA_DRIVER_ARGS = ["mcp"]  # stdio MCP transport (fallback when the
                             # driver doesn't expose `manifest` — see
@@ -187,7 +187,7 @@ _CUA_TELEMETRY_ENV_VAR = "CUA_DRIVER_RS_TELEMETRY_ENABLED"
 def _computer_use_cfg() -> Dict[str, Any]:
     """The ``computer_use`` config block, or ``{}`` when config is unreadable."""
     try:
-        from hermes_cli.config import load_config
+        from kova_cli.config import load_config
 
         return (load_config() or {}).get("computer_use") or {}
     except Exception:
@@ -357,7 +357,7 @@ def _resolve_mcp_invocation(
 ) -> Tuple[str, List[str]]:
     """Return ``(command, args)`` that spawn cua-driver's stdio MCP server.
 
-    Surface 8 of NousResearch/hermes-agent#47072: instead of hardcoding
+    Surface 8 of NousResearch/kova-agent#47072: instead of hardcoding
     ``["mcp"]`` we ask the driver itself via ``cua-driver manifest``
     (trycua/cua#1961). The manifest carries a stable ``mcp_invocation``
     pointer with both ``command`` and ``args``, so a future cua-driver
@@ -501,7 +501,7 @@ def _candidate_cua_driver_commands(override: Optional[str] = None) -> List[str]:
     """Return candidate cua-driver commands in resolution order.
 
     ``override`` is authoritative when supplied. Otherwise a non-empty
-    ``HERMES_CUA_DRIVER_CMD`` is authoritative; only when neither is set do we
+    ``KOVA_CUA_DRIVER_CMD`` is authoritative; only when neither is set do we
     use PATH and canonical install locations.
 
     Desktop apps launched from Finder/Dock often inherit a narrow PATH that
@@ -536,7 +536,7 @@ def _candidate_cua_driver_commands(override: Optional[str] = None) -> List[str]:
 def resolve_cua_driver_cmd(override: Optional[str] = None) -> Optional[str]:
     """Resolve the cua-driver executable for every runtime/status surface.
 
-    A supplied override (or ``HERMES_CUA_DRIVER_CMD``) is never silently
+    A supplied override (or ``KOVA_CUA_DRIVER_CMD``) is never silently
     replaced by another binary. Otherwise resolve PATH first, then canonical
     user-local installation locations used by the official installer.
     """
@@ -689,7 +689,7 @@ def _parse_elements_from_tree(markdown: str) -> List[UIElement]:
 
 
 def _parse_elements_from_structured(raw_elements: List[Dict[str, Any]]) -> List[UIElement]:
-    """Surface 2 of NousResearch/hermes-agent#47072: read the canonical
+    """Surface 2 of NousResearch/kova-agent#47072: read the canonical
     ``structuredContent.elements`` array cua-driver-rs emits on every
     ``get_window_state`` response (trycua/cua#1961).
 
@@ -887,7 +887,7 @@ class _CuaDriverSession:
         self._session = None
         self._lock = threading.Lock()
         self._started = False
-        # Surface 4 of NousResearch/hermes-agent#47072: per-tool
+        # Surface 4 of NousResearch/kova-agent#47072: per-tool
         # capability-token sets, populated from `tools/list` at session
         # init. Keys are tool names (e.g. "click", "get_window_state");
         # values are sets of capability strings (e.g.
@@ -1061,12 +1061,12 @@ class _CuaDriverSession:
             # passes but the wrapper times out" reports are undiagnosable
             # from a bare "never reached ready".
             phase = getattr(self, "_startup_phase", "unknown")
-            from hermes_constants import display_hermes_home
+            from kova_constants import display_kova_home
             raise RuntimeError(
                 "cua-driver session never reached ready (timeout 30s; "
                 f"stuck in phase: {phase}). "
                 "Run `kova computer-use doctor` and check "
-                f"{display_hermes_home()}/logs/agent.log for the phase timings."
+                f"{display_kova_home()}/logs/agent.log for the phase timings."
             )
         # If setup failed, the lifecycle coroutine set _setup_error
         # before setting _ready_event. Re-raise it on the caller's thread.
@@ -1397,7 +1397,7 @@ def _extract_tool_result(mcp_result: Any) -> Dict[str, Any]:
 
     `image_mime_types` is the explicit `mimeType` cua-driver emits on every
     image part as of trycua/cua#1961 (Surface 7 of
-    NousResearch/hermes-agent#47072). Each entry corresponds index-for-index
+    NousResearch/kova-agent#47072). Each entry corresponds index-for-index
     with `images`; an empty string entry signals the part carried no
     mimeType (older cua-driver build), and the caller should fall back to
     base64-prefix sniffing.
@@ -1544,7 +1544,7 @@ class CuaDriverBackend(ComputerUseBackend):
         # Exact identity for capture_after. App names may be generic on Linux
         # (for example, multiple unrelated Qt windows can say Qt6Application).
         self._last_target: Optional[Dict[str, Optional[int]]] = None
-        # Surface 6 of NousResearch/hermes-agent#47072: per-snapshot
+        # Surface 6 of NousResearch/kova-agent#47072: per-snapshot
         # `element_index -> element_token` map populated on capture().
         # Action tools (click/scroll/set_value/...) attach the matching
         # token alongside `element_index` so cua-driver detects "stale"
@@ -1569,7 +1569,7 @@ class CuaDriverBackend(ComputerUseBackend):
         # unknown to the driver (older builds), the tool calls
         # degrade to the anonymous / unsynced path documented in the
         # MCP server instructions.
-        self._session_id: str = f"hermes-{uuid.uuid4().hex[:12]}"
+        self._session_id: str = f"kova-{uuid.uuid4().hex[:12]}"
 
     # ── Lifecycle ──────────────────────────────────────────────────
     def start(self) -> None:
@@ -1823,7 +1823,7 @@ class CuaDriverBackend(ComputerUseBackend):
         `get_window_state` (ax/som) or `screenshot` (vision).
         """
         # Step 1: enumerate on-screen windows to find target pid/window_id.
-        # Surface 3 of NousResearch/hermes-agent#47072: read the canonical
+        # Surface 3 of NousResearch/kova-agent#47072: read the canonical
         # `structuredContent.windows` array directly. Pre-fix the wrapper
         # also kept a text-line regex (`_WINDOW_LINE_RE`) as a fallback for
         # cua-driver builds that predated structuredContent; the supersede
@@ -2092,7 +2092,7 @@ class CuaDriverBackend(ComputerUseBackend):
             # Parse element count from summary e.g. "✅ AppName — 42 elements, turn 3..."
             m = re.search(r'(\d+)\s+elements?', summary)
 
-            # Surface 2 of NousResearch/hermes-agent#47072: prefer the
+            # Surface 2 of NousResearch/kova-agent#47072: prefer the
             # canonical structuredContent.elements array (trycua/cua#1961).
             # Falls back to markdown regex parsing for cua-driver builds
             # that didn't carry the structured shape — those bounds come
@@ -2164,7 +2164,7 @@ class CuaDriverBackend(ComputerUseBackend):
         ``foreground_unsupported`` result instead of silently downgrading to
         background (which would land the input somewhere the model didn't
         expect). Returns an ActionResult to short-circuit on refusal, or None
-        to proceed. See NousResearch/hermes-agent#67052 phase B.
+        to proceed. See NousResearch/kova-agent#67052 phase B.
         """
         if not delivery_mode or delivery_mode == "background":
             return None
@@ -2210,7 +2210,7 @@ class CuaDriverBackend(ComputerUseBackend):
 
         # Choose tool by click_count only — single-vs-double — and pass the
         # button through to `click`'s `button` enum (Surface 5 of
-        # NousResearch/hermes-agent#47072). cua-driver-rs gained an explicit
+        # NousResearch/kova-agent#47072). cua-driver-rs gained an explicit
         # `button: "left"|"right"|"middle"` arg on `click` in trycua/cua#1961
         # which rejects unknown buttons; before that, `middle` was silently
         # mapped to a left-click via name-routing through `right_click`.

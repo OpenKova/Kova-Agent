@@ -276,7 +276,13 @@ def ensure_fresh_token(
             return cached[1], False
 
     source = raw if raw is not None else _read_config(path)
-    block = (source.get("hosts") or {}).get(host) or {}
+    from plugins.memory.honcho.client import identity_for_host
+
+    block = (
+        (source.get("hosts") or {}).get(host)
+        or (source.get("hosts") or {}).get(identity_for_host(host))
+        or {}
+    )
     cred = OAuthCredential.from_host_block(block)
     if cred is None:
         _expiry_cache.pop(key, None)
@@ -289,7 +295,14 @@ def ensure_fresh_token(
     with _refresh_lock, _config_refresh_lock(path):
         # Re-read under both locks: another thread or process may have just
         # rotated the token — adopt theirs instead of replaying the old one.
-        fresh_block = (_read_config(path).get("hosts") or {}).get(host) or {}
+        from plugins.memory.honcho.client import identity_for_host
+
+        fresh_hosts = _read_config(path).get("hosts") or {}
+        fresh_block = (
+            fresh_hosts.get(host)
+            or fresh_hosts.get(identity_for_host(host))
+            or {}
+        )
         current = OAuthCredential.from_host_block(fresh_block) or cred
         if not current.is_expired(now=now):
             return current.access_token, current.access_token != cred.access_token

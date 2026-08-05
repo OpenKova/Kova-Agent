@@ -53,7 +53,7 @@ class TestVerifyConsoleScriptsInstalled:
 
         mock_install.assert_not_called()
 
-    def test_triggers_reinstall_when_hermes_exe_missing(
+    def test_triggers_reinstall_when_kova_exe_missing(
         self, temp_pyproject, fake_scripts_dir
     ):
         (fake_scripts_dir / "kova-agent.exe").write_bytes(b"fake")
@@ -110,7 +110,7 @@ class TestVerifyConsoleScriptsInstalled:
         import kova_cli.main as main_mod
 
         with patch("kova_cli.main._is_windows", return_value=True):
-            names = {path.name for path in main_mod._hermes_exe_shims(fake_scripts_dir)}
+            names = {path.name for path in main_mod._kova_exe_shims(fake_scripts_dir)}
 
         assert {"kova.exe", "kova-agent.exe", "kova-acp.exe"} <= names
         assert "kova-gateway.exe" in names

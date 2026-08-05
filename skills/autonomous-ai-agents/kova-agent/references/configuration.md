@@ -26,7 +26,7 @@ Full reference: https://kova-agent.kova.ai/docs/user-guide/configuration
 ### Toolsets
 
 Enable/disable via `kova tools` (interactive) or `kova tools enable/disable NAME`.
-Full enumeration: `TOOLSETS` dict in `toolsets.py` (`_HERMES_CORE_TOOLS` is the default bundle most platforms inherit).
+Full enumeration: `TOOLSETS` dict in `toolsets.py` (`_KOVA_CORE_TOOLS` is the default bundle most platforms inherit).
 
 | Toolset | What it provides |
 |---------|-----------------|
