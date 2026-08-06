@@ -1279,7 +1279,7 @@ class LineAdapter(BasePlatformAdapter):
         from trusted internal code, we recheck the resolved path against
         an allowed-roots set before serving. Sources allowed:
         ``tempfile.gettempdir()``, ``/tmp`` (which resolves to
-        ``/private/tmp`` on macOS), and ``HERMES_HOME``. PR #8398.
+        ``/private/tmp`` on macOS), and ``KOVA_HOME``. PR #8398.
         """
         from aiohttp import web
 
@@ -1581,7 +1581,7 @@ def interactive_setup() -> None:
     """Minimal stdin wizard for ``kova setup line``.
 
     Mirrors the irc/teams style: prompts for the two required vars, plus
-    one optional public URL. Writes to ``~/.hermes/.env`` via ``kova_cli.config``.
+    one optional public URL. Writes to ``~/.kova/.env`` via ``kova_cli.config``.
     """
     print()
     print("LINE Messaging API setup")
@@ -1593,7 +1593,7 @@ def interactive_setup() -> None:
     try:
         from kova_cli.config import get_env_var, set_env_var
     except ImportError:
-        print("kova_cli.config not available; set LINE_* vars manually in ~/.hermes/.env")
+        print("kova_cli.config not available; set LINE_* vars manually in ~/.kova/.env")
         return
 
     def _prompt(var: str, prompt: str, *, secret: bool = False) -> None:

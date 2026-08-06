@@ -56,7 +56,7 @@ If you're just running the Kova Agent and want to use Docker, see `website/docs/
 │   │   └── skills_sync.py
 │   └── 02-reconcile-profiles          ← kova_cli.container_boot
 │       ├── chown /run/service (kova-writable for runtime register)
-│       └── walk $HERMES_HOME/profiles/<name>/gateway_state.json
+│       └── walk $KOVA_HOME/profiles/<name>/gateway_state.json
 │           → recreate /run/service/gateway-<name>/
 │           → auto-start only those with prior_state == "running"
 │
@@ -69,7 +69,7 @@ If you're just running the Kova Agent and want to use Docker, see `website/docs/
 │   │   ├── type        ("longrun")
 │   │   ├── run         ("#!/command/with-contenv sh ... exec s6-setuidgid kova kova -p coder gateway run")
 │   │   ├── down        (marker — present means "registered but don't auto-start")
-│   │   └── log/run     (s6-log → $HERMES_HOME/logs/gateways/coder/current)
+│   │   └── log/run     (s6-log → $KOVA_HOME/logs/gateways/coder/current)
 │   └── ...
 │
 └── CMD ("main program")               ← /opt/kova/docker/main-wrapper.sh
@@ -169,11 +169,11 @@ The harness lives in `tests/docker/` and skips when Docker isn't available. The 
 
 ### Profile directory ownership
 
-The cont-init reconciler runs as kova (`s6-setuidgid kova` in `02-reconcile-profiles`). If a profile dir ends up root-owned (e.g. because `docker exec <c> kova profile create …` ran as root by default), the reconciler can't read SOUL.md and fails with `PermissionError`. Mitigation: `stage2-hook.sh` chowns `$HERMES_HOME/profiles` to kova on **every** boot, idempotently. Don't remove that block.
+The cont-init reconciler runs as kova (`s6-setuidgid kova` in `02-reconcile-profiles`). If a profile dir ends up root-owned (e.g. because `docker exec <c> kova profile create …` ran as root by default), the reconciler can't read SOUL.md and fails with `PermissionError`. Mitigation: `stage2-hook.sh` chowns `$KOVA_HOME/profiles` to kova on **every** boot, idempotently. Don't remove that block.
 
 ### Files written by `docker exec` are root-owned
 
-`docker exec` defaults to root. Either pass `--user kova` or rely on the stage2 chown sweep next reboot. Don't write files under `$HERMES_HOME/profiles/<name>/` as root manually — the next reconcile pass will sweep them but in-flight operations may hit perm errors.
+`docker exec` defaults to root. Either pass `--user kova` or rely on the stage2 chown sweep next reboot. Don't write files under `$KOVA_HOME/profiles/<name>/` as root manually — the next reconcile pass will sweep them but in-flight operations may hit perm errors.
 
 ### Service slot exists but s6-svstat says "s6-supervise not running"
 

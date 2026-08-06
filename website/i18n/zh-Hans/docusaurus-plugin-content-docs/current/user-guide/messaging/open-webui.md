@@ -37,7 +37,7 @@ kova config set API_SERVER_ENABLED true
 kova config set API_SERVER_KEY your-secret-key
 ```
 
-`kova config set` 会自动将标志路由到 `config.yaml`，将密钥路由到 `~/.hermes/.env`。如果 gateway 已在运行，请重启以使更改生效：
+`kova config set` 会自动将标志路由到 `config.yaml`，将密钥路由到 `~/.kova/.env`。如果 gateway 已在运行，请重启以使更改生效：
 
 ```bash
 kova gateway stop && kova gateway
@@ -241,14 +241,14 @@ Open WebUI 在首次启动后会将 OpenAI 兼容连接设置持久化到其自�
 
 ```bash
 kova profile create alice
-cat >> ~/.hermes/profiles/alice/.env <<EOF
+cat >> ~/.kova/profiles/alice/.env <<EOF
 API_SERVER_ENABLED=true
 API_SERVER_PORT=8650
 API_SERVER_KEY=alice-secret
 EOF
 
 kova profile create bob
-cat >> ~/.hermes/profiles/bob/.env <<EOF
+cat >> ~/.kova/profiles/bob/.env <<EOF
 API_SERVER_ENABLED=true
 API_SERVER_PORT=8651
 API_SERVER_KEY=bob-secret

@@ -436,7 +436,7 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
           # Helper: run merge then load with Python, output merged JSON
           merge_and_load() {
             local kova_home="$1"
-            export HERMES_HOME="$kova_home"
+            export KOVA_HOME="$kova_home"
             ${configMergeScript} ${nixSettings} "$kova_home/config.yaml"
             ${kovaVenv}/bin/python3 -c '
 import json, sys

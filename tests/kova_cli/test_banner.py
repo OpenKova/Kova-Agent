@@ -286,7 +286,7 @@ def test_build_welcome_banner_moa_provider_shows_preset_and_aggregator(tmp_path,
 
     home = tmp_path / ".kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     (home / "config.yaml").write_text(
         yaml.safe_dump(
             {
@@ -330,7 +330,7 @@ def test_build_welcome_banner_moa_provider_shows_preset_and_aggregator(tmp_path,
 
 def test_build_welcome_banner_non_moa_unchanged(tmp_path, monkeypatch):
     """A normal provider still renders the bare model slug, no MoA prefix."""
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".kova"))
+    monkeypatch.setenv("KOVA_HOME", str(tmp_path / ".kova"))
     (tmp_path / ".kova").mkdir()
 
     with (

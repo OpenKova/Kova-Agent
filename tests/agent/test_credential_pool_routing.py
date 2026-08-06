@@ -332,7 +332,7 @@ class TestApiKeyHintRealPool:
                 }
             )
         )
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         from agent.credential_pool import load_pool
 
         return load_pool("openrouter")
@@ -383,7 +383,7 @@ class TestFailureAttribution:
     """
 
     def _make_pool(self, tmp_path, monkeypatch, entries):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path / "kova"))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path / "kova"))
         kova_home = tmp_path / "kova"
         kova_home.mkdir(parents=True, exist_ok=True)
         (kova_home / "auth.json").write_text(

@@ -228,7 +228,7 @@ RUN mkdir -p /opt/kova/bin && \
     chmod 0755 /opt/kova/bin/kova && \
     printf 'docker\n' > /opt/kova/.install_method
 # The ``.install_method`` stamp is baked next to the running code (the install
-# tree), NOT into $HERMES_HOME. $HERMES_HOME (/opt/data) is a shared data
+# tree), NOT into $KOVA_HOME. $KOVA_HOME (/opt/data) is a shared data
 # volume that is commonly bind-mounted from the host and even shared with a
 # host-side Desktop/CLI install; stamping it at boot used to clobber that
 # host install's marker and wrongly block its ``kova update``. A code-scoped
@@ -274,7 +274,7 @@ COPY docker/s6-rc.d/ /etc/s6-overlay/s6-rc.d/
 # runs before user services start.
 #
 # 02-reconcile-profiles re-creates per-profile gateway s6 service
-# slots from $HERMES_HOME/profiles/<name>/ after a container restart
+# slots from $KOVA_HOME/profiles/<name>/ after a container restart
 # (the /run/service/ scandir is tmpfs and wiped on restart). Phase 4.
 RUN mkdir -p /etc/cont-init.d && \
     printf '#!/command/with-contenv sh\nexec /opt/kova/docker/stage2-hook.sh\n' \
@@ -302,7 +302,7 @@ ENV KOVA_WEB_DIST=/opt/kova/kova_cli/web_dist
 # 502 / "[session ended]". Pointing at the prebuilt bundle sidesteps the whole
 # check. (A separate launcher hardening is tracked independently.)
 ENV KOVA_TUI_DIR=/opt/kova/ui-tui
-ENV HERMES_HOME=/opt/data
+ENV KOVA_HOME=/opt/data
 ENV KOVA_WRITE_SAFE_ROOT=/opt/data
 ENV KOVA_DISABLE_LAZY_INSTALLS=1
 # The published image seals /opt/kova (root-owned, read-only) so a runtime
@@ -321,7 +321,7 @@ ENV KOVA_LAZY_INSTALL_TARGET=/opt/data/lazy-packages
 
 # `docker exec` privilege-drop shim. When operators run
 # `docker exec <c> kova ...` they default to root, and any file the
-# command writes under $HERMES_HOME (auth.json, .env, config.yaml) ends
+# command writes under $KOVA_HOME (auth.json, .env, config.yaml) ends
 # up root-owned and unreadable to the supervised gateway (UID 10000).
 # The shim lives at /opt/kova/bin/kova, sits earliest on PATH, and
 # transparently re-exec's the real venv binary via `s6-setuidgid kova`

@@ -767,7 +767,7 @@ class TestInstallArchiveMemberValidation:
         archive, checksums = self._write_archive(tmp_path, member, payload)
 
         kova_home = tmp_path / "kova-home"
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         with patch("tools.tirith_security._download_file",
                    side_effect=self._download_side_effect(archive, checksums)):
             path, reason = _install_tirith(log_failures=False)
@@ -794,7 +794,7 @@ class TestInstallArchiveMemberValidation:
         archive, checksums = self._write_archive(tmp_path, member)
 
         kova_home = tmp_path / "kova-home"
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         with patch("tools.tirith_security._download_file",
                    side_effect=self._download_side_effect(archive, checksums)):
             path, reason = _install_tirith(log_failures=False)
@@ -1013,7 +1013,7 @@ class TestDiskFailureMarker:
         _tirith_mod._resolved_path = None
 
     def test_install_failed_recovers_from_kova_bin(self):
-        """After _INSTALL_FAILED, manual install in HERMES_HOME/bin is picked up."""
+        """After _INSTALL_FAILED, manual install in KOVA_HOME/bin is picked up."""
         from tools.tirith_security import _resolve_tirith_path, _INSTALL_FAILED
         import tempfile
         tmpdir = tempfile.mkdtemp()
@@ -1155,41 +1155,41 @@ class TestDiskFailureMarker:
 
 
 # ---------------------------------------------------------------------------
-# HERMES_HOME isolation
+# KOVA_HOME isolation
 # ---------------------------------------------------------------------------
 
 class TestKovaHomeIsolation:
     def test_kova_bin_dir_respects_kova_home(self):
-        """_kova_bin_dir must use HERMES_HOME, not hardcoded ~/.hermes."""
+        """_kova_bin_dir must use KOVA_HOME, not hardcoded ~/.kova."""
         from tools.tirith_security import _kova_bin_dir
         import tempfile
         tmpdir = tempfile.mkdtemp()
-        with patch.dict(os.environ, {"HERMES_HOME": tmpdir}):
+        with patch.dict(os.environ, {"KOVA_HOME": tmpdir}):
             result = _kova_bin_dir()
         assert result == os.path.join(tmpdir, "bin")
         assert os.path.isdir(result)
 
     def test_failure_marker_respects_kova_home(self):
-        """_failure_marker_path must use HERMES_HOME, not hardcoded ~/.hermes."""
+        """_failure_marker_path must use KOVA_HOME, not hardcoded ~/.kova."""
         from tools.tirith_security import _failure_marker_path
-        with patch.dict(os.environ, {"HERMES_HOME": "/custom/kova"}):
+        with patch.dict(os.environ, {"KOVA_HOME": "/custom/kova"}):
             result = _failure_marker_path()
         assert result == "/custom/kova/.tirith-install-failed"
 
     def test_conftest_isolation_prevents_real_home_writes(self):
-        """The conftest autouse fixture sets HERMES_HOME; verify it's active."""
-        kova_home = os.getenv("HERMES_HOME")
-        assert kova_home is not None, "HERMES_HOME should be set by conftest"
+        """The conftest autouse fixture sets KOVA_HOME; verify it's active."""
+        kova_home = os.getenv("KOVA_HOME")
+        assert kova_home is not None, "KOVA_HOME should be set by conftest"
         assert "kova_test" in kova_home, "Should point to test temp dir"
 
     def test_get_kova_home_fallback(self):
-        """Without HERMES_HOME set, falls back to the active OS home."""
+        """Without KOVA_HOME set, falls back to the active OS home."""
         from tools.tirith_security import _get_kova_home
         with patch.dict(os.environ, {}, clear=True):
-            # Remove HERMES_HOME entirely. With HOME also absent, expanduser
+            # Remove KOVA_HOME entirely. With HOME also absent, expanduser
             # falls back to the account database; compute expected under the
             # same environment instead of after patch.dict restores HOME.
-            os.environ.pop("HERMES_HOME", None)
+            os.environ.pop("KOVA_HOME", None)
             expected = os.path.join(os.path.expanduser("~"), ".kova")
             result = _get_kova_home()
         assert result == expected

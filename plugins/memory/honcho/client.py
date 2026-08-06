@@ -1,7 +1,7 @@
 """Honcho client initialization and configuration.
 
 Resolution order for config file:
-  1. $HERMES_HOME/honcho.json  (instance-local, enables isolated Kova instances)
+  1. $KOVA_HOME/honcho.json  (instance-local, enables isolated Kova instances)
   2. ~/.honcho/config.json     (global, shared across all Honcho-enabled apps)
   3. Environment variables     (HONCHO_API_KEY, HONCHO_ENVIRONMENT)
 
@@ -35,10 +35,10 @@ logger = logging.getLogger(__name__)
 # Local Honcho host key (config-block key + CLI labels). Renameable.
 HOST = "kova"
 # Legacy host key honoured for dual-read (pre-rename configs).
-LEGACY_HOST = "hermes"
+LEGACY_HOST = "kova"
 # Server-side Honcho memory identity seed. HARD NO — renaming orphans all
 # existing workspaces/peers on Honcho's servers.
-IDENTITY_HOST = "hermes"
+IDENTITY_HOST = "kova"
 
 
 def profile_host_key(profile: str | None) -> str:
@@ -139,8 +139,8 @@ def resolve_config_path() -> Path:
     """Return the active Honcho config path.
 
     Resolution order:
-      1. $HERMES_HOME/honcho.json      (profile-local, if it exists)
-      2. ~/.hermes/honcho.json          (default profile — shared host blocks live here)
+      1. $KOVA_HOME/honcho.json      (profile-local, if it exists)
+      2. ~/.kova/honcho.json          (default profile — shared host blocks live here)
       3. ~/.honcho/config.json          (global, cross-app interop)
 
     Returns the global path if none exist (for first-time setup writes).
@@ -532,7 +532,7 @@ class HonchoClientConfig:
     ) -> HonchoClientConfig:
         """Create config from the resolved Honcho config path.
 
-        Resolution: $HERMES_HOME/honcho.json -> ~/.honcho/config.json -> env vars.
+        Resolution: $KOVA_HOME/honcho.json -> ~/.honcho/config.json -> env vars.
         When host is None, derives it from the active Kova profile.
         """
         resolved_host = host or resolve_active_host()

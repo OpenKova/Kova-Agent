@@ -3,7 +3,7 @@
 A provider API key can live in .env, auth.json's credential_pool, and
 config.yaml mirrors at once. These tests drive the REAL dashboard endpoint
 handlers (PUT/DELETE /api/env) against real on-disk fixtures in a temp
-HERMES_HOME (tests/conftest.py isolation) and assert every store agrees
+KOVA_HOME (tests/conftest.py isolation) and assert every store agrees
 afterwards.
 
 All fake secrets are constructed at runtime so no key-shaped literal ever
@@ -28,10 +28,10 @@ NEW_KEY = "zk-" + "c" * 24
 
 @pytest.fixture
 def kova_home(monkeypatch, tmp_path):
-    """Fresh HERMES_HOME with .env + auth.json + config.yaml fixtures."""
+    """Fresh KOVA_HOME with .env + auth.json + config.yaml fixtures."""
     home = tmp_path / "cred_home"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     from kova_cli.config import invalidate_env_cache
 
     invalidate_env_cache()

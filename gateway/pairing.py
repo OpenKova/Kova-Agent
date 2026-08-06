@@ -15,7 +15,7 @@ Security features (based on OWASP + NIST SP 800-63-4 guidance):
   - File permissions: chmod 0600 on all data files
   - Codes are never logged to stdout
 
-Storage: ~/.hermes/pairing/
+Storage: ~/.kova/pairing/
 """
 
 import hashlib
@@ -174,8 +174,8 @@ def _load_json_file(path: Path) -> dict:
 def _merge_pairing_dir(active_dir: Path, alternate_dir: Path) -> None:
     """Merge split legacy/new pairing data into the active PairingStore dir.
 
-    Older installs use ``{HERMES_HOME}/pairing`` while newer code/docs may
-    write ``{HERMES_HOME}/platforms/pairing``. If both directories exist, the
+    Older installs use ``{KOVA_HOME}/pairing`` while newer code/docs may
+    write ``{KOVA_HOME}/platforms/pairing``. If both directories exist, the
     gateway must not silently ignore approved users sitting in the inactive
     location; otherwise already-paired Feishu users get asked for a fresh code.
     """
@@ -242,14 +242,14 @@ class PairingStore:
       - _rate_limits.json         : rate limit tracking
 
     When constructed with ``profile="<name>"``, storage lives under
-    ``<HERMES_HOME>/profiles/<name>/pairing/`` (per-profile, used by
+    ``<KOVA_HOME>/profiles/<name>/pairing/`` (per-profile, used by
     multiplexing gateways so each profile has its own whitelist).
-    Without a profile, storage is the global ``<HERMES_HOME>/pairing/``
+    Without a profile, storage is the global ``<KOVA_HOME>/pairing/``
     directory (backward-compat for the ``kova pairing`` CLI).
     """
 
     def __init__(self, profile: Optional[str] = None):
-        # Resolve storage directory lazily — tests use a temp HERMES_HOME
+        # Resolve storage directory lazily — tests use a temp KOVA_HOME
         # and PairingStore may be constructed before the env is set.
         if profile:
             from kova_constants import get_kova_home

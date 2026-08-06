@@ -28,7 +28,7 @@ def isolated_home(tmp_path, monkeypatch):
     kova = home / ".kova"
     kova.mkdir(parents=True)
     monkeypatch.setattr(Path, "home", lambda: home)
-    monkeypatch.setenv("HERMES_HOME", str(kova))
+    monkeypatch.setenv("KOVA_HOME", str(kova))
     # Ensure get_env_value cache doesn't carry stale state.
     for key in list(os.environ):
         if key.startswith("WHATSAPP_"):

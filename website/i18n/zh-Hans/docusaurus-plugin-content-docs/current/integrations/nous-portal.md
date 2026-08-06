@@ -35,7 +35,7 @@ Portal 代理了来自整个生态系统的精选 agentic 模型目录——统�
 | **GLM / Zhipu** | GLM-4.6、GLM-4-Plus |
 | **MiniMax** | M2.7、M1 |
 | **xAI** | Grok-4、Grok-3 |
-| **Kova** | Hermes-4-70B、Hermes-4-405B（对话，见[下方说明](#a-note-on-hermes-4)） |
+| **Kova** | Kova-4-70B、Kova-4-405B（对话，见[下方说明](#a-note-on-kova-4)） |
 | **+ 其他所有模型** | 240+ 额外模型——完整的 agentic 前沿生态 |
 
 底层路由通过 OpenRouter 实现，因此模型可用性和故障转移行为与使用 OpenRouter 密钥一致——只是计费走你的 Nous 订阅。在会话中途用 `/model` 即可在 Claude Sonnet 4.6（适合代码）和 Gemini 2.5 Pro（适合长上下文）之间切换——无需新凭证，无需充值，不会遇到余额为零的意外报错。
@@ -58,7 +58,7 @@ Portal 代理了来自整个生态系统的精选 agentic 模型目录——统�
 
 ### 凭证不落入 dotfiles
 
-由于所有请求都通过一个经 OAuth 认证的 Portal 会话路由，你不会积累一个包含十几个长期 API 密钥的 `.env` 文件。磁盘上唯一的凭证是 `~/.hermes/auth.json` 中的 refresh token（刷新令牌），Kova 会在每次请求时从中生成短期 JWT——详见下方[令牌处理](#token-handling)。
+由于所有请求都通过一个经 OAuth 认证的 Portal 会话路由，你不会积累一个包含十几个长期 API 密钥的 `.env` 文件。磁盘上唯一的凭证是 `~/.kova/auth.json` 中的 refresh token（刷新令牌），Kova 会在每次请求时从中生成短期 JWT——详见下方[令牌处理](#token-handling)。
 
 ### 跨平台一致性
 
@@ -66,7 +66,7 @@ Portal 代理了来自整个生态系统的精选 agentic 模型目录——统�
 
 ## 关于 Kova 4 的说明
 
-Nous Research 自家的 **Kova 4** 系列（Hermes-4-70B、Hermes-4-405B）通过 Portal 提供，享有大幅折扣。这些是**前沿混合推理对话模型**——在数学、科学、指令遵循、schema 遵从、角色扮演和长文写作方面表现出色。
+Nous Research 自家的 **Kova 4** 系列（Kova-4-70B、Kova-4-405B）通过 Portal 提供，享有大幅折扣。这些是**前沿混合推理对话模型**——在数学、科学、指令遵循、schema 遵从、角色扮演和长文写作方面表现出色。
 
 但**不建议在 Kova Agent 内部使用它们**。Kova 4 针对对话和推理进行了调优，而非 agent 所依赖的高频工具调用循环。请将它们用于研究工作流，或通过[订阅代理](/user-guide/features/subscription-proxy)从其他工具调用——但在 agent 场景下，请从目录中选择前沿 agentic 模型：
 
@@ -90,9 +90,9 @@ kova setup --portal
 一次性完成全部配置：
 
 1. 打开浏览器跳转至 portal.nousresearch.com 进行 OAuth 登录
-2. 将 refresh token 存储至 `~/.hermes/auth.json`
+2. 将 refresh token 存储至 `~/.kova/auth.json`
 3. 让你从精选列表中选择一个 Nous 模型（也可跳过以保留当前模型）
-4. 在 `~/.hermes/config.yaml` 中将 Nous 设为推理提供商（当你选择模型时）
+4. 在 `~/.kova/config.yaml` 中将 Nous 设为推理提供商（当你选择模型时）
 5. 开启 Tool Gateway（网页、图像、TTS、浏览器路由）
 6. 返回终端，即可运行 `kova chat`
 
@@ -195,7 +195,7 @@ Tool Gateway 是按工具单独选择启用的，而非全部或全不。完整�
 
 ## 配置参考
 
-运行 `kova setup --portal` 后，`~/.hermes/config.yaml` 将如下所示：
+运行 `kova setup --portal` 后，`~/.kova/config.yaml` 将如下所示：
 
 ```yaml
 model:
@@ -220,7 +220,7 @@ browser:
   backend: nous
 ```
 
-OAuth refresh token 单独存储在 `~/.hermes/auth.json`（不在 `config.yaml` 中——凭证与配置有意分开存放）。
+OAuth refresh token 单独存储在 `~/.kova/auth.json`（不在 `config.yaml` 中——凭证与配置有意分开存放）。
 
 ## 令牌处理
 

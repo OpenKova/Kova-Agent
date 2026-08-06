@@ -5,7 +5,7 @@ server's dashboard plugin loader.
 Two primitives combined into the original advisory chain:
 
 1. ``kova_cli.web_server._discover_dashboard_plugins`` opted into
-   the untrusted ``./.hermes/plugins/`` source via
+   the untrusted ``./.kova/plugins/`` source via
    ``os.environ.get("KOVA_ENABLE_PROJECT_PLUGINS")`` — truthy for
    any non-empty string, so ``=0`` / ``=false`` / ``=no`` (all of
    which the agent loader treats as off, and which operators set to
@@ -74,7 +74,7 @@ class TestProjectPluginsEnvGate:
     def project_plugin(self, tmp_path, monkeypatch):
         """Plant a project-source plugin under CWD's ``.kova/plugins``
         and isolate the user-plugins dir to an empty tmp tree."""
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path / "home"))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path / "home"))
         (tmp_path / "home").mkdir()
         cwd = tmp_path / "evil-repo"
         cwd.mkdir()
@@ -184,7 +184,7 @@ class TestDiscoveryScrubsApiField:
 
     @pytest.fixture
     def user_plugin_factory(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path))
         monkeypatch.delenv("KOVA_ENABLE_PROJECT_PLUGINS", raising=False)
 
         def _make(name: str, manifest: dict) -> None:
@@ -315,7 +315,7 @@ class TestEndToEndPocBlocked:
     project-source bypass)."""
 
     def test_full_chain_blocked(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path / "home"))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path / "home"))
         (tmp_path / "home").mkdir()
         cwd = tmp_path / "evil-repo"
         cwd.mkdir()

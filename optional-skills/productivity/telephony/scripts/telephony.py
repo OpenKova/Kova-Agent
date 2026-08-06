@@ -2,7 +2,7 @@
 """Telephony helper for the Kova optional telephony skill.
 
 Capabilities:
-- Persist telephony provider credentials to the Kova .env file ($HERMES_HOME/.env)
+- Persist telephony provider credentials to the Kova .env file ($KOVA_HOME/.env)
 - Search for, buy, and remember Twilio phone numbers
 - Make direct Twilio calls (TwiML <Say> or <Play>)
 - Send SMS / MMS via Twilio
@@ -69,7 +69,7 @@ class OwnedTwilioNumber:
 
 
 def _kova_home() -> Path:
-    return Path(os.environ.get("HERMES_HOME", "~/.hermes")).expanduser()
+    return Path(os.environ.get("KOVA_HOME", "~/.kova")).expanduser()
 
 
 def _env_path() -> Path:

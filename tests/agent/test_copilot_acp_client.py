@@ -164,7 +164,7 @@ class CopilotACPClientSafetyTests(unittest.TestCase):
 
             with patch.dict(
                 os.environ,
-                {"HOME": str(home), "HERMES_HOME": str(home / ".kova")},
+                {"HOME": str(home), "KOVA_HOME": str(home / ".kova")},
                 clear=False,
             ):
                 response = self._dispatch(
@@ -291,7 +291,7 @@ def test_run_prompt_preserves_real_home_when_profile_home_available(monkeypatch,
     real_home.mkdir()
 
     monkeypatch.setenv("HOME", str(real_home))
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     captured = {}
     client = _make_home_client(tmp_path)
@@ -306,7 +306,7 @@ def test_run_prompt_preserves_real_home_when_profile_home_available(monkeypatch,
 
 def test_run_prompt_passes_home_when_parent_env_is_clean(monkeypatch, tmp_path):
     monkeypatch.delenv("HOME", raising=False)
-    monkeypatch.delenv("HERMES_HOME", raising=False)
+    monkeypatch.delenv("KOVA_HOME", raising=False)
 
     captured = {}
     client = _make_home_client(tmp_path)

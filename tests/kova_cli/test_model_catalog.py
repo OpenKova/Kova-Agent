@@ -13,11 +13,11 @@ import pytest
 
 @pytest.fixture
 def isolated_home(tmp_path, monkeypatch):
-    """Isolate HERMES_HOME + reset any module-level catalog cache per test."""
+    """Isolate KOVA_HOME + reset any module-level catalog cache per test."""
     home = tmp_path / ".kova"
     home.mkdir()
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
 
     # Force a fresh catalog module state for each test.
     import importlib
@@ -440,9 +440,9 @@ class TestIntegrationWithModelsModule:
         # We deliberately do NOT use the ``isolated_home`` fixture here:
         # that fixture monkeypatches ``Path.home`` to ``tmp_path``, which
         # trips the auth-store seat-belt in ``_auth_file_path()`` because
-        # ``HERMES_HOME / auth.json`` then resolves to the same path the
+        # ``KOVA_HOME / auth.json`` then resolves to the same path the
         # seat-belt thinks is the "real" user store. Use the autouse
-        # ``_hermetic_environment`` HERMES_HOME directly instead.
+        # ``_hermetic_environment`` KOVA_HOME directly instead.
         import importlib
         from kova_cli import model_catalog
         from kova_cli.models import get_curated_nous_model_ids
@@ -450,7 +450,7 @@ class TestIntegrationWithModelsModule:
         try:
             from kova_cli.model_switch import list_picker_providers
 
-            active_home = Path(os.environ["HERMES_HOME"])
+            active_home = Path(os.environ["KOVA_HOME"])
             (active_home / "auth.json").write_text(
                 json.dumps(
                     {
@@ -502,7 +502,7 @@ class TestIntegrationWithModelsModule:
                 list_picker_providers,
             )
 
-            active_home = Path(os.environ["HERMES_HOME"])
+            active_home = Path(os.environ["KOVA_HOME"])
             (active_home / "auth.json").write_text(
                 json.dumps(
                     {

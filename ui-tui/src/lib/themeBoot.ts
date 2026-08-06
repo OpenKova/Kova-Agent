@@ -34,13 +34,13 @@ interface BootThemeFile {
   version: 1
 }
 
-// Profile-aware: the Python launcher exports HERMES_HOME (set by
+// Profile-aware: the Python launcher exports KOVA_HOME (set by
 // _apply_profile_override) before spawning the TUI. Falling back to
-// ~/.hermes matches get_kova_home()'s default.
-const bootFilePath = () => join(process.env.HERMES_HOME ?? join(homedir(), '.kova'), 'tui-theme-boot.json')
+// ~/.kova matches get_kova_home()'s default.
+const bootFilePath = () => join(process.env.KOVA_HOME ?? join(homedir(), '.kova'), 'tui-theme-boot.json')
 
-// Never touch the user's real ~/.hermes from test runs (the TS suite has no
-// HERMES_HOME isolation fixture).
+// Never touch the user's real ~/.kova from test runs (the TS suite has no
+// KOVA_HOME isolation fixture).
 const isTestRun = () => !!process.env.VITEST || process.env.NODE_ENV === 'test'
 
 const looksLikeTheme = (value: unknown): value is Theme => {

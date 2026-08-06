@@ -842,7 +842,7 @@ def test_skill_installs_cleanly_under_skills_guard():
     # python_os_environ  — reads MIGRATION_JSON_OUTPUT to enable JSON output mode
     #                      (feature flag, not an env dump)
     # kova_config_mod  — print statements in the post-migration summary that
-    #                      tell the user to *review* ~/.hermes/config.yaml;
+    #                      tell the user to *review* ~/.kova/config.yaml;
     #                      the script never writes to that file
     #
     # Accept "caution" or "safe" — just not "dangerous" from a *real* threat.
@@ -863,7 +863,7 @@ def test_rebrand_text_replaces_openclaw_variants():
     assert mod.rebrand_text("Open-Claw config is great") == "Kova config is great"
     assert mod.rebrand_text("OPENCLAW uses tools well") == "Kova uses tools well"
     # All-lowercase matches → lowercase ``kova``; dot-prefixed filesystem
-    # paths keep ``~/.hermes`` (Kova home) when rebranding memory entries
+    # paths keep ``~/.kova`` (Kova home) when rebranding memory entries
     # that reference ``~/.openclaw``.
     assert mod.rebrand_text("openclaw should always respond concisely") == "kova should always respond concisely"
 
@@ -901,12 +901,12 @@ def test_rebrand_text_preserves_filesystem_path_casing():
     """
     mod = load_module()
     assert mod.rebrand_text("config is at ~/.openclaw/config.yaml") == \
-        "config is at ~/.hermes/config.yaml"
+        "config is at ~/.kova/config.yaml"
     assert mod.rebrand_text("use .openclaw directory") == "use .kova directory"
     assert mod.rebrand_text("Path.home() / '.openclaw'") == "Path.home() / '.kova'"
     # Sentence with both lowercase path and capitalized prose.
     assert mod.rebrand_text("openclaw config path: ~/.openclaw/") == \
-        "kova config path: ~/.hermes/"
+        "kova config path: ~/.kova/"
 
 
 def test_migrate_memory_rebrands_entries(tmp_path):

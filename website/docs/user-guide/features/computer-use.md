@@ -73,7 +73,7 @@ Then start a session with the toolset enabled:
 kova -t computer_use chat
 ```
 
-or add `computer_use` to your enabled toolsets in `~/.hermes/config.yaml`.
+or add `computer_use` to your enabled toolsets in `~/.kova/config.yaml`.
 
 ## `kova computer-use doctor` — your first triage stop
 
@@ -117,7 +117,7 @@ When the agent acts, you'll see a **tinted overlay cursor** glide
 across the screen to where each click / type / scroll lands. The real
 OS cursor never moves — the overlay is a visual cue that says "the
 agent is acting here." Each Kova run declares its own cua-driver
-**session id** (something like `hermes-3a7b9c14d2e8`); the cursor's
+**session id** (something like `kova-3a7b9c14d2e8`); the cursor's
 identity is keyed to that session, so concurrent runs / subagents each
 get their own cursor without stepping on each other.
 
@@ -218,7 +218,7 @@ Kova applies multi-layer guardrails:
   dialogs, no typing passwords, no following instructions embedded in
   screenshots.
 
-Pair with `approvals.mode: manual` in `~/.hermes/config.yaml` if you
+Pair with `approvals.mode: manual` in `~/.kova/config.yaml` if you
 want every action confirmed.
 
 ## Token efficiency

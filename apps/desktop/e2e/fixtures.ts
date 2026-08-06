@@ -201,7 +201,7 @@ function writeEmptyConfig(kovaHome: string): void {
  * Build the environment for the Electron app process.
  *
  * Key env vars:
- *  - HERMES_HOME → sandbox kova-home (isolated config/sessions)
+ *  - KOVA_HOME → sandbox kova-home (isolated config/sessions)
  *  - KOVA_DESKTOP_USER_DATA_DIR → sandbox electron-user-data
  *  - KOVA_DESKTOP_IGNORE_EXISTING=1 → don't pick up `kova` from PATH
  *    (we want the dev checkout at REPO_ROOT)
@@ -225,7 +225,7 @@ export function buildAppEnv(sandbox: Sandbox, extra: Record<string, string> = {}
 
   return {
     ...clean,
-    HERMES_HOME: sandbox.kovaHome,
+    KOVA_HOME: sandbox.kovaHome,
     KOVA_DESKTOP_USER_DATA_DIR: sandbox.userDataDir,
     KOVA_DESKTOP_IGNORE_EXISTING: '1',
     KOVA_DESKTOP_KOVA_ROOT: REPO_ROOT,
@@ -295,8 +295,8 @@ export function findElectron(): string {
 /**
  * Launch the desktop app in dev mode.
  *
- * @param sandbox  - isolated HERMES_HOME + userData
- * @param env      - the process environment (already has HERMES_HOME etc.)
+ * @param sandbox  - isolated KOVA_HOME + userData
+ * @param env      - the process environment (already has KOVA_HOME etc.)
  * @returns the ElectronApplication + first Page
  */
 export async function launchDesktop(
@@ -525,7 +525,7 @@ export interface PackagedAppFixture {
  * progress without spawning a real Kova backend.
  *
  * Uses the same sandbox isolation (credential stripping, isolated
- * HERMES_HOME + userData, unique app name) as the dev-mode fixtures.
+ * KOVA_HOME + userData, unique app name) as the dev-mode fixtures.
  *
  * Skips if the packaged binary doesn't exist — run `npm run pack` first.
  */

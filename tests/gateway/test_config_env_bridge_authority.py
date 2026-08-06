@@ -55,7 +55,7 @@ def _run_gateway_import(kova_home: Path, initial_env: dict[str, str]) -> dict[st
         """
     )
     env = dict(initial_env)
-    env["HERMES_HOME"] = str(kova_home)
+    env["KOVA_HOME"] = str(kova_home)
     # Keep PATH / PYTHONPATH so venv imports resolve.
     for k in ("PATH", "PYTHONPATH", "VIRTUAL_ENV", "HOME"):
         if k in os.environ and k not in env:

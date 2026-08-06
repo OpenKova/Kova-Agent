@@ -38,7 +38,7 @@ TUI_CONTEXT_DIRS = [
 ]
 
 # User plugin roots — scanned at runtime if they exist.  Plugins load from
-# ``get_kova_home() / "plugins"`` (user) and ``./.hermes/plugins/`` (project,
+# ``get_kova_home() / "plugins"`` (user) and ``./.kova/plugins/`` (project,
 # gated behind ``KOVA_ENABLE_PROJECT_PLUGINS``) — see
 # ``kova_cli/plugins.py:10-12``.  The guard only checked the bundled
 # ``plugins/`` dir, missing user-installed code that spawns subprocesses
@@ -187,7 +187,7 @@ def main() -> int:
 
     # Scan user plugin directories (Gap 1: guard missed user-installed
     # plugins in get_kova_home()/plugins/ and project plugins in
-    # ./.hermes/plugins/, where code like ori/hooks.py can spawn
+    # ./.kova/plugins/, where code like ori/hooks.py can spawn
     # subprocesses with inherited stdin — #67639).
     plugin_roots: list[Path] = [get_kova_home() / "plugins"]
     if os.environ.get("KOVA_ENABLE_PROJECT_PLUGINS"):

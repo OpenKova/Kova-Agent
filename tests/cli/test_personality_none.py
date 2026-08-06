@@ -150,11 +150,11 @@ class TestGatewayPersonalityNone:
         (tmp_path / "config.yaml").write_text(yaml.dump({"agent": {"personalities": {}}}))
 
         with patch("gateway.run._kova_home", tmp_path), \
-             patch("kova_constants.display_kova_home", return_value="~/.hermes/profiles/coder"):
+             patch("kova_constants.display_kova_home", return_value="~/.kova/profiles/coder"):
             event = self._make_event("")
             result = await runner._handle_personality_command(event)
 
-        assert result == "No personalities configured in `~/.hermes/profiles/coder/config.yaml`"
+        assert result == "No personalities configured in `~/.kova/profiles/coder/config.yaml`"
 
 
 class TestPersonalityDictFormat:

@@ -9,7 +9,7 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def _isolate_kova(tmp_path, monkeypatch):
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".kova"))
+    monkeypatch.setenv("KOVA_HOME", str(tmp_path / ".kova"))
     (tmp_path / ".kova").mkdir(exist_ok=True)
 
 

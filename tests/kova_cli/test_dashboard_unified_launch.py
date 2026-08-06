@@ -57,7 +57,7 @@ class TestUnifiedDashboardRouting:
         assert opened == ["http://127.0.0.1:9119/?profile=worker_x"]
 
     def test_profile_launch_reexecs_machine_dashboard(self, main_mod, monkeypatch):
-        monkeypatch.delenv("HERMES_HOME", raising=False)
+        monkeypatch.delenv("KOVA_HOME", raising=False)
         monkeypatch.setattr(
             "kova_cli.profiles.get_active_profile_name", lambda: "worker_x"
         )
@@ -81,24 +81,24 @@ class TestUnifiedDashboardRouting:
         assert "--open-profile" in argv
         assert argv[argv.index("--open-profile") + 1] == "worker_x"
         # The child is pinned to the machine ROOT, not the launching profile's
-        # HERMES_HOME.  For a standard install (HERMES_HOME unset) that root is
-        # the platform-native default (~/.hermes), NOT dropped — see the Docker
+        # KOVA_HOME.  For a standard install (KOVA_HOME unset) that root is
+        # the platform-native default (~/.kova), NOT dropped — see the Docker
         # test below for why we resolve explicitly instead of popping.
         from kova_constants import get_default_kova_root
-        assert env.get("HERMES_HOME") == str(get_default_kova_root())
+        assert env.get("KOVA_HOME") == str(get_default_kova_root())
 
     def test_reexec_pins_docker_machine_root(self, main_mod, monkeypatch):
-        """In the Docker layout (HERMES_HOME=/opt/data, profiles under
+        """In the Docker layout (KOVA_HOME=/opt/data, profiles under
         /opt/data/profiles/<name>) the reroute must pin the child to the
-        machine root /opt/data — NOT drop HERMES_HOME.
+        machine root /opt/data — NOT drop KOVA_HOME.
 
-        Dropping it makes the child fall back to $HOME/.hermes
+        Dropping it makes the child fall back to $HOME/.kova
         (= /opt/data/.kova), an empty auto-seeded home, so the dashboard
         shows only the default profile and the .install_method stamp is
         missing (which also misfires the Docker update-button guard).
         Regression test for the support report.
         """
-        monkeypatch.setenv("HERMES_HOME", "/opt/data/profiles/oracle")
+        monkeypatch.setenv("KOVA_HOME", "/opt/data/profiles/oracle")
         monkeypatch.setattr(
             "kova_cli.profiles.get_active_profile_name", lambda: "oracle"
         )
@@ -119,7 +119,7 @@ class TestUnifiedDashboardRouting:
         # get_default_kova_root() strips the trailing profiles/<name>, so the
         # child binds /opt/data — where the real default/oracle/saga profiles
         # and the .install_method stamp actually live.
-        assert env.get("HERMES_HOME") == "/opt/data"
+        assert env.get("KOVA_HOME") == "/opt/data"
 
     def test_desktop_profile_backend_skips_machine_dashboard_reroute(self, main_mod, monkeypatch):
         """A desktop-spawned named-profile backend (KOVA_DESKTOP=1) must NOT

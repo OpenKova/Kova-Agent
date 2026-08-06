@@ -39,7 +39,7 @@ kova gateway setup
 
 ### 通过环境变量
 
-将以下内容添加到 `~/.hermes/.env`：
+将以下内容添加到 `~/.kova/.env`：
 
 ```
 SIMPLEX_WS_URL=ws://127.0.0.1:5225

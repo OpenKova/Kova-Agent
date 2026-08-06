@@ -23,9 +23,9 @@ def kova_home(tmp_path, monkeypatch):
     home = tmp_path / ".kova"
     home.mkdir()
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
 
-    # Bust the goal-module DB cache so it re-resolves HERMES_HOME.
+    # Bust the goal-module DB cache so it re-resolves KOVA_HOME.
     from kova_cli import goals
 
     goals._DB_CACHE.clear()

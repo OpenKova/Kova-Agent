@@ -31,7 +31,7 @@ Cargo.lock
 .web_ui_build.lock
 
 # Runtime markers that must never be swept by `git stash -u` during update
-.hermes-bootstrap-complete
+.kova-bootstrap-complete
 .install_method
 .update-incomplete
 

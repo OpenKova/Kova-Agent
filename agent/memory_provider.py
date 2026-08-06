@@ -66,8 +66,8 @@ class MemoryProvider(ABC):
         establish connections, start background threads, etc.
 
         kwargs always include:
-          - kova_home (str): The active HERMES_HOME directory path. Use this
-            for profile-scoped storage instead of hardcoding ``~/.hermes``.
+          - kova_home (str): The active KOVA_HOME directory path. Use this
+            for profile-scoped storage instead of hardcoding ``~/.kova``.
           - platform (str): "cli", "telegram", "discord", "cron", etc.
 
         kwargs may also include:
@@ -265,7 +265,7 @@ class MemoryProvider(ABC):
 
         Called by 'kova memory setup' after collecting user inputs.
         ``values`` contains only non-secret fields (secrets go to .env).
-        ``kova_home`` is the active HERMES_HOME directory path.
+        ``kova_home`` is the active KOVA_HOME directory path.
 
         Providers with native config files (JSON, YAML) should override
         this to write to their expected location. Providers that use only
@@ -297,9 +297,9 @@ class MemoryProvider(ABC):
         """
 
     def backup_paths(self) -> List[str]:
-        """Return extra on-disk paths this provider stores OUTSIDE HERMES_HOME.
+        """Return extra on-disk paths this provider stores OUTSIDE KOVA_HOME.
 
-        ``kova backup`` only walks HERMES_HOME, so any provider state kept
+        ``kova backup`` only walks KOVA_HOME, so any provider state kept
         under ``~/.honcho``, ``~/.hindsight``, ``~/.openviking``, etc. is lost
         across a backup/import cycle unless it's declared here.
 

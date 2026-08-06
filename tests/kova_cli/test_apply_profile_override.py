@@ -1,10 +1,10 @@
-"""Regression tests for _apply_profile_override HERMES_HOME guard (issue #22502).
+"""Regression tests for _apply_profile_override KOVA_HOME guard (issue #22502).
 
-When HERMES_HOME is set to the kova root (e.g. systemd hardcodes
-HERMES_HOME=/root/.kova), _apply_profile_override must still read
-active_profile and update HERMES_HOME to the profile directory.
+When KOVA_HOME is set to the kova root (e.g. systemd hardcodes
+KOVA_HOME=/root/.kova), _apply_profile_override must still read
+active_profile and update KOVA_HOME to the profile directory.
 
-When HERMES_HOME is already a profile directory (.../profiles/<name>),
+When KOVA_HOME is already a profile directory (.../profiles/<name>),
 _apply_profile_override must trust it and return without re-reading
 active_profile (child-process inheritance contract).
 """
@@ -24,7 +24,7 @@ def _run_apply_profile_override(
 ):
     """Run _apply_profile_override in isolation.
 
-    Returns the value of os.environ["HERMES_HOME"] after the call,
+    Returns the value of os.environ["KOVA_HOME"] after the call,
     or None if unset.
     """
     kova_root = tmp_path / ".kova"
@@ -38,33 +38,33 @@ def _run_apply_profile_override(
 
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     if kova_home is not None:
-        monkeypatch.setenv("HERMES_HOME", kova_home)
+        monkeypatch.setenv("KOVA_HOME", kova_home)
     else:
-        monkeypatch.delenv("HERMES_HOME", raising=False)
+        monkeypatch.delenv("KOVA_HOME", raising=False)
 
     monkeypatch.setattr(sys, "argv", argv or ["kova", "gateway", "start"])
 
     from kova_cli.main import _apply_profile_override
     _apply_profile_override()
 
-    return os.environ.get("HERMES_HOME")
+    return os.environ.get("KOVA_HOME")
 
 
 class TestApplyProfileOverrideKovaHomeGuard:
     """Regression guard for issue #22502.
 
-    Verifies that HERMES_HOME pointing to the kova root does NOT suppress
-    the active_profile check, while HERMES_HOME already pointing to a
+    Verifies that KOVA_HOME pointing to the kova root does NOT suppress
+    the active_profile check, while KOVA_HOME already pointing to a
     profile directory IS trusted as-is.
     """
 
     def test_kova_home_at_root_with_active_profile_is_redirected(
         self, tmp_path, monkeypatch
     ):
-        """HERMES_HOME=/root/.hermes + active_profile=coder must redirect
-        HERMES_HOME to .../profiles/coder.
+        """KOVA_HOME=/root/.kova + active_profile=coder must redirect
+        KOVA_HOME to .../profiles/coder.
 
-        Bug scenario from #22502: systemd sets HERMES_HOME to the kova root
+        Bug scenario from #22502: systemd sets KOVA_HOME to the kova root
         and the user switches to a profile via `kova profile use`.
         Before the fix, the guard returned early and active_profile was ignored.
         """
@@ -78,20 +78,20 @@ class TestApplyProfileOverrideKovaHomeGuard:
             active_profile="coder",
         )
 
-        assert result is not None, "HERMES_HOME must be set after profile redirect"
+        assert result is not None, "KOVA_HOME must be set after profile redirect"
         assert "profiles" in result, (
-            f"Expected HERMES_HOME to point into profiles/ dir, got: {result!r}"
+            f"Expected KOVA_HOME to point into profiles/ dir, got: {result!r}"
         )
         assert result.endswith("coder"), (
-            f"Expected HERMES_HOME to end with 'coder', got: {result!r}"
+            f"Expected KOVA_HOME to end with 'coder', got: {result!r}"
         )
 
     def test_kova_home_already_profile_dir_is_trusted(self, tmp_path, monkeypatch):
-        """HERMES_HOME=.../profiles/coder must not be overridden even when
+        """KOVA_HOME=.../profiles/coder must not be overridden even when
         active_profile says something different.
 
         Preserves the child-process inheritance contract: a subprocess spawned
-        with HERMES_HOME already set to a specific profile must stay in that
+        with KOVA_HOME already set to a specific profile must stay in that
         profile.
         """
         kova_root = tmp_path / ".kova"
@@ -101,19 +101,19 @@ class TestApplyProfileOverrideKovaHomeGuard:
         (kova_root / "active_profile").write_text("other")
 
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(profile_dir))
+        monkeypatch.setenv("KOVA_HOME", str(profile_dir))
         monkeypatch.setattr(sys, "argv", ["kova", "gateway", "start"])
 
         from kova_cli.main import _apply_profile_override
         _apply_profile_override()
 
-        assert os.environ.get("HERMES_HOME") == str(profile_dir), (
-            "HERMES_HOME must remain unchanged when already pointing to a profile dir"
+        assert os.environ.get("KOVA_HOME") == str(profile_dir), (
+            "KOVA_HOME must remain unchanged when already pointing to a profile dir"
         )
 
     def test_kova_home_unset_reads_active_profile(self, tmp_path, monkeypatch):
-        """Classic case: HERMES_HOME unset + active_profile=coder must set
-        HERMES_HOME to the profile directory (existing behaviour must not regress).
+        """Classic case: KOVA_HOME unset + active_profile=coder must set
+        KOVA_HOME to the profile directory (existing behaviour must not regress).
         """
         result = _run_apply_profile_override(
             tmp_path,
@@ -135,7 +135,7 @@ class TestApplyProfileOverrideKovaHomeGuard:
 
         monkeypatch.setattr(Path, "home", lambda: root_home)
         monkeypatch.setenv("SUDO_USER", "kova")
-        monkeypatch.delenv("HERMES_HOME", raising=False)
+        monkeypatch.delenv("KOVA_HOME", raising=False)
         monkeypatch.setattr(os, "geteuid", lambda: 0, raising=False)
         monkeypatch.setattr(sys, "argv", ["kova", "-p", "elias", "gateway", "install", "--system"])
 
@@ -146,23 +146,23 @@ class TestApplyProfileOverrideKovaHomeGuard:
         from kova_cli.main import _apply_profile_override
         _apply_profile_override()
 
-        assert os.environ.get("HERMES_HOME") == str(profile_dir)
+        assert os.environ.get("KOVA_HOME") == str(profile_dir)
         assert sys.argv == ["kova", "gateway", "install", "--system"]
 
     def test_kova_home_unset_default_profile_no_redirect(self, tmp_path, monkeypatch):
-        """active_profile=default must not redirect HERMES_HOME."""
+        """active_profile=default must not redirect KOVA_HOME."""
         kova_root = tmp_path / ".kova"
         kova_root.mkdir(parents=True, exist_ok=True)
 
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.delenv("HERMES_HOME", raising=False)
+        monkeypatch.delenv("KOVA_HOME", raising=False)
         monkeypatch.setattr(sys, "argv", ["kova", "gateway", "start"])
         (kova_root / "active_profile").write_text("default")
 
         from kova_cli.main import _apply_profile_override
         _apply_profile_override()
 
-        assert os.environ.get("HERMES_HOME") is None
+        assert os.environ.get("KOVA_HOME") is None
 
     def test_subcommand_profile_flag_is_not_consumed(self, tmp_path, monkeypatch):
         """Command argv flags named --profile must stay with that command.
@@ -190,13 +190,13 @@ class TestApplyProfileOverrideKovaHomeGuard:
         ]
 
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.delenv("HERMES_HOME", raising=False)
+        monkeypatch.delenv("KOVA_HOME", raising=False)
         monkeypatch.setattr(sys, "argv", list(argv))
 
         from kova_cli.main import _apply_profile_override
         _apply_profile_override()
 
-        assert os.environ.get("HERMES_HOME") is None
+        assert os.environ.get("KOVA_HOME") is None
         assert sys.argv == argv
 
     def test_profile_after_chat_subcommand_is_still_consumed(self, tmp_path, monkeypatch):
@@ -246,7 +246,7 @@ class TestSupervisedChildIgnoresStickyProfile:
     """The reserved default gateway s6 slot must not follow active_profile.
 
     Inside the Docker s6 image the ``gateway-default`` service slot runs a
-    bare ``kova gateway run`` (no ``-p``) to mean "the root HERMES_HOME
+    bare ``kova gateway run`` (no ``-p``) to mean "the root KOVA_HOME
     profile". The run-script exports ``KOVA_S6_SUPERVISED_CHILD=1``.
     Without a guard, ``_apply_profile_override`` would read the sticky
     ``active_profile`` file (set by e.g. the dashboard profile switcher) and
@@ -261,7 +261,7 @@ class TestSupervisedChildIgnoresStickyProfile:
 
         Reproduces the Docker/profile scoping bug: the supervised default
         gateway is launched as bare ``kova gateway run`` with
-        HERMES_HOME=/opt/data (the container root, whose parent is NOT
+        KOVA_HOME=/opt/data (the container root, whose parent is NOT
         ``profiles``), and a sticky ``active_profile`` of another profile.
         The reserved default slot must stay on the root profile.
         """
@@ -271,18 +271,18 @@ class TestSupervisedChildIgnoresStickyProfile:
         (kova_root / "profiles" / "briefer").mkdir(parents=True, exist_ok=True)
 
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        # Container root HERMES_HOME: parent dir is NOT "profiles", so the
+        # Container root KOVA_HOME: parent dir is NOT "profiles", so the
         # #22502 guard does not short-circuit — step 2 (active_profile) runs.
-        monkeypatch.setenv("HERMES_HOME", str(kova_root))
+        monkeypatch.setenv("KOVA_HOME", str(kova_root))
         monkeypatch.setenv("KOVA_S6_SUPERVISED_CHILD", "1")
         monkeypatch.setattr(sys, "argv", ["kova", "gateway", "run"])
 
         from kova_cli.main import _apply_profile_override
         _apply_profile_override()
 
-        assert os.environ.get("HERMES_HOME") == str(kova_root), (
+        assert os.environ.get("KOVA_HOME") == str(kova_root), (
             "Supervised default gateway must stay on the root profile, not be "
-            f"hijacked by active_profile; got {os.environ.get('HERMES_HOME')!r}"
+            f"hijacked by active_profile; got {os.environ.get('KOVA_HOME')!r}"
         )
 
     def test_non_supervised_run_still_follows_active_profile(
@@ -312,14 +312,14 @@ class TestSupervisedChildIgnoresStickyProfile:
         (kova_root / "profiles" / "coder").mkdir(parents=True, exist_ok=True)
 
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.delenv("HERMES_HOME", raising=False)
+        monkeypatch.delenv("KOVA_HOME", raising=False)
         monkeypatch.setenv("KOVA_S6_SUPERVISED_CHILD", "1")
         monkeypatch.setattr(sys, "argv", ["kova", "-p", "coder", "gateway", "run"])
 
         from kova_cli.main import _apply_profile_override
         _apply_profile_override()
 
-        result = os.environ.get("HERMES_HOME")
+        result = os.environ.get("KOVA_HOME")
         assert result is not None
         assert result.endswith("coder")
 

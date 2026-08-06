@@ -559,13 +559,13 @@ def test_s6_register_creates_service_dir_and_triggers_scan(
     log_run = svc_dir / "log" / "run"
     assert log_run.is_file()
     log_text = log_run.read_text()
-    # CRITICAL: HERMES_HOME must be a runtime env-var expansion, NOT
+    # CRITICAL: KOVA_HOME must be a runtime env-var expansion, NOT
     # a Python-substituted absolute path. Negative-assert the wrong
     # form so future regressions are caught.
-    assert "$HERMES_HOME" in log_text
+    assert "$KOVA_HOME" in log_text
     assert "logs/gateways/coder" in log_text
     assert "/opt/data/logs/gateways/coder" not in log_text, (
-        "log_dir was hard-coded; must use ${HERMES_HOME} at run time"
+        "log_dir was hard-coded; must use ${KOVA_HOME} at run time"
     )
     # `1` action directive forwards lines to stdout BEFORE the file
     # destination so the supervised gateway's stdout (including the
@@ -685,13 +685,13 @@ def test_render_run_script_uses_replace_to_take_over_stale_holder() -> None:
 
     Without ``--replace`` a gateway started OUTSIDE s6 (a stray shell
     ``kova gateway run``, an agent action, the Open WebUI helper) holds
-    the per-HERMES_HOME PID lock; the supervised slot then execs a bare
+    the per-KOVA_HOME PID lock; the supervised slot then execs a bare
     ``gateway run``, hits the "Another gateway instance is already
     running" guard, exits non-zero, and s6 restarts it — a restart loop
     that never binds. ``--replace`` makes the supervised gateway reap the
     stale holder and win, so s6 is authoritative for the slot.
 
-    Covers both the default (root HERMES_HOME, no ``-p``) and named-profile
+    Covers both the default (root KOVA_HOME, no ``-p``) and named-profile
     render paths.
     """
     default_text = S6ServiceManager._render_run_script("default", {})
@@ -847,7 +847,7 @@ def test_s6_lifecycle_persists_named_profile_desired_state(
     profile_dir = kova_home / "profiles" / "coder"
     profile_dir.mkdir(parents=True)
     (s6_scandir / "gateway-coder").mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     mgr = S6ServiceManager(scandir=s6_scandir)
     mgr.start("gateway-coder")
@@ -869,7 +869,7 @@ def test_s6_lifecycle_persists_default_profile_desired_state(
     kova_home = tmp_path / "kova-home"
     kova_home.mkdir()
     (s6_scandir / "gateway-default").mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(kova_home / "profiles" / "coder"))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home / "profiles" / "coder"))
 
     mgr = S6ServiceManager(scandir=s6_scandir)
     mgr.start("gateway-default")
@@ -1116,14 +1116,14 @@ def test_s6_log_run_chowns_gateways_parent(s6_scandir, fake_subprocess_run) -> N
 
     log_text = (s6_scandir / "gateway-coder" / "log" / "run").read_text()
 
-    parent_chown = 'chown kova:kova "$HERMES_HOME/logs/gateways"'
+    parent_chown = 'chown kova:kova "$KOVA_HOME/logs/gateways"'
     assert parent_chown in log_text, (
         "log/run must chown the logs/gateways parent so profiles added "
         f"after a root-context boot can create their leaf dirs. Saw: {log_text!r}"
     )
     # Non-recursive on purpose: sibling profile leaf dirs are each managed
     # by their own log/run; a recursive parent chown would race them.
-    assert 'chown -R kova:kova "$HERMES_HOME/logs/gateways"' not in log_text
+    assert 'chown -R kova:kova "$KOVA_HOME/logs/gateways"' not in log_text
 
     # Ordering: mkdir creates the parent, then the parent chown repairs its
     # ownership, then the leaf chown — all before s6-log execs.

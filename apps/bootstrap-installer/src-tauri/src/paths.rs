@@ -2,11 +2,11 @@
 //!
 //! Mirrors `kova_constants.get_kova_home()` from the Python CLI:
 //!   Windows: %LOCALAPPDATA%\kova
-//!   macOS:   ~/.hermes
-//!   Linux:   ~/.hermes  (override via $HERMES_HOME)
+//!   macOS:   ~/.kova
+//!   Linux:   ~/.kova  (override via $KOVA_HOME)
 //!
 //! NOTE (macOS): Python's get_kova_home(), scripts/install.sh, and the
-//! Electron desktop's resolveKovaHome() ALL use ~/.hermes on macOS — there
+//! Electron desktop's resolveKovaHome() ALL use ~/.kova on macOS — there
 //! is no ~/Library/Application Support branch anywhere else. An earlier
 //! version of this file used Application Support, which drifted from every
 //! other component: the installer wrote the install to one dir and the
@@ -21,9 +21,9 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use tracing_appender::non_blocking::WorkerGuard;
 
-/// Returns the canonical Kova home directory, respecting $HERMES_HOME if set.
+/// Returns the canonical Kova home directory, respecting $KOVA_HOME if set.
 pub fn kova_home() -> PathBuf {
-    if let Ok(override_path) = std::env::var("HERMES_HOME") {
+    if let Ok(override_path) = std::env::var("KOVA_HOME") {
         if !override_path.trim().is_empty() {
             return PathBuf::from(override_path);
         }
@@ -37,7 +37,7 @@ pub fn kova_home() -> PathBuf {
         }
     }
 
-    // macOS + Linux + fallback: ~/.hermes (matches Python get_kova_home(),
+    // macOS + Linux + fallback: ~/.kova (matches Python get_kova_home(),
     // install.sh, and the Electron desktop's resolveKovaHome()).
     if let Some(home) = dirs::home_dir() {
         return home.join(".kova");
@@ -63,7 +63,7 @@ pub fn bootstrap_cache_dir() -> PathBuf {
 /// Stable location the installer copies itself to after a successful install.
 /// The desktop app re-invokes this with `--update`, and the start-menu /
 /// desktop shortcuts can point users back to it. Lives directly under
-/// HERMES_HOME so it survives repo checkout deletion (unlike anything under
+/// KOVA_HOME so it survives repo checkout deletion (unlike anything under
 /// kova-agent/).
 ///
 /// On Windows this is `%LOCALAPPDATA%\kova\kova-setup.exe`; on other
@@ -83,8 +83,8 @@ pub fn installer_dest() -> PathBuf {
 /// mid-update re-locks the venv shim and triggers `force_kill_other_kova`,
 /// which then kills that legitimate backend in a respawn loop (#50238).
 ///
-/// Lives directly under HERMES_HOME (same rationale as `installer_dest`) so the
-/// Electron desktop — which resolves HERMES_HOME identically and pins it into
+/// Lives directly under KOVA_HOME (same rationale as `installer_dest`) so the
+/// Electron desktop — which resolves KOVA_HOME identically and pins it into
 /// the updater's env — agrees on the exact path.
 pub fn update_in_progress_marker() -> PathBuf {
     kova_home().join(".kova-update-in-progress")
@@ -119,7 +119,7 @@ pub fn copy_self_to_kova_home() -> std::io::Result<()> {
     }
     std::fs::copy(&src, &dest)?;
     repair_macos_installer_helper(&dest);
-    tracing::info!(?src, ?dest, "copied installer to HERMES_HOME");
+    tracing::info!(?src, ?dest, "copied installer to KOVA_HOME");
     Ok(())
 }
 
@@ -151,14 +151,14 @@ fn repair_macos_installer_helper(_path: &Path) {}
 
 /// Where install.ps1 writes the bootstrap-complete marker (existence-only file
 /// the Electron app also checks). Per main.ts:
-///   const BOOTSTRAP_COMPLETE_MARKER = path.join(ACTIVE_KOVA_ROOT, '.hermes-bootstrap-complete')
+///   const BOOTSTRAP_COMPLETE_MARKER = path.join(ACTIVE_KOVA_ROOT, '.kova-bootstrap-complete')
 /// We don't always know ACTIVE_KOVA_ROOT until install.ps1 reports it, so
 /// this is a probe helper, not a definitive path.
 pub fn likely_bootstrap_marker(install_root: &Path) -> PathBuf {
-    install_root.join(".hermes-bootstrap-complete")
+    install_root.join(".kova-bootstrap-complete")
 }
 
-/// Initializes tracing to bootstrap-installer.log under HERMES_HOME/logs/.
+/// Initializes tracing to bootstrap-installer.log under KOVA_HOME/logs/.
 /// Returns a guard that flushes the appender on drop — keep it alive for
 /// the lifetime of the process.
 pub fn init_logging() -> Option<WorkerGuard> {

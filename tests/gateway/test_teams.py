@@ -380,7 +380,7 @@ class TestTeamsInteractiveSetup:
         credentials to .env without crashing.
         """
         kova_home = tmp_path / "kova"
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
         import kova_cli.cli_output as cli_output_mod
 

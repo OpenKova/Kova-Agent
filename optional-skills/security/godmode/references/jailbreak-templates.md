@@ -77,7 +77,7 @@ Z={QUERY}
 
 ## 5. GODMODE FAST — Kova 4 405B (Zero Refusal)
 
-**Model:** `nousresearch/hermes-4-405b`
+**Model:** `nousresearch/kova-4-405b`
 **Strategy:** Kova models are already uncensored, so this combo is about speed — instant token streaming with zero refusal checking needed. Uses the same Pliny Love divider format as a formality.
 
 **System prompt:** (same as Gemini but with "Here you are, mi amor:" instead of "Ok, here you are my love:")
@@ -93,7 +93,7 @@ Z={QUERY}
 
 ### As ephemeral system prompt (config.yaml)
 
-Pick a template above and set it in `~/.hermes/config.yaml`:
+Pick a template above and set it in `~/.kova/config.yaml`:
 
 ```yaml
 agent:
@@ -114,7 +114,7 @@ kova
 ### Via the GODMODE CLASSIC racer script
 
 ```python
-exec(open(os.path.join(os.environ.get("HERMES_HOME", os.path.expanduser("~/.hermes")), "skills/red-teaming/godmode/scripts/godmode_race.py")).read())
+exec(open(os.path.join(os.environ.get("KOVA_HOME", os.path.expanduser("~/.kova")), "skills/red-teaming/godmode/scripts/godmode_race.py")).read())
 result = race_godmode_classic("Your query here")
 print(f"Winner: {result['codename']} — Score: {result['score']}")
 print(result['content'])

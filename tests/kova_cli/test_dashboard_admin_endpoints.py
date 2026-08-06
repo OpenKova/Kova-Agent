@@ -21,7 +21,7 @@ def _client():
 
     client = TestClient(app)
     client.headers[_SESSION_HEADER_NAME] = _SESSION_TOKEN
-    # Keep the state DB under the isolated HERMES_HOME for any handler that
+    # Keep the state DB under the isolated KOVA_HOME for any handler that
     # touches it.
     kova_state.DEFAULT_DB_PATH = get_kova_home() / "state.db"
     return client, _SESSION_HEADER_NAME
@@ -256,7 +256,7 @@ class TestCredentialPoolEndpoints:
     def test_env_seeded_delete_stays_deleted(self):
         """#55217: DELETE must suppress the source or load_pool() resurrects it.
 
-        load_pool() re-seeds from ~/.hermes/.env on every call, so removing
+        load_pool() re-seeds from ~/.kova/.env on every call, so removing
         just the pool row silently reverts on the next dashboard refresh.
         The endpoint must mirror `kova auth remove`: clean up the backing
         source and suppress (provider, source).

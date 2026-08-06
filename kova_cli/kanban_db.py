@@ -36,9 +36,9 @@ Board resolution order (highest precedence first, all optional):
   the "currently selected" board. Written by ``kova kanban boards
   switch <slug>``. When absent, the active board is ``default``.
 
-In standard installs ``<root>`` is ``~/.hermes``. In Docker / custom
-deployments where ``HERMES_HOME`` points outside ``~/.hermes`` (e.g.
-``/opt/kova``), ``<root>`` is ``HERMES_HOME``. Legacy env-var
+In standard installs ``<root>`` is ``~/.kova``. In Docker / custom
+deployments where ``KOVA_HOME`` points outside ``~/.kova`` (e.g.
+``/opt/kova``), ``<root>`` is ``KOVA_HOME``. Legacy env-var
 overrides still work:
 
 * ``KOVA_KANBAN_DB`` — pin the database file path directly.
@@ -170,7 +170,7 @@ def _fire_kanban_lifecycle_hook(event: str, task_id: str, **fields: Any) -> None
     a plugin raising, import error) is swallowed — a misbehaving observer must
     never break a board state transition.
 
-    ``profile_name`` is resolved from the active HERMES_HOME so dispatcher- and
+    ``profile_name`` is resolved from the active KOVA_HOME so dispatcher- and
     worker-side hooks both carry the right profile without the caller plumbing
     it through.
     """
@@ -399,12 +399,12 @@ def kanban_home() -> Path:
     1. ``KOVA_KANBAN_HOME`` env var when set and non-empty (explicit
        override for tests and unusual deployments).
     2. ``get_default_kova_root()``, which already returns ``<root>``
-       when ``HERMES_HOME`` is ``<root>/profiles/<name>``, and returns
-       ``HERMES_HOME`` directly for Docker / custom deployments.
+       when ``KOVA_HOME`` is ``<root>/profiles/<name>``, and returns
+       ``KOVA_HOME`` directly for Docker / custom deployments.
 
     The kanban board is shared across profiles **by design** (see the
     module docstring). Resolving the kanban paths through the active
-    profile's ``HERMES_HOME`` would silently fork the board per profile,
+    profile's ``KOVA_HOME`` would silently fork the board per profile,
     which breaks the dispatcher / worker handoff.
     """
     override = os.environ.get("KOVA_KANBAN_HOME", "").strip()
@@ -8695,7 +8695,7 @@ def _resolve_worker_cli_toolsets(kova_home: Optional[str]) -> Optional[list[str]
         return toolsets or None
     except Exception as exc:
         _log.debug(
-            "kanban worker: could not resolve CLI toolsets for HERMES_HOME=%r (%s)",
+            "kanban worker: could not resolve CLI toolsets for KOVA_HOME=%r (%s)",
             kova_home,
             exc,
         )
@@ -8731,23 +8731,23 @@ def _default_spawn(
     prompt = f"work kanban task {task.id}"
     env = dict(os.environ)
 
-    # Inject HERMES_HOME so the worker reads the profile-scoped config.yaml
+    # Inject KOVA_HOME so the worker reads the profile-scoped config.yaml
     # (fallback_providers, toolsets, agent settings, etc.) instead of the root
     # config.  Without this, `env = dict(os.environ)` copies only the parent's
     # env, and when the child process starts `kova -p <name>` the
     # _apply_profile_override() runs *before* kova_constants is imported.
-    # If HERMES_HOME is absent from the child's env, get_kova_home() falls
+    # If KOVA_HOME is absent from the child's env, get_kova_home() falls
     # back to Path.home() / ".kova" (the DEFAULT profile root), ignoring the
     # profile-specific config entirely.  Fixes profile-scoped fallback_providers
     # being invisible to kanban workers.
     from kova_cli.profiles import resolve_profile_env
     try:
-        env["HERMES_HOME"] = resolve_profile_env(profile_arg)
+        env["KOVA_HOME"] = resolve_profile_env(profile_arg)
     except FileNotFoundError:
         # Profile dir doesn't exist — defer resolution to the CLI's
         # _apply_profile_override() via KOVA_PROFILE (set below).
         # This only happens in test fixtures where the isolated
-        # HERMES_HOME never had profiles created.
+        # KOVA_HOME never had profiles created.
         pass
     if task.tenant:
         env["KOVA_TENANT"] = task.tenant
@@ -8794,7 +8794,7 @@ def _default_spawn(
         env["TERMINAL_MAX_FOREGROUND_TIMEOUT"] = foreground_timeout
     # Pin the shared board + workspaces root the dispatcher resolved, so
     # that even when the worker activates a profile (`kova -p <name>`
-    # rewrites HERMES_HOME), its kanban paths still match the
+    # rewrites KOVA_HOME), its kanban paths still match the
     # dispatcher's. Belt-and-braces with the `get_default_kova_root()`
     # resolution in `kanban_home()` — symmetric resolution is the norm,
     # but unusual symlink / Docker layouts are caught here too.
@@ -8823,7 +8823,7 @@ def _default_spawn(
         *_resolve_kova_argv(),
         "-p", profile_arg,
         "--cli",
-        # Worker subprocesses switch to a profile-scoped HERMES_HOME above,
+        # Worker subprocesses switch to a profile-scoped KOVA_HOME above,
         # so they see that profile's shell-hook allowlist instead of the
         # dispatcher's root allowlist. Pass --accept-hooks explicitly so
         # profile-local worker sessions still register configured hooks.
@@ -8846,7 +8846,7 @@ def _default_spawn(
         # the classic mis-set that stalls a board).
         if task.provider_override:
             cmd.extend(["--provider", task.provider_override])
-    worker_toolsets = _resolve_worker_cli_toolsets(env.get("HERMES_HOME"))
+    worker_toolsets = _resolve_worker_cli_toolsets(env.get("KOVA_HOME"))
     if worker_toolsets:
         cmd.extend(["--toolsets", ",".join(worker_toolsets)])
     cmd.extend([

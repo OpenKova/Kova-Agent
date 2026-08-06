@@ -10,7 +10,7 @@ def homes(tmp_path, monkeypatch):
     home.mkdir()
     managed = tmp_path / "managed"
     managed.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     monkeypatch.setenv("KOVA_MANAGED_DIR", str(managed))
     import kova_cli.config as cfg
     from kova_cli import managed_scope

@@ -74,7 +74,7 @@ class TestNonInteractiveSetup:
         with (
             patch("kova_cli.setup.ensure_kova_home"),
             patch("kova_cli.setup.load_config", return_value={}),
-            patch("kova_cli.setup.get_kova_home", return_value="/tmp/.hermes"),
+            patch("kova_cli.setup.get_kova_home", return_value="/tmp/.kova"),
             patch("kova_cli.auth.get_active_provider", side_effect=AssertionError("wizard continued")),
             patch("builtins.input", side_effect=AssertionError("input should not be called")),
         ):
@@ -92,7 +92,7 @@ class TestNonInteractiveSetup:
         with (
             patch("kova_cli.setup.ensure_kova_home"),
             patch("kova_cli.setup.load_config", return_value={}),
-            patch("kova_cli.setup.get_kova_home", return_value="/tmp/.hermes"),
+            patch("kova_cli.setup.get_kova_home", return_value="/tmp/.kova"),
             patch("kova_cli.auth.get_active_provider", side_effect=AssertionError("wizard continued")),
             patch("sys.stdin") as mock_stdin,
             patch("builtins.input", side_effect=AssertionError("input should not be called")),
@@ -107,7 +107,7 @@ class TestNonInteractiveSetup:
         """--reset should rewrite config.yaml even when the wizard cannot run interactively."""
         from kova_cli.setup import run_setup_wizard
 
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path))
         cfg = load_config()
         cfg["model"] = {"provider": "custom", "base_url": "http://localhost:8080/v1", "default": "llama3"}
         cfg["agent"]["max_turns"] = 12

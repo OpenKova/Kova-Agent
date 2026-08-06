@@ -126,12 +126,12 @@ test('shouldRemoveAppBundle requires packaged AND a resolved path', () => {
 test('buildPosixCleanupScript waits for the PID, runs the uninstall module, removes bundle', () => {
   const script = buildPosixCleanupScript({
     desktopPid: 4321,
-    pythonExe: '/home/x/.hermes/hermes-agent/venv/bin/python',
+    pythonExe: '/home/x/.kova/kova-agent/venv/bin/python',
     pythonPath: null,
-    agentRoot: '/home/x/.hermes/kova-agent',
+    agentRoot: '/home/x/.kova/kova-agent',
     uninstallArgs: ['-m', 'kova_cli.uninstall', '--mode', 'gui'],
     appPath: '/opt/kova/linux-unpacked',
-    kovaHome: '/home/x/.hermes'
+    kovaHome: '/home/x/.kova'
   })
 
   assert.match(script, /^#!\/bin\/bash/)
@@ -141,18 +141,18 @@ test('buildPosixCleanupScript waits for the PID, runs the uninstall module, remo
   assert.match(script, /seq 1 60/)
   assert.match(script, /'-m' 'kova_cli\.uninstall' '--mode' 'gui'/)
   assert.match(script, /rm -rf '\/opt\/kova\/linux-unpacked'/)
-  assert.match(script, /export HERMES_HOME='\/home\/x\/\.kova'/)
+  assert.match(script, /export KOVA_HOME='\/home\/x\/\.kova'/)
 })
 
 test('buildPosixCleanupScript exports PYTHONPATH when pythonPath is set (lite/full)', () => {
   const script = buildPosixCleanupScript({
     desktopPid: 1,
     pythonExe: '/usr/bin/python3',
-    pythonPath: '/home/x/.hermes/kova-agent',
-    agentRoot: '/home/x/.hermes/kova-agent',
+    pythonPath: '/home/x/.kova/kova-agent',
+    agentRoot: '/home/x/.kova/kova-agent',
     uninstallArgs: ['-m', 'kova_cli.uninstall', '--mode', 'full'],
     appPath: null,
-    kovaHome: '/home/x/.hermes'
+    kovaHome: '/home/x/.kova'
   })
 
   // System python + source on PYTHONPATH so import kova_cli works while the

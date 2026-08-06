@@ -61,10 +61,10 @@ class TestMultiplexActiveFailClosed:
             ss.reset_secret_scope(token)
 
     def test_global_env_still_reads_environ_under_multiplex(self, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", "/opt/data")
+        monkeypatch.setenv("KOVA_HOME", "/opt/data")
         ss.set_multiplex_active(True)
-        # No scope, multiplex on — but HERMES_HOME is global, so no raise.
-        assert ss.get_secret("HERMES_HOME") == "/opt/data"
+        # No scope, multiplex on — but KOVA_HOME is global, so no raise.
+        assert ss.get_secret("KOVA_HOME") == "/opt/data"
 
     def test_kanban_prefix_is_global(self, monkeypatch):
         monkeypatch.setenv("KOVA_KANBAN_DB", "/x/kanban.db")

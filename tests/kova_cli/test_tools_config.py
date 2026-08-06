@@ -551,7 +551,7 @@ def test_get_platform_tools_no_mcp_sentinel_does_not_affect_other_platforms():
 
 
 def test_toolset_has_keys_for_vision_accepts_codex_auth(tmp_path, monkeypatch):
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("KOVA_HOME", str(tmp_path))
     (tmp_path / "auth.json").write_text(
         '{"active_provider":"openai-codex","providers":{"openai-codex":{"tokens":{"access_token": "codex-...oken","refresh_token": "codex-...oken"}}}}'
     )
@@ -1774,7 +1774,7 @@ def test_vision_picker_writes_provider_and_model(tmp_path, monkeypatch):
     as ``kova model`` and writes the selection to the auxiliary config keys
     the resolver reads.
     """
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("KOVA_HOME", str(tmp_path))
     import kova_cli.tools_config as tc
     from kova_cli.config import load_config
 
@@ -1802,7 +1802,7 @@ def test_vision_picker_writes_provider_and_model(tmp_path, monkeypatch):
 
 def test_vision_picker_auto_clears_override(tmp_path, monkeypatch):
     """Choosing Auto clears any pinned provider/model so resolution auto-detects."""
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("KOVA_HOME", str(tmp_path))
     import kova_cli.tools_config as tc
     from kova_cli.config import load_config, save_config
 
@@ -1825,7 +1825,7 @@ def test_vision_picker_auto_clears_override(tmp_path, monkeypatch):
 
 def test_vision_picker_custom_endpoint(tmp_path, monkeypatch):
     """Custom endpoint writes base_url+model to config and the key to env."""
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("KOVA_HOME", str(tmp_path))
     import kova_cli.tools_config as tc
     from kova_cli.config import load_config
 

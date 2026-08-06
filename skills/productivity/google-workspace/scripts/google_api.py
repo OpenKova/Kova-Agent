@@ -38,9 +38,9 @@ if _SCRIPTS_DIR not in sys.path:
 
 from _kova_home import get_kova_home
 
-HERMES_HOME = get_kova_home()
-TOKEN_PATH = HERMES_HOME / "google_token.json"
-CLIENT_SECRET_PATH = HERMES_HOME / "google_client_secret.json"
+KOVA_HOME = get_kova_home()
+TOKEN_PATH = KOVA_HOME / "google_token.json"
+CLIENT_SECRET_PATH = KOVA_HOME / "google_client_secret.json"
 
 SCOPES = [
     "https://www.googleapis.com/auth/gmail.readonly",

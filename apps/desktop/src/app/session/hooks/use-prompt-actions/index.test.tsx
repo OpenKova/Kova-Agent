@@ -1606,7 +1606,7 @@ describe('usePromptActions file attachment sync', () => {
       if (method === 'file.attach') {
         return {
           attached: true,
-          path: '/remote/work/.hermes/desktop-attachments/report.txt',
+          path: '/remote/work/.kova/desktop-attachments/report.txt',
           ref_text: '@file:.kova/desktop-attachments/report.txt',
           uploaded: true
         } as never

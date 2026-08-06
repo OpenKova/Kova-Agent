@@ -12,7 +12,7 @@ def rate_guard_env(tmp_path, monkeypatch):
     """Isolate rate guard state to a temp directory."""
     kova_home = str(tmp_path / ".kova")
     os.makedirs(kova_home, exist_ok=True)
-    monkeypatch.setenv("HERMES_HOME", kova_home)
+    monkeypatch.setenv("KOVA_HOME", kova_home)
     # Clear any cached module-level imports
     return kova_home
 

@@ -28,7 +28,7 @@ class ManagedToolGatewayConfig:
 
 
 def auth_json_path():
-    """Return the Kova auth store path, respecting HERMES_HOME overrides."""
+    """Return the Kova auth store path, respecting KOVA_HOME overrides."""
     return get_kova_home() / "auth.json"
 
 

@@ -37,7 +37,7 @@ kova config set API_SERVER_ENABLED true
 kova config set API_SERVER_KEY your-secret-key
 ```
 
-`kova config set` auto-routes the flag to `config.yaml` and the secret to `~/.hermes/.env`. If the gateway is already running, restart it so the change takes effect:
+`kova config set` auto-routes the flag to `config.yaml` and the secret to `~/.kova/.env`. If the gateway is already running, restart it so the change takes effect:
 
 ```bash
 kova gateway stop && kova gateway
@@ -241,14 +241,14 @@ To run separate Kova instances per user — each with their own config, memory, 
 
 ```bash
 kova profile create alice
-cat >> ~/.hermes/profiles/alice/.env <<EOF
+cat >> ~/.kova/profiles/alice/.env <<EOF
 API_SERVER_ENABLED=true
 API_SERVER_PORT=8650
 API_SERVER_KEY=alice-secret
 EOF
 
 kova profile create bob
-cat >> ~/.hermes/profiles/bob/.env <<EOF
+cat >> ~/.kova/profiles/bob/.env <<EOF
 API_SERVER_ENABLED=true
 API_SERVER_PORT=8651
 API_SERVER_KEY=bob-secret

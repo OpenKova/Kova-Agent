@@ -269,7 +269,7 @@ def _legacy_posix_scrubber(source_env, is_passthrough):
     _SECRET_SUBSTRINGS = ("KEY", "TOKEN", "SECRET", "PASSWORD", "CREDENTIAL",
                           "PASSWD", "AUTH", "DSN", "WEBHOOK")
     _KOVA_CHILD_ALLOWED = frozenset({
-        "HERMES_HOME", "KOVA_PROFILE", "KOVA_CONFIG", "KOVA_ENV",
+        "KOVA_HOME", "KOVA_PROFILE", "KOVA_CONFIG", "KOVA_ENV",
     })
     out = {}
     for k, v in source_env.items():
@@ -317,7 +317,7 @@ class TestPosixEquivalence:
         "CONDA_PREFIX": "/opt/conda",
         # KOVA_* handling (#27303): only the operational allowlist passes;
         # every other KOVA_* is dropped (the broad prefix was removed).
-        "HERMES_HOME": "/home/alice/.hermes",        # allowlisted → kept
+        "KOVA_HOME": "/home/alice/.kova",        # allowlisted → kept
         "KOVA_PROFILE": "default",                 # allowlisted → kept
         "KOVA_INTERACTIVE": "1",                   # not allowlisted → dropped
         "KOVA_BASE_URL": "https://api.internal",   # not allowlisted → dropped

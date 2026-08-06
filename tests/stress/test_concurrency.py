@@ -40,7 +40,7 @@ def worker_loop(worker_id: int, kova_home: str, result_file: str) -> None:
     repeats until the ready pool is empty. Records every claim + complete
     into its own JSON result file for later aggregation.
     """
-    os.environ["HERMES_HOME"] = kova_home
+    os.environ["KOVA_HOME"] = kova_home
     os.environ["HOME"] = kova_home
     sys.path.insert(0, WT)
 
@@ -118,10 +118,10 @@ def worker_loop(worker_id: int, kova_home: str, result_file: str) -> None:
 
 def main():
     home = tempfile.mkdtemp(prefix="kova_concurrency_")
-    print(f"HERMES_HOME = {home}")
+    print(f"KOVA_HOME = {home}")
 
     # Seed.
-    os.environ["HERMES_HOME"] = home
+    os.environ["KOVA_HOME"] = home
     os.environ["HOME"] = home
     sys.path.insert(0, WT)
     from kova_cli import kanban_db as kb

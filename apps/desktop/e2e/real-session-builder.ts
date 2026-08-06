@@ -68,7 +68,7 @@ export class RealSessionBuilder {
       cwd: REPO_ROOT,
       env: {
         ...process.env,
-        HERMES_HOME: kovaHome,
+        KOVA_HOME: kovaHome,
         PYTHONPATH: REPO_ROOT,
       },
       stdio: 'pipe',

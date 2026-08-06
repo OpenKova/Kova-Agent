@@ -7,7 +7,7 @@
 # The s6 image runs the supervised gateway/main process as the unprivileged
 # `kova` user (UID 10000). When an operator runs `docker exec <c> kova ...`
 # the default UID is root (0), and any file the command writes under
-# $HERMES_HOME — auth.json, .env, config.yaml — ends up root-owned and
+# $KOVA_HOME — auth.json, .env, config.yaml — ends up root-owned and
 # unreadable to the supervised gateway. The most common manifestation: the
 # user runs `docker exec <c> kova login`, this writes
 # /opt/data/auth.json as root:root mode 0600, and from then on the gateway
@@ -22,7 +22,7 @@
 # This shim sits at /opt/kova/bin/kova and is placed earliest on PATH.
 # When invoked as root, it drops to the kova user (via s6-setuidgid)
 # before exec'ing the real venv binary, so anything that writes under
-# $HERMES_HOME is uid-aligned with the supervised processes. When invoked
+# $KOVA_HOME is uid-aligned with the supervised processes. When invoked
 # as any non-root UID — including the supervised processes themselves,
 # `docker exec --user kova`, kanban subagents, etc. — it short-circuits
 # straight to the venv binary with no privilege change. Net: one extra

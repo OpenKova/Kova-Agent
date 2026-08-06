@@ -20,7 +20,7 @@ def kova_home(monkeypatch):
     d = tempfile.mkdtemp(prefix="kova_wa_test_")
     home = os.path.join(d, ".kova")
     os.makedirs(home)
-    monkeypatch.setenv("HERMES_HOME", home)
+    monkeypatch.setenv("KOVA_HOME", home)
     yield home
     shutil.rmtree(d, ignore_errors=True)
 
@@ -198,7 +198,7 @@ def test_skill_gate_on_always_stages(kova_home):
 
 def test_skill_gate_on_then_apply_writes_file(kova_home):
     # SKILLS_DIR is resolved at import time, so reload the skill module under
-    # this test's HERMES_HOME to exercise the real on-disk write path.
+    # this test's KOVA_HOME to exercise the real on-disk write path.
     import importlib
     import tools.skill_manager_tool as smt
     importlib.reload(smt)

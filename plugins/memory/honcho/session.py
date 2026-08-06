@@ -385,7 +385,7 @@ class HonchoSessionManager:
         user_peer_id = self._resolve_user_peer_id(key)
 
         assistant_peer_id = self._sanitize_id(
-            self._config.ai_peer if self._config else "hermes-assistant"
+            self._config.ai_peer if self._config else "kova-assistant"
         )
 
         # All expensive I/O outside the lock — Honcho's persistence is source of truth
@@ -840,7 +840,7 @@ class HonchoSessionManager:
 
         Args:
             session_key: The session key to associate files with.
-            memory_dir: Path to the memories directory (~/.hermes/memories/).
+            memory_dir: Path to the memories directory (~/.kova/memories/).
 
         Returns:
             True if at least one file was uploaded, False otherwise.

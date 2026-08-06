@@ -12,7 +12,7 @@ Why tools instead of just shelling out to ``kova kanban``?
    / Modal / Singularity / SSH would run ``kova kanban complete …``
    inside the container, where ``kova`` isn't installed and the DB
    isn't mounted. Tools run in the agent's Python process, so they
-   always reach ``~/.hermes/kanban.db`` regardless of terminal backend.
+   always reach ``~/.kova/kanban.db`` regardless of terminal backend.
 
 2. **No shell-quoting footguns.** Passing ``--metadata '{"x": [...]}'``
    through shlex+argparse is fragile. Structured tool args skip it.

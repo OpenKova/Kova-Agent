@@ -38,7 +38,7 @@ _EXAMPLE_PLUGIN_FIXTURE = (
 
 @pytest.fixture
 def _install_example_plugin(_isolate_kova_home):
-    """Drop the example-dashboard fixture into the per-test HERMES_HOME
+    """Drop the example-dashboard fixture into the per-test KOVA_HOME
     user-plugins directory and force the web_server's dashboard plugin
     cache + API mount to rediscover it.
 
@@ -47,7 +47,7 @@ def _install_example_plugin(_isolate_kova_home):
     user's sidebar. It is now a tests-only fixture: any test that needs
     ``/api/plugins/example/hello`` or ``/dashboard-plugins/example/...``
     requests this fixture so the plugin appears only for that test's
-    isolated ``HERMES_HOME``.
+    isolated ``KOVA_HOME``.
 
     The user-plugin source is preferred over a transient
     ``KOVA_BUNDLED_PLUGINS`` override because the bundled dir is
@@ -89,7 +89,7 @@ def _install_example_plugin(_isolate_kova_home):
     #   1. Identify the routes the mount call appends.
     #   2. Restore the original list on teardown — otherwise leftover
     #      ``/api/plugins/example/*`` routes leak into subsequent tests
-    #      and start serving requests against a torn-down HERMES_HOME.
+    #      and start serving requests against a torn-down KOVA_HOME.
     app = web_server.app
     original_routes = list(app.router.routes)
 
@@ -244,7 +244,7 @@ class TestWebServerEndpoints:
 
     @pytest.fixture(autouse=True)
     def _setup_test_client(self, monkeypatch, _isolate_kova_home):
-        """Create a TestClient and isolate the state DB under the test HERMES_HOME."""
+        """Create a TestClient and isolate the state DB under the test KOVA_HOME."""
         try:
             from starlette.testclient import TestClient
         except ImportError:
@@ -1004,7 +1004,7 @@ class TestWebServerEndpoints:
 
     @pytest.fixture(autouse=True)
     def _isolate_honcho_config(self):
-        # Honcho tests write the suite-wide HERMES_HOME honcho.json; snapshot and
+        # Honcho tests write the suite-wide KOVA_HOME honcho.json; snapshot and
         # restore it so provider status/config state never leaks across tests.
         from kova_constants import get_kova_home
 
@@ -3103,7 +3103,7 @@ class TestWebServerEndpoints:
         import kova_cli.web_server as ws
 
         hosted_home = tmp_path / "opt-data"
-        monkeypatch.setenv("HERMES_HOME", str(hosted_home))
+        monkeypatch.setenv("KOVA_HOME", str(hosted_home))
         captured = {}
 
         def fake_spawn(subcommand, name):
@@ -4008,7 +4008,7 @@ class TestWebServerEndpoints:
 
         resp = self.client.post(
             "/api/model/set",
-            json={"scope": "main", "provider": "nous", "model": "hermes-4"},
+            json={"scope": "main", "provider": "nous", "model": "kova-4"},
         )
         assert resp.status_code == 200
         data = resp.json()
@@ -4280,7 +4280,7 @@ class TestWebServerEndpoints:
         from kova_cli.config import load_config, save_config
 
         cfg = load_config()
-        cfg["model"] = {"provider": "nous", "default": "hermes-4"}
+        cfg["model"] = {"provider": "nous", "default": "kova-4"}
         cfg["auxiliary"] = {
             # Pinned to nous — same as the OLD main, becomes stale after switch.
             "compression": {"provider": "nous", "model": "anthropic/claude-sonnet-4.6"},
@@ -4311,7 +4311,7 @@ class TestWebServerEndpoints:
         from kova_cli.config import load_config, save_config
 
         cfg = load_config()
-        cfg["model"] = {"provider": "nous", "default": "hermes-4"}
+        cfg["model"] = {"provider": "nous", "default": "kova-4"}
         cfg["auxiliary"] = {
             "compression": {"provider": "openrouter", "model": "google/gemini-2.5-flash"},
             "vision": {"provider": "auto", "model": ""},
@@ -4600,7 +4600,7 @@ class TestWebServerEndpoints:
         from kova_cli.config import load_config, save_config
 
         save_config({
-            "model": {"provider": "nous", "default": "hermes-4"},
+            "model": {"provider": "nous", "default": "kova-4"},
             "providers": {
                 "axet-proxy": {
                     "name": "Axet Proxy",
@@ -4635,7 +4635,7 @@ class TestWebServerEndpoints:
 
         resp = self.client.post(
             "/api/model/set",
-            json={"scope": "main", "provider": "nous", "model": "hermes-4"},
+            json={"scope": "main", "provider": "nous", "model": "kova-4"},
         )
         assert resp.status_code == 200
         data = resp.json()
@@ -7669,15 +7669,15 @@ class TestNormaliseThemeDefinition:
 
 
 class TestDiscoverUserThemes:
-    """Tests for _discover_user_themes() — scans ~/.hermes/dashboard-themes/."""
+    """Tests for _discover_user_themes() — scans ~/.kova/dashboard-themes/."""
 
     def test_returns_empty_when_dir_missing(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path))
         from kova_cli import web_server
         assert web_server._discover_user_themes() == []
 
     def test_loads_and_normalises_yaml(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path))
         themes_dir = tmp_path / "dashboard-themes"
         themes_dir.mkdir()
         (themes_dir / "ocean.yaml").write_text(
@@ -7701,7 +7701,7 @@ class TestDiscoverUserThemes:
         assert "fontSans" in results[0]["typography"]
 
     def test_malformed_yaml_skipped(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path))
         themes_dir = tmp_path / "dashboard-themes"
         themes_dir.mkdir()
         (themes_dir / "bad.yaml").write_text("::: not valid yaml :::\n\tindent wrong")
@@ -7715,7 +7715,7 @@ class TestDiscoverUserThemes:
         assert len(results) == 1  # only the valid one
 
     def test_ignores_transient_profile_override(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path))
         themes_dir = tmp_path / "dashboard-themes"
         themes_dir.mkdir()
         (themes_dir / "mine.yaml").write_text("name: mine\n")
@@ -7764,7 +7764,7 @@ class TestThemeBootstrapCSS:
     def test_user_theme_renders_bundle_vars(self, tmp_path, monkeypatch):
         """Active user theme → style block with ONLY variable names the
         bundle actually consumes (layerVars/typographyVars tokens)."""
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path))
         self._write_theme(tmp_path)
         from kova_cli import web_server
         monkeypatch.setattr(
@@ -7791,7 +7791,7 @@ class TestThemeBootstrapCSS:
         assert "#0a1628" not in css.split("html,body")[1]
 
     def test_builtin_theme_renders_nothing(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path))
         from kova_cli import web_server
         for builtin in ("default", "midnight", "cyberpunk"):
             monkeypatch.setattr(
@@ -7802,7 +7802,7 @@ class TestThemeBootstrapCSS:
 
     def test_unknown_theme_renders_nothing(self, tmp_path, monkeypatch):
         """Configured theme has no YAML on disk → empty string, no crash."""
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path))
         from kova_cli import web_server
         monkeypatch.setattr(
             web_server, "load_config", lambda: {"dashboard": {"theme": "ghost"}}
@@ -7810,7 +7810,7 @@ class TestThemeBootstrapCSS:
         assert web_server._render_active_theme_bootstrap_css() == ""
 
     def test_non_string_theme_renders_nothing(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path))
         from kova_cli import web_server
         monkeypatch.setattr(
             web_server, "load_config", lambda: {"dashboard": {"theme": 42}}
@@ -7820,7 +7820,7 @@ class TestThemeBootstrapCSS:
     def test_malformed_theme_yaml_no_crash(self, tmp_path, monkeypatch):
         """A garbage YAML for the active theme name must not crash — the
         discover helper skips it, so no style block is emitted."""
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path))
         themes_dir = tmp_path / "dashboard-themes"
         themes_dir.mkdir()
         (themes_dir / "broken.yaml").write_text(
@@ -7843,7 +7843,7 @@ class TestThemeBootstrapCSS:
 
     def test_style_escape_defends_style_breakout(self, tmp_path, monkeypatch):
         """`</style>` in a theme value cannot break out of the block."""
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path))
         themes_dir = tmp_path / "dashboard-themes"
         themes_dir.mkdir()
         (themes_dir / "sneaky.yaml").write_text(
@@ -7878,7 +7878,7 @@ class TestThemeBootstrapCSS:
         return TestClient(spa_app)
 
     def test_serve_index_injects_bootstrap_for_user_theme(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path))
         self._write_theme(tmp_path)
         import kova_cli.web_server as ws
         monkeypatch.setattr(
@@ -7894,7 +7894,7 @@ class TestThemeBootstrapCSS:
         assert "kova-theme-bootstrap" in head
 
     def test_serve_index_no_bootstrap_for_builtin_theme(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path))
         import kova_cli.web_server as ws
         monkeypatch.setattr(
             ws, "load_config", lambda: {"dashboard": {"theme": "default"}}
@@ -7907,7 +7907,7 @@ class TestThemeBootstrapCSS:
     def test_serve_index_survives_render_failure(self, tmp_path, monkeypatch):
         """Even if theme rendering blows up internally, index serving
         must not crash (the helper swallows and returns '')."""
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path))
         import kova_cli.web_server as ws
 
         def boom():
@@ -8274,7 +8274,7 @@ class TestDeleteEmptySessionsEndpoint:
         from kova_constants import get_kova_home
         from kova_cli.web_server import app, _SESSION_HEADER_NAME, _SESSION_TOKEN
 
-        # Pin the SessionDB to the isolated HERMES_HOME so each test
+        # Pin the SessionDB to the isolated KOVA_HOME so each test
         # starts with a clean state.db.
         monkeypatch.setattr(
             kova_state, "DEFAULT_DB_PATH", get_kova_home() / "state.db"
@@ -8399,7 +8399,7 @@ class TestPluginAPIAuth:
         Pulls in ``_install_example_plugin`` so ``test_plugin_route_allows_auth``
         has the ``/api/plugins/example/hello`` endpoint available — the
         example plugin is no longer a bundled plugin, so the fixture
-        installs it into the per-test ``HERMES_HOME``.
+        installs it into the per-test ``KOVA_HOME``.
         """
         try:
             from starlette.testclient import TestClient
@@ -8426,7 +8426,7 @@ class TestPluginAPIAuth:
         """Plugin API routes should work with a valid session token.
 
         Uses ``/api/plugins/example/hello`` from the example-dashboard
-        test fixture (installed into HERMES_HOME by the class-level
+        test fixture (installed into KOVA_HOME by the class-level
         ``_install_example_plugin`` fixture) — a stable, side-effect-free
         GET that's only loaded for tests. With a valid token the handler
         should run (200); without one the middleware should 401 before
@@ -8519,7 +8519,7 @@ class TestDashboardPluginManifestExtensions:
         return plug_dir
 
     def test_override_and_hidden_carried_through(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path))
         self._write_plugin(tmp_path, "skin-home", {
             "name": "skin-home",
             "label": "Skin Home",
@@ -8539,7 +8539,7 @@ class TestDashboardPluginManifestExtensions:
     def test_user_plugins_ignore_profile_home_override(self, tmp_path, monkeypatch):
         """Regression: user dashboard extensions are a dashboard-owned asset
         (like theme YAML), so they must stay visible after a context-local
-        HERMES_HOME override scopes a request to another profile."""
+        KOVA_HOME override scopes a request to another profile."""
         from kova_constants import (
             reset_kova_home_override,
             set_kova_home_override,
@@ -8555,7 +8555,7 @@ class TestDashboardPluginManifestExtensions:
         other = tmp_path / "other-profile"
         other.mkdir()
 
-        monkeypatch.setenv("HERMES_HOME", str(launch_home))
+        monkeypatch.setenv("KOVA_HOME", str(launch_home))
         from kova_cli import web_server
         token = set_kova_home_override(str(other))
         try:
@@ -8565,7 +8565,7 @@ class TestDashboardPluginManifestExtensions:
         assert any(p["name"] == "skin-home" for p in plugins)
 
     def test_override_requires_leading_slash(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path))
         self._write_plugin(tmp_path, "bad-override", {
             "name": "bad-override",
             "label": "Bad",
@@ -8579,7 +8579,7 @@ class TestDashboardPluginManifestExtensions:
         assert "override" not in entry["tab"]
 
     def test_slots_default_empty(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path))
         self._write_plugin(tmp_path, "no-slots", {
             "name": "no-slots",
             "label": "No Slots",
@@ -8595,7 +8595,7 @@ class TestDashboardPluginManifestExtensions:
         assert "override" not in entry["tab"]
 
     def test_slots_filters_non_string_entries(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path))
         self._write_plugin(tmp_path, "mixed-slots", {
             "name": "mixed-slots",
             "label": "Mixed",
@@ -8614,7 +8614,7 @@ class TestDashboardPluginManifestExtensions:
         the manifest loader untouched.  The backend has no allowlist — the
         frontend ``<PluginSlot name="...">`` placements decide what actually
         renders — but the loader must not mangle colons in slot names."""
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path))
         self._write_plugin(tmp_path, "page-slots", {
             "name": "page-slots",
             "label": "Page Slots",
@@ -8849,7 +8849,7 @@ class TestPtyWebSocket:
     ):
         import kova_cli.main as main_mod
 
-        config_path = Path(os.environ["HERMES_HOME"]) / "config.yaml"
+        config_path = Path(os.environ["KOVA_HOME"]) / "config.yaml"
         config_path.write_text(
             "\n".join(
                 [
@@ -9289,7 +9289,7 @@ class TestDashboardPluginStaticAssetAllowlist:
         is served while ``plugin_api.py`` and ``__pycache__/*.pyc``
         from the same directory are not. Since the example plugin is
         no longer bundled, ``_install_example_plugin`` lays it down in
-        the per-test ``HERMES_HOME`` user-plugins dir.
+        the per-test ``KOVA_HOME`` user-plugins dir.
         """
         try:
             from starlette.testclient import TestClient

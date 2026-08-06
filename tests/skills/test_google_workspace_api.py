@@ -26,7 +26,7 @@ API_PATH = (
 def bridge_module(monkeypatch, tmp_path):
     kova_home = tmp_path / ".kova"
     kova_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     spec = importlib.util.spec_from_file_location("gws_bridge_test", BRIDGE_PATH)
     module = importlib.util.module_from_spec(spec)
@@ -39,7 +39,7 @@ def bridge_module(monkeypatch, tmp_path):
 def api_module(monkeypatch, tmp_path):
     kova_home = tmp_path / ".kova"
     kova_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     spec = importlib.util.spec_from_file_location("gws_api_test", API_PATH)
     module = importlib.util.module_from_spec(spec)

@@ -52,7 +52,7 @@ async def test_kova_provider_forwards_asend_values(tmp_path, monkeypatch):
 
     assert _KOVA_PROVIDER_CLS is not None, "SDK OAuth types must be available"
 
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("KOVA_HOME", str(tmp_path))
     reset_manager_for_tests()
 
     # Seed a valid-looking token so the SDK's _initialize loads something and
@@ -134,7 +134,7 @@ async def test_kova_provider_forwards_401_triggers_refresh(tmp_path, monkeypatch
 
     assert _KOVA_PROVIDER_CLS is not None
 
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("KOVA_HOME", str(tmp_path))
     reset_manager_for_tests()
 
     storage = KovaTokenStorage("srv")

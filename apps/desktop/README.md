@@ -67,10 +67,10 @@ npm run dev          # Vite renderer + Electron, which boots the Python backend
 Point the app at a specific source checkout, or sandbox it away from your real config:
 
 ```bash
-# throwaway HERMES_HOME, separate Electron userData, distinct app name to avoid the single-instance lock
+# throwaway KOVA_HOME, separate Electron userData, distinct app name to avoid the single-instance lock
 ../scripts/dev-sandbox.sh npm run dev
 KOVA_DESKTOP_KOVA_ROOT=/path/to/clone npm run dev
-HERMES_HOME=/tmp/throwaway npm run dev
+KOVA_HOME=/tmp/throwaway npm run dev
 npm run dev:fake-boot   # exercise the startup overlay with deterministic delays
 ```
 
@@ -88,8 +88,8 @@ Installers are built and uploaded to GitHub Releases manually. macOS/Windows sig
 ### How it works
 
 The packaged app ships the Electron shell and a native React chat surface. On
-first launch it can install the Kova Agent runtime into `HERMES_HOME`
-(`~/.hermes`, or `%LOCALAPPDATA%\kova` on Windows), using the same layout as a
+first launch it can install the Kova Agent runtime into `KOVA_HOME`
+(`~/.kova`, or `%LOCALAPPDATA%\kova` on Windows), using the same layout as a
 CLI install.
 
 The app has three boundaries:
@@ -162,15 +162,15 @@ release-path changes.
 
 ### Troubleshooting
 
-Boot logs land in `HERMES_HOME/logs/desktop.log` (includes backend output and recent Python tracebacks) — check it first if the app reports a boot failure.
+Boot logs land in `KOVA_HOME/logs/desktop.log` (includes backend output and recent Python tracebacks) — check it first if the app reports a boot failure.
 
 **macOS / Linux:**
 
 ```bash
 # Force a clean first-launch setup
-rm "$HOME/.hermes/kova-agent/.hermes-bootstrap-complete"
+rm "$HOME/.kova/kova-agent/.kova-bootstrap-complete"
 # Rebuild a broken Python venv
-rm -rf "$HOME/.hermes/hermes-agent/venv"
+rm -rf "$HOME/.kova/kova-agent/venv"
 # Reset a stuck macOS microphone prompt (macOS only)
 tccutil reset Microphone com.nousresearch.kova
 ```
@@ -179,12 +179,12 @@ tccutil reset Microphone com.nousresearch.kova
 
 ```powershell
 # Force a clean first-launch setup
-Remove-Item "$env:LOCALAPPDATA\kova\kova-agent\.hermes-bootstrap-complete"
+Remove-Item "$env:LOCALAPPDATA\kova\kova-agent\.kova-bootstrap-complete"
 # Rebuild a broken Python venv
 Remove-Item -Recurse -Force "$env:LOCALAPPDATA\kova\kova-agent\venv"
 ```
 
-> The default Kova home on Windows is `%LOCALAPPDATA%\kova`. Set the `HERMES_HOME` env var if you've relocated it.
+> The default Kova home on Windows is `%LOCALAPPDATA%\kova`. Set the `KOVA_HOME` env var if you've relocated it.
 
 ---
 

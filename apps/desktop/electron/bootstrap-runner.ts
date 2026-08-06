@@ -11,8 +11,8 @@
  *     installStamp,        // INSTALL_STAMP from main.ts (may be null in dev)
  *     activeRoot,          // ACTIVE_KOVA_ROOT
  *     sourceRepoRoot,      // SOURCE_REPO_ROOT (for dev install.ps1 lookup)
- *     kovaHome,          // HERMES_HOME
- *     logRoot,             // HERMES_HOME/logs
+ *     kovaHome,          // KOVA_HOME
+ *     logRoot,             // KOVA_HOME/logs
  *     emit: ev => {...}    // event sink (sender.send or similar)
  *   })
  *
@@ -90,7 +90,7 @@ function readExistingPinnedCommit(activeRoot: string | null | undefined): string
   }
 
   try {
-    const raw = fs.readFileSync(path.join(activeRoot, '.hermes-bootstrap-complete'), 'utf8')
+    const raw = fs.readFileSync(path.join(activeRoot, '.kova-bootstrap-complete'), 'utf8')
     const parsed = JSON.parse(raw)
 
     return parsed && isPinnedCommit(parsed.pinnedCommit) ? parsed.pinnedCommit : null
@@ -192,7 +192,7 @@ function bootstrapCacheDir(kovaHome) {
 }
 
 // The install.sh / install.ps1 that ships inside the already-installed agent
-// checkout under ~/.hermes/kova-agent. Used as a last-resort fallback when
+// checkout under ~/.kova/kova-agent. Used as a last-resort fallback when
 // the pinned commit can't be fetched from GitHub (e.g. a locally-built desktop
 // app stamped to an unpushed HEAD).
 function installedAgentInstallScript(kovaHome) {
@@ -468,9 +468,9 @@ function spawnPowerShell(scriptPath, args, { emit, stageName, abortSignal, kovaH
         stdio: ['ignore', 'pipe', 'pipe'],
         env: {
           ...process.env,
-          // Pass HERMES_HOME through so install.ps1 respects the caller's
+          // Pass KOVA_HOME through so install.ps1 respects the caller's
           // choice rather than re-computing the default.
-          HERMES_HOME: kovaHome || process.env.HERMES_HOME || ''
+          KOVA_HOME: kovaHome || process.env.KOVA_HOME || ''
         }
       })
     )
@@ -566,7 +566,7 @@ function spawnBash(scriptPath, args, { emit, stageName, abortSignal, kovaHome }:
       stdio: ['ignore', 'pipe', 'pipe'],
       env: {
         ...process.env,
-        HERMES_HOME: kovaHome || process.env.HERMES_HOME || ''
+        KOVA_HOME: kovaHome || process.env.KOVA_HOME || ''
       }
     })
 

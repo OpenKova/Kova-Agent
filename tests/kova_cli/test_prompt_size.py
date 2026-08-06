@@ -36,7 +36,7 @@ def _seed_skill(kova_home, name, description):
 def isolated_home(tmp_path, monkeypatch):
     kova_home = tmp_path / ".kova"
     kova_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
     monkeypatch.chdir(tmp_path)  # avoid picking up the repo's AGENTS.md
     return kova_home
 

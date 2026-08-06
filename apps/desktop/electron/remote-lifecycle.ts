@@ -33,7 +33,7 @@ const LOCKFILE_SCHEMA_VERSION = 2
 // args, served-token reconciliation). A mismatch forces a clean respawn.
 const PROTOCOL_VERSION = 1
 const READY_RE = /^KOVA_(?:BACKEND|DASHBOARD)_READY port=(\d+)/m
-const REMOTE_LOCK_DIR = '~/.hermes/desktop-ssh'
+const REMOTE_LOCK_DIR = '~/.kova/desktop-ssh'
 const SUPPORTED_REMOTE_OS = new Set(['Linux', 'Darwin'])
 const DEFAULT_READY_TIMEOUT_MS = 45_000
 const READY_POLL_INTERVAL_MS = 750
@@ -190,7 +190,7 @@ async function locateKova(ssh, remoteKovaPath) {
   // command locations (scripts/install.sh) — per-user, root/FHS, legacy venv.
   candidates.push('~/.local/bin/kova')
   candidates.push('/usr/local/bin/kova')
-  candidates.push('~/.hermes/hermes-agent/venv/bin/kova')
+  candidates.push('~/.kova/kova-agent/venv/bin/kova')
 
   for (const candidate of candidates) {
     if (!candidate) {
@@ -242,14 +242,14 @@ async function probeRemotePlatform(ssh) {
   return { os: osName, arch }
 }
 
-// The HERMES_HOME the remote dashboard will use (explicit env wins, else
-// ~/.hermes). Recorded in the lockfile so a future reuse can tell it's the same
+// The KOVA_HOME the remote dashboard will use (explicit env wins, else
+// ~/.kova). Recorded in the lockfile so a future reuse can tell it's the same
 // state store; best-effort.
 async function probeRemoteKovaHome(ssh) {
   try {
-    const out = (await ssh.exec('echo "${HERMES_HOME:-$HOME/.hermes}"')).trim().split('\n').pop()
+    const out = (await ssh.exec('echo "${KOVA_HOME:-$HOME/.kova}"')).trim().split('\n').pop()
 
-    return out || '~/.hermes'
+    return out || '~/.kova'
   } catch (cause) {
     const error: any = new Error('Could not resolve the remote Kova home.')
     error.kind = 'transient-transport-error'

@@ -16,7 +16,7 @@ def homes(tmp_path, monkeypatch):
     home.mkdir()
     managed = tmp_path / "managed"
     managed.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     monkeypatch.setenv("KOVA_MANAGED_DIR", str(managed))
     import kova_cli.config as cfg
     from kova_cli import managed_scope
@@ -58,7 +58,7 @@ def test_gateway_config_loader_honors_managed(homes, monkeypatch):
     )
     import gateway.config as gc
 
-    # load_gateway_config resolves home via get_kova_home() (HERMES_HOME env).
+    # load_gateway_config resolves home via get_kova_home() (KOVA_HOME env).
     cfg = gc.load_gateway_config()
     # Managed value should have flowed into the GatewayConfig.
     assert cfg.group_sessions_per_user is True

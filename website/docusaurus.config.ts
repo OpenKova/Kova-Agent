@@ -145,7 +145,7 @@ const config: Config = {
           position: 'left',
         },
         {
-          href: 'https://hermes-agent.nousresearch.com/',
+          href: 'https://kova-agent.nousresearch.com/',
           label: 'Download',
           position: 'left',
         },
@@ -154,7 +154,7 @@ const config: Config = {
           position: 'right',
         },
         {
-          href: 'https://hermes-agent.nousresearch.com',
+          href: 'https://kova-agent.nousresearch.com',
           label: 'Home',
           position: 'right',
         },
@@ -193,7 +193,7 @@ const config: Config = {
         {
           title: 'More',
           items: [
-            { label: 'Desktop Download', href: 'https://hermes-agent.nousresearch.com/' },
+            { label: 'Desktop Download', href: 'https://kova-agent.nousresearch.com/' },
             { label: 'GitHub', href: 'https://github.com/OpenKova/Kova-Agent' },
             { label: 'Nous Research', href: 'https://nousresearch.com' },
           ],

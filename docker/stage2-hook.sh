@@ -17,7 +17,7 @@
 
 set -eu
 
-HERMES_HOME="${HERMES_HOME:-/opt/data}"
+KOVA_HOME="${KOVA_HOME:-/opt/data}"
 INSTALL_DIR="/opt/kova"
 
 # Drop to kova via s6-setuidgid, but skip it when already non-root.
@@ -32,7 +32,7 @@ as_kova() { [ "$(id -u)" = 0 ] || { "$@"; return; }; s6-setuidgid kova "$@"; }
 # ownership, config seeding) requires root, and it is skipped when the container
 # starts non-root. The baked install tree under /opt/kova is intentionally
 # root-owned and non-writable; mutable runtime state must live under
-# $HERMES_HOME. An arbitrary `--user` UID therefore cannot repair or populate
+# $KOVA_HOME. An arbitrary `--user` UID therefore cannot repair or populate
 # the data volume, and startup fails with EACCES. See #34837 for the
 # supervision-tree side of this.
 #
@@ -73,17 +73,17 @@ EOF
     exit 1
 fi
 
-# --- Bootstrap HERMES_HOME as root ---
+# --- Bootstrap KOVA_HOME as root ---
 # Create the directory (and any missing parents) while we still have root
 # privileges so the chown checks below see real metadata and the later
 # `s6-setuidgid kova mkdir -p` block doesn't EACCES on root-owned
-# ancestors. Without this, custom HERMES_HOME paths whose parents only
-# root can create (e.g. `HERMES_HOME=/home/kova/.kova` in a Compose
+# ancestors. Without this, custom KOVA_HOME paths whose parents only
+# root can create (e.g. `KOVA_HOME=/home/kova/.kova` in a Compose
 # file, or any path under a fresh / not pre-populated by the image)
 # fail on first boot with `mkdir: cannot create directory '/...': Permission
 # denied` and the cont-init hook exits non-zero. Idempotent — `mkdir -p`
 # is a no-op if the dir already exists. (#18482, salvages #18488)
-mkdir -p "$HERMES_HOME"
+mkdir -p "$KOVA_HOME"
 
 # Numeric UID/GID validation: must be digits only, non-root, 1-65534.
 # NAS hosts such as Unraid commonly use low non-root IDs (99:100).
@@ -172,9 +172,9 @@ for sock in /var/run/docker.sock /run/docker.sock; do
 done
 
 # --- Fix ownership of data volume ---
-# When KOVA_UID is remapped or the top-level $HERMES_HOME isn't owned by
+# When KOVA_UID is remapped or the top-level $KOVA_HOME isn't owned by
 # the runtime kova UID, restore ownership to kova — but ONLY for the
-# directories kova actually writes to. The full $HERMES_HOME may be a
+# directories kova actually writes to. The full $KOVA_HOME may be a
 # host-mounted bind containing unrelated user files; `chown -R` would
 # silently destroy host ownership of those (see issue #19788).
 #
@@ -184,7 +184,7 @@ actual_kova_uid=$(id -u kova)
 
 path_has_symlink_component() {
     path="$1"
-    root="${2:-$HERMES_HOME}"
+    root="${2:-$KOVA_HOME}"
     while [ -n "$path" ] && [ "$path" != "/" ]; do
         if [ -L "$path" ]; then
             return 0
@@ -221,30 +221,30 @@ chown_kova_tree() {
 }
 
 needs_chown=false
-if [ "$(stat -c %u "$HERMES_HOME" 2>/dev/null)" != "$actual_kova_uid" ]; then
+if [ "$(stat -c %u "$KOVA_HOME" 2>/dev/null)" != "$actual_kova_uid" ]; then
     needs_chown=true
 fi
 if [ "$needs_chown" = true ]; then
-    echo "[stage2] Fixing ownership of $HERMES_HOME (targeted) to kova ($actual_kova_uid)"
+    echo "[stage2] Fixing ownership of $KOVA_HOME (targeted) to kova ($actual_kova_uid)"
     # In rootless Podman the container's "root" is mapped to an
     # unprivileged host UID — chown will fail. That's fine: the volume
     # is already owned by the mapped user on the host side.
     #
-    # Top-level $HERMES_HOME: chown the directory itself (not its contents)
+    # Top-level $KOVA_HOME: chown the directory itself (not its contents)
     # so kova can mkdir new subdirs but bind-mounted host files keep
     # their existing ownership.
-    if refuse_symlinked_path "chown" "$HERMES_HOME"; then
+    if refuse_symlinked_path "chown" "$KOVA_HOME"; then
         :
     else
-        chown kova:kova "$HERMES_HOME" 2>/dev/null || \
-            echo "[stage2] Warning: chown $HERMES_HOME failed (rootless container?) — continuing"
+        chown kova:kova "$KOVA_HOME" 2>/dev/null || \
+            echo "[stage2] Warning: chown $KOVA_HOME failed (rootless container?) — continuing"
     fi
     # Kova-owned subdirs: recursive chown is safe here because these are
     # created and managed exclusively by kova (see the s6-setuidgid mkdir
     # -p block below for the canonical list).
     for sub in cron sessions logs hooks memories skills skins plans workspace home profiles pairing platforms/pairing lazy-packages; do
-        if [ -e "$HERMES_HOME/$sub" ]; then
-            chown_kova_tree "$HERMES_HOME/$sub"
+        if [ -e "$KOVA_HOME/$sub" ]; then
+            chown_kova_tree "$KOVA_HOME/$sub"
         fi
     done
 fi
@@ -252,14 +252,14 @@ fi
 # --- Immutable install tree ---
 # Do not chown runtime code or dependency trees under $INSTALL_DIR back to the
 # kova user. Hosted/container instances keep mutable state under
-# $HERMES_HOME (/opt/data) and run with PYTHONDONTWRITEBYTECODE plus
+# $KOVA_HOME (/opt/data) and run with PYTHONDONTWRITEBYTECODE plus
 # KOVA_DISABLE_LAZY_INSTALLS=1. Keeping /opt/kova root-owned and
 # non-writable prevents an agent session from self-modifying the installed
 # source, venv, TUI bundle, or node_modules and bricking the gateway.
 #
 # Lazy-installable optional backends (Firecrawl, Exa, Feishu, etc.) cannot
 # install into the sealed venv, so they are redirected to the writable
-# $HERMES_HOME/lazy-packages dir on the data volume (Dockerfile sets
+# $KOVA_HOME/lazy-packages dir on the data volume (Dockerfile sets
 # KOVA_LAZY_INSTALL_TARGET). That dir is appended to the END of sys.path,
 # so a package installed there can only ADD modules — it can never shadow or
 # break a core module, which is what keeps the sealed-venv guarantee intact
@@ -268,23 +268,23 @@ fi
 # unprivileged runtime user, and it persists across container recreates /
 # image updates (an ABI stamp wipes it if a rebuild bumps the interpreter).
 
-# Always reset ownership of $HERMES_HOME/profiles to kova on every
+# Always reset ownership of $KOVA_HOME/profiles to kova on every
 # boot. Profile dirs and files can land owned by root when commands
 # are invoked via `docker exec <container> kova …` (which defaults
 # to root unless `-u` is passed), and that breaks the cont-init
 # reconciler (02-reconcile-profiles) which runs as kova and walks
 # the profiles dir. Idempotent; skipped on rootless containers where
 # chown would fail.
-if [ -d "$HERMES_HOME/profiles" ]; then
-    chown_kova_tree "$HERMES_HOME/profiles"
+if [ -d "$KOVA_HOME/profiles" ]; then
+    chown_kova_tree "$KOVA_HOME/profiles"
 fi
 
-# Always reset ownership of $HERMES_HOME/cron on every boot for the same
+# Always reset ownership of $KOVA_HOME/cron on every boot for the same
 # docker-exec/root-write reason as profiles/. The cron scheduler state
 # (jobs.json) must stay readable by the unprivileged kova runtime even
 # after root-context maintenance commands or scheduler writes.
-if [ -d "$HERMES_HOME/cron" ]; then
-    chown_kova_tree "$HERMES_HOME/cron"
+if [ -d "$KOVA_HOME/cron" ]; then
+    chown_kova_tree "$KOVA_HOME/cron"
 fi
 
 # Always reset ownership of pairing data on every boot, same docker-exec/
@@ -292,21 +292,21 @@ fi
 # kova pairing approve …` defaults to uid=0 and writes 0600 root-owned
 # approval files that the unprivileged kova gateway cannot read,
 # silently leaving the approved user unauthorized (#10270). The targeted
-# data-volume chown above only runs when the top-level $HERMES_HOME is
+# data-volume chown above only runs when the top-level $KOVA_HOME is
 # mis-owned, so warm boots skip it — this block makes a container restart
 # self-heal. Tiny directory (a handful of small JSON files), so the cost
 # is negligible.
-if [ -d "$HERMES_HOME/platforms/pairing" ]; then
-    chown_kova_tree "$HERMES_HOME/platforms/pairing"
+if [ -d "$KOVA_HOME/platforms/pairing" ]; then
+    chown_kova_tree "$KOVA_HOME/platforms/pairing"
 fi
 # Legacy location (pre-consolidated layout).
-if [ -d "$HERMES_HOME/pairing" ]; then
-    chown_kova_tree "$HERMES_HOME/pairing"
+if [ -d "$KOVA_HOME/pairing" ]; then
+    chown_kova_tree "$KOVA_HOME/pairing"
 fi
 
 # Reset ownership of kova-owned top-level state files on every boot.
 # The targeted data-volume chown above only covers kova-owned
-# *subdirectories*; loose state files living directly under $HERMES_HOME
+# *subdirectories*; loose state files living directly under $KOVA_HOME
 # are missed. When those files are created or rewritten by
 # `docker exec <container> kova …` (root unless `-u` is passed) they
 # land root-owned, and the unprivileged kova runtime then hits
@@ -314,7 +314,7 @@ fi
 # auth.json), producing a gateway restart loop.
 #
 # We use an explicit allowlist rather than a blanket `find -user root`
-# sweep so host-owned files in a bind-mounted $HERMES_HOME are never
+# sweep so host-owned files in a bind-mounted $KOVA_HOME are never
 # touched — same targeted-ownership contract as the subdir chown above
 # (issue #19788, PR #19795). The list mirrors the top-level *file*
 # entries of kova_cli.profile_distribution.USER_OWNED_EXCLUDE plus the
@@ -326,11 +326,11 @@ for f in \
     response_store.db response_store.db-shm response_store.db-wal \
     gateway.pid gateway.lock gateway_state.json processes.json \
     active_profile; do
-    if [ -e "$HERMES_HOME/$f" ]; then
-        if refuse_symlinked_path "chown" "$HERMES_HOME/$f"; then
+    if [ -e "$KOVA_HOME/$f" ]; then
+        if refuse_symlinked_path "chown" "$KOVA_HOME/$f"; then
             :
         else
-            chown kova:kova "$HERMES_HOME/$f" 2>/dev/null || true
+            chown kova:kova "$KOVA_HOME/$f" 2>/dev/null || true
         fi
     fi
 done
@@ -338,12 +338,12 @@ done
 # --- config.yaml permissions ---
 # Ensure config.yaml is readable by the kova runtime user even if it
 # was edited on the host after initial ownership setup.
-if [ -f "$HERMES_HOME/config.yaml" ]; then
-    if refuse_symlinked_path "chown/chmod" "$HERMES_HOME/config.yaml"; then
+if [ -f "$KOVA_HOME/config.yaml" ]; then
+    if refuse_symlinked_path "chown/chmod" "$KOVA_HOME/config.yaml"; then
         :
     else
-        chown kova:kova "$HERMES_HOME/config.yaml" 2>/dev/null || true
-        chmod 640 "$HERMES_HOME/config.yaml" 2>/dev/null || true
+        chown kova:kova "$KOVA_HOME/config.yaml" 2>/dev/null || true
+        chmod 640 "$KOVA_HOME/config.yaml" 2>/dev/null || true
     fi
 fi
 
@@ -352,42 +352,42 @@ fi
 # under rootless Podman where chown back to root would fail).
 #
 # Use direct `mkdir -p` invocation (no `sh -c "..."` wrapper) so the
-# shell isn't a second interpreter — defends against $HERMES_HOME values
+# shell isn't a second interpreter — defends against $KOVA_HOME values
 # containing shell metacharacters. PR #30136 review item O2.
 as_kova mkdir -p \
-    "$HERMES_HOME/backups" \
-    "$HERMES_HOME/cron" \
-    "$HERMES_HOME/sessions" \
-    "$HERMES_HOME/logs" \
-    "$HERMES_HOME/logs/gateways" \
-    "$HERMES_HOME/hooks" \
-    "$HERMES_HOME/memories" \
-    "$HERMES_HOME/skills" \
-    "$HERMES_HOME/skins" \
-    "$HERMES_HOME/plans" \
-    "$HERMES_HOME/workspace" \
-    "$HERMES_HOME/home" \
-    "$HERMES_HOME/pairing" \
-    "$HERMES_HOME/platforms/pairing" \
-    "$HERMES_HOME/lazy-packages"
+    "$KOVA_HOME/backups" \
+    "$KOVA_HOME/cron" \
+    "$KOVA_HOME/sessions" \
+    "$KOVA_HOME/logs" \
+    "$KOVA_HOME/logs/gateways" \
+    "$KOVA_HOME/hooks" \
+    "$KOVA_HOME/memories" \
+    "$KOVA_HOME/skills" \
+    "$KOVA_HOME/skins" \
+    "$KOVA_HOME/plans" \
+    "$KOVA_HOME/workspace" \
+    "$KOVA_HOME/home" \
+    "$KOVA_HOME/pairing" \
+    "$KOVA_HOME/platforms/pairing" \
+    "$KOVA_HOME/lazy-packages"
 
 # --- Install-method stamp ---
 # The 'docker' stamp is baked into the immutable install tree at
 # /opt/kova/.install_method (see Dockerfile), NOT written here into
-# $HERMES_HOME. detect_install_method() reads the code-scoped stamp first.
+# $KOVA_HOME. detect_install_method() reads the code-scoped stamp first.
 #
-# Why we no longer stamp $HERMES_HOME: it is a shared DATA volume, commonly
-# bind-mounted from the host (~/.hermes:/opt/data) and sometimes shared with a
+# Why we no longer stamp $KOVA_HOME: it is a shared DATA volume, commonly
+# bind-mounted from the host (~/.kova:/opt/data) and sometimes shared with a
 # host-side Desktop/CLI install. Stamping 'docker' here clobbered that host
 # install's marker, so its in-app updater read 'docker' and refused to run
 # 'kova update'. To heal homes already poisoned by older images, remove a
-# stale 'docker' stamp from $HERMES_HOME if one is present (the host install's
+# stale 'docker' stamp from $KOVA_HOME if one is present (the host install's
 # own installer re-creates its code-scoped stamp; a genuine container relies on
 # the baked /opt/kova stamp, so deleting the data-dir copy is safe).
-if [ -f "$HERMES_HOME/.install_method" ]; then
-    stamped="$(tr -d '[:space:]' < "$HERMES_HOME/.install_method" 2>/dev/null || true)"
+if [ -f "$KOVA_HOME/.install_method" ]; then
+    stamped="$(tr -d '[:space:]' < "$KOVA_HOME/.install_method" 2>/dev/null || true)"
     if [ "$stamped" = "docker" ]; then
-        rm -f "$HERMES_HOME/.install_method" 2>/dev/null || true
+        rm -f "$KOVA_HOME/.install_method" 2>/dev/null || true
     fi
 fi
 
@@ -395,11 +395,11 @@ fi
 seed_one() {
     dest=$1
     src=$2
-    if [ ! -f "$HERMES_HOME/$dest" ] && [ -f "$INSTALL_DIR/$src" ]; then
-        if refuse_symlinked_path "seed" "$HERMES_HOME/$dest"; then
+    if [ ! -f "$KOVA_HOME/$dest" ] && [ -f "$INSTALL_DIR/$src" ]; then
+        if refuse_symlinked_path "seed" "$KOVA_HOME/$dest"; then
             :
         else
-            as_kova cp "$INSTALL_DIR/$src" "$HERMES_HOME/$dest"
+            as_kova cp "$INSTALL_DIR/$src" "$KOVA_HOME/$dest"
         fi
     fi
 }
@@ -410,22 +410,22 @@ seed_one "SOUL.md" "docker/SOUL.md"
 # .env holds API keys and secrets — restrict to owner-only access. Applied
 # unconditionally (not only on first-seed) so a host-mounted .env that was
 # created with a permissive umask gets tightened on every container start.
-if [ -f "$HERMES_HOME/.env" ]; then
-    if refuse_symlinked_path "chown/chmod" "$HERMES_HOME/.env"; then
+if [ -f "$KOVA_HOME/.env" ]; then
+    if refuse_symlinked_path "chown/chmod" "$KOVA_HOME/.env"; then
         :
     else
-        chown kova:kova "$HERMES_HOME/.env" 2>/dev/null || true
-        chmod 600 "$HERMES_HOME/.env" 2>/dev/null || true
+        chown kova:kova "$KOVA_HOME/.env" 2>/dev/null || true
+        chmod 600 "$KOVA_HOME/.env" 2>/dev/null || true
     fi
 fi
 
 # --- Migrate persisted config schema ---
 # Docker image upgrades replace the code under $INSTALL_DIR but preserve
-# $HERMES_HOME on the mounted volume. Run the same safe, non-interactive
+# $KOVA_HOME on the mounted volume. Run the same safe, non-interactive
 # config-schema migrations that `kova update` runs for non-Docker installs,
 # after first-boot seeding and before supervised gateway services start.
 # Set KOVA_SKIP_CONFIG_MIGRATION=1 for controlled/manual migrations.
-if [ -f "$HERMES_HOME/config.yaml" ]; then
+if [ -f "$KOVA_HOME/config.yaml" ]; then
     s6-setuidgid kova "$INSTALL_DIR/.venv/bin/python" "$INSTALL_DIR/scripts/docker_config_migrate.py" \
         || echo "[stage2] Warning: docker_config_migrate.py failed; continuing"
 fi
@@ -433,13 +433,13 @@ fi
 # auth.json: bootstrap from env on first boot only. Same semantics as the
 # pre-s6 entrypoint — the [ ! -f ] guard is critical to avoid clobbering
 # rotated refresh tokens on container restart.
-if [ ! -f "$HERMES_HOME/auth.json" ] && [ -n "${KOVA_AUTH_JSON_BOOTSTRAP:-}" ]; then
-    if refuse_symlinked_path "seed" "$HERMES_HOME/auth.json"; then
+if [ ! -f "$KOVA_HOME/auth.json" ] && [ -n "${KOVA_AUTH_JSON_BOOTSTRAP:-}" ]; then
+    if refuse_symlinked_path "seed" "$KOVA_HOME/auth.json"; then
         :
     else
-        printf '%s' "$KOVA_AUTH_JSON_BOOTSTRAP" > "$HERMES_HOME/auth.json"
-        chown kova:kova "$HERMES_HOME/auth.json" 2>/dev/null || true
-        chmod 600 "$HERMES_HOME/auth.json"
+        printf '%s' "$KOVA_AUTH_JSON_BOOTSTRAP" > "$KOVA_HOME/auth.json"
+        chown kova:kova "$KOVA_HOME/auth.json" 2>/dev/null || true
+        chmod 600 "$KOVA_HOME/auth.json"
     fi
 fi
 
@@ -458,13 +458,13 @@ fi
 # local session. Older/incomparable seeds remain no-ops, so leaving the env set
 # cannot roll a healthy rotated token backward. Runs as its own stdlib-only
 # subprocess (no app imports) and always exits 0.
-if [ -f "$HERMES_HOME/auth.json" ] && [ -n "${KOVA_AUTH_JSON_REBOOTSTRAP:-}" ]; then
-    if refuse_symlinked_path "reseed" "$HERMES_HOME/auth.json"; then
+if [ -f "$KOVA_HOME/auth.json" ] && [ -n "${KOVA_AUTH_JSON_REBOOTSTRAP:-}" ]; then
+    if refuse_symlinked_path "reseed" "$KOVA_HOME/auth.json"; then
         :
     else
         s6-setuidgid kova "$INSTALL_DIR/.venv/bin/python" \
             "$INSTALL_DIR/scripts/docker_rebootstrap_nous_session.py" \
-            "$HERMES_HOME/auth.json" \
+            "$KOVA_HOME/auth.json" \
             || echo "[stage2] Warning: docker_rebootstrap_nous_session.py failed; continuing"
     fi
 fi
@@ -494,14 +494,14 @@ fi
 # Only a literal "running" is honoured (the sole value in the reconciler's
 # _AUTOSTART_STATES); any other value is ignored so a typo can't write a
 # bogus state the reconciler would treat as "no prior state" anyway.
-if [ ! -f "$HERMES_HOME/gateway_state.json" ] && \
+if [ ! -f "$KOVA_HOME/gateway_state.json" ] && \
         [ "${KOVA_GATEWAY_BOOTSTRAP_STATE:-}" = "running" ]; then
-    if refuse_symlinked_path "seed" "$HERMES_HOME/gateway_state.json"; then
+    if refuse_symlinked_path "seed" "$KOVA_HOME/gateway_state.json"; then
         :
     else
-        printf '{"gateway_state":"running"}\n' > "$HERMES_HOME/gateway_state.json"
-        chown kova:kova "$HERMES_HOME/gateway_state.json" 2>/dev/null || true
-        chmod 644 "$HERMES_HOME/gateway_state.json"
+        printf '{"gateway_state":"running"}\n' > "$KOVA_HOME/gateway_state.json"
+        chown kova:kova "$KOVA_HOME/gateway_state.json" 2>/dev/null || true
+        chmod 644 "$KOVA_HOME/gateway_state.json"
     fi
 fi
 

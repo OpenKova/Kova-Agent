@@ -3,13 +3,13 @@
 Official skills maintained by Nous Research that are **not activated by default**.
 
 These skills ship with the kova-agent repository but are not copied to
-`~/.hermes/skills/` during setup. They are discoverable via the Skills Hub:
+`~/.kova/skills/` during setup. They are discoverable via the Skills Hub:
 
 ```bash
 kova skills browse               # browse all skills, official shown first
 kova skills browse --source official  # browse only official optional skills
 kova skills search <query>       # finds optional skills labeled "official"
-kova skills install <identifier> # copies to ~/.hermes/skills/ and activates
+kova skills install <identifier> # copies to ~/.kova/skills/ and activates
 ```
 
 ## Why optional?

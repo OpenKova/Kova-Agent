@@ -20,7 +20,7 @@ import pytest
 def _isolate_home(tmp_path, monkeypatch):
     kova_home = tmp_path / ".kova"
     kova_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
     yield kova_home
 
 
@@ -214,7 +214,7 @@ def test_registry_resolve_by_name(tmp_path):
 def test_registry_defaults_to_kova_home(tmp_path, monkeypatch):
     from plugins.google_meet.node.registry import NodeRegistry
 
-    # _isolate_home already set HERMES_HOME to tmp_path/.kova; the
+    # _isolate_home already set KOVA_HOME to tmp_path/.kova; the
     # registry default path must live inside that tree.
     r = NodeRegistry()
     r.add("x", "ws://x", "t")

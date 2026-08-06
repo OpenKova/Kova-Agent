@@ -139,7 +139,7 @@ Kanban 工具通过分发器设置的 `KOVA_KANBAN_TASK` 环境变量进行访�
    ```bash
    codex login                  # 将 token 写入 ~/.codex/auth.json
    ```
-   Kova 自己的 `kova auth login codex` 写入 `~/.hermes/auth.json`——那是独立的会话。**如果你还没有运行过 `codex login`，请单独运行它。**
+   Kova 自己的 `kova auth login codex` 写入 `~/.kova/auth.json`——那是独立的会话。**如果你还没有运行过 `codex login`，请单独运行它。**
 
 3. **（可选）安装你想要的 Codex 插件。** 启用运行时时，Kova 会自动迁移你已通过 Codex CLI 安装的所有精选插件：
    ```bash
@@ -159,7 +159,7 @@ Kanban 工具通过分发器设置的 `KOVA_KANBAN_TASK` 环境变量进行访�
 该命令会：
 - 验证 `codex` CLI 是否已安装（若未安装则阻止并提示安装方法）。
 - 将 `model.openai_runtime: codex_app_server` 持久化到你的 config.yaml。
-- 将用户 MCP server 从 `~/.hermes/config.yaml` 迁移到 `~/.codex/config.toml`。
+- 将用户 MCP server 从 `~/.kova/config.yaml` 迁移到 `~/.codex/config.toml`。
 - **发现并迁移已安装的原生 Codex 插件**（Linear、GitHub、Gmail、Calendar、Canva 等），通过查询 Codex 的 `plugin/list` RPC 实现。
 - **将 Kova 自身的工具注册为 MCP server**，以便 Codex 子进程能够回调获取 Codex 未内置的工具。
 - **写入 `default_permissions = ":workspace"`**，使沙箱允许在工作区内写入，无需对每次操作进行提示。
@@ -172,7 +172,7 @@ Kanban 工具通过分发器设置的 `KOVA_KANBAN_TASK` 环境变量进行访�
 /codex-runtime
 ```
 
-你也可以在 `~/.hermes/config.yaml` 中手动设置：
+你也可以在 `~/.kova/config.yaml` 中手动设置：
 ```yaml
 model:
   openai_runtime: codex_app_server   # 默认值为 "auto"（= Kova 运行时）
@@ -246,7 +246,7 @@ default_permissions = ":read-only"
 
 这并非 `codex_app_server` 特有——现有的 `codex_responses` 路径也是如此——但在这里更为明显，因为你是在明确选择订阅计费。
 
-要将特定辅助任务路由到更便宜/不同的模型，请在 `~/.hermes/config.yaml` 中设置显式覆盖：
+要将特定辅助任务路由到更便宜/不同的模型，请在 `~/.kova/config.yaml` 中设置显式覆盖：
 
 ```yaml
 auxiliary:
@@ -293,11 +293,11 @@ default_permissions = ":workspace"
 
 默认情况下，无论哪个 Kova 配置文件处于活跃状态，Kova 都将 Codex 子进程指向 `~/.codex/`。这意味着 `kova -p work` 和 `kova -p personal` 共享相同的 Codex 认证、插件和配置。对大多数用户来说这是正确的行为——与直接运行 `codex` CLI 的效果一致。
 
-如果你需要按配置文件隔离 Codex（独立的认证、独立的已安装插件、独立的配置），请为每个配置文件显式设置 `CODEX_HOME`。最简洁的方式是指向你 `HERMES_HOME` 下的某个目录：
+如果你需要按配置文件隔离 Codex（独立的认证、独立的已安装插件、独立的配置），请为每个配置文件显式设置 `CODEX_HOME`。最简洁的方式是指向你 `KOVA_HOME` 下的某个目录：
 
 ```bash
 # 在 work 配置文件中，你可以这样包装 kova：
-CODEX_HOME=~/.hermes/profiles/work/codex kova chat
+CODEX_HOME=~/.kova/profiles/work/codex kova chat
 ```
 
 你需要在设置了该 `CODEX_HOME` 的情况下重新运行一次 `codex login`，以便 OAuth token 落入配置文件范围的位置。之后，`kova -p work` 将在隔离的 Codex 状态下运行。
@@ -350,7 +350,7 @@ Codex 的内置工具集涵盖 shell/文件操作/patch，但没有网络搜索�
 [mcp_servers.kova-tools]
 command = "/path/to/python"
 args = ["-m", "agent.transports.kova_tools_mcp_server"]
-env = { HERMES_HOME = "/your/.hermes", PYTHONPATH = "...", KOVA_QUIET = "1" }
+env = { KOVA_HOME = "/your/.kova", PYTHONPATH = "...", KOVA_QUIET = "1" }
 startup_timeout_sec = 30.0
 tool_timeout_sec = 600.0
 ```

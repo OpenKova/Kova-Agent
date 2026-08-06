@@ -243,7 +243,7 @@ def _exhausted_pool_store(now=None):
 def test_clear_cooldowns_only_touches_quota_shaped_entries(tmp_path, monkeypatch):
     kova_home = tmp_path / "kova"
     _write_auth_store(kova_home, _exhausted_pool_store())
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     assert clear_codex_pool_quota_cooldowns() == 1
 
@@ -275,7 +275,7 @@ def test_clear_cooldowns_scoped_to_access_token(tmp_path, monkeypatch):
     )
     kova_home = tmp_path / "kova"
     _write_auth_store(kova_home, store)
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     assert clear_codex_pool_quota_cooldowns("tok-other") == 1
 
@@ -288,7 +288,7 @@ def test_clear_cooldowns_scoped_to_access_token(tmp_path, monkeypatch):
 def test_clear_cooldowns_noop_without_pool(tmp_path, monkeypatch):
     kova_home = tmp_path / "kova"
     _write_auth_store(kova_home, {"version": 1, "providers": {}})
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
     assert clear_codex_pool_quota_cooldowns() == 0
 
 
@@ -329,7 +329,7 @@ def test_resolver_recovers_when_probe_confirms_reset(tmp_path, monkeypatch):
     probe must clear the cooldown and return the pool credential."""
     kova_home = tmp_path / "kova"
     _write_auth_store(kova_home, _pool_only_rate_limited_store())
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     monkeypatch.setattr(
         auth_mod, "_probe_codex_quota_restored", lambda token, **kw: True
@@ -348,7 +348,7 @@ def test_resolver_recovers_when_probe_confirms_reset(tmp_path, monkeypatch):
 def test_resolver_keeps_cooldown_when_probe_negative(tmp_path, monkeypatch):
     kova_home = tmp_path / "kova"
     _write_auth_store(kova_home, _pool_only_rate_limited_store())
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     monkeypatch.setattr(
         auth_mod, "_probe_codex_quota_restored", lambda token, **kw: False
@@ -363,7 +363,7 @@ def test_resolver_keeps_cooldown_when_probe_negative(tmp_path, monkeypatch):
 def test_resolver_keeps_cooldown_when_probe_indeterminate(tmp_path, monkeypatch):
     kova_home = tmp_path / "kova"
     _write_auth_store(kova_home, _pool_only_rate_limited_store())
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     monkeypatch.setattr(
         auth_mod, "_probe_codex_quota_restored", lambda token, **kw: None
@@ -380,7 +380,7 @@ def test_resolver_keeps_cooldown_when_probe_indeterminate(tmp_path, monkeypatch)
 
 
 def test_pool_entry_recovers_when_probe_confirms_reset(tmp_path, monkeypatch):
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / "kova"))
+    monkeypatch.setenv("KOVA_HOME", str(tmp_path / "kova"))
     _write_auth_store(tmp_path / "kova", _pool_only_rate_limited_store())
 
     from agent.credential_pool import load_pool
@@ -397,7 +397,7 @@ def test_pool_entry_recovers_when_probe_confirms_reset(tmp_path, monkeypatch):
 
 
 def test_pool_entry_stays_frozen_when_probe_negative(tmp_path, monkeypatch):
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / "kova"))
+    monkeypatch.setenv("KOVA_HOME", str(tmp_path / "kova"))
     _write_auth_store(tmp_path / "kova", _pool_only_rate_limited_store())
 
     from agent.credential_pool import load_pool
@@ -418,7 +418,7 @@ def test_pool_probe_not_fired_for_non_quota_exhaustion(tmp_path, monkeypatch):
     entry["last_error_code"] = 401
     entry["last_error_reason"] = "token_expired"
     entry["last_error_message"] = "expired"
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / "kova"))
+    monkeypatch.setenv("KOVA_HOME", str(tmp_path / "kova"))
     _write_auth_store(tmp_path / "kova", store)
 
     from agent.credential_pool import load_pool
@@ -438,7 +438,7 @@ def test_pool_probe_not_fired_for_non_quota_exhaustion(tmp_path, monkeypatch):
 def test_pool_readonly_enumeration_does_not_probe(tmp_path, monkeypatch):
     """clear_expired=False callers (read-only listing) must not fire probes
     or mutate persisted state."""
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / "kova"))
+    monkeypatch.setenv("KOVA_HOME", str(tmp_path / "kova"))
     _write_auth_store(tmp_path / "kova", _pool_only_rate_limited_store())
 
     from agent.credential_pool import load_pool
@@ -463,7 +463,7 @@ def test_pool_readonly_enumeration_does_not_probe(tmp_path, monkeypatch):
 def test_redeem_reset_clears_pool_cooldowns(tmp_path, monkeypatch):
     kova_home = tmp_path / "kova"
     _write_auth_store(kova_home, _pool_only_rate_limited_store())
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     from agent import account_usage
 

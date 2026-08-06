@@ -286,7 +286,7 @@ def test_chat_multimodal_note_persists_clean_input_once(tmp_path, monkeypatch):
     from kova_state import SessionDB
     from run_agent import AIAgent
 
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".kova"))
+    monkeypatch.setenv("KOVA_HOME", str(tmp_path / ".kova"))
     cli = _make_cli()
     session_id = cli.session_id
     db = SessionDB(db_path=tmp_path / "state.db")
@@ -459,7 +459,7 @@ def test_chat_close_does_not_persist_previous_turn_override(tmp_path, monkeypatc
     from kova_state import SessionDB
     from run_agent import AIAgent
 
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".kova"))
+    monkeypatch.setenv("KOVA_HOME", str(tmp_path / ".kova"))
     cli = _make_cli()
     session_id = cli.session_id
     db = SessionDB(db_path=tmp_path / "state.db")
@@ -544,7 +544,7 @@ def test_close_waits_for_atomic_cli_staging_before_snapshot(tmp_path, monkeypatc
     from kova_state import SessionDB
     from run_agent import AIAgent
 
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".kova"))
+    monkeypatch.setenv("KOVA_HOME", str(tmp_path / ".kova"))
     cli = _make_cli()
     session_id = cli.session_id
     db = SessionDB(db_path=tmp_path / "state.db")

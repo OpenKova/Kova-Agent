@@ -60,7 +60,7 @@ _TASK_NAME_DEFAULT = "Kova_Gateway"
 # name (e.g. older desktop app versions) must still be found by status /
 # start / stop / uninstall — hence the dual lookup in is_task_registered()
 # and query_task_status().
-_TASK_NAME_LEGACY = "Hermes_Gateway"
+_TASK_NAME_LEGACY = "Kova_Gateway"
 _TASK_DESCRIPTION = "Kova Agent Gateway - Messaging Platform Integration"
 _TASK_LOGON_DELAY = "PT30S"
 _TASK_RESTART_INTERVAL = "PT1M"
@@ -91,12 +91,12 @@ def _assert_windows() -> None:
 
 
 def _preserve_kova_home_path(path: str | Path) -> str:
-    """Render Kova-owned paths under the configured HERMES_HOME spelling.
+    """Render Kova-owned paths under the configured KOVA_HOME spelling.
 
     Windows installs may keep ``%LOCALAPPDATA%\\kova`` as a symlink/junction to
     another drive. Runtime state should still identify itself by the configured
     AppData path, so launcher files must not bake in the resolved target when a
-    path lives under HERMES_HOME.
+    path lives under KOVA_HOME.
     """
     candidate = Path(path)
     try:
@@ -312,7 +312,7 @@ def _task_name_candidates() -> list[str]:
     """Current + legacy task names, most-recent first.
 
     The current name is ``Kova_Gateway[_<profile>]``; the legacy name
-    ``Hermes_Gateway[_<profile>]`` matches registrations made by older
+    ``Kova_Gateway[_<profile>]`` matches registrations made by older
     installs. Lookup/status sites iterate this list so both are found.
     """
     _assert_windows()
@@ -333,7 +333,7 @@ def get_task_script_path() -> Path:
     """The generated ``gateway.cmd`` wrapper kept beside the VBS launcher.
 
     Lives under ``%LOCALAPPDATA%\\kova\\gateway-service\\<task_name>.cmd``
-    (or ``<HERMES_HOME>/gateway-service/<task_name>.cmd`` so per-profile
+    (or ``<KOVA_HOME>/gateway-service/<task_name>.cmd`` so per-profile
     Kova installs stay self-contained).
     """
     _assert_windows()
@@ -380,10 +380,10 @@ def _legacy_startup_entry_path() -> Path:
 def _stable_gateway_working_dir(project_root: Path) -> str:
     """Return a stable cwd for detached/startup gateway runs.
 
-    Mirror the POSIX service invariant: anchor at ``HERMES_HOME`` whenever it
+    Mirror the POSIX service invariant: anchor at ``KOVA_HOME`` whenever it
     exists so Scheduled Task / Startup launches do not fail at the ``cd`` step
     after a transient checkout or worktree is moved away. Fall back to the
-    source checkout only if ``HERMES_HOME`` cannot be used yet. Preserve the
+    source checkout only if ``KOVA_HOME`` cannot be used yet. Preserve the
     configured spelling instead of resolving symlinks so AppData installs backed
     by a junction/symlink still identify themselves as AppData.
     """
@@ -414,7 +414,7 @@ def _build_gateway_cmd_script(
 
     The script:
       - cd's into a stable working directory
-      - exports HERMES_HOME, PYTHONIOENCODING, VIRTUAL_ENV
+      - exports KOVA_HOME, PYTHONIOENCODING, VIRTUAL_ENV
       - invokes ``python -m kova_cli.main [--profile X] gateway run``
 
     The .cmd is a compatibility/manual-run artifact: service persistence
@@ -429,7 +429,7 @@ def _build_gateway_cmd_script(
     """
     lines = ["@echo off", f"rem {_TASK_DESCRIPTION}"]
     lines.append(f"cd /d {_quote_cmd_script_arg(working_dir)}")
-    lines.append(f'set "HERMES_HOME={kova_home}"')
+    lines.append(f'set "KOVA_HOME={kova_home}"')
     lines.append('set "PYTHONIOENCODING=utf-8"')
     lines.append('set "KOVA_GATEWAY_DETACHED=1"')
     python_exe_path, venv_dir, extra_pythonpath = _resolve_detached_python(python_path)
@@ -514,7 +514,7 @@ def _build_gateway_vbs_script(
         "Dim sh, env, existing_pp",
         'Set sh = CreateObject("WScript.Shell")',
         'Set env = sh.Environment("PROCESS")',
-        f"env.Item({_quote_vbs_string('HERMES_HOME')}) = {_quote_vbs_string(kova_home)}",
+        f"env.Item({_quote_vbs_string('KOVA_HOME')}) = {_quote_vbs_string(kova_home)}",
         f"env.Item({_quote_vbs_string('PYTHONIOENCODING')}) = {_quote_vbs_string('utf-8')}",
         f"env.Item({_quote_vbs_string('KOVA_GATEWAY_DETACHED')}) = {_quote_vbs_string('1')}",
         f"env.Item({_quote_vbs_string('VIRTUAL_ENV')}) = {_quote_vbs_string(_preserve_kova_home_path(venv_dir))}",
@@ -815,7 +815,7 @@ def _build_gateway_argv() -> tuple[list[str], str, dict[str, str]]:
     argv.extend(["gateway", "run"])
 
     env_overlay = {
-        "HERMES_HOME": kova_home,
+        "KOVA_HOME": kova_home,
         "PYTHONIOENCODING": "utf-8",
         "KOVA_GATEWAY_DETACHED": "1",
         "VIRTUAL_ENV": _preserve_kova_home_path(venv_dir),
@@ -842,7 +842,7 @@ def windowless_gateway_restart_spec(
     pythonw.exe rewrite here produced a console-less gateway whose every
     console-subsystem child allocated a visible conhost).  This helper now
     only normalizes the interpreter via ``_resolve_detached_python`` and
-    supplies the stable cwd + env overlay (HERMES_HOME, VIRTUAL_ENV,
+    supplies the stable cwd + env overlay (KOVA_HOME, VIRTUAL_ENV,
     PYTHONPATH) so the respawn doesn't depend on the watcher's transient
     working directory.
 
@@ -888,7 +888,7 @@ def windowless_gateway_restart_spec(
         "VIRTUAL_ENV": str(venv_dir),
     }
     if kova_home:
-        env_overlay["HERMES_HOME"] = kova_home
+        env_overlay["KOVA_HOME"] = kova_home
     _prepend_pythonpath(
         env_overlay,
         [project_root, *extra_pythonpath] if extra_pythonpath else [project_root],
@@ -1218,7 +1218,7 @@ def uninstall() -> None:
     legacy_startup_entry = _legacy_startup_entry_path()
 
     scheduled_task_removed = False
-    # Delete both the current (Kova_Gateway) and legacy (Hermes_Gateway)
+    # Delete both the current (Kova_Gateway) and legacy (Kova_Gateway)
     # registrations so a pre-rename install is fully cleaned up.
     for task_candidate in _task_name_candidates():
         if not _task_registered_by_name(task_candidate):
@@ -1273,7 +1273,7 @@ def _task_registered_by_name(task_name: str) -> bool:
 
 
 def is_task_registered() -> bool:
-    # Dual lookup: current Kova_Gateway first, then legacy Hermes_Gateway
+    # Dual lookup: current Kova_Gateway first, then legacy Kova_Gateway
     # so installs registered before the rename are still detected.
     for candidate in _task_name_candidates():
         if _task_registered_by_name(candidate):
@@ -1292,7 +1292,7 @@ def is_installed() -> bool:
 
 def query_task_status() -> dict[str, str]:
     """Parse ``schtasks /Query /V /FO LIST`` and pull the interesting keys."""
-    # Dual lookup: try Kova_Gateway first, fall back to legacy Hermes_Gateway.
+    # Dual lookup: try Kova_Gateway first, fall back to legacy Kova_Gateway.
     for candidate in _task_name_candidates():
         code, out, err = _exec_schtasks(["/Query", "/TN", candidate, "/V", "/FO", "LIST"])
         if code != 0:

@@ -34,59 +34,59 @@ class TestGetDefaultKovaRoot:
     """Tests for get_default_kova_root() — Docker/custom deployment awareness."""
 
     def test_no_kova_home_returns_native(self, tmp_path, monkeypatch):
-        """When HERMES_HOME is not set, returns ~/.hermes."""
-        monkeypatch.delenv("HERMES_HOME", raising=False)
+        """When KOVA_HOME is not set, returns ~/.kova."""
+        monkeypatch.delenv("KOVA_HOME", raising=False)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         assert get_default_kova_root() == tmp_path / ".kova"
 
     def test_kova_home_is_native(self, tmp_path, monkeypatch):
-        """When HERMES_HOME = ~/.hermes, returns ~/.hermes."""
+        """When KOVA_HOME = ~/.kova, returns ~/.kova."""
         native = tmp_path / ".kova"
         native.mkdir()
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(native))
+        monkeypatch.setenv("KOVA_HOME", str(native))
         assert get_default_kova_root() == native
 
     def test_kova_home_is_profile(self, tmp_path, monkeypatch):
-        """When HERMES_HOME is a profile under ~/.hermes, returns ~/.hermes."""
+        """When KOVA_HOME is a profile under ~/.kova, returns ~/.kova."""
         native = tmp_path / ".kova"
         profile = native / "profiles" / "coder"
         profile.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(profile))
+        monkeypatch.setenv("KOVA_HOME", str(profile))
         assert get_default_kova_root() == native
 
     def test_kova_home_is_docker(self, tmp_path, monkeypatch):
-        """When HERMES_HOME points outside ~/.hermes (Docker), returns HERMES_HOME."""
+        """When KOVA_HOME points outside ~/.kova (Docker), returns KOVA_HOME."""
         docker_home = tmp_path / "opt" / "data"
         docker_home.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(docker_home))
+        monkeypatch.setenv("KOVA_HOME", str(docker_home))
         assert get_default_kova_root() == docker_home
 
     def test_kova_home_is_custom_path(self, tmp_path, monkeypatch):
-        """Any HERMES_HOME outside ~/.hermes is treated as the root."""
+        """Any KOVA_HOME outside ~/.kova is treated as the root."""
         custom = tmp_path / "my-kova-data"
         custom.mkdir()
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(custom))
+        monkeypatch.setenv("KOVA_HOME", str(custom))
         assert get_default_kova_root() == custom
 
     def test_docker_profile_active(self, tmp_path, monkeypatch):
-        """When a Docker profile is active (HERMES_HOME=<root>/profiles/<name>),
+        """When a Docker profile is active (KOVA_HOME=<root>/profiles/<name>),
         returns the Docker root, not the profile dir."""
         docker_root = tmp_path / "opt" / "data"
         profile = docker_root / "profiles" / "coder"
         profile.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(profile))
+        monkeypatch.setenv("KOVA_HOME", str(profile))
         assert get_default_kova_root() == docker_root
 
     def test_no_kova_home_returns_localappdata_root_on_windows(self, tmp_path, monkeypatch):
-        """Native Windows falls back to %LOCALAPPDATA%\\kova, not ~/.hermes."""
+        """Native Windows falls back to %LOCALAPPDATA%\\kova, not ~/.kova."""
         local_appdata = tmp_path / "LocalAppData"
-        monkeypatch.delenv("HERMES_HOME", raising=False)
+        monkeypatch.delenv("KOVA_HOME", raising=False)
         monkeypatch.setenv("LOCALAPPDATA", str(local_appdata))
         monkeypatch.setattr(Path, "home", lambda: tmp_path / "Home")
         monkeypatch.setattr(kova_constants.sys, "platform", "win32")
@@ -96,7 +96,7 @@ class TestGetDefaultKovaRoot:
     def test_no_kova_home_uses_windows_path_when_localappdata_missing(self, tmp_path, monkeypatch):
         """Windows fallback still uses AppData/Local/kova without LOCALAPPDATA."""
         home = tmp_path / "Home"
-        monkeypatch.delenv("HERMES_HOME", raising=False)
+        monkeypatch.delenv("KOVA_HOME", raising=False)
         monkeypatch.delenv("LOCALAPPDATA", raising=False)
         monkeypatch.setattr(Path, "home", lambda: home)
         monkeypatch.setattr(kova_constants.sys, "platform", "win32")
@@ -108,9 +108,9 @@ class TestGetKovaHome:
     """Tests for get_kova_home() platform-aware fallback."""
 
     def test_windows_fallback_uses_localappdata(self, tmp_path, monkeypatch):
-        """When HERMES_HOME is unset on Windows, use %LOCALAPPDATA%\\kova."""
+        """When KOVA_HOME is unset on Windows, use %LOCALAPPDATA%\\kova."""
         local_appdata = tmp_path / "LocalAppData"
-        monkeypatch.delenv("HERMES_HOME", raising=False)
+        monkeypatch.delenv("KOVA_HOME", raising=False)
         monkeypatch.setenv("LOCALAPPDATA", str(local_appdata))
         monkeypatch.setattr(Path, "home", lambda: tmp_path / "Home")
         monkeypatch.setattr(kova_constants.sys, "platform", "win32")
@@ -129,18 +129,18 @@ class TestGetProcessKovaHome:
 
     def test_env_set_returns_that_path(self, tmp_path, monkeypatch):
         home = tmp_path / "launch-home"
-        monkeypatch.setenv("HERMES_HOME", str(home))
+        monkeypatch.setenv("KOVA_HOME", str(home))
         assert get_process_kova_home() == home
 
     def test_env_unset_returns_platform_default(self, tmp_path, monkeypatch):
-        monkeypatch.delenv("HERMES_HOME", raising=False)
+        monkeypatch.delenv("KOVA_HOME", raising=False)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
         assert get_process_kova_home() == tmp_path / ".kova"
 
     def test_ignores_context_local_override(self, tmp_path, monkeypatch):
         launch_home = tmp_path / "launch-home"
         profile_home = tmp_path / "profiles" / "coder"
-        monkeypatch.setenv("HERMES_HOME", str(launch_home))
+        monkeypatch.setenv("KOVA_HOME", str(launch_home))
         token = set_kova_home_override(profile_home)
         try:
             # get_kova_home() follows the override; the process-scoped
@@ -159,7 +159,7 @@ class TestKovaManagedNode:
         node_dir.mkdir(parents=True)
         bin_dir.mkdir()
         monkeypatch.setattr(kova_constants.sys, "platform", "win32")
-        monkeypatch.setenv("HERMES_HOME", str(home))
+        monkeypatch.setenv("KOVA_HOME", str(home))
 
         assert iter_kova_node_dirs() == [node_dir, bin_dir]
 
@@ -170,7 +170,7 @@ class TestKovaManagedNode:
         npm_cmd = node_dir / "npm.cmd"
         npm_cmd.write_text("@echo off\n")
         monkeypatch.setattr(kova_constants.sys, "platform", "win32")
-        monkeypatch.setenv("HERMES_HOME", str(home))
+        monkeypatch.setenv("KOVA_HOME", str(home))
         monkeypatch.setattr(kova_constants, "node_tool_runnable", lambda path: True)
 
         assert find_kova_node_executable("npm") == str(npm_cmd)
@@ -199,7 +199,7 @@ class TestKovaManagedNode:
         extensionless.write_text("#!/usr/bin/env node\n")
         npm_cmd.write_text("@echo off\n")
         monkeypatch.setattr(kova_constants.sys, "platform", "win32")
-        monkeypatch.setenv("HERMES_HOME", str(home))
+        monkeypatch.setenv("KOVA_HOME", str(home))
         monkeypatch.setenv("PATH", str(bin_dir))
 
         assert find_node_executable("npm") == str(npm_cmd)
@@ -214,7 +214,7 @@ class TestKovaManagedNode:
         path_npm = bin_dir / "npm.cmd"
         path_npm.write_text("@echo off\n")
         monkeypatch.setattr(kova_constants.sys, "platform", "win32")
-        monkeypatch.setenv("HERMES_HOME", str(home))
+        monkeypatch.setenv("KOVA_HOME", str(home))
         monkeypatch.setenv("PATH", str(bin_dir))
         monkeypatch.setattr(kova_constants, "_managed_node_heal_attempted", False)
         monkeypatch.setattr(kova_constants, "heal_kova_managed_node", lambda: False)
@@ -235,7 +235,7 @@ class TestKovaManagedNode:
         node_dir.mkdir(parents=True)
         bin_dir.mkdir()
         monkeypatch.setattr(kova_constants.sys, "platform", "win32")
-        monkeypatch.setenv("HERMES_HOME", str(home))
+        monkeypatch.setenv("KOVA_HOME", str(home))
 
         env = with_kova_node_path({"PATH": "system-node"})
         parts = env["PATH"].split(os.pathsep)
@@ -279,7 +279,7 @@ class TestNodeToolRunnable:
         system_bin.mkdir()
         self._stub(system_bin, "npm", "#!/bin/sh\necho '11.10.0'\nexit 0\n")
 
-        monkeypatch.setenv("HERMES_HOME", str(profile_home))
+        monkeypatch.setenv("KOVA_HOME", str(profile_home))
         monkeypatch.setenv("PATH", str(system_bin))
         monkeypatch.setattr(kova_constants, "_managed_node_heal_attempted", False)
 
@@ -307,7 +307,7 @@ class TestNodeToolRunnable:
         system_bin.mkdir()
         good_npm = self._stub(system_bin, "npm", "#!/bin/sh\necho '11.10.0'\nexit 0\n")
 
-        monkeypatch.setenv("HERMES_HOME", str(profile_home))
+        monkeypatch.setenv("KOVA_HOME", str(profile_home))
         monkeypatch.setenv("PATH", str(system_bin))
         monkeypatch.setattr(kova_constants, "_managed_node_heal_attempted", False)
 
@@ -332,7 +332,7 @@ class TestNodeToolRunnable:
         system_bin.mkdir()
         self._stub(system_bin, "npm", "#!/bin/sh\necho '11.10.0'\nexit 0\n")
 
-        monkeypatch.setenv("HERMES_HOME", str(profile_home))
+        monkeypatch.setenv("KOVA_HOME", str(profile_home))
         monkeypatch.setenv("PATH", str(system_bin))
         monkeypatch.setattr(kova_constants, "_managed_node_heal_attempted", False)
         monkeypatch.setattr(kova_constants, "heal_kova_managed_node", lambda: False)
@@ -349,7 +349,7 @@ class TestNodeToolRunnable:
         system_bin.mkdir()
         self._stub(system_bin, "npm", "#!/bin/sh\necho '11.10.0'\nexit 0\n")
 
-        monkeypatch.setenv("HERMES_HOME", str(profile_home))
+        monkeypatch.setenv("KOVA_HOME", str(profile_home))
         monkeypatch.setenv("PATH", str(system_bin))
 
         assert find_node_executable("npm") == str(managed_npm)
@@ -1008,7 +1008,7 @@ class TestGetKovaDir:
     """
 
     def _set_home(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path))
 
     def test_neither_exists_returns_new(self, tmp_path, monkeypatch):
         self._set_home(tmp_path, monkeypatch)

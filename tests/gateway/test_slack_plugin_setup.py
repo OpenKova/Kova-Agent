@@ -35,7 +35,7 @@ def _patch_setup_io(monkeypatch, prompts, saved, removed, existing):
 
 def test_interactive_setup_saves_home_channel(monkeypatch, tmp_path):
     """interactive_setup() saves SLACK_HOME_CHANNEL when the user provides one."""
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("KOVA_HOME", str(tmp_path))
     saved, removed = {}, []
     # prompts: bot token, app token, allowed users (empty), home channel
     _patch_setup_io(
@@ -54,7 +54,7 @@ def test_interactive_setup_saves_home_channel(monkeypatch, tmp_path):
 
 def test_interactive_setup_home_channel_empty_not_saved(monkeypatch, tmp_path):
     """interactive_setup() does not save SLACK_HOME_CHANNEL when left blank."""
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("KOVA_HOME", str(tmp_path))
     saved, removed = {}, []
     _patch_setup_io(
         monkeypatch,
@@ -73,7 +73,7 @@ class TestSlackHomeChannelClear:
     """Blank home-channel answer must clear SLACK_HOME_CHANNEL (#12423)."""
 
     def test_blank_removes_existing_home_channel(self, monkeypatch, tmp_path):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path))
         saved, removed = {}, []
         _patch_setup_io(
             monkeypatch,
@@ -87,7 +87,7 @@ class TestSlackHomeChannelClear:
         assert "SLACK_HOME_CHANNEL" not in saved
 
     def test_blank_without_prior_home_still_attempts_remove(self, monkeypatch, tmp_path):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path))
         saved, removed = {}, []
         _patch_setup_io(
             monkeypatch,
@@ -100,7 +100,7 @@ class TestSlackHomeChannelClear:
         assert removed.count("SLACK_HOME_CHANNEL") == 1
 
     def test_nonempty_saves_home_channel(self, monkeypatch, tmp_path):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path))
         saved, removed = {}, []
         _patch_setup_io(
             monkeypatch,
@@ -115,7 +115,7 @@ class TestSlackHomeChannelClear:
 
     def test_whitespace_only_clears_home_channel(self, monkeypatch, tmp_path):
         """Whitespace-only input should clear, not save."""
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path))
         saved, removed = {}, []
         _patch_setup_io(
             monkeypatch,

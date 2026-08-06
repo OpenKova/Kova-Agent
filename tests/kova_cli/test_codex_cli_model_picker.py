@@ -34,7 +34,7 @@ def kova_auth_only_env(tmp_path, monkeypatch):
     kova_home = tmp_path / ".kova"
     kova_home.mkdir()
 
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
     # Point CODEX_HOME to nonexistent dir to prove it's not needed
     monkeypatch.setenv("CODEX_HOME", str(tmp_path / "no_codex"))
 
@@ -114,7 +114,7 @@ def claude_code_only_env(tmp_path, monkeypatch):
     kova_home = tmp_path / ".kova"
     kova_home.mkdir()
 
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
     # No Codex CLI
     monkeypatch.setenv("CODEX_HOME", str(tmp_path / "no_codex"))
 
@@ -169,7 +169,7 @@ def test_no_codex_when_no_credentials(tmp_path, monkeypatch):
     kova_home = tmp_path / ".kova"
     kova_home.mkdir()
 
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
     monkeypatch.setenv("CODEX_HOME", str(tmp_path / "no_codex"))
 
     (kova_home / "auth.json").write_text(

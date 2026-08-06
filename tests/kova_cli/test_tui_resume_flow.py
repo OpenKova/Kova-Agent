@@ -1719,7 +1719,7 @@ def test_launch_tui_applies_terminal_backend_config(
     monkeypatch, main_mod, _isolate_kova_home
 ):
     captured = {}
-    config_path = Path(os.environ["HERMES_HOME"]) / "config.yaml"
+    config_path = Path(os.environ["KOVA_HOME"]) / "config.yaml"
     config_path.write_text(
         "\n".join(
             [

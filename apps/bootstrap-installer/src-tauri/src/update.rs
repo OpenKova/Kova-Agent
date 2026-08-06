@@ -751,7 +751,7 @@ fn resolve_kova(install_root: &Path) -> Option<PathBuf> {
 fn update_child_env(install_root: &Path) -> Vec<(String, OsString)> {
     let kova_home = crate::paths::kova_home();
     let mut envs = vec![(
-        "HERMES_HOME".to_string(),
+        "KOVA_HOME".to_string(),
         kova_home.as_os_str().to_os_string(),
     )];
     // `kova update` is a Python CLI writing to a pipe here, so CPython

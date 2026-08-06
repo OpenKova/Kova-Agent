@@ -742,12 +742,12 @@ async def test_create_cron_job_without_profile_uses_backend_own_profile(
     isolated_profiles, monkeypatch
 ):
     """A pool backend scoped to a named profile must not default creates to
-    ``~/.hermes`` when the request carries no explicit ``profile`` (the
+    ``~/.kova`` when the request carries no explicit ``profile`` (the
     Desktop app's pre-profileScoped clients sent none)."""
     from kova_cli import web_server
 
     monkeypatch.setenv(
-        "HERMES_HOME", str(isolated_profiles["worker_alpha"])
+        "KOVA_HOME", str(isolated_profiles["worker_alpha"])
     )
 
     job = await web_server.create_cron_job(
@@ -768,11 +768,11 @@ async def test_create_cron_job_without_profile_uses_backend_own_profile(
 async def test_create_cron_job_without_profile_defaults_when_unscoped(
     isolated_profiles, monkeypatch
 ):
-    """HERMES_HOME at the default home (or unrecognized) keeps the legacy
+    """KOVA_HOME at the default home (or unrecognized) keeps the legacy
     ``default`` fallback."""
     from kova_cli import web_server
 
-    monkeypatch.setenv("HERMES_HOME", str(isolated_profiles["default"]))
+    monkeypatch.setenv("KOVA_HOME", str(isolated_profiles["default"]))
 
     job = await web_server.create_cron_job(
         web_server.CronJobCreate(

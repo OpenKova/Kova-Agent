@@ -10,7 +10,7 @@
  *      relaunch/claim a GUI update; AppImage/.deb/.rpm/dev/unresolved paths land
  *      on the guiSkew terminal state and do NOT claim the GUI was updated.
  *   2. Launch context is replayed on re-exec (args filtered of Electron
- *      internals; HERMES_HOME / KOVA_DESKTOP_* env + cwd preserved) and is
+ *      internals; KOVA_HOME / KOVA_DESKTOP_* env + cwd preserved) and is
  *      safely shell-quoted.
  *   3. The sandbox preflight: chrome-sandbox must be root-owned + setuid to be
  *      launchable; otherwise the decision degrades to a manual terminal state
@@ -37,7 +37,7 @@ import {
   unpackedDirName
 } from './update-relaunch'
 
-const ROOT = '/home/u/.hermes/kova-agent'
+const ROOT = '/home/u/.kova/kova-agent'
 const UNPACKED = path.join(ROOT, 'apps', 'desktop', 'release', 'linux-unpacked')
 
 // ---------------------------------------------------------------------------
@@ -64,7 +64,7 @@ test('resolveUnpackedRelease is null for AppImage / .deb / .rpm / dev / unresolv
   assert.equal(resolveUnpackedRelease('/opt/Kova/kova', ROOT, 'linux'), null)
   // dev electron
   assert.equal(
-    resolveUnpackedRelease('/home/u/.hermes/kova-agent/node_modules/electron/dist/electron', ROOT, 'linux'),
+    resolveUnpackedRelease('/home/u/.kova/kova-agent/node_modules/electron/dist/electron', ROOT, 'linux'),
     null
   )
   // empty / missing
@@ -157,9 +157,9 @@ test('collectRelaunchArgs drops Electron internals, keeps user/launcher args', (
   assert.deepEqual(collectRelaunchArgs(undefined), [])
 })
 
-test('collectRelaunchEnv preserves HERMES_HOME + KOVA_DESKTOP_* + sandbox opt-out only', () => {
+test('collectRelaunchEnv preserves KOVA_HOME + KOVA_DESKTOP_* + sandbox opt-out only', () => {
   const env = {
-    HERMES_HOME: '/home/u/.hermes',
+    KOVA_HOME: '/home/u/.kova',
     KOVA_DESKTOP_REMOTE_URL: 'http://box:9119',
     KOVA_DESKTOP_REMOTE_TOKEN: 'secret',
     KOVA_DESKTOP_KOVA_ROOT: '/home/u/dev/kova',
@@ -171,7 +171,7 @@ test('collectRelaunchEnv preserves HERMES_HOME + KOVA_DESKTOP_* + sandbox opt-ou
   }
 
   assert.deepEqual(collectRelaunchEnv(env), {
-    HERMES_HOME: '/home/u/.hermes',
+    KOVA_HOME: '/home/u/.kova',
     KOVA_DESKTOP_REMOTE_URL: 'http://box:9119',
     KOVA_DESKTOP_REMOTE_TOKEN: 'secret',
     KOVA_DESKTOP_KOVA_ROOT: '/home/u/dev/kova',
@@ -193,9 +193,9 @@ test('shellQuote neutralizes single quotes and metacharacters', () => {
 test('buildRelaunchScript embeds pid/exec/args/env/cwd and is valid bash', () => {
   const script = buildRelaunchScript({
     pid: 4242,
-    execPath: '/home/u/.hermes/kova-agent/apps/desktop/release/linux-unpacked/Kova',
+    execPath: '/home/u/.kova/kova-agent/apps/desktop/release/linux-unpacked/Kova',
     args: ['kova://open/agent/42', "--note=it's fine"],
-    env: { HERMES_HOME: '/home/u/.hermes', KOVA_DESKTOP_REMOTE_URL: 'http://box:9119' },
+    env: { KOVA_HOME: '/home/u/.kova', KOVA_DESKTOP_REMOTE_URL: 'http://box:9119' },
     cwd: '/home/u/work dir'
   })
 
@@ -205,7 +205,7 @@ test('buildRelaunchScript embeds pid/exec/args/env/cwd and is valid bash', () =>
   assert.match(script, /kill -9 "\$APP_PID"/)
   assert.match(script, /rm -f -- "\$0"/)
   // env exports + cwd restore + args replay are present and quoted.
-  assert.match(script, /export HERMES_HOME='\/home\/u\/\.kova'/)
+  assert.match(script, /export KOVA_HOME='\/home\/u\/\.kova'/)
   assert.match(script, /export KOVA_DESKTOP_REMOTE_URL='http:\/\/box:9119'/)
   assert.match(script, /cd '\/home\/u\/work dir'/)
   assert.match(script, /exec '.*\/linux-unpacked\/Kova' 'kova:\/\/open\/agent\/42' '--note=it'\\''s fine'/)

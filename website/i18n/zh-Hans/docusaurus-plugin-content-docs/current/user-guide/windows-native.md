@@ -12,7 +12,7 @@ Kova 可在 Windows 10 和 Windows 11 上原生运行——无需 WSL、Cygwin �
 如果你只是想安装，[首页](/) 或[安装页面](../getting-started/installation#windows原生powershell)上的一行命令就够了。遇到意外情况时再回来查阅本页。
 
 :::tip 想用 WSL？
-如果你更倾向于真正的 POSIX 环境（用于 dashboard 内嵌终端、`fork` 语义、Linux 风格文件监视器等），请参阅 **[Windows（WSL2）指南](./windows-wsl-quickstart.md)**。两者可以干净共存：原生数据存放在 `%LOCALAPPDATA%\kova`，WSL 数据存放在 `~/.hermes`。
+如果你更倾向于真正的 POSIX 环境（用于 dashboard 内嵌终端、`fork` 语义、Linux 风格文件监视器等），请参阅 **[Windows（WSL2）指南](./windows-wsl-quickstart.md)**。两者可以干净共存：原生数据存放在 `%LOCALAPPDATA%\kova`，WSL 数据存放在 `~/.kova`。
 :::
 
 ## 快速安装
@@ -20,7 +20,7 @@ Kova 可在 Windows 10 和 Windows 11 上原生运行——无需 WSL、Cygwin �
 打开 **PowerShell**（或 Windows Terminal）并运行：
 
 ```powershell
-iex (irm https://hermes-agent.nousresearch.com/install.ps1)
+iex (irm https://kova-agent.nousresearch.com/install.ps1)
 ```
 
 无需管理员权限。安装程序会写入 `%LOCALAPPDATA%\kova\`，并将 `kova` 添加到你的**用户 PATH**——安装完成后打开新终端即可使用。
@@ -28,7 +28,7 @@ iex (irm https://hermes-agent.nousresearch.com/install.ps1)
 **安装程序选项**（需要使用 scriptblock 形式传递参数）：
 
 ```powershell
-& ([scriptblock]::Create((irm https://hermes-agent.nousresearch.com/install.ps1))) -NoVenv -SkipSetup -Branch main
+& ([scriptblock]::Create((irm https://kova-agent.nousresearch.com/install.ps1))) -NoVenv -SkipSetup -Branch main
 ```
 
 | 参数          | 默认值                               | 用途                                            |
@@ -210,7 +210,7 @@ kova gateway uninstall   # 移除 schtasks 条目、Startup 快捷方式、pid �
 
 这种分离是有意为之：`%LOCALAPPDATA%\kova` 是可丢弃的基础设施（可以删除后用一行命令恢复）。`%USERPROFILE%\.kova` 是你的数据——配置、记忆、技能、会话历史——其结构与 Linux 安装完全相同。在机器间同步它，你的 Kova 就随之迁移。
 
-**覆盖 `HERMES_HOME`：** 设置该环境变量以指向不同的数据目录。与 Linux 上的用法相同。
+**覆盖 `KOVA_HOME`：** 设置该环境变量以指向不同的数据目录。与 Linux 上的用法相同。
 
 ## 浏览器工具
 

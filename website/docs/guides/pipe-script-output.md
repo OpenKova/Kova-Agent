@@ -153,7 +153,7 @@ fi
 ```bash
 # Crontab entry
 0 9 * * * /usr/local/bin/generate-metrics.sh \
-  | /home/me/.hermes/bin/kova send \
+  | /home/me/.kova/bin/kova send \
       --to telegram --subject "Daily metrics $(date +%Y-%m-%d)"
 ```
 
@@ -186,7 +186,7 @@ msg_id=$(kova send --to discord:#ops --json "build started" \
 **Usually no.** For any bot-token platform — Telegram, Discord, Slack,
 Signal, SMS, WhatsApp Cloud API, and most others — `kova send` calls
 the platform's REST endpoint directly using credentials from
-`~/.hermes/.env` and `~/.hermes/config.yaml`. It's a standalone subprocess
+`~/.kova/.env` and `~/.kova/config.yaml`. It's a standalone subprocess
 that exits as soon as the message is delivered.
 
 A live gateway is only required for **plugin platforms** that rely on a
@@ -211,7 +211,7 @@ kova send --list telegram
 kova send --list --json
 ```
 
-The listing is built from `~/.hermes/channel_directory.json`, which the
+The listing is built from `~/.kova/channel_directory.json`, which the
 gateway refreshes every few minutes while it's running. If you see
 "no channels discovered yet", start the gateway once (`kova gateway
 start`) so it can populate the cache.

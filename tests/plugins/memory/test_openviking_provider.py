@@ -312,7 +312,7 @@ def test_post_setup_existing_profile_picker_validates_and_links_saved_profile(tm
         json.dumps({"url": "https://vps.example", "api_key": "user-key"}),
         encoding="utf-8",
     )
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
     monkeypatch.setattr(openviking_module.Path, "home", staticmethod(lambda: tmp_path))
 
     from kova_cli import memory_setup
@@ -357,7 +357,7 @@ def test_post_setup_create_remote_user_profile_can_mirror_to_openviking_store(tm
     _clear_openviking_env(monkeypatch)
     kova_home = tmp_path / "kova"
     kova_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
     monkeypatch.setattr(openviking_module.Path, "home", staticmethod(lambda: tmp_path))
     _allow_setup_validation(monkeypatch)
 
@@ -400,7 +400,7 @@ def test_post_setup_create_remote_user_can_keep_kova_only(tmp_path, monkeypatch)
     _clear_openviking_env(monkeypatch)
     kova_home = tmp_path / "kova"
     kova_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
     _allow_setup_validation(monkeypatch)
 
     from kova_cli import memory_setup
@@ -433,7 +433,7 @@ def test_post_setup_create_openviking_service_validates_after_api_key(tmp_path, 
     _clear_openviking_env(monkeypatch)
     kova_home = tmp_path / "kova"
     kova_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     from kova_cli import memory_setup
 
@@ -488,7 +488,7 @@ def test_post_setup_remote_blank_api_key_cancels_without_saving(tmp_path, monkey
     _clear_openviking_env(monkeypatch)
     kova_home = tmp_path / "kova"
     kova_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
     monkeypatch.setattr(openviking_module, "_validate_openviking_reachability", lambda endpoint: (True, ""))
 
     from kova_cli import config as kova_config
@@ -519,7 +519,7 @@ def test_post_setup_user_key_path_can_route_detected_root_key_to_root_setup(tmp_
     _clear_openviking_env(monkeypatch)
     kova_home = tmp_path / "kova"
     kova_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     from kova_cli import memory_setup
 
@@ -563,7 +563,7 @@ def test_post_setup_root_key_path_can_route_detected_user_key_to_user_setup(tmp_
     _clear_openviking_env(monkeypatch)
     kova_home = tmp_path / "kova"
     kova_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     from kova_cli import memory_setup
 
@@ -653,7 +653,7 @@ def test_start_local_openviking_server_uses_endpoint_host_and_port(monkeypatch):
 
 def test_start_local_openviking_server_writes_output_to_log(tmp_path, monkeypatch):
     kova_home = tmp_path / "kova"
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
     popen_calls = []
 
     class FakeProcess:
@@ -1071,7 +1071,7 @@ def test_post_setup_local_server_down_can_offer_autostart(tmp_path, monkeypatch)
     _clear_openviking_env(monkeypatch)
     kova_home = tmp_path / "kova"
     kova_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
     monkeypatch.setattr(openviking_module, "_validate_openviking_setup_values", lambda values, *, require_api_key=False: (True, "", None))
 
     from kova_cli import memory_setup
@@ -1114,7 +1114,7 @@ def test_post_setup_invalid_env_profile_can_create_new_config(tmp_path, monkeypa
     ovcli_path = tmp_path / "broken" / "ovcli.conf"
     ovcli_path.parent.mkdir()
     ovcli_path.write_text("{", encoding="utf-8")
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
     monkeypatch.setenv("OPENVIKING_CLI_CONFIG_FILE", str(ovcli_path))
     _allow_setup_validation(monkeypatch)
 

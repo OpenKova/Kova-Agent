@@ -15,7 +15,7 @@ Kova Agent supports Amazon Bedrock as a native provider using the **Converse API
   - `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY` environment variables
   - `AWS_PROFILE` for SSO or named profiles
   - `aws configure` for local development
-- **boto3** — install with `cd ~/.hermes/kova-agent && uv pip install -e ".[bedrock]"`
+- **boto3** — install with `cd ~/.kova/kova-agent && uv pip install -e ".[bedrock]"`
 - **IAM permissions** — at minimum:
   - `bedrock:InvokeModel` and `bedrock:InvokeModelWithResponseStream` (for inference)
   - `bedrock:ListFoundationModels` and `bedrock:ListInferenceProfiles` (for model discovery)
@@ -28,7 +28,7 @@ On AWS compute, attach an IAM role with `AmazonBedrockFullAccess` and you're don
 
 ```bash
 # Install with Bedrock support
-cd ~/.hermes/kova-agent && uv pip install -e ".[bedrock]"
+cd ~/.kova/kova-agent && uv pip install -e ".[bedrock]"
 
 # Select Bedrock as your provider
 kova model
@@ -41,7 +41,7 @@ kova chat
 
 ## Configuration
 
-After running `kova model`, your `~/.hermes/config.yaml` will contain:
+After running `kova model`, your `~/.kova/config.yaml` will contain:
 
 ```yaml
 model:

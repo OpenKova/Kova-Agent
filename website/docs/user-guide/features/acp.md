@@ -36,7 +36,7 @@ It intentionally excludes things that do not fit typical editor UX, such as mess
 Install Kova normally, then add the ACP extra from the install checkout:
 
 ```bash
-cd ~/.hermes/kova-agent && uv pip install -e '.[acp]'
+cd ~/.kova/kova-agent && uv pip install -e '.[acp]'
 ```
 
 This installs the `agent-client-protocol` dependency and enables:
@@ -85,7 +85,7 @@ This is the standalone command. The terminal-auth flow (`kova acp --setup`) also
 
 What it does:
 
-- Installs Node.js 22 LTS into `~/.hermes/node/` if missing
+- Installs Node.js 22 LTS into `~/.kova/node/` if missing
 - `npm install -g agent-browser @askjo/camofox-browser` into that prefix (no sudo needed — `npm`'s `--prefix` points at the user-writable Kova-managed Node)
 - Installs Playwright Chromium, or uses a detected system Chrome/Chromium when available
 
@@ -139,7 +139,7 @@ Configure Kova as a custom agent server in Zed settings:
 
 Prerequisites:
 
-- Configure Kova provider credentials first with `kova model`, or set them in `~/.hermes/.env` / `~/.hermes/config.yaml`.
+- Configure Kova provider credentials first with `kova model`, or set them in `~/.kova/.env` / `~/.kova/config.yaml`.
 
 ### JetBrains
 
@@ -149,10 +149,10 @@ Use an ACP-compatible plugin and point it at `kova acp` or `kova-acp`.
 
 ACP mode uses the same Kova configuration as the CLI:
 
-- `~/.hermes/.env`
-- `~/.hermes/config.yaml`
-- `~/.hermes/skills/`
-- `~/.hermes/state.db`
+- `~/.kova/.env`
+- `~/.kova/config.yaml`
+- `~/.kova/skills/`
+- `~/.kova/state.db`
 
 Provider resolution uses Kova' normal runtime resolver, so ACP inherits the currently configured provider and credentials. Kova also advertises a terminal auth method (`--setup`) for first-run ACP clients; this opens Kova' interactive model/provider setup.
 
@@ -207,7 +207,7 @@ Check:
 
 - For manual/local development, verify the custom `agent_servers` command points to `kova acp`.
 - Kova is installed and on your PATH.
-- The ACP extra is installed (`cd ~/.hermes/kova-agent && uv pip install -e '.[acp]'`).
+- The ACP extra is installed (`cd ~/.kova/kova-agent && uv pip install -e '.[acp]'`).
 
 ### ACP starts but immediately errors
 
@@ -228,7 +228,7 @@ ACP mode uses Kova' existing provider setup. Configure credentials with:
 kova model
 ```
 
-or by editing `~/.hermes/.env`. The terminal auth flow (`kova acp --setup`) can also trigger the interactive provider/model setup.
+or by editing `~/.kova/.env`. The terminal auth flow (`kova acp --setup`) can also trigger the interactive provider/model setup.
 
 ## See also
 

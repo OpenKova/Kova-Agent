@@ -3,7 +3,7 @@ import { homedir } from 'node:os'
 import { join } from 'node:path'
 
 const MAX = 1000
-const dir = process.env.HERMES_HOME ?? join(homedir(), '.kova')
+const dir = process.env.KOVA_HOME ?? join(homedir(), '.kova')
 const file = join(dir, '.kova_history')
 
 let cache: string[] | null = null

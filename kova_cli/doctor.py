@@ -16,10 +16,10 @@ from kova_constants import display_kova_home
 from kova_constants import agent_browser_runnable
 
 PROJECT_ROOT = get_project_root()
-HERMES_HOME = get_kova_home()
-_DHH = display_kova_home()  # user-facing display path (e.g. ~/.hermes or ~/.hermes/profiles/coder)
+KOVA_HOME = get_kova_home()
+_DHH = display_kova_home()  # user-facing display path (e.g. ~/.kova or ~/.kova/profiles/coder)
 
-# Load environment variables from ~/.hermes/.env so API key checks work
+# Load environment variables from ~/.kova/.env so API key checks work
 _env_path = get_env_path()
 load_kova_dotenv(kova_home=_env_path.parent, project_env=PROJECT_ROOT / ".env")
 
@@ -101,7 +101,7 @@ def _termux_install_all_fallback_notes() -> list[str]:
 
 
 def _has_provider_env_config(content: str) -> bool:
-    """Return True when ~/.hermes/.env contains provider auth/base URL settings."""
+    """Return True when ~/.kova/.env contains provider auth/base URL settings."""
     return any(key in content for key in _PROVIDER_ENV_HINTS)
 
 
@@ -638,7 +638,7 @@ def run_doctor(args):
         else:
             print(color(
                 f"  ✗ Failed to persist ack for {ack_target}. "
-                f"Check ~/.hermes/config.yaml is writable.",
+                f"Check ~/.kova/config.yaml is writable.",
                 Colors.RED,
             ))
             sys.exit(1)
@@ -813,8 +813,8 @@ def run_doctor(args):
     _section("Configuration Files")
     # Managed scope (administrator-pinned config/env), when present.
     managed_scope_check()
-    # Check ~/.hermes/.env (primary location for user config)
-    env_path = HERMES_HOME / '.env'
+    # Check ~/.kova/.env (primary location for user config)
+    env_path = KOVA_HOME / '.env'
     if env_path.exists():
         check_ok(f"{_DHH}/.env file exists")
         
@@ -852,8 +852,8 @@ def run_doctor(args):
                 check_info("Run 'kova setup' to create one")
                 issues.append("Run 'kova setup' to create .env")
     
-    # Check ~/.hermes/config.yaml (primary) or project cli-config.yaml (fallback)
-    config_path = HERMES_HOME / 'config.yaml'
+    # Check ~/.kova/config.yaml (primary) or project cli-config.yaml (fallback)
+    config_path = KOVA_HOME / 'config.yaml'
     if config_path.exists():
         check_ok(f"{_DHH}/config.yaml exists")
 
@@ -1032,7 +1032,7 @@ def run_doctor(args):
                     if not configured:
                         _fail_and_issue(
                             f"model.provider '{runtime_provider}' is set but no API key is configured",
-                            "(check ~/.hermes/.env or run 'kova setup')",
+                            "(check ~/.kova/.env or run 'kova setup')",
                             (
                                 f"No credentials found for provider '{runtime_provider}'. "
                                 f"Run 'kova setup' or set the provider's API key in {_DHH}/.env, "
@@ -1065,7 +1065,7 @@ def run_doctor(args):
                 check_warn("config.yaml not found", "(using defaults)")
 
     # Check config version and stale keys
-    config_path = HERMES_HOME / 'config.yaml'
+    config_path = KOVA_HOME / 'config.yaml'
     if config_path.exists():
         try:
             from kova_cli.config import check_config_version, migrate_config
@@ -1317,7 +1317,7 @@ def run_doctor(args):
         pass
 
     _section("Directory Structure")
-    kova_home = HERMES_HOME
+    kova_home = KOVA_HOME
     if kova_home.exists():
         check_ok(f"{_DHH} directory exists")
     elif should_fix:
@@ -1808,7 +1808,7 @@ def run_doctor(args):
         # glob (which pulls in Electron, node-pty, etc.) is never resolved
         # for a routine security check. The web and ui-tui workspaces are
         # audited separately via --workspace flags. See #38772.
-        # The WhatsApp bridge may live under a writable HERMES_HOME mirror
+        # The WhatsApp bridge may live under a writable KOVA_HOME mirror
         # instead of the (possibly read-only) install tree in Docker — resolve
         # it through the shared helper so we audit the dir that actually holds
         # node_modules. See #49561.
@@ -2365,7 +2365,7 @@ def run_doctor(args):
         check_warn("Could not check tool availability", f"({e})")
     
     _section("Skills Hub")
-    hub_dir = HERMES_HOME / "skills" / ".hub"
+    hub_dir = KOVA_HOME / "skills" / ".hub"
     if hub_dir.exists():
         check_ok("Skills Hub directory exists")
         lock_file = hub_dir / "lock.json"
@@ -2409,7 +2409,7 @@ def run_doctor(args):
     _active_memory_provider = ""
     try:
         import yaml as _yaml
-        _mem_cfg_path = HERMES_HOME / "config.yaml"
+        _mem_cfg_path = KOVA_HOME / "config.yaml"
         if _mem_cfg_path.exists():
             with open(_mem_cfg_path, encoding="utf-8") as _f:
                 _raw_cfg = _yaml.safe_load(_f) or {}

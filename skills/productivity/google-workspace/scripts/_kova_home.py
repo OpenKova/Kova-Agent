@@ -1,4 +1,4 @@
-"""Resolve HERMES_HOME for standalone skill scripts.
+"""Resolve KOVA_HOME for standalone skill scripts.
 
 Skill scripts may run outside the Kova process (e.g. system Python,
 nix env, CI) where ``kova_constants`` is not importable.  This module
@@ -11,7 +11,7 @@ picked up automatically.  The fallback path replicates the core logic
 from ``kova_constants.py`` using only the stdlib.
 
 All scripts under ``google-workspace/scripts/`` should import from here
-instead of duplicating the ``HERMES_HOME = Path(os.getenv(...))`` pattern.
+instead of duplicating the ``KOVA_HOME = Path(os.getenv(...))`` pattern.
 """
 
 from __future__ import annotations
@@ -25,10 +25,10 @@ try:
 except (ModuleNotFoundError, ImportError):
 
     def get_kova_home() -> Path:
-        """Return the Kova home directory (default: ~/.hermes).
+        """Return the Kova home directory (default: ~/.kova).
 
         Mirrors ``kova_constants.get_kova_home()``."""
-        val = os.environ.get("HERMES_HOME", "").strip()
+        val = os.environ.get("KOVA_HOME", "").strip()
         return Path(val) if val else Path.home() / ".kova"
 
     def display_kova_home() -> str:

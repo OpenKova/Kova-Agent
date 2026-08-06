@@ -1177,7 +1177,7 @@ def _openviking_server_log_path() -> Path:
         from kova_constants import get_kova_home
         home = get_kova_home()
     except Exception:
-        home = Path(os.environ.get("HERMES_HOME", "")).expanduser() if os.environ.get("HERMES_HOME") else Path.home() / ".kova"
+        home = Path(os.environ.get("KOVA_HOME", "")).expanduser() if os.environ.get("KOVA_HOME") else Path.home() / ".kova"
     return home / _OPENVIKING_SERVER_LOG_RELATIVE_PATH
 
 

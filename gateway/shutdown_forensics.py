@@ -168,7 +168,7 @@ def snapshot_shutdown_context(received_signal: Any = None) -> Dict[str, Any]:
     # _PLANNED_STOP_MARKER_FILENAME); we use string literals here so the
     # signal-handler path stays import-light.
     try:
-        kova_home_str = os.environ.get("HERMES_HOME")
+        kova_home_str = os.environ.get("KOVA_HOME")
         if kova_home_str:
             takeover_path = Path(kova_home_str) / ".gateway-takeover.json"
             if takeover_path.exists():

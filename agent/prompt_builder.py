@@ -87,11 +87,11 @@ def _find_git_root(start: Path) -> Optional[Path]:
     return None
 
 
-_KOVA_MD_NAMES = (".hermes.md", "kova.md")
+_KOVA_MD_NAMES = (".hermes.md", "HERMES.md", ".kova.md", "KOVA.md", "kova.md")
 
 
 def _find_kova_md(cwd: Path) -> Optional[Path]:
-    """Discover the nearest ``.hermes.md`` or ``kova.md``.
+    """Discover the nearest ``.kova.md`` or ``kova.md``.
 
     Search order: *cwd* first, then each parent directory up to (and
     including) the git repository root.  Returns the first match, or
@@ -101,7 +101,7 @@ def _find_kova_md(cwd: Path) -> Optional[Path]:
     current = cwd.resolve()
 
     # When there is no git root, only check cwd itself – walking parents
-    # could pick up a .hermes.md planted in /tmp, /home, etc.
+    # could pick up a .kova.md planted in /tmp, /home, etc.
     search_dirs = [current, *current.parents] if stop_at else [current]
 
     for directory in search_dirs:
@@ -204,7 +204,7 @@ SKILLS_GUIDANCE = (
 KANBAN_GUIDANCE = (
     "# Kanban task execution protocol\n"
     "You have been assigned ONE task from "
-    "the shared board at `~/.hermes/kanban.db`. Your task id is in "
+    "the shared board at `~/.kova/kanban.db`. Your task id is in "
     "`$KOVA_KANBAN_TASK`; your workspace is `$KOVA_KANBAN_WORKSPACE`. "
     "The `kanban_*` tools in your schema are your primary coordination surface — "
     "they write directly to the shared SQLite DB and work regardless of terminal "
@@ -1526,7 +1526,7 @@ def build_skills_system_prompt(
     Falls back to a full filesystem scan when both layers miss.
 
     External skill directories (``skills.external_dirs`` in config.yaml) are
-    scanned alongside the local ``~/.hermes/skills/`` directory.  External dirs
+    scanned alongside the local ``~/.kova/skills/`` directory.  External dirs
     are read-only — they appear in the index but new skills are always created
     in the local dir.  Local skills take precedence when names collide.
 
@@ -1886,7 +1886,7 @@ def _truncate_content(
 
 
 def load_soul_md(context_length: Optional[int] = None) -> Optional[str]:
-    """Load SOUL.md from HERMES_HOME and return its content, or None.
+    """Load SOUL.md from KOVA_HOME and return its content, or None.
 
     Used as the agent identity (slot #1 in the system prompt).  When this
     returns content, ``build_context_files_prompt`` should be called with
@@ -1896,7 +1896,7 @@ def load_soul_md(context_length: Optional[int] = None) -> Optional[str]:
         from kova_cli.config import ensure_kova_home
         ensure_kova_home()
     except Exception as e:
-        logger.debug("Could not ensure HERMES_HOME before loading SOUL.md: %s", e)
+        logger.debug("Could not ensure KOVA_HOME before loading SOUL.md: %s", e)
 
     soul_path = get_kova_home() / "SOUL.md"
     if not soul_path.exists():
@@ -1917,7 +1917,7 @@ def load_soul_md(context_length: Optional[int] = None) -> Optional[str]:
 
 
 def _load_kova_md(cwd_path: Path, context_length: Optional[int] = None) -> str:
-    """.hermes.md / kova.md — walk to git root."""
+    """.kova.md / kova.md — walk to git root."""
     kova_md_path = _find_kova_md(cwd_path)
     if not kova_md_path:
         return ""
@@ -1934,7 +1934,7 @@ def _load_kova_md(cwd_path: Path, context_length: Optional[int] = None) -> str:
         content = _scan_context_content(content, rel)
         result = f"## {rel}\n\n{content}"
         return _truncate_content(
-            result, ".hermes.md", context_length=context_length,
+            result, ".kova.md", context_length=context_length,
             read_path=str(kova_md_path),
         )
     except Exception as e:
@@ -2022,12 +2022,12 @@ def build_context_files_prompt(
     """Discover and load context files for the system prompt.
 
     Priority (first found wins — only ONE project context type is loaded):
-      1. .hermes.md / kova.md  (walk to git root)
+      1. .kova.md / kova.md  (walk to git root)
       2. AGENTS.md / agents.md   (cwd only)
       3. CLAUDE.md / claude.md   (cwd only)
       4. .cursorrules / .cursor/rules/*.mdc  (cwd only)
 
-    SOUL.md from HERMES_HOME is independent and always included when present.
+    SOUL.md from KOVA_HOME is independent and always included when present.
 
     Each context source is capped before injection. The cap defaults to the
     model's context window (scaled — see ``_dynamic_context_file_max_chars``)
@@ -2079,7 +2079,7 @@ def build_context_files_prompt(
     if project_context:
         sections.append(project_context)
 
-    # SOUL.md from HERMES_HOME only — skip when already loaded as identity
+    # SOUL.md from KOVA_HOME only — skip when already loaded as identity
     if not skip_soul:
         soul_content = load_soul_md(context_length)
         if soul_content:

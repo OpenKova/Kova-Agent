@@ -60,14 +60,14 @@ class TestGoogleWorkspaceCredentialFiles:
             fm = _parse_frontmatter(content)
             entries = fm.get("required_credential_files", [])
 
-            with patch.dict(os.environ, {"HERMES_HOME": str(kova_home)}):
+            with patch.dict(os.environ, {"KOVA_HOME": str(kova_home)}):
                 missing = register_credential_files(entries)
 
             assert missing == [], f"Unexpected missing files: {missing}"
             mounts = get_credential_file_mounts()
             container_paths = {m["container_path"] for m in mounts}
-            assert "/root/.hermes/google_token.json" in container_paths
-            assert "/root/.hermes/google_client_secret.json" in container_paths
+            assert "/root/.kova/google_token.json" in container_paths
+            assert "/root/.kova/google_client_secret.json" in container_paths
         finally:
             clear_credential_files()
 
@@ -89,13 +89,13 @@ class TestGoogleWorkspaceCredentialFiles:
             fm = _parse_frontmatter(content)
             entries = fm.get("required_credential_files", [])
 
-            with patch.dict(os.environ, {"HERMES_HOME": str(kova_home)}):
+            with patch.dict(os.environ, {"KOVA_HOME": str(kova_home)}):
                 missing = register_credential_files(entries)
 
             assert "google_token.json" in missing
             mounts = get_credential_file_mounts()
             container_paths = {m["container_path"] for m in mounts}
-            assert "/root/.hermes/google_client_secret.json" in container_paths
-            assert "/root/.hermes/google_token.json" not in container_paths
+            assert "/root/.kova/google_client_secret.json" in container_paths
+            assert "/root/.kova/google_token.json" not in container_paths
         finally:
             clear_credential_files()

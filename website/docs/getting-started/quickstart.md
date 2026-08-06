@@ -48,21 +48,21 @@ Pick the row that matches your goal:
 
 ## 1. Install Kova Agent
 ### With the Kova Desktop installer on macOS or Windows (recommended)
-To easily install the command-line and desktop applications, [download the Kova Desktop installer](https://hermes-agent.nousresearch.com/) from our website and run it.
+To easily install the command-line and desktop applications, [download the Kova Desktop installer](https://kova-agent.nousresearch.com/) from our website and run it.
 
 ### Without Kova Desktop:
 For a command-line only install without Kova Desktop, run:
 
 #### Linux / macOS / WSL2 / Android (Termux)
 ```bash
-curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+curl -fsSL https://kova-agent.nousresearch.com/install.sh | bash
 ```
 
 #### Windows (native)
 
 Run in powershell:
 ```powershell
-iex (irm https://hermes-agent.nousresearch.com/install.ps1) 
+iex (irm https://kova-agent.nousresearch.com/install.ps1) 
 ```
 
 :::tip Android / Termux
@@ -159,8 +159,8 @@ You can switch providers at any time with `kova model` — no lock-in. For a ful
 
 Kova separates secrets from normal config:
 
-- **Secrets and tokens** → `~/.hermes/.env`
-- **Non-secret settings** → `~/.hermes/config.yaml`
+- **Secrets and tokens** → `~/.kova/.env`
+- **Non-secret settings** → `~/.kova/config.yaml`
 
 The easiest way to set values correctly is through the CLI:
 
@@ -278,8 +278,8 @@ kova config set terminal.backend ssh       # Remote server
 
 ```bash
 # From the Kova install directory (the curl installer placed it at
-# ~/.hermes/kova-agent on Linux/macOS or %LOCALAPPDATA%\kova\kova-agent on Windows):
-cd ~/.hermes/kova-agent
+# ~/.kova/kova-agent on Linux/macOS or %LOCALAPPDATA%\kova\kova-agent on Windows):
+cd ~/.kova/kova-agent
 uv pip install -e ".[voice]"
 # Includes faster-whisper for free local speech-to-text
 ```
@@ -290,7 +290,7 @@ Then in the CLI: `/voice on`. Press `Ctrl+B` to record. See [Voice Mode](../user
 
 Skills are on-demand instruction documents that teach Kova how to do a specific task — deploy to Kubernetes, open a GitHub PR, fine-tune a model, search for GIFs. Each is a `SKILL.md` file with a name, a description, and a step-by-step procedure. The agent reads the short descriptions for free and only loads a skill's full content when a task actually calls for it, so adding skills doesn't bloat every request.
 
-Kova ships with a catalog of bundled skills already installed in `~/.hermes/skills/`. You can add more from the Skills Hub, or write your own.
+Kova ships with a catalog of bundled skills already installed in `~/.kova/skills/`. You can add more from the Skills Hub, or write your own.
 
 **Browse and install from the hub:**
 
@@ -316,7 +316,7 @@ See [Skills System](../user-guide/features/skills.md) for writing your own, exte
 ### MCP servers
 
 ```yaml
-# Add to ~/.hermes/config.yaml
+# Add to ~/.kova/config.yaml
 mcp_servers:
   github:
     command: npx
@@ -333,7 +333,7 @@ ACP support ships with the standard `[all]` extras, so the curl installer alread
 kova acp
 ```
 
-(If you installed without `[all]`, run `cd ~/.hermes/kova-agent && uv pip install -e ".[acp]"` first.)
+(If you installed without `[all]`, run `cd ~/.kova/kova-agent && uv pip install -e ".[acp]"` first.)
 
 See [ACP Editor Integration](../user-guide/features/acp.md).
 

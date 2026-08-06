@@ -13,7 +13,7 @@ import pytest
 def kova_home(tmp_path, monkeypatch):
     home = tmp_path / "kova_home"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     # No managed dir: point the override at a guaranteed-absent path so a real
     # /etc/kova on the dev/CI box can't influence the test.
     monkeypatch.setenv("KOVA_MANAGED_DIR", str(tmp_path / "no_such_managed_dir"))

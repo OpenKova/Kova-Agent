@@ -1776,13 +1776,13 @@ class SlackAdapter(BasePlatformAdapter):
             logger.error(
                 "[Slack] SLACK_BOT_TOKEN not set — this is a permanent config "
                 "error; set SLACK_BOT_TOKEN via `kova gateway setup` "
-                "or in the active profile's ~/.hermes/.env file, then restart "
+                "or in the active profile's ~/.kova/.env file, then restart "
                 "the gateway.",
             )
             self._set_fatal_error(
                 "missing_slack_bot_token",
                 "SLACK_BOT_TOKEN not configured. Use `kova gateway setup` "
-                "or add it to your active profile's ~/.hermes/.env file, "
+                "or add it to your active profile's ~/.kova/.env file, "
                 "then restart the gateway.",
                 retryable=False,
             )
@@ -1791,13 +1791,13 @@ class SlackAdapter(BasePlatformAdapter):
             logger.error(
                 "[Slack] SLACK_APP_TOKEN not set — this is a permanent config "
                 "error; set SLACK_APP_TOKEN via `kova gateway setup` "
-                "or in the active profile's ~/.hermes/.env file, then restart "
+                "or in the active profile's ~/.kova/.env file, then restart "
                 "the gateway.",
             )
             self._set_fatal_error(
                 "missing_slack_app_token",
                 "SLACK_APP_TOKEN not configured. Use `kova gateway setup` "
-                "or add it to your active profile's ~/.hermes/.env file, "
+                "or add it to your active profile's ~/.kova/.env file, "
                 "then restart the gateway.",
                 retryable=False,
             )
@@ -8858,7 +8858,7 @@ def interactive_setup() -> None:
     )
 
     def _write_slack_manifest_and_instruct() -> None:
-        """Generate the Slack manifest, write it under HERMES_HOME, and print
+        """Generate the Slack manifest, write it under KOVA_HOME, and print
         paste-into-Slack instructions. Failures are non-fatal."""
         try:
             from kova_cli.slack_cli import _build_full_manifest

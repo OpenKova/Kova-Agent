@@ -1,7 +1,7 @@
 """Tests for kova_cli.uninstall.remove_node_symlinks.
 
 Regression for #34536: the POSIX installer drops node/npm/npx symlinks in
-~/.local/bin pointing into $HERMES_HOME/node and prepends ~/.local/bin to
+~/.local/bin pointing into $KOVA_HOME/node and prepends ~/.local/bin to
 PATH, shadowing an existing nvm. Uninstall must remove those symlinks, but
 only when they still resolve into the Kova-managed node dir.
 """
@@ -26,7 +26,7 @@ def fake_home(tmp_path, monkeypatch):
 
 
 def _make_kova_node(kova_home: Path) -> Path:
-    """Create a fake $HERMES_HOME/node/bin/{node,npm,npx} tree."""
+    """Create a fake $KOVA_HOME/node/bin/{node,npm,npx} tree."""
     node_bin = kova_home / "node" / "bin"
     node_bin.mkdir(parents=True)
     for name in ("node", "npm", "npx"):

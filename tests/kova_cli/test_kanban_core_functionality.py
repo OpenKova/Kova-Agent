@@ -33,7 +33,7 @@ from kova_cli.kanban import run_slash
 def kanban_home(tmp_path, monkeypatch):
     home = tmp_path / ".kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     # Existing crash-detection tests pre-date the grace window; pin to 0
     # so they keep their immediate-reclaim semantics.
     monkeypatch.setenv("KOVA_KANBAN_CRASH_GRACE_SECONDS", "0")
@@ -1240,7 +1240,7 @@ def test_migration_renames_legacy_event_kinds(tmp_path, monkeypatch):
     in place on init_db()."""
     home = tmp_path / ".kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     # Init fresh.
     kb.init_db()
@@ -1278,9 +1278,9 @@ def test_migration_renames_legacy_event_kinds(tmp_path, monkeypatch):
 
 def test_list_profiles_on_disk(tmp_path, monkeypatch):
     """list_profiles_on_disk returns the implicit default profile plus
-    named profiles under ~/.hermes/profiles/ that contain a config.yaml."""
+    named profiles under ~/.kova/profiles/ that contain a config.yaml."""
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
-    monkeypatch.delenv("HERMES_HOME", raising=False)
+    monkeypatch.delenv("KOVA_HOME", raising=False)
     profiles = tmp_path / ".kova" / "profiles"
     profiles.mkdir(parents=True)
     for name in ("researcher", "writer"):
@@ -1296,8 +1296,8 @@ def test_list_profiles_on_disk(tmp_path, monkeypatch):
 
 
 def test_list_profiles_on_disk_custom_root(tmp_path, monkeypatch):
-    """list_profiles_on_disk respects a custom HERMES_HOME root."""
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    """list_profiles_on_disk respects a custom KOVA_HOME root."""
+    monkeypatch.setenv("KOVA_HOME", str(tmp_path))
     profiles = tmp_path / "profiles"
     profiles.mkdir(parents=True)
     for name in ("researcher", "writer"):
@@ -1315,7 +1315,7 @@ def test_known_assignees_merges_disk_and_board(tmp_path, monkeypatch):
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     profiles = tmp_path / ".kova" / "profiles"
     profiles.mkdir(parents=True)
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".kova"))
+    monkeypatch.setenv("KOVA_HOME", str(tmp_path / ".kova"))
 
     for name in ("researcher", "writer"):
         d = profiles / name
@@ -2260,17 +2260,17 @@ def test_claim_task_recovers_from_invariant_leak(kanban_home):
 # -------------------------------------------------------------------------
 
 def test_cli_create_on_fresh_home_auto_inits(tmp_path, monkeypatch):
-    """First CLI action on an empty HERMES_HOME must not error with
+    """First CLI action on an empty KOVA_HOME must not error with
     'no such table: tasks' — init_db auto-runs now."""
     home = tmp_path / ".kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     # Sanity: kanban.db does NOT exist yet.
     import subprocess as _sp
     import sys as _sys
     worktree_root = Path(__file__).resolve().parents[2]
-    env = {**os.environ, "HERMES_HOME": str(home),
+    env = {**os.environ, "KOVA_HOME": str(home),
            "PYTHONPATH": str(worktree_root)}
     r = _sp.run(
         [_sys.executable, "-m", "kova_cli.main", "kanban",
@@ -2286,11 +2286,11 @@ def test_cli_create_on_fresh_home_auto_inits(tmp_path, monkeypatch):
 
 
 def test_connect_auto_inits_fresh_db(tmp_path, monkeypatch):
-    """Calling connect() on a fresh HERMES_HOME must create the
+    """Calling connect() on a fresh KOVA_HOME must create the
     schema. Previously callers had to remember kb.init_db() first."""
     home = tmp_path / ".kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     # Flush the module-level cache so this path looks fresh.
     kb._INITIALIZED_PATHS.clear()
@@ -2400,7 +2400,7 @@ def test_migration_backfill_idempotent_under_re_run(tmp_path, monkeypatch):
     dispatcher is simultaneously claiming."""
     home = tmp_path / ".kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
     # Fresh DB, one task left in 'running' with a claim but no run row.

@@ -741,7 +741,7 @@ plugins:
 """,
             encoding="utf-8",
         )
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         from kova_cli import config as _config_mod
         _config_mod._config_cache = None  # type: ignore[attr-defined]
 
@@ -760,7 +760,7 @@ plugins:
         kova_home = tmp_path / ".kova"
         kova_home.mkdir()
         (kova_home / "config.yaml").write_text("plugins: {}\n", encoding="utf-8")
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         from kova_cli import config as _config_mod
         _config_mod._config_cache = None  # type: ignore[attr-defined]
 

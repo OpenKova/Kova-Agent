@@ -2,7 +2,7 @@
 
 A system-level directory (default ``/etc/kova``, root-owned and not
 user-writable) supplies ``config.yaml`` and ``.env`` values that WIN over the
-user's ``~/.hermes/config.yaml`` and ``~/.hermes/.env`` on a per-leaf-key basis.
+user's ``~/.kova/config.yaml`` and ``~/.kova/.env`` on a per-leaf-key basis.
 
 This is DISTINCT from ``kova_cli.config.is_managed()`` / ``KOVA_MANAGED``,
 which is a coarse package-manager write-lock (declarative-distro / formula

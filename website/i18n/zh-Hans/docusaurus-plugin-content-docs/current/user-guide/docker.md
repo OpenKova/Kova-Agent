@@ -18,13 +18,13 @@ Docker 与 Kova Agent 的交集有两种截然不同的方式：
 如果这是你第一次运行 Kova Agent，请在宿主机上创建一个数据目录，并以交互方式启动容器以运行设置向导：
 
 ```sh
-mkdir -p ~/.hermes
+mkdir -p ~/.kova
 docker run -it --rm \
-  -v ~/.hermes:/opt/data \
+  -v ~/.kova:/opt/data \
   nousresearch/kova-agent setup
 ```
 
-这将进入设置向导，向导会提示你输入 API 密钥并将其写入 `~/.hermes/.env`。你只需执行一次。强烈建议此时为 gateway 配置一个聊天系统。
+这将进入设置向导，向导会提示你输入 API 密钥并将其写入 `~/.kova/.env`。你只需执行一次。强烈建议此时为 gateway 配置一个聊天系统。
 
 ## 以 gateway 模式运行
 
@@ -34,7 +34,7 @@ docker run -it --rm \
 docker run -d \
   --name kova \
   --restart unless-stopped \
-  -v ~/.hermes:/opt/data \
+  -v ~/.kova:/opt/data \
   -p 8642:8642 \
   nousresearch/kova-agent gateway run
 ```
@@ -47,7 +47,7 @@ docker run -d \
 docker run -d \
   --name kova \
   --restart unless-stopped \
-  -v ~/.hermes:/opt/data \
+  -v ~/.kova:/opt/data \
   -p 8642:8642 \
   -e API_SERVER_ENABLED=true \
   -e API_SERVER_HOST=0.0.0.0 \
@@ -66,7 +66,7 @@ docker run -d \
 docker run -d \
   --name kova \
   --restart unless-stopped \
-  -v ~/.hermes:/opt/data \
+  -v ~/.kova:/opt/data \
   -p 8642:8642 \
   -p 9119:9119 \
   -e KOVA_DASHBOARD=1 \
@@ -116,7 +116,7 @@ Dashboard 由 s6 监管：若进程崩溃，`s6-supervise` 会在短暂退避后
 
 ```sh
 docker run -it --rm \
-  -v ~/.hermes:/opt/data \
+  -v ~/.kova:/opt/data \
   nousresearch/kova-agent
 ```
 
@@ -128,7 +128,7 @@ docker run -it --rm \
 
 ## 持久化卷
 
-`/opt/data` 卷是所有 Kova 状态的唯一数据来源。它映射到宿主机的 `~/.hermes/` 目录，包含：
+`/opt/data` 卷是所有 Kova 状态的唯一数据来源。它映射到宿主机的 `~/.kova/` 目录，包含：
 
 | 路径 | 内容 |
 |------|----------|
@@ -160,13 +160,13 @@ docker run -it --rm \
 
 ## 多 profile 支持
 
-Kova 支持[多个 profile](../reference/profile-commands.md)——独立的 `~/.hermes/` 子目录，让你可以从单个安装运行独立的 agent（不同的 SOUL、skills、memory、sessions、credentials）。**在官方 Docker 镜像内，s6 监管树把每个 profile 当作一等受监管服务**，因此推荐部署方式是：**一个容器承载多个 profile**。
+Kova 支持[多个 profile](../reference/profile-commands.md)——独立的 `~/.kova/` 子目录，让你可以从单个安装运行独立的 agent（不同的 SOUL、skills、memory、sessions、credentials）。**在官方 Docker 镜像内，s6 监管树把每个 profile 当作一等受监管服务**，因此推荐部署方式是：**一个容器承载多个 profile**。
 
 每个通过 `kova profile create <name>` 创建的 profile 都会获得：
 
 - 一个专用的 s6 服务槽位 `/run/service/gateway-<name>/`，运行时动态注册，无需重建镜像。
 - 崩溃后的自动重启，由 `s6-supervise` 管理退避。
-- 每个 profile 独立的轮转日志：`${HERMES_HOME}/logs/gateways/<name>/current`。
+- 每个 profile 独立的轮转日志：`${KOVA_HOME}/logs/gateways/<name>/current`。
 - 跨容器重启的状态持久化：启动协调器会读取该 profile 的 `gateway_state.json`，仅在上次记录状态为 `running` 时自动拉起。
 
 容器内生命周期命令与宿主机上一致：
@@ -192,7 +192,7 @@ API 密钥从容器内的 `/opt/data/.env` 读取。你也可以直接传递环�
 
 ```sh
 docker run -it --rm \
-  -v ~/.hermes:/opt/data \
+  -v ~/.kova:/opt/data \
   -e ANTHROPIC_API_KEY="sk-ant-..." \
   -e OPENAI_API_KEY="sk-..." \
   nousresearch/kova-agent
@@ -219,7 +219,7 @@ services:
       - "8642:8642"   # gateway API
       - "9119:9119"   # dashboard（仅在 KOVA_DASHBOARD=1 时生效）
     volumes:
-      - ~/.hermes:/opt/data
+      - ~/.kova:/opt/data
     environment:
       - KOVA_DASHBOARD=1
       # 取消注释以直接转发特定环境变量而非使用 .env 文件：
@@ -254,7 +254,7 @@ docker run -d \
   --name kova \
   --restart unless-stopped \
   --memory=4g --cpus=2 \
-  -v ~/.hermes:/opt/data \
+  -v ~/.kova:/opt/data \
   nousresearch/kova-agent gateway run
 ```
 
@@ -273,7 +273,7 @@ docker run -d \
 
 容器的 `ENTRYPOINT` 是 s6-overlay 的 `/init`。启动时：
 1. 以 root 身份运行 `/etc/cont-init.d/01-kova-setup`（即 `docker/stage2-hook.sh`）：可选的 UID/GID 重映射、修复卷所有权、首次启动时初始化 `.env` / `config.yaml` / `SOUL.md`、同步内置技能。
-2. 运行 `/etc/cont-init.d/02-reconcile-profiles`（即 `kova_cli.container_boot`）：遍历 `$HERMES_HOME/profiles/<name>/`，在 `/run/service/gateway-<profile>/` 下重建各 profile 的 gateway s6 服务槽，并仅自动启动上次记录状态为 `running` 的 profile（参见 [Per-profile gateway 监管](#per-profile-gateway-supervision)）。
+2. 运行 `/etc/cont-init.d/02-reconcile-profiles`（即 `kova_cli.container_boot`）：遍历 `$KOVA_HOME/profiles/<name>/`，在 `/run/service/gateway-<profile>/` 下重建各 profile 的 gateway s6 服务槽，并仅自动启动上次记录状态为 `running` 的 profile（参见 [Per-profile gateway 监管](#per-profile-gateway-supervision)）。
 3. 启动静态的 `main-kova` 和 `dashboard` s6-rc 服务。
 4. 将容器的 CMD 作为主程序 exec（`/opt/kova/docker/main-wrapper.sh`），根据用户传给 `docker run` 的参数进行路由：
    - 无参数 → `kova`（默认）
@@ -305,8 +305,8 @@ kova profile delete coder            # 拆除 s6 槽
 
 - Gateway 崩溃后由 `s6-supervise` 在约 1 秒退避后自动重启。
 - Dashboard 崩溃后自动重启（设置 `KOVA_DASHBOARD=1` 以启动）。
-- `docker restart` 保留运行中的 gateway：cont-init 协调器读取 `$HERMES_HOME/profiles/<name>/gateway_state.json`，若上次记录状态为 `running` 则恢复该槽。已停止的 gateway 保持停止状态。
-- 各 profile 的 gateway 日志持久化于 `$HERMES_HOME/logs/gateways/<profile>/current`（由 `s6-log` 轮转），协调器的操作记录在每次启动时追加到 `$HERMES_HOME/logs/container-boot.log`。
+- `docker restart` 保留运行中的 gateway：cont-init 协调器读取 `$KOVA_HOME/profiles/<name>/gateway_state.json`，若上次记录状态为 `running` 则恢复该槽。已停止的 gateway 保持停止状态。
+- 各 profile 的 gateway 日志持久化于 `$KOVA_HOME/logs/gateways/<profile>/current`（由 `s6-log` 轮转），协调器的操作记录在每次启动时追加到 `$KOVA_HOME/logs/container-boot.log`。
 
 在容器内执行 `kova status` 会显示 `Manager: s6 (container supervisor)`。使用 `/command/s6-svstat /run/service/gateway-<name>` 查看原始 supervisor 状态（注意 `/command/` 仅在监管树进程的 PATH 中；从 `docker exec` 调用时请传入绝对路径）。
 
@@ -320,7 +320,7 @@ docker rm -f kova
 docker run -d \
   --name kova \
   --restart unless-stopped \
-  -v ~/.hermes:/opt/data \
+  -v ~/.kova:/opt/data \
   nousresearch/kova-agent gateway run
 ```
 
@@ -333,7 +333,7 @@ docker compose up -d
 
 ## 技能与凭据文件
 
-当使用 Docker 作为执行环境时（不是上述方法，而是 agent 在 Docker 沙箱内运行命令——参见 [配置 → Docker 后端](./configuration.md#docker-backend)），Kova 为所有工具调用复用单个长期运行的容器，并自动将技能目录（`~/.hermes/skills/`）和技能声明的所有凭据文件以只读卷的形式绑定挂载到该容器中。技能脚本、模板和引用在沙箱内无需手动配置即可使用，由于容器在 Kova 进程的整个生命周期内持续存在，你安装的任何依赖或写入的文件都会在下次工具调用时保留。
+当使用 Docker 作为执行环境时（不是上述方法，而是 agent 在 Docker 沙箱内运行命令——参见 [配置 → Docker 后端](./configuration.md#docker-backend)），Kova 为所有工具调用复用单个长期运行的容器，并自动将技能目录（`~/.kova/skills/`）和技能声明的所有凭据文件以只读卷的形式绑定挂载到该容器中。技能脚本、模板和引用在沙箱内无需手动配置即可使用，由于容器在 Kova 进程的整个生命周期内持续存在，你安装的任何依赖或写入的文件都会在下次工具调用时保留。
 
 SSH 和 Modal 后端也会进行相同的同步——技能和凭据文件在每次命令执行前通过 rsync 或 Modal mount API 上传。
 
@@ -374,7 +374,7 @@ docker build -t my-kova:latest .
 docker run -d \
   --name kova \
   --restart unless-stopped \
-  -v ~/.hermes:/opt/data \
+  -v ~/.kova:/opt/data \
   -p 8642:8642 \
   my-kova:latest gateway run
 ```
@@ -395,7 +395,7 @@ services:
     ports:
       - "8642:8642"
     volumes:
-      - ~/.hermes:/opt/data
+      - ~/.kova:/opt/data
     networks:
       - kova-net
 
@@ -453,7 +453,7 @@ services:
     ports:
       - "8642:8642"
     volumes:
-      - ~/.hermes:/opt/data
+      - ~/.kova:/opt/data
     networks:
       - kova-net
 
@@ -462,7 +462,7 @@ networks:
     driver: bridge
 ```
 
-然后在 `~/.hermes/config.yaml` 中，使用**容器名称**作为主机名：
+然后在 `~/.kova/config.yaml` 中，使用**容器名称**作为主机名：
 
 ```yaml
 model:
@@ -488,7 +488,7 @@ model:
 ```sh
 docker run -d \
   --name kova \
-  -v ~/.hermes:/opt/data \
+  -v ~/.kova:/opt/data \
   -p 8642:8642 \
   nousresearch/kova-agent gateway run
 ```
@@ -508,7 +508,7 @@ model:
 docker run -d \
   --name kova \
   --network host \
-  -v ~/.hermes:/opt/data \
+  -v ~/.kova:/opt/data \
   nousresearch/kova-agent gateway run
 ```
 
@@ -560,10 +560,10 @@ model:
 
 ### "Permission denied" 错误
 
-容器的 stage2 hook 通过 `s6-setuidgid` 在每个受监管的服务内将权限降至非 root 用户 `kova`（UID 10000）。如果宿主机的 `~/.hermes/` 由不同 UID 拥有，请设置 `KOVA_UID`/`KOVA_GID` 以匹配宿主机用户，或确保数据目录可写：
+容器的 stage2 hook 通过 `s6-setuidgid` 在每个受监管的服务内将权限降至非 root 用户 `kova`（UID 10000）。如果宿主机的 `~/.kova/` 由不同 UID 拥有，请设置 `KOVA_UID`/`KOVA_GID` 以匹配宿主机用户，或确保数据目录可写：
 
 ```sh
-chmod -R 755 ~/.hermes
+chmod -R 755 ~/.kova
 ```
 
 ### 浏览器工具无法使用
@@ -574,7 +574,7 @@ Playwright 需要共享内存。在 Docker run 命令中添加 `--shm-size=1g`�
 docker run -d \
   --name kova \
   --shm-size=1g \
-  -v ~/.hermes:/opt/data \
+  -v ~/.kova:/opt/data \
   nousresearch/kova-agent gateway run
 ```
 

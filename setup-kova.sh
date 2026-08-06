@@ -396,14 +396,14 @@ else
 fi
 
 # ============================================================================
-# Seed bundled skills into ~/.hermes/skills/
+# Seed bundled skills into ~/.kova/skills/
 # ============================================================================
 
-KOVA_SKILLS_DIR="${HERMES_HOME:-$HOME/.hermes}/skills"
+KOVA_SKILLS_DIR="${KOVA_HOME:-$HOME/.kova}/skills"
 mkdir -p "$KOVA_SKILLS_DIR"
 
 echo ""
-echo "Syncing bundled skills to ~/.hermes/skills/ ..."
+echo "Syncing bundled skills to ~/.kova/skills/ ..."
 if "$SCRIPT_DIR/venv/bin/python" "$SCRIPT_DIR/tools/skills_sync.py" 2>/dev/null; then
     echo -e "${GREEN}✓${NC} Skills synced"
 else

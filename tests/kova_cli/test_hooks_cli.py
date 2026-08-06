@@ -17,7 +17,7 @@ from kova_cli import hooks as hooks_cli
 
 @pytest.fixture(autouse=True)
 def _isolated_home(tmp_path, monkeypatch):
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / "home"))
+    monkeypatch.setenv("KOVA_HOME", str(tmp_path / "home"))
     monkeypatch.delenv("KOVA_ACCEPT_HOOKS", raising=False)
     shell_hooks.reset_for_tests()
     yield

@@ -1,6 +1,6 @@
 # Session Storage
 
-Kova Agent uses a SQLite database (`~/.hermes/state.db`) to persist session
+Kova Agent uses a SQLite database (`~/.kova/state.db`) to persist session
 metadata, full message history, and model configuration across CLI and gateway
 sessions. This replaces the earlier per-session JSONL file approach.
 
@@ -10,7 +10,7 @@ Source file: `kova_state.py`
 ## Architecture Overview
 
 ```
-~/.hermes/state.db (SQLite, WAL mode)
+~/.kova/state.db (SQLite, WAL mode)
 ├── sessions              — Session metadata, token counts, billing
 ├── messages              — Full message history per session
 ├── messages_fts          — FTS5 virtual table (content + tool_name + tool_calls)
@@ -187,7 +187,7 @@ _CHECKPOINT_EVERY_N_WRITES = 50
 ```python
 from kova_state import SessionDB
 
-db = SessionDB()                           # Default: ~/.hermes/state.db
+db = SessionDB()                           # Default: ~/.kova/state.db
 db = SessionDB(db_path=Path("/tmp/test.db"))  # Custom path
 ```
 
@@ -391,10 +391,10 @@ db.delete_session("sess_abc123")
 
 ## Database Location
 
-Default path: `~/.hermes/state.db`
+Default path: `~/.kova/state.db`
 
 This is derived from `kova_constants.get_kova_home()` which resolves to
-`~/.hermes/` by default, or the value of `HERMES_HOME` environment variable.
+`~/.kova/` by default, or the value of `KOVA_HOME` environment variable.
 
 The database file, WAL file (`state.db-wal`), and shared-memory file
 (`state.db-shm`) are all created in the same directory.

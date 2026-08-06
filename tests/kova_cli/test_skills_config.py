@@ -211,7 +211,7 @@ class TestGetDisabledSkillNames:
             "    telegram:\n"
             "      - tg-only-skill\n"
         )
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path))
         monkeypatch.delenv("KOVA_PLATFORM", raising=False)
         monkeypatch.delenv("KOVA_SESSION_PLATFORM", raising=False)
 
@@ -230,7 +230,7 @@ class TestGetDisabledSkillNames:
             "    discord:\n"
             "      - discord-skill\n"
         )
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path))
         monkeypatch.delenv("KOVA_PLATFORM", raising=False)
         monkeypatch.setenv("KOVA_SESSION_PLATFORM", "discord")
 
@@ -249,7 +249,7 @@ class TestGetDisabledSkillNames:
             "    discord:\n"
             "      - discord-skill\n"
         )
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path))
         monkeypatch.setenv("KOVA_PLATFORM", "telegram")
         monkeypatch.setenv("KOVA_SESSION_PLATFORM", "discord")
 
@@ -268,7 +268,7 @@ class TestGetDisabledSkillNames:
             "    slack:\n"
             "      - slack-skill\n"
         )
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path))
         monkeypatch.setenv("KOVA_PLATFORM", "telegram")
         monkeypatch.setenv("KOVA_SESSION_PLATFORM", "telegram")
 
@@ -287,7 +287,7 @@ class TestGetDisabledSkillNames:
             "    telegram:\n"
             "      - tg-skill\n"
         )
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path))
         monkeypatch.delenv("KOVA_PLATFORM", raising=False)
         monkeypatch.delenv("KOVA_SESSION_PLATFORM", raising=False)
 

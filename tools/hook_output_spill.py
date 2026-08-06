@@ -26,14 +26,14 @@ Config (``config.yaml``)::
         max_chars: 10000       # default; context above this is spilled
         preview_head: 500      # chars shown at the start of the preview
         preview_tail: 500      # chars shown at the end of the preview
-        directory: null        # default: <HERMES_HOME>/hook_outputs
+        directory: null        # default: <KOVA_HOME>/hook_outputs
 
 Design invariants
 -----------------
 * Behaviour-preserving when ``enabled: false`` or when content is under
   the cap — return the input string unchanged.
 * Never raises. Any I/O error (disk full, permission denied, missing
-  HERMES_HOME, etc.) falls back to a byte-length truncation with an
+  KOVA_HOME, etc.) falls back to a byte-length truncation with an
   in-prompt notice — the hook context still reaches the model, just
   bounded in size.
 * Spill files are grouped by session so a ``/new`` session doesn't grow
@@ -121,8 +121,8 @@ def _resolve_spill_dir(directory_override: Optional[str], session_id: Optional[s
             from kova_constants import get_kova_home
             base = Path(get_kova_home()) / "hook_outputs"
         except Exception:
-            # Last-resort fallback: HERMES_HOME env var, then ~/.hermes
-            home = os.environ.get("HERMES_HOME") or os.path.expanduser("~/.hermes")
+            # Last-resort fallback: KOVA_HOME env var, then ~/.kova
+            home = os.environ.get("KOVA_HOME") or os.path.expanduser("~/.kova")
             base = Path(home) / "hook_outputs"
 
     # Group by session so spills are contained per conversation.

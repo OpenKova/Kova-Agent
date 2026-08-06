@@ -40,11 +40,11 @@ import pytest
 
 @pytest.fixture
 def isolated_home(monkeypatch):
-    """Temp HERMES_HOME with config + clean credential env vars."""
+    """Temp KOVA_HOME with config + clean credential env vars."""
     test_home = tempfile.mkdtemp(prefix="kova_test_31179_")
     kova_home = os.path.join(test_home, ".kova")
     os.makedirs(kova_home)
-    monkeypatch.setenv("HERMES_HOME", kova_home)
+    monkeypatch.setenv("KOVA_HOME", kova_home)
 
     # Strip all credential-shaped env vars so each scenario starts hermetic.
     for k in list(os.environ.keys()):

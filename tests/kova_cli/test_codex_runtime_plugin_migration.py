@@ -792,13 +792,13 @@ class TestStripUnmanagedPluginTables:
         assert '[plugins."tasks@openai-curated"]' in new_text
 
 
-# ---- Bug C: HERMES_HOME tempdir leak into ~/.codex/config.toml ----
+# ---- Bug C: KOVA_HOME tempdir leak into ~/.codex/config.toml ----
 
 
 class TestKovaHomeLeakGuard:
     """Regression tests for issue #26250 Bug C.
 
-    Previously ``_build_kova_tools_mcp_entry()`` read ``HERMES_HOME``
+    Previously ``_build_kova_tools_mcp_entry()`` read ``KOVA_HOME``
     directly from ``os.environ``, so a pytest ``monkeypatch.setenv`` would
     leak a transient tempdir path into the user's real ``~/.codex/config.toml``
     once codex spawned the kova-tools MCP subprocess.
@@ -816,48 +816,48 @@ class TestKovaHomeLeakGuard:
         )
 
     def test_tempdir_detector_accepts_real_kova_home(self):
-        assert not _looks_like_test_tempdir("/Users/alice/.hermes")
-        assert not _looks_like_test_tempdir("/home/bob/.hermes")
+        assert not _looks_like_test_tempdir("/Users/alice/.kova")
+        assert not _looks_like_test_tempdir("/home/bob/.kova")
         assert not _looks_like_test_tempdir("/opt/kova")
         assert not _looks_like_test_tempdir("")
 
     def test_pytest_tempdir_not_burned_into_mcp_env(self, monkeypatch):
-        """The headline regression: even when HERMES_HOME points at a pytest
+        """The headline regression: even when KOVA_HOME points at a pytest
         tempdir, _build_kova_tools_mcp_entry() must NOT propagate it."""
         monkeypatch.setenv(
-            "HERMES_HOME",
+            "KOVA_HOME",
             "/private/var/folders/xx/pytest-of-user/pytest-99/test_x/kova_test",
         )
         entry = _build_kova_tools_mcp_entry()
         env = entry.get("env", {})
-        assert "HERMES_HOME" not in env, (
-            f"pytest-tempdir HERMES_HOME leaked into codex MCP entry: "
-            f"{env.get('HERMES_HOME')!r}"
+        assert "KOVA_HOME" not in env, (
+            f"pytest-tempdir KOVA_HOME leaked into codex MCP entry: "
+            f"{env.get('KOVA_HOME')!r}"
         )
 
     def test_real_kova_home_propagates(self, monkeypatch, tmp_path):
-        """A legitimate HERMES_HOME (not a tempdir path) DOES propagate so the
+        """A legitimate KOVA_HOME (not a tempdir path) DOES propagate so the
         MCP subprocess sees the same config as the parent CLI."""
         # Use a path that looks real — under /Users or /home, not /var/folders.
         # We can't easily create one in the test, so just use a stable path
         # outside any tempdir-detector needle. The detector checks for tempdir
         # markers, not for path existence.
-        real_path = "/Users/alice/.hermes"
-        monkeypatch.setenv("HERMES_HOME", real_path)
+        real_path = "/Users/alice/.kova"
+        monkeypatch.setenv("KOVA_HOME", real_path)
         entry = _build_kova_tools_mcp_entry()
         env = entry.get("env", {})
-        assert env.get("HERMES_HOME") == real_path
+        assert env.get("KOVA_HOME") == real_path
 
     def test_unset_kova_home_omits_env_key(self, monkeypatch):
-        """When HERMES_HOME is unset in the environment, the MCP entry MUST
+        """When KOVA_HOME is unset in the environment, the MCP entry MUST
         NOT bake in a resolved-default path. The codex subprocess should
-        inherit whatever HERMES_HOME its launcher (systemd, gateway, shell)
+        inherit whatever KOVA_HOME its launcher (systemd, gateway, shell)
         sets at runtime, rather than being pinned to migrate-time defaults.
         Regression guard for issue #26250 follow-up review."""
-        monkeypatch.delenv("HERMES_HOME", raising=False)
+        monkeypatch.delenv("KOVA_HOME", raising=False)
         entry = _build_kova_tools_mcp_entry()
         env = entry.get("env", {})
-        assert "HERMES_HOME" not in env, (
-            f"HERMES_HOME should not be set when env var is unset, got: "
-            f"{env.get('HERMES_HOME')!r}"
+        assert "KOVA_HOME" not in env, (
+            f"KOVA_HOME should not be set when env var is unset, got: "
+            f"{env.get('KOVA_HOME')!r}"
         )

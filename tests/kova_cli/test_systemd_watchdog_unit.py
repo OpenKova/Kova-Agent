@@ -58,7 +58,7 @@ def test_user_unit_reads_watchdog_from_config_yaml(tmp_path, monkeypatch):
         "gateway:\n  systemd_watchdog_seconds: 45\n",
         encoding="utf-8",
     )
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     unit = gateway_cli.generate_systemd_unit(system=False)
 
@@ -80,7 +80,7 @@ def test_system_unit_reads_watchdog_from_target_home(tmp_path, monkeypatch):
         "gateway:\n  systemd_watchdog_seconds: 75\n",
         encoding="utf-8",
     )
-    monkeypatch.setenv("HERMES_HOME", str(caller_home))
+    monkeypatch.setenv("KOVA_HOME", str(caller_home))
     monkeypatch.setattr(
         gateway_cli,
         "_system_service_identity",
@@ -111,7 +111,7 @@ def test_managed_watchdog_override_controls_generated_unit(tmp_path, monkeypatch
         "gateway:\n  systemd_watchdog_seconds: 0\n",
         encoding="utf-8",
     )
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
     monkeypatch.setenv("KOVA_MANAGED_DIR", str(managed_home))
 
     from kova_cli import managed_scope

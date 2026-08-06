@@ -80,12 +80,12 @@ class TestEnvFileReadBlocking:
             assert error is None, f"{path} should be allowed"
 
     def test_allowed_kova_env(self):
-        """Kova' own .env inside HERMES_HOME is NOT blocked by this rule
+        """Kova' own .env inside KOVA_HOME is NOT blocked by this rule
         (it's handled by other mechanisms). Only project-local .env is blocked."""
-        # Note: kova internal .env is in ~/.hermes/.env which is NOT a project-local
+        # Note: kova internal .env is in ~/.kova/.env which is NOT a project-local
         # path, but the basename check applies to ANY .env. This is intentional —
-        # even ~/.hermes/.env should not be readable via read_file.
-        error = get_read_block_error(os.path.expanduser("~/.hermes/.env"))
+        # even ~/.kova/.env should not be readable via read_file.
+        error = get_read_block_error(os.path.expanduser("~/.kova/.env"))
         assert error is not None
 
     def test_blocked_set_is_lowercase(self):
@@ -135,7 +135,7 @@ class TestCombinedGuards:
     """Both guards should work independently without interference."""
 
     def test_env_guard_works_regardless_of_kova_home(self, tmp_path):
-        """The env basename guard does not depend on HERMES_HOME resolution."""
+        """The env basename guard does not depend on KOVA_HOME resolution."""
         kova_home = tmp_path / ".kova"
         kova_home.mkdir()
 

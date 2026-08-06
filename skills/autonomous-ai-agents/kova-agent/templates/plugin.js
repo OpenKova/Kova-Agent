@@ -1,7 +1,7 @@
 /**
  * Kova desktop plugin template. Save as:
  *   <kova home>/desktop-plugins/<id>/plugin.js   (folder name == id)
- * where <kova home> is ~/.hermes by default, or ~/.hermes/profiles/<name>
+ * where <kova home> is ~/.kova by default, or ~/.kova/profiles/<name>
  * when running a named profile (`kova -p <name>`). Run `kova doctor` (or
  * check the app's Settings → Plugins folder path) if unsure which is active.
  * Then run "Reload desktop plugins" from ⌘K in the desktop app.

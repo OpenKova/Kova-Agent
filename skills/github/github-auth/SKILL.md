@@ -220,7 +220,7 @@ if command -v gh &>/dev/null && gh auth status &>/dev/null; then
   echo "AUTH_METHOD=gh"
 elif [ -n "$GITHUB_TOKEN" ]; then
   echo "AUTH_METHOD=curl"
-elif _kova_env="${HERMES_HOME:-$HOME/.hermes}/.env"; [ -f "$_kova_env" ] && grep -q "^GITHUB_TOKEN=" "$_kova_env"; then
+elif _kova_env="${KOVA_HOME:-$HOME/.kova}/.env"; [ -f "$_kova_env" ] && grep -q "^GITHUB_TOKEN=" "$_kova_env"; then
   export GITHUB_TOKEN=$(grep "^GITHUB_TOKEN=" "$_kova_env" | head -1 | cut -d= -f2 | tr -d '\n\r')
   echo "AUTH_METHOD=curl"
 elif grep -q "github.com" ~/.git-credentials 2>/dev/null; then

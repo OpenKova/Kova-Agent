@@ -101,7 +101,7 @@ class TestGoalMigratesOnRotation:
         agent = _build_agent_with_db(db, parent)
 
         # Set a persistent goal on the parent via the real persistence path.
-        with patch.dict(os.environ, {"HERMES_HOME": str(tmp_path / ".kova")}):
+        with patch.dict(os.environ, {"KOVA_HOME": str(tmp_path / ".kova")}):
             (tmp_path / ".kova").mkdir(exist_ok=True)
             import kova_cli.goals as goals
             goals._DB_CACHE.clear()

@@ -19,10 +19,10 @@ from kova_cli import kanban_db as kb
 
 @pytest.fixture
 def kanban_home(tmp_path, monkeypatch):
-    """Isolated HERMES_HOME with an empty kanban DB."""
+    """Isolated KOVA_HOME with an empty kanban DB."""
     home = tmp_path / ".kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     kb.init_db()
     return home
@@ -110,7 +110,7 @@ def test_connect_rejects_tls_record_in_sqlite_header(tmp_path, monkeypatch):
     """Kanban should classify TLS-looking page-0 clobbers before WAL setup."""
     home = tmp_path / ".kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     monkeypatch.delenv("KOVA_KANBAN_DB", raising=False)
     monkeypatch.delenv("KOVA_KANBAN_HOME", raising=False)
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
@@ -2572,7 +2572,7 @@ def test_cleanup_workspace_honors_workspaces_root_env_override(tmp_path, monkeyp
     """
     home = tmp_path / ".kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     workspaces_override = tmp_path / "ext-workspaces"
     workspaces_override.mkdir()
@@ -2875,22 +2875,22 @@ def test_session_id_compose_with_tenant_filter(kanban_home):
 # spawned with `kova -p <profile>` must read/write the same kanban.db
 # as the dispatcher that claimed the task. These tests exercise the
 # path-resolution layer directly and would have caught the regression
-# where `kanban_db_path()` resolved to the active profile's HERMES_HOME.
+# where `kanban_db_path()` resolved to the active profile's KOVA_HOME.
 # ---------------------------------------------------------------------------
 
 class TestSharedBoardPaths:
     """`kanban_home`/`kanban_db_path`/`workspaces_root`/`worker_log_path`
-    must anchor at the **shared root**, not the active profile's HERMES_HOME."""
+    must anchor at the **shared root**, not the active profile's KOVA_HOME."""
 
     def _set_home(self, monkeypatch, tmp_path, kova_home):
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.delenv("KOVA_KANBAN_HOME", raising=False)
 
     def test_default_install_anchors_at_home_dot_kova(
         self, tmp_path, monkeypatch
     ):
-        # Standard install: HERMES_HOME == ~/.hermes, no profile active.
+        # Standard install: KOVA_HOME == ~/.kova, no profile active.
         default_home = tmp_path / ".kova"
         default_home.mkdir()
         self._set_home(monkeypatch, tmp_path, default_home)
@@ -2906,10 +2906,10 @@ class TestSharedBoardPaths:
     def test_profile_worker_resolves_to_shared_root(
         self, tmp_path, monkeypatch
     ):
-        # Reproduces the bug: dispatcher uses ~/.hermes/kanban.db,
+        # Reproduces the bug: dispatcher uses ~/.kova/kanban.db,
         # worker spawned with -p <profile> previously resolved to
-        # ~/.hermes/profiles/<profile>/kanban.db. After the fix both
-        # converge on ~/.hermes/kanban.db.
+        # ~/.kova/profiles/<profile>/kanban.db. After the fix both
+        # converge on ~/.kova/kanban.db.
         default_home = tmp_path / ".kova"
         default_home.mkdir()
         profile_home = default_home / "profiles" / "nehemiahkanban"
@@ -2917,7 +2917,7 @@ class TestSharedBoardPaths:
         self._set_home(monkeypatch, tmp_path, profile_home)
 
         # All four resolvers must anchor at the shared root, not the
-        # profile-local HERMES_HOME.
+        # profile-local KOVA_HOME.
         assert kb.kanban_home() == default_home
         assert kb.kanban_db_path() == default_home / "kanban.db"
         assert kb.workspaces_root() == default_home / "kanban" / "workspaces"
@@ -2934,7 +2934,7 @@ class TestSharedBoardPaths:
         self, tmp_path, monkeypatch
     ):
         # End-to-end convergence: resolve the path under each side's
-        # HERMES_HOME and confirm equality. This is the property the
+        # KOVA_HOME and confirm equality. This is the property the
         # dispatcher/worker handoff actually depends on.
         default_home = tmp_path / ".kova"
         default_home.mkdir()
@@ -2948,7 +2948,7 @@ class TestSharedBoardPaths:
         dispatcher_log = kb.worker_log_path("t_handoff")
 
         # Worker's perspective (profile activated by `kova -p coder`).
-        monkeypatch.setenv("HERMES_HOME", str(profile_home))
+        monkeypatch.setenv("KOVA_HOME", str(profile_home))
         worker_db = kb.kanban_db_path()
         worker_ws = kb.workspaces_root()
         worker_log = kb.worker_log_path("t_handoff")
@@ -2960,7 +2960,7 @@ class TestSharedBoardPaths:
     def test_docker_custom_kova_home_uses_env_path_directly(
         self, tmp_path, monkeypatch
     ):
-        # Docker / custom deployment: HERMES_HOME points outside ~/.hermes.
+        # Docker / custom deployment: KOVA_HOME points outside ~/.kova.
         # `get_default_kova_root()` returns env_home directly when it
         # is not a `<root>/profiles/<name>` shape and not under
         # `Path.home() / ".kova"`.
@@ -2974,7 +2974,7 @@ class TestSharedBoardPaths:
     def test_docker_profile_layout_uses_grandparent(
         self, tmp_path, monkeypatch
     ):
-        # Docker profile shape: HERMES_HOME=/opt/kova/profiles/coder;
+        # Docker profile shape: KOVA_HOME=/opt/kova/profiles/coder;
         # `get_default_kova_root()` walks up to /opt/kova because
         # the immediate parent dir is named "profiles".
         custom_root = tmp_path / "opt" / "kova"
@@ -2997,7 +2997,7 @@ class TestSharedBoardPaths:
         override.mkdir()
 
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(profile_home))
+        monkeypatch.setenv("KOVA_HOME", str(profile_home))
         monkeypatch.setenv("KOVA_KANBAN_HOME", str(override))
 
         assert kb.kanban_home() == override
@@ -3009,7 +3009,7 @@ class TestSharedBoardPaths:
         default_home = tmp_path / ".kova"
         default_home.mkdir()
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(default_home))
+        monkeypatch.setenv("KOVA_HOME", str(default_home))
         monkeypatch.setenv("KOVA_KANBAN_HOME", "   ")
 
         assert kb.kanban_home() == default_home
@@ -3018,7 +3018,7 @@ class TestSharedBoardPaths:
         self, tmp_path, monkeypatch
     ):
         # Belt-and-suspenders: round-trip a task across the two
-        # HERMES_HOME perspectives via a real SQLite file. Without the
+        # KOVA_HOME perspectives via a real SQLite file. Without the
         # fix the worker would open a different file and see no rows.
         default_home = tmp_path / ".kova"
         default_home.mkdir()
@@ -3031,8 +3031,8 @@ class TestSharedBoardPaths:
         with kb.connect() as conn:
             task_id = kb.create_task(conn, title="cross-profile")
 
-        # Worker switches to the profile HERMES_HOME and reads.
-        monkeypatch.setenv("HERMES_HOME", str(profile_home))
+        # Worker switches to the profile KOVA_HOME and reads.
+        monkeypatch.setenv("KOVA_HOME", str(profile_home))
         with kb.connect() as conn:
             task = kb.get_task(conn, task_id)
         assert task is not None
@@ -3052,7 +3052,7 @@ class TestSharedBoardPaths:
         pinned_db.parent.mkdir()
 
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(default_home))
+        monkeypatch.setenv("KOVA_HOME", str(default_home))
         monkeypatch.setenv("KOVA_KANBAN_HOME", str(umbrella))
         monkeypatch.setenv("KOVA_KANBAN_DB", str(pinned_db))
 
@@ -3073,7 +3073,7 @@ class TestSharedBoardPaths:
         pinned_ws.mkdir()
 
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(default_home))
+        monkeypatch.setenv("KOVA_HOME", str(default_home))
         monkeypatch.setenv("KOVA_KANBAN_HOME", str(umbrella))
         monkeypatch.setenv("KOVA_KANBAN_WORKSPACES_ROOT", str(pinned_ws))
 
@@ -3089,7 +3089,7 @@ class TestSharedBoardPaths:
         default_home = tmp_path / ".kova"
         default_home.mkdir()
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(default_home))
+        monkeypatch.setenv("KOVA_HOME", str(default_home))
         monkeypatch.setenv("KOVA_KANBAN_DB", "   ")
         monkeypatch.setenv("KOVA_KANBAN_WORKSPACES_ROOT", "")
 
@@ -3102,7 +3102,7 @@ class TestSharedBoardPaths:
         # The dispatcher's `_default_spawn` must inject KOVA_KANBAN_DB
         # and KOVA_KANBAN_WORKSPACES_ROOT into the worker env so the
         # worker converges on the dispatcher's paths even when the
-        # `-p <profile>` flag rewrites HERMES_HOME.
+        # `-p <profile>` flag rewrites KOVA_HOME.
         default_home = tmp_path / ".kova"
         default_home.mkdir()
         self._set_home(monkeypatch, tmp_path, default_home)
@@ -3250,7 +3250,7 @@ def test_connect_falls_back_to_delete_on_locking_protocol(tmp_path, monkeypatch,
 
     home = tmp_path / ".kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
     # Clear module cache so a fresh connect() is attempted
@@ -3503,15 +3503,15 @@ def test_resolve_kova_argv_kova_bin_bare_name_uses_path(monkeypatch, tmp_path):
     cwd_kova = tmp_path / "kova"
     cwd_kova.write_text("wrong\n", encoding="utf-8")
     cwd_kova.chmod(cwd_kova.stat().st_mode | stat.S_IXUSR)
-    path_hermes = tmp_path / "bin" / "kova"
-    path_hermes.parent.mkdir()
-    path_hermes.write_text("right\n", encoding="utf-8")
-    path_hermes.chmod(path_hermes.stat().st_mode | stat.S_IXUSR)
+    path_kova = tmp_path / "bin" / "kova"
+    path_kova.parent.mkdir()
+    path_kova.write_text("right\n", encoding="utf-8")
+    path_kova.chmod(path_kova.stat().st_mode | stat.S_IXUSR)
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("PATH", str(path_hermes.parent))
+    monkeypatch.setenv("PATH", str(path_kova.parent))
     monkeypatch.setenv("KOVA_BIN", "kova")
 
-    assert kb._resolve_kova_argv() == [str(path_hermes)]
+    assert kb._resolve_kova_argv() == [str(path_kova)]
 
 
 def test_resolve_kova_argv_kova_bin_bare_name_ignores_cwd(monkeypatch, tmp_path):
@@ -3707,7 +3707,7 @@ def test_task_dict_survives_corrupt_created_at(tmp_path, monkeypatch):
     # Set up an isolated kanban home so we can write a corrupt created_at.
     home = tmp_path / ".kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
     kb._INITIALIZED_PATHS.clear()
     kb.init_db()

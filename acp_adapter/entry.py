@@ -1,6 +1,6 @@
 """CLI entry point for the kova-agent ACP adapter.
 
-Loads environment variables from ``~/.hermes/.env``, configures logging
+Loads environment variables from ``~/.kova/.env``, configures logging
 to write to stderr (so stdout is reserved for ACP JSON-RPC transport),
 and starts the ACP agent server.
 
@@ -99,7 +99,7 @@ def _setup_logging() -> None:
 
 
 def _load_env() -> None:
-    """Load .env from HERMES_HOME (default ``~/.hermes``)."""
+    """Load .env from KOVA_HOME (default ``~/.kova``)."""
     from kova_cli.env_loader import load_kova_dotenv
 
     kova_home = get_kova_home()
@@ -132,7 +132,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--setup-browser",
         action="store_true",
-        help="Install agent-browser + Playwright Chromium into ~/.hermes/node/ "
+        help="Install agent-browser + Playwright Chromium into ~/.kova/node/ "
              "for browser tool support. Idempotent.",
     )
     parser.add_argument(

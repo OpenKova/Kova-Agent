@@ -29,7 +29,7 @@ def test_check_for_updates_uses_cache(tmp_path, monkeypatch):
     cache_file = tmp_path / ".update_check"
     cache_file.write_text(json.dumps({"ts": time.time(), "behind": 3, "ver": __version__}))
 
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("KOVA_HOME", str(tmp_path))
     with patch("kova_cli.banner.subprocess.run") as mock_run:
         result = check_for_updates()
 
@@ -58,7 +58,7 @@ def test_check_for_updates_invalidates_on_version_change(tmp_path, monkeypatch):
         json.dumps({"ts": time.time(), "behind": 1, "rev": None, "ver": "0.0.1-old"})
     )
 
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("KOVA_HOME", str(tmp_path))
     monkeypatch.delenv("KOVA_REVISION", raising=False)
     with patch("kova_cli.banner.subprocess.run") as mock_run:
         result = banner.check_for_updates()
@@ -87,7 +87,7 @@ def test_check_for_updates_expired_cache(tmp_path, monkeypatch):
 
     mock_result = MagicMock(returncode=0, stdout="5\n")
 
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("KOVA_HOME", str(tmp_path))
     with patch("kova_cli.banner.subprocess.run", return_value=mock_result) as mock_run:
         result = check_for_updates()
 
@@ -231,7 +231,7 @@ def test_check_for_updates_no_git_dir(tmp_path, monkeypatch):
     fake_banner.touch()
 
     monkeypatch.setattr(banner, "__file__", str(fake_banner))
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("KOVA_HOME", str(tmp_path))
     with patch("kova_cli.banner.subprocess.run") as mock_run:
         result = banner.check_for_updates()
     assert result is None
@@ -239,15 +239,15 @@ def test_check_for_updates_no_git_dir(tmp_path, monkeypatch):
 
 
 def test_check_for_updates_fallback_to_project_root(tmp_path, monkeypatch):
-    """Dev install: falls back to Path(__file__).parent.parent when HERMES_HOME has no git repo."""
+    """Dev install: falls back to Path(__file__).parent.parent when KOVA_HOME has no git repo."""
     import kova_cli.banner as banner
 
     project_root = Path(banner.__file__).parent.parent.resolve()
     if not (project_root / ".git").exists():
         pytest.skip("Not running from a git checkout")
 
-    # Point HERMES_HOME at a temp dir with no kova-agent/.git
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    # Point KOVA_HOME at a temp dir with no kova-agent/.git
+    monkeypatch.setenv("KOVA_HOME", str(tmp_path))
     with patch("kova_cli.banner.subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(returncode=0, stdout="0\n")
         result = banner.check_for_updates()
@@ -266,7 +266,7 @@ def test_check_for_updates_docker_returns_none(tmp_path, monkeypatch):
     """
     import kova_cli.banner as banner
 
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("KOVA_HOME", str(tmp_path))
     cache_file = tmp_path / ".update_check"
 
     with patch("kova_cli.config.detect_install_method", return_value="docker"), \
@@ -305,7 +305,7 @@ def test_invalidate_update_cache_clears_all_profiles(tmp_path):
     """_invalidate_update_cache() should delete .update_check from ALL profiles."""
     from kova_cli.main import _invalidate_update_cache
 
-    # Build a fake ~/.hermes with default + two named profiles
+    # Build a fake ~/.kova with default + two named profiles
     default_home = tmp_path / ".kova"
     default_home.mkdir()
     (default_home / ".update_check").write_text('{"ts":1,"behind":50}')
@@ -317,7 +317,7 @@ def test_invalidate_update_cache_clears_all_profiles(tmp_path):
         (p / ".update_check").write_text('{"ts":1,"behind":50}')
 
     with patch.object(Path, "home", return_value=tmp_path), \
-         patch.dict(os.environ, {"HERMES_HOME": str(default_home)}):
+         patch.dict(os.environ, {"KOVA_HOME": str(default_home)}):
         _invalidate_update_cache()
 
     # All three caches should be gone
@@ -335,7 +335,7 @@ def test_invalidate_update_cache_no_profiles_dir(tmp_path):
     (default_home / ".update_check").write_text('{"ts":1,"behind":5}')
 
     with patch.object(Path, "home", return_value=tmp_path), \
-         patch.dict(os.environ, {"HERMES_HOME": str(default_home)}):
+         patch.dict(os.environ, {"KOVA_HOME": str(default_home)}):
         _invalidate_update_cache()
 
     assert not (default_home / ".update_check").exists()

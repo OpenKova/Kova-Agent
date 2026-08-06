@@ -48,7 +48,7 @@ from rich.console import Console
 from kova_constants import OPENROUTER_BASE_URL, get_kova_home
 from agent.retry_utils import jittered_backoff
 
-# Load .env from HERMES_HOME first, then project root as a dev fallback.
+# Load .env from KOVA_HOME first, then project root as a dev fallback.
 from kova_cli.env_loader import load_kova_dotenv
 
 _kova_home = get_kova_home()

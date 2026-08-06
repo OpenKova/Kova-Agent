@@ -102,7 +102,7 @@ def generate_bash(parser: argparse.ArgumentParser) -> str:
 #   eval "$(kova completion bash)"
 
 _kova_profiles() {{
-    local profiles_dir="$HOME/.hermes/profiles"
+    local profiles_dir="$HOME/.kova/profiles"
     local profiles="default"
     if [ -d "$profiles_dir" ]; then
         for f in "$profiles_dir"/*/; do
@@ -207,8 +207,8 @@ def generate_zsh(parser: argparse.ArgumentParser) -> str:
 _kova_profiles() {{
     local -a profiles
     profiles=(default)
-    if [[ -d "$HOME/.hermes/profiles" ]]; then
-        profiles+=($HOME/.hermes/profiles/*(N/:t))
+    if [[ -d "$HOME/.kova/profiles" ]]; then
+        profiles+=($HOME/.kova/profiles/*(N/:t))
     fi
     _describe 'profile' profiles
 }}
@@ -261,8 +261,8 @@ def generate_fish(parser: argparse.ArgumentParser) -> str:
         "# Helper: list available profiles",
         "function __kova_profiles",
         "    echo default",
-        "    if test -d $HOME/.hermes/profiles",
-        "        for d in $HOME/.hermes/profiles/*/",
+        "    if test -d $HOME/.kova/profiles",
+        "        for d in $HOME/.kova/profiles/*/",
         "            basename $d",
         "        end",
         "    end",

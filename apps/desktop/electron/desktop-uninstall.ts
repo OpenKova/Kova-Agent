@@ -153,7 +153,7 @@ function buildPosixCleanupScript({ desktopPid, pythonExe, pythonPath, agentRoot,
     '    sleep 0.5',
     '  done',
     'fi',
-    `export HERMES_HOME=${q(kovaHome)}`
+    `export KOVA_HOME=${q(kovaHome)}`
   ]
 
   if (pythonPath) {
@@ -209,7 +209,7 @@ function buildWindowsCleanupScript({
   const lines = [
     '@echo off',
     'setlocal enableextensions',
-    `set "HERMES_HOME=${String(kovaHome).replace(/"/g, '')}"`,
+    `set "KOVA_HOME=${String(kovaHome).replace(/"/g, '')}"`,
     `set "PID=${pid}"`
   ]
 

@@ -184,7 +184,7 @@ Kova automatically discovers credentials from multiple sources and seeds the poo
 | Environment variables | `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY` | Yes |
 | OAuth tokens (auth.json) | Codex device code, Nous device code | Yes |
 | Claude Code credentials | `~/.claude/.credentials.json` | Yes (Anthropic) |
-| Kova PKCE OAuth | `~/.hermes/auth.json` | Yes (Anthropic) |
+| Kova PKCE OAuth | `~/.kova/auth.json` | Yes (Anthropic) |
 | Custom endpoint config | `model.api_key` in config.yaml | Yes (custom endpoints) |
 | Manual entries | Added via `kova auth add` | Persisted in auth.json |
 
@@ -219,7 +219,7 @@ The credential pool integrates at the provider resolution layer:
 
 ## Storage
 
-Pool state is stored in `~/.hermes/auth.json` under the `credential_pool` key:
+Pool state is stored in `~/.kova/auth.json` under the `credential_pool` key:
 
 ```json
 {

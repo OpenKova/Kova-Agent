@@ -49,17 +49,17 @@ const APP = (() => {
   }
 })()
 
-// Default HERMES_HOME for non-sandboxed runs -- matches main.ts's
+// Default KOVA_HOME for non-sandboxed runs -- matches main.ts's
 // resolveKovaHome(). On Windows it's %LOCALAPPDATA%\kova; elsewhere
-// it's ~/.hermes. The fresh-install sandbox launchFresh() sets its own
-// HERMES_HOME and never touches this.
+// it's ~/.kova. The fresh-install sandbox launchFresh() sets its own
+// KOVA_HOME and never touches this.
 const DEFAULT_KOVA_HOME = (() => {
   if (PLATFORM === 'win32' && process.env.LOCALAPPDATA) {
     return path.join(process.env.LOCALAPPDATA, 'kova')
   }
   return path.join(os.homedir(), '.kova')
 })()
-const VENV_ROOT = path.join(DEFAULT_KOVA_HOME, 'hermes-agent', 'venv')
+const VENV_ROOT = path.join(DEFAULT_KOVA_HOME, 'kova-agent', 'venv')
 const FRESH_SANDBOX_ROOT = path.join(os.tmpdir(), 'kova-desktop-fresh-install')
 
 function die(message) {
@@ -260,7 +260,7 @@ function launchFresh() {
   env.KOVA_DESKTOP_IGNORE_EXISTING = '1'
   env.KOVA_DESKTOP_TEST_MODE = 'fresh-install'
   env.KOVA_DESKTOP_USER_DATA_DIR = userDataDir
-  env.HERMES_HOME = kovaHome
+  env.KOVA_HOME = kovaHome
   delete env.KOVA_DESKTOP_BIN
   delete env.KOVA_DESKTOP_KOVA_ROOT
 
@@ -275,7 +275,7 @@ function launchFresh() {
   console.log('\nFresh install sandbox:')
   console.log(`  root: ${sandbox}`)
   console.log(`  electron userData: ${userDataDir}`)
-  console.log(`  HERMES_HOME: ${kovaHome}`)
+  console.log(`  KOVA_HOME: ${kovaHome}`)
   console.log(`  cwd: ${cwd}`)
 
   return { runtimeRoot: path.join(kovaHome, 'kova-agent', 'venv') }
@@ -400,7 +400,7 @@ function printArtifacts(options = {}) {
 function help() {
   console.log(`Usage:
   npm run test:desktop:existing  # build packaged app, launch with normal PATH/existing Kova
-  npm run test:desktop:fresh     # build packaged app, launch with temp userData + HERMES_HOME
+  npm run test:desktop:fresh     # build packaged app, launch with temp userData + KOVA_HOME
   npm run test:desktop:dmg       # (macOS only) build DMG and open it
   npm run test:desktop:nsis      # (win32 only) build NSIS installer
   npm run test:desktop:all       # build installer, validate app payload, print paths

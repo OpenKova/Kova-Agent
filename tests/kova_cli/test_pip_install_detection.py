@@ -66,9 +66,9 @@ def test_home_scoped_retired_stamp_falls_back_to_unknown(tmp_path, retired_metho
 
 
 def test_code_scoped_stamp_wins_over_home_stamp(tmp_path):
-    """The stamp next to the running code is authoritative over $HERMES_HOME.
+    """The stamp next to the running code is authoritative over $KOVA_HOME.
 
-    Models a host git install whose $HERMES_HOME is shared with (and stamped
+    Models a host git install whose $KOVA_HOME is shared with (and stamped
     'docker' by) a co-located container. The code-scoped stamp must win so the
     host install is correctly identified as 'git' and 'kova update' works.
     """
@@ -88,7 +88,7 @@ def test_home_docker_stamp_ignored_when_not_containerized(tmp_path):
     """A 'docker' home stamp is ignored on a host (non-container) install.
 
     Self-heal path for homes already poisoned by an older image that wrote
-    'docker' into the shared $HERMES_HOME. With no code-scoped stamp, a host
+    'docker' into the shared $KOVA_HOME. With no code-scoped stamp, a host
     git checkout must fall through to '.git' detection rather than honour the
     contaminating 'docker' value and refuse to update.
     """
@@ -128,7 +128,7 @@ def test_home_non_docker_stamp_still_honored_for_backcompat(tmp_path):
     """Legacy non-'docker' home stamps (e.g. 'git') are still respected.
 
     Only the 'docker' value carries the cross-contamination risk, so a host
-    install that historically stamped 'git' into $HERMES_HOME keeps
+    install that historically stamped 'git' into $KOVA_HOME keeps
     resolving from there when no code-scoped stamp exists yet.
     """
     code = tmp_path / "code"
@@ -144,7 +144,7 @@ def test_home_non_docker_stamp_still_honored_for_backcompat(tmp_path):
 
 
 def test_stamp_install_method_writes_code_scoped(tmp_path):
-    """stamp_install_method writes next to the code, not into $HERMES_HOME."""
+    """stamp_install_method writes next to the code, not into $KOVA_HOME."""
     code = tmp_path / "code"
     home = tmp_path / "home"
     code.mkdir()

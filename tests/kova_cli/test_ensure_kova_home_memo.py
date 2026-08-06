@@ -8,7 +8,7 @@ from kova_cli import config as cfg
 
 def test_repeat_calls_are_memoized_but_deleted_home_is_recreated(tmp_path, monkeypatch):
     home = tmp_path / ".kova"
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
 
     cfg.ensure_kova_home()
     assert (home / "sessions").is_dir()
@@ -29,11 +29,11 @@ def test_distinct_home_paths_each_get_the_skeleton(tmp_path, monkeypatch):
     first = tmp_path / "a" / ".kova"
     second = tmp_path / "b" / ".kova"
 
-    monkeypatch.setenv("HERMES_HOME", str(first))
+    monkeypatch.setenv("KOVA_HOME", str(first))
     cfg.ensure_kova_home()
 
-    # Profile switch: HERMES_HOME moves → the new path is ensured too.
-    monkeypatch.setenv("HERMES_HOME", str(second))
+    # Profile switch: KOVA_HOME moves → the new path is ensured too.
+    monkeypatch.setenv("KOVA_HOME", str(second))
     cfg.ensure_kova_home()
 
     assert (first / "logs").is_dir()

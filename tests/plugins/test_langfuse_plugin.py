@@ -51,10 +51,10 @@ class TestDiscovery:
         """Scanner should find the plugin but NOT load it by default."""
         from kova_cli import plugins as plugins_mod
 
-        # Isolated HERMES_HOME so we don't read the developer's config.yaml.
+        # Isolated KOVA_HOME so we don't read the developer's config.yaml.
         home = tmp_path / ".kova"
         home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(home))
+        monkeypatch.setenv("KOVA_HOME", str(home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         manager = plugins_mod.PluginManager()

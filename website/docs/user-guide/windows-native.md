@@ -12,7 +12,7 @@ Kova runs natively on Windows 10 and Windows 11 — no WSL, no Cygwin, no Docker
 If you just want to install, the one-liner on the [landing page](/) or [Installation page](../getting-started/installation#windows-native-powershell) is all you need. Come back here when something surprises you.
 
 :::tip Want WSL instead?
-If you prefer a real POSIX environment (for the dashboard's embedded terminal, `fork` semantics, Linux-style file watchers, etc.), see the **[Windows (WSL2) Guide](./windows-wsl-quickstart.md)**. Both coexist cleanly: native data lives under `%LOCALAPPDATA%\kova`, WSL data lives under `~/.hermes`.
+If you prefer a real POSIX environment (for the dashboard's embedded terminal, `fork` semantics, Linux-style file watchers, etc.), see the **[Windows (WSL2) Guide](./windows-wsl-quickstart.md)**. Both coexist cleanly: native data lives under `%LOCALAPPDATA%\kova`, WSL data lives under `~/.kova`.
 :::
 
 ## Quick install
@@ -75,7 +75,7 @@ Top-to-bottom, in order:
 6. **Tiered `uv pip install`** — tries `.[all]` first, falls back to progressively smaller sets (`[messaging,dashboard,ext]` → `[messaging]` → `.`) if a `git+https` dep flakes on rate-limited GitHub. Prevents "single flake drops you to a bare install" failure mode.
 7. **Auto-installs messaging SDKs** keyed off `.env` — if `TELEGRAM_BOT_TOKEN` / `DISCORD_BOT_TOKEN` / `SLACK_BOT_TOKEN` / `SLACK_APP_TOKEN` / `WHATSAPP_ENABLED` are present, runs `python -m ensurepip --upgrade` and targeted `pip install` calls so each platform's SDK is actually importable.
 8. **Sets `KOVA_GIT_BASH_PATH`** to the resolved `bash.exe` so Kova finds it deterministically in fresh shells.
-9. **Adds `%LOCALAPPDATA%\kova\kova-agent\venv\Scripts` to User PATH and sets `HERMES_HOME=%LOCALAPPDATA%\kova`** — exposes the `kova` command (and points it at your data dir) after you open a new terminal.
+9. **Adds `%LOCALAPPDATA%\kova\kova-agent\venv\Scripts` to User PATH and sets `KOVA_HOME=%LOCALAPPDATA%\kova`** — exposes the `kova` command (and points it at your data dir) after you open a new terminal.
 10. **Runs `kova setup`** — the normal first-run wizard (model, provider, toolsets). Skip with `-SkipSetup`.
 
 :::tip Skip provider hunting on Windows
@@ -208,9 +208,9 @@ Services require admin rights to install and tie the gateway's lifecycle to mach
 | `%LOCALAPPDATA%\kova\bin\` | Kova's managed `uv.exe` (the Python manager it uses for updates). |
 | `%LOCALAPPDATA%\kova\` (root) | Your config, auth, skills, sessions, logs (`config.yaml`, `.env`, `skills\`, `sessions\`, `logs\`, …). **Survives reinstalls.** |
 
-On native Windows the installer sets `HERMES_HOME=%LOCALAPPDATA%\kova`, so your data and the disposable install live under the **same** `%LOCALAPPDATA%\kova` root: the install/runtime is the `kova-agent\`, `git\`, `node\`, and `bin\` subdirectories, while your data files sit directly in `%LOCALAPPDATA%\kova`. Reinstalling only replaces the `kova-agent\` checkout, so your data survives — but because the two share a root, **don't** `Remove-Item -Recurse %LOCALAPPDATA%\kova` if you want to keep your data; delete the `kova-agent\` subdirectory instead. Your data directory is identical in shape to a Linux `~/.hermes`, so you can mirror it between machines.
+On native Windows the installer sets `KOVA_HOME=%LOCALAPPDATA%\kova`, so your data and the disposable install live under the **same** `%LOCALAPPDATA%\kova` root: the install/runtime is the `kova-agent\`, `git\`, `node\`, and `bin\` subdirectories, while your data files sit directly in `%LOCALAPPDATA%\kova`. Reinstalling only replaces the `kova-agent\` checkout, so your data survives — but because the two share a root, **don't** `Remove-Item -Recurse %LOCALAPPDATA%\kova` if you want to keep your data; delete the `kova-agent\` subdirectory instead. Your data directory is identical in shape to a Linux `~/.kova`, so you can mirror it between machines.
 
-**Override `HERMES_HOME`:** set the environment variable to point at a different data dir (e.g. `%USERPROFILE%\.kova` to match a Linux/WSL layout). Works the same as on Linux.
+**Override `KOVA_HOME`:** set the environment variable to point at a different data dir (e.g. `%USERPROFILE%\.kova` to match a Linux/WSL layout). Works the same as on Linux.
 
 ## Browser tool
 
@@ -235,7 +235,7 @@ kova --version
 
 ### Environment variables
 
-Kova honors both `$env:X` (process-scope) and User environment variables (permanent, set in System Properties → Environment Variables). Setting API keys in `%LOCALAPPDATA%\kova\.env` (your `HERMES_HOME`) is the normal path — same as Linux:
+Kova honors both `$env:X` (process-scope) and User environment variables (permanent, set in System Properties → Environment Variables). Setting API keys in `%LOCALAPPDATA%\kova\.env` (your `KOVA_HOME`) is the normal path — same as Linux:
 
 ```
 OPENROUTER_API_KEY=sk-or-...

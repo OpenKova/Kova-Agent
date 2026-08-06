@@ -26,13 +26,13 @@ import pytest
 
 @pytest.fixture
 def kova_home(tmp_path, monkeypatch):
-    """Isolated HERMES_HOME so SessionDB.state_meta writes stay hermetic."""
+    """Isolated KOVA_HOME so SessionDB.state_meta writes stay hermetic."""
     home = tmp_path / ".kova"
     home.mkdir()
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
 
-    # Bust the goal module's DB cache so it re-resolves HERMES_HOME each test.
+    # Bust the goal module's DB cache so it re-resolves KOVA_HOME each test.
     from kova_cli import goals
     goals._DB_CACHE.clear()
     yield home

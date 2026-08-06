@@ -8,12 +8,12 @@ import pytest
 
 @pytest.fixture
 def config_home(tmp_path, monkeypatch):
-    """Isolated HERMES_HOME with an empty config."""
+    """Isolated KOVA_HOME with an empty config."""
     home = tmp_path / "kova"
     home.mkdir()
     (home / "config.yaml").write_text("model: some-old-model\n")
     (home / ".env").write_text("")
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     # Clear any ambient env that could alter provider resolution
     for var in (
         "KOVA_MODEL",

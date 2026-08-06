@@ -184,7 +184,7 @@ kova profile show <name>
 ```bash
 $ kova profile show work
 Profile: work
-Path:    ~/.hermes/profiles/work
+Path:    ~/.kova/profiles/work
 Model:   anthropic/claude-sonnet-4 (anthropic)
 Gateway: stopped
 Skills:  12
@@ -237,7 +237,7 @@ kova profile rename <old-name> <new-name>
 
 ```bash
 kova profile rename mybot assistant
-# ~/.hermes/profiles/mybot → ~/.hermes/profiles/assistant
+# ~/.kova/profiles/mybot → ~/.kova/profiles/assistant
 # ~/.local/bin/mybot → ~/.local/bin/assistant
 ```
 

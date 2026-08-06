@@ -118,12 +118,12 @@ Middleware only runs for enabled plugins. For a bundled plugin:
 kova plugins enable <plugin-name>
 ```
 
-For isolated local testing, use one `HERMES_HOME` for plugin enablement and the
+For isolated local testing, use one `KOVA_HOME` for plugin enablement and the
 agent run:
 
 ```bash
-export HERMES_HOME=/tmp/kova-middleware-test
-mkdir -p "$HERMES_HOME"
+export KOVA_HOME=/tmp/kova-middleware-test
+mkdir -p "$KOVA_HOME"
 kova plugins enable <plugin-name>
 kova chat --query 'Reply exactly ok'
 ```

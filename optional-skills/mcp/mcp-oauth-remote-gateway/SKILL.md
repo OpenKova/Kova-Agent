@@ -55,7 +55,7 @@ laptop and fails to connect. The callback never reaches the Kova process, the
 flow times out, and `/reload-mcp` returns "No MCP tools available" with no detail.
 
 Symptoms to recognize: `[xdg-open] <defunct>` processes under the kova user, an
-empty or missing tokens directory (`$HERMES_HOME/mcp-tokens/`), and a reload that
+empty or missing tokens directory (`$KOVA_HOME/mcp-tokens/`), and a reload that
 responds without any "Added/Reconnected: X" line in `change_detail`.
 
 ## Cheap First Fallbacks: the Built-in Flow's Own Escape Hatches
@@ -111,7 +111,7 @@ to `*_TOKEN`/`*_SECRET` vars.
 
 **What the dashboard does NOT fix (still host-side / shell):** stdio servers that
 need shell auth state (a CLI `login` command whose credentials may not persist
-across restarts) and anything reading credentials from `$HERMES_HOME/.env`. Those
+across restarts) and anything reading credentials from `$KOVA_HOME/.env`. Those
 are out of the dashboard's scope regardless.
 
 ## The Workaround
@@ -136,12 +136,12 @@ No display + a remote indicator = remote gateway. `tools/mcp_oauth.py::_can_open
 uses these same env vars, so if Kova' own auto-detect says "headless", the
 built-in flow won't work.
 
-### 2. Find HERMES_HOME and the config path
+### 2. Find KOVA_HOME and the config path
 
 ```bash
-HERMES_HOME=$(python3 -c 'from kova_constants import get_kova_home; print(get_kova_home())')
-echo "config: $HERMES_HOME/config.yaml"
-echo "tokens: $HERMES_HOME/mcp-tokens/"
+KOVA_HOME=$(python3 -c 'from kova_constants import get_kova_home; print(get_kova_home())')
+echo "config: $KOVA_HOME/config.yaml"
+echo "tokens: $KOVA_HOME/mcp-tokens/"
 ```
 
 ### 3. Discover OAuth metadata from the MCP server
@@ -243,7 +243,7 @@ When the user pastes the callback URL:
 ### 8. Write tokens in Kova' exact schema
 
 `tools/mcp_oauth.py::KovaTokenStorage` expects two files under
-`$HERMES_HOME/mcp-tokens/` (create dir with `0o700`, files with `0o600`):
+`$KOVA_HOME/mcp-tokens/` (create dir with `0o700`, files with `0o600`):
 
 **`<server_name>.json`** — the `OAuthToken` pydantic model:
 ```json

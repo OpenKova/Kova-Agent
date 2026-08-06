@@ -2,7 +2,7 @@
 
 Covers the core catalog/slot schema/renderers/fill (cron/blueprint_catalog.py),
 the shared /blueprint command handler (kova_cli/blueprint_cmd.py), and
-the docs generator. Uses an isolated HERMES_HOME for anything that touches the
+the docs generator. Uses an isolated KOVA_HOME for anything that touches the
 cron job store.
 """
 
@@ -158,7 +158,7 @@ class TestRenderers:
 def isolated_home(tmp_path, monkeypatch):
     home = tmp_path / ".kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     import kova_constants
     importlib.reload(kova_constants)
     import cron.jobs as jobs

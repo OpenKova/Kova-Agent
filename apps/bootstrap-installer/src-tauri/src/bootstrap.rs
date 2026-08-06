@@ -3,7 +3,7 @@
 //! Direct port of `runBootstrap` from `apps/desktop/electron/bootstrap-runner.ts`.
 //! Drives install.ps1 / install.sh stage-by-stage, emits progress events
 //! over the Tauri `bootstrap` channel, writes a forensic log to
-//! HERMES_HOME/logs/bootstrap-<timestamp>.log.
+//! KOVA_HOME/logs/bootstrap-<timestamp>.log.
 //!
 //! Lifecycle:
 //!   1. `start_bootstrap` (Tauri command) → spawns the worker task.
@@ -43,7 +43,7 @@ pub struct StartBootstrapArgs {
     /// bootstrap-runner passes false to avoid building-while-running.
     #[serde(default = "default_true")]
     pub include_desktop: bool,
-    /// Optional override for HERMES_HOME. Tests use this; production
+    /// Optional override for KOVA_HOME. Tests use this; production
     /// almost always falls back to the OS default.
     pub kova_home: Option<String>,
 }
@@ -256,7 +256,7 @@ pub(crate) fn resolve_kova_desktop_app(install_root: &std::path::Path) -> Option
 /// launchable desktop app exists on disk. Used by the installer's launcher fast
 /// path so a bare re-open just opens Kova instead of re-running setup.
 pub(crate) fn kova_is_installed(install_root: &std::path::Path) -> bool {
-    install_root.join(".hermes-bootstrap-complete").exists()
+    install_root.join(".kova-bootstrap-complete").exists()
         && resolve_kova_desktop_exe(install_root).is_some()
 }
 

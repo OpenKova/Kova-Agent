@@ -23,10 +23,10 @@ from kova_cli.config import (
 
 @pytest.fixture
 def container_env(tmp_path, monkeypatch):
-    """Set up a fake HERMES_HOME with .container-mode file."""
+    """Set up a fake KOVA_HOME with .container-mode file."""
     kova_home = tmp_path / ".kova"
     kova_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
     monkeypatch.delenv("KOVA_DEV", raising=False)
 
     container_mode = kova_home / ".container-mode"
@@ -64,7 +64,7 @@ def test_get_container_exec_info_none_without_file(tmp_path, monkeypatch):
     """Returns None when .container-mode doesn't exist (native mode)."""
     kova_home = tmp_path / ".kova"
     kova_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
     monkeypatch.delenv("KOVA_DEV", raising=False)
 
     with patch("kova_constants.is_container", return_value=False):

@@ -112,12 +112,12 @@ class TestSyncBackNoChanges:
         host_content = b'{"key": "val"}'
         _write_file(host_file, host_content)
 
-        remote_path = "/root/.hermes/cred.json"
+        remote_path = "/root/.kova/cred.json"
         mapping = [(str(host_file), remote_path)]
 
         # Remote tar contains the same content as was pushed
         download_fn = _make_download_fn({
-            "root/.hermes/cred.json": host_content,
+            "root/.kova/cred.json": host_content,
         })
 
         mgr = _make_manager(tmp_path, file_mapping=mapping, bulk_download_fn=download_fn)
@@ -138,12 +138,12 @@ class TestSyncBackAppliesChanged:
         original_content = b"print('v1')"
         _write_file(host_file, original_content)
 
-        remote_path = "/root/.hermes/skill.py"
+        remote_path = "/root/.kova/skill.py"
         mapping = [(str(host_file), remote_path)]
 
         remote_content = b"print('v2 - edited on remote')"
         download_fn = _make_download_fn({
-            "root/.hermes/skill.py": remote_content,
+            "root/.kova/skill.py": remote_content,
         })
 
         mgr = _make_manager(tmp_path, file_mapping=mapping, bulk_download_fn=download_fn)
@@ -161,12 +161,12 @@ class TestSyncBackNewRemoteFile:
         # Existing mapping gives _infer_host_path a prefix to work with
         existing_host = tmp_path / "host" / "skills" / "existing.py"
         _write_file(existing_host, b"existing")
-        mapping = [(str(existing_host), "/root/.hermes/skills/existing.py")]
+        mapping = [(str(existing_host), "/root/.kova/skills/existing.py")]
 
         # Remote has a NEW file in the same directory that was never pushed
         new_remote_content = b"# brand new skill created on remote"
         download_fn = _make_download_fn({
-            "root/.hermes/skills/new_skill.py": new_remote_content,
+            "root/.kova/skills/new_skill.py": new_remote_content,
         })
 
         mgr = _make_manager(tmp_path, file_mapping=mapping, bulk_download_fn=download_fn)
@@ -188,7 +188,7 @@ class TestSyncBackConflict:
         original_content = b'{"v": 1}'
         _write_file(host_file, original_content)
 
-        remote_path = "/root/.hermes/config.json"
+        remote_path = "/root/.kova/config.json"
         mapping = [(str(host_file), remote_path)]
 
         # Host was modified after push
@@ -197,7 +197,7 @@ class TestSyncBackConflict:
         # Remote was also modified
         remote_content = b'{"v": 3, "remote-edit": true}'
         download_fn = _make_download_fn({
-            "root/.hermes/config.json": remote_content,
+            "root/.kova/config.json": remote_content,
         })
 
         mgr = _make_manager(tmp_path, file_mapping=mapping, bulk_download_fn=download_fn)
@@ -262,7 +262,7 @@ class TestPushedHashesPopulated:
         host_file = tmp_path / "data.txt"
         host_file.write_bytes(b"hello world")
 
-        remote_path = "/root/.hermes/data.txt"
+        remote_path = "/root/.kova/data.txt"
         mapping = [(str(host_file), remote_path)]
 
         mgr = FileSyncManager(
@@ -280,7 +280,7 @@ class TestPushedHashesPopulated:
         host_file = tmp_path / "deleteme.txt"
         host_file.write_bytes(b"to be deleted")
 
-        remote_path = "/root/.hermes/deleteme.txt"
+        remote_path = "/root/.kova/deleteme.txt"
         mapping = [(str(host_file), remote_path)]
         current_mapping = list(mapping)
 
@@ -339,26 +339,26 @@ class TestInferHostPath:
         """Remote path in unmapped directory should return None."""
         host_file = tmp_path / "host" / "skills" / "a.py"
         _write_file(host_file, b"content")
-        mapping = [(str(host_file), "/root/.hermes/skills/a.py")]
+        mapping = [(str(host_file), "/root/.kova/skills/a.py")]
 
         mgr = _make_manager(tmp_path, file_mapping=mapping)
         result = mgr._infer_host_path(
-            "/root/.hermes/cache/new.json",
+            "/root/.kova/cache/new.json",
             file_mapping=mapping,
         )
         assert result is None
 
     def test_infer_partial_prefix_no_false_match(self, tmp_path):
-        """A partial prefix like /root/.hermes/sk should NOT match /root/.hermes/skills/."""
+        """A partial prefix like /root/.kova/sk should NOT match /root/.kova/skills/."""
         host_file = tmp_path / "host" / "skills" / "a.py"
         _write_file(host_file, b"content")
-        mapping = [(str(host_file), "/root/.hermes/skills/a.py")]
+        mapping = [(str(host_file), "/root/.kova/skills/a.py")]
 
         mgr = _make_manager(tmp_path, file_mapping=mapping)
-        # /root/.hermes/skillsXtra/b.py shares prefix "skills" but the
-        # directory is different — should not match /root/.hermes/skills/
+        # /root/.kova/skillsXtra/b.py shares prefix "skills" but the
+        # directory is different — should not match /root/.kova/skills/
         result = mgr._infer_host_path(
-            "/root/.hermes/skillsXtra/b.py",
+            "/root/.kova/skillsXtra/b.py",
             file_mapping=mapping,
         )
         assert result is None
@@ -367,11 +367,11 @@ class TestInferHostPath:
         """A file in a mapped directory should be correctly inferred."""
         host_file = tmp_path / "host" / "skills" / "a.py"
         _write_file(host_file, b"content")
-        mapping = [(str(host_file), "/root/.hermes/skills/a.py")]
+        mapping = [(str(host_file), "/root/.kova/skills/a.py")]
 
         mgr = _make_manager(tmp_path, file_mapping=mapping)
         result = mgr._infer_host_path(
-            "/root/.hermes/skills/b.py",
+            "/root/.kova/skills/b.py",
             file_mapping=mapping,
         )
         expected = str(tmp_path / "host" / "skills" / "b.py")
@@ -437,12 +437,12 @@ class TestSyncBackSizeCap:
         # Build a download_fn that writes a small tar, but patch the cap
         # so the test doesn't need to produce a 2 GiB file.
         skill_host = _write_file(tmp_path / "host_skill.md", b"original")
-        files = {"root/.hermes/skill.md": b"remote_version"}
+        files = {"root/.kova/skill.md": b"remote_version"}
         download_fn = _make_download_fn(files)
 
         mgr = _make_manager(
             tmp_path,
-            file_mapping=[(skill_host, "/root/.hermes/skill.md")],
+            file_mapping=[(skill_host, "/root/.kova/skill.md")],
             bulk_download_fn=download_fn,
         )
 
@@ -459,12 +459,12 @@ class TestSyncBackSizeCap:
     def test_sync_back_applies_when_under_cap(self, tmp_path):
         """A tar under the cap should extract normally (sanity check)."""
         host_file = _write_file(tmp_path / "host_skill.md", b"original")
-        files = {"root/.hermes/skill.md": b"remote_version"}
+        files = {"root/.kova/skill.md": b"remote_version"}
         download_fn = _make_download_fn(files)
 
         mgr = _make_manager(
             tmp_path,
-            file_mapping=[(host_file, "/root/.hermes/skill.md")],
+            file_mapping=[(host_file, "/root/.kova/skill.md")],
             bulk_download_fn=download_fn,
         )
 

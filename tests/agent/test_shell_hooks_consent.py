@@ -17,7 +17,7 @@ from agent import shell_hooks
 
 @pytest.fixture(autouse=True)
 def _isolated_home(tmp_path, monkeypatch):
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / "kova_home"))
+    monkeypatch.setenv("KOVA_HOME", str(tmp_path / "kova_home"))
     monkeypatch.delenv("KOVA_ACCEPT_HOOKS", raising=False)
     shell_hooks.reset_for_tests()
     yield

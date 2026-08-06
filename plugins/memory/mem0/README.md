@@ -16,12 +16,12 @@ kova memory setup    # select "mem0"
 Or manually:
 ```bash
 kova config set memory.provider mem0
-echo "MEM0_API_KEY=your-key" >> ~/.hermes/.env
+echo "MEM0_API_KEY=your-key" >> ~/.kova/.env
 ```
 
 ## Config
 
-Behavioral settings live in `$HERMES_HOME/mem0.json` (set them via `kova memory setup`). Only the secret `MEM0_API_KEY` belongs in `~/.hermes/.env`.
+Behavioral settings live in `$KOVA_HOME/mem0.json` (set them via `kova memory setup`). Only the secret `MEM0_API_KEY` belongs in `~/.kova/.env`.
 
 | Key | Default | Description |
 |-----|---------|-------------|
@@ -50,10 +50,10 @@ Connect the plugin to a standalone Mem0 server you run yourself — the Docker-s
    ```
    or via env vars:
    ```bash
-   echo "MEM0_HOST=http://localhost:8888" >> ~/.hermes/.env
-   echo "MEM0_API_KEY=your-admin-api-key" >> ~/.hermes/.env
+   echo "MEM0_HOST=http://localhost:8888" >> ~/.kova/.env
+   echo "MEM0_API_KEY=your-admin-api-key" >> ~/.kova/.env
    ```
-   or in `$HERMES_HOME/mem0.json`:
+   or in `$KOVA_HOME/mem0.json`:
    ```json
    {
      "host": "http://localhost:8888",
@@ -114,14 +114,14 @@ kova memory setup mem0 --mode oss \
 kova memory setup mem0 --mode oss --oss-llm-key sk-...
 ```
 
-Or edit `$HERMES_HOME/mem0.json` directly:
+Or edit `$KOVA_HOME/mem0.json` directly:
 ```json
 {
   "mode": "oss",
   "oss": {
     "llm": {"provider": "openai", "config": {"model": "gpt-5-mini"}},
     "embedder": {"provider": "openai", "config": {"model": "text-embedding-3-small"}},
-    "vector_store": {"provider": "qdrant", "config": {"path": "~/.hermes/mem0_qdrant"}}
+    "vector_store": {"provider": "qdrant", "config": {"path": "~/.kova/mem0_qdrant"}}
   }
 }
 ```
@@ -160,7 +160,7 @@ Circuit breaker tripped after 5 consecutive failures. Resets after 2 minutes.
 
 ```bash
 # If using local Qdrant, check the storage path is writable:
-ls -la ~/.hermes/mem0_qdrant
+ls -la ~/.kova/mem0_qdrant
 
 # If using Qdrant server, check it's reachable:
 curl http://localhost:6333/healthz
@@ -184,4 +184,4 @@ curl http://localhost:11434/api/tags
 
 - `mem0_add` stores verbatim (no extraction). Use `sync_turn` for LLM extraction.
 - Search uses semantic matching — try broader queries.
-- Check `user_id` matches between sessions (`$HERMES_HOME/mem0.json`).
+- Check `user_id` matches between sessions (`$KOVA_HOME/mem0.json`).

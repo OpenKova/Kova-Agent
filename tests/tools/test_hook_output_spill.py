@@ -180,18 +180,18 @@ class SpillIfOversizedTests(unittest.TestCase):
         self.assertIn("truncated", result)
 
     def test_default_directory_uses_kova_home(self):
-        """When no directory override, spill under HERMES_HOME/hook_outputs."""
+        """When no directory override, spill under KOVA_HOME/hook_outputs."""
         test_home = tempfile.mkdtemp(prefix="kova-home-")
         try:
-            with patch.dict(os.environ, {"HERMES_HOME": test_home}):
+            with patch.dict(os.environ, {"KOVA_HOME": test_home}):
                 # Also patch get_kova_home to the env var to mirror production.
                 cfg = self._cfg(directory=None, max_chars=5)
                 hos.spill_if_oversized("x" * 200, session_id="sess", config=cfg)
             # Spill directory exists somewhere under test_home OR default
-            # ~/.hermes/hook_outputs depending on get_kova_home behaviour.
+            # ~/.kova/hook_outputs depending on get_kova_home behaviour.
             candidates = [
                 Path(test_home) / "hook_outputs" / "sess",
-                Path(os.path.expanduser("~/.hermes/hook_outputs/sess")),
+                Path(os.path.expanduser("~/.kova/hook_outputs/sess")),
             ]
             # At least one of the candidate dirs now exists and has a file.
             existing = [c for c in candidates if c.is_dir() and list(c.iterdir())]

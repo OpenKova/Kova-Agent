@@ -31,9 +31,9 @@ class TestWriteDenyExactPaths:
 
 
     def test_kova_env(self):
-        # ``.env`` under the active HERMES_HOME (profile-aware, not just
-        # ``~/.hermes``) must be write-denied. The hermetic test conftest
-        # points HERMES_HOME at a tempdir — resolve via get_kova_home()
+        # ``.env`` under the active KOVA_HOME (profile-aware, not just
+        # ``~/.kova``) must be write-denied. The hermetic test conftest
+        # points KOVA_HOME at a tempdir — resolve via get_kova_home()
         # to match the denylist.
         from kova_constants import get_kova_home
         path = str(get_kova_home() / ".env")
@@ -51,7 +51,7 @@ class TestWriteDenyExactPaths:
 
         Before the fix, ``build_write_denied_paths`` only added
         ``<active_profile>/.env`` to the deny list, so the global
-        ``~/.hermes/.env`` (whose credentials are inherited by every profile)
+        ``~/.kova/.env`` (whose credentials are inherited by every profile)
         could be silently overwritten by ``write_file`` while a profile was
         active.
         """
@@ -61,9 +61,9 @@ class TestWriteDenyExactPaths:
         global_env = root / ".env"
         global_env.write_text("OPENAI_API_KEY=sk-real\n")
 
-        monkeypatch.setenv("HERMES_HOME", str(profile_home))
+        monkeypatch.setenv("KOVA_HOME", str(profile_home))
 
-        # Sanity check: HERMES_HOME does point to the profile dir, not the root.
+        # Sanity check: KOVA_HOME does point to the profile dir, not the root.
         from kova_constants import get_kova_home, get_default_kova_root
         assert get_kova_home() == profile_home
         assert get_default_kova_root() == root

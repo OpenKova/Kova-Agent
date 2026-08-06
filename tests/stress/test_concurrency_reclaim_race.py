@@ -39,7 +39,7 @@ WT = str(Path(__file__).resolve().parents[2])
 
 
 def worker_loop(worker_id: int, kova_home: str, result_file: str) -> None:
-    os.environ["HERMES_HOME"] = kova_home
+    os.environ["KOVA_HOME"] = kova_home
     os.environ["HOME"] = kova_home
     sys.path.insert(0, WT)
     from kova_cli import kanban_db as kb
@@ -96,7 +96,7 @@ def worker_loop(worker_id: int, kova_home: str, result_file: str) -> None:
 
 
 def reclaimer_loop(kova_home: str, result_file: str) -> None:
-    os.environ["HERMES_HOME"] = kova_home
+    os.environ["KOVA_HOME"] = kova_home
     os.environ["HOME"] = kova_home
     sys.path.insert(0, WT)
     from kova_cli import kanban_db as kb
@@ -122,7 +122,7 @@ def reclaimer_loop(kova_home: str, result_file: str) -> None:
 
 def main():
     home = tempfile.mkdtemp(prefix="kova_reclaim_race_")
-    os.environ["HERMES_HOME"] = home
+    os.environ["KOVA_HOME"] = home
     os.environ["HOME"] = home
     sys.path.insert(0, WT)
     from kova_cli import kanban_db as kb

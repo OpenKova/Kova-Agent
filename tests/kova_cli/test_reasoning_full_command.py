@@ -37,7 +37,7 @@ def _seed_config(tmp_path, monkeypatch):
     hh = tmp_path / ".kova"
     hh.mkdir()
     (hh / "config.yaml").write_text("display:\n  show_reasoning: true\n")
-    monkeypatch.setenv("HERMES_HOME", str(hh))
+    monkeypatch.setenv("KOVA_HOME", str(hh))
     # cli captures _kova_home at import; force it to the temp home.
     import cli
 

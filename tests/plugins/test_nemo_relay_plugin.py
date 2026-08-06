@@ -246,7 +246,7 @@ def test_manifest_fields():
 
 
 def test_nemo_relay_plugin_is_discoverable_as_bundled_plugin(tmp_path, monkeypatch):
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / "kova_test"))
+    monkeypatch.setenv("KOVA_HOME", str(tmp_path / "kova_test"))
 
     manager = PluginManager()
     manager.discover_and_load()

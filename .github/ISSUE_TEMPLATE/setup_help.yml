@@ -109,4 +109,4 @@ body:
       placeholder: |
         - Ran `kova update`
         - Tried reinstalling with `pip install -e ".[all]"`
-        - Checked that OPENROUTER_API_KEY is set in ~/.hermes/.env
+        - Checked that OPENROUTER_API_KEY is set in ~/.kova/.env

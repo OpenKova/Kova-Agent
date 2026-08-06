@@ -73,11 +73,11 @@ MIGRATION_OPTION_METADATA: Dict[str, Dict[str, str]] = {
     },
     "skills": {
         "label": "User skills",
-        "description": "Copy OpenClaw skills into ~/.hermes/skills/openclaw-imports/.",
+        "description": "Copy OpenClaw skills into ~/.kova/skills/openclaw-imports/.",
     },
     "tts-assets": {
         "label": "TTS assets",
-        "description": "Copy compatible workspace TTS assets into ~/.hermes/tts/.",
+        "description": "Copy compatible workspace TTS assets into ~/.kova/tts/.",
     },
     "discord-settings": {
         "label": "Discord settings",
@@ -402,7 +402,7 @@ def backup_existing(path: Path, backup_root: Path) -> Optional[Path]:
 #
 # Case-preserving: ``OpenClaw`` → ``Kova`` (prose), but lowercase
 # ``openclaw`` → ``kova`` and dot-prefixed filesystem paths like
-# ``~/.openclaw`` → ``~/.hermes`` (the real Kova home — not the
+# ``~/.openclaw`` → ``~/.kova`` (the real Kova home — not the
 # broken ``~/.Kova`` or ``~/.kova``).
 _REBRAND_PATTERNS: List[Tuple[re.Pattern, str]] = [
     # Filesystem paths first — the Kova home dir keeps its real name.
@@ -418,7 +418,7 @@ def _case_preserving_replacement(replacement: str):
     matched text was all-lowercase.
 
     Keeps ``OpenClaw`` → ``Kova`` but maps ``openclaw`` → ``kova`` and
-    rewrites dot-prefixed filesystem paths ``~/.openclaw`` → ``~/.hermes``
+    rewrites dot-prefixed filesystem paths ``~/.openclaw`` → ``~/.kova``
     (the real Kova home) instead of the broken ``~/.Kova`` or
     ``~/.kova``.
     """
@@ -2949,7 +2949,7 @@ class Migrator:
 
         notes.extend([
             "- Run `kova gateway install` if you need the gateway service",
-            "- Review `~/.hermes/config.yaml` for any adjustments",
+            "- Review `~/.kova/config.yaml` for any adjustments",
             "",
         ])
 
@@ -2963,7 +2963,7 @@ class Migrator:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Migrate OpenClaw user state into Kova Agent.")
     parser.add_argument("--source", default=str(Path.home() / ".openclaw"), help="OpenClaw home directory")
-    parser.add_argument("--target", default=os.environ.get("HERMES_HOME") or str(Path.home() / ".kova"), help="Kova home directory")
+    parser.add_argument("--target", default=os.environ.get("KOVA_HOME") or str(Path.home() / ".kova"), help="Kova home directory")
     parser.add_argument(
         "--workspace-target",
         help="Optional workspace root where the workspace instructions file should be copied",
@@ -3070,7 +3070,7 @@ def main() -> int:
             seen_kinds.add(label)
             dest = item.get("destination") or ""
             if dest.startswith(str(report["target_root"])):
-                dest = "~/.hermes/" + dest[len(str(report["target_root"])) + 1:]
+                dest = "~/.kova/" + dest[len(str(report["target_root"])) + 1:]
             meta = MIGRATION_OPTION_METADATA.get(label, {})
             display = meta.get("label", label)
             print(f"    ✔ {display:<35s} -> {dest}")
@@ -3116,7 +3116,7 @@ def main() -> int:
     if args.execute:
         print()
         print("  Next steps:")
-        print("    1. Review ~/.hermes/config.yaml")
+        print("    1. Review ~/.kova/config.yaml")
         print("    2. Run: kova mcp list")
         if any(i["kind"] == "cron-jobs" and i["status"] == "archived" for i in items):
             print("    3. Recreate cron jobs: kova cron")

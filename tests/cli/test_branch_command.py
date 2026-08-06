@@ -19,7 +19,7 @@ import pytest
 @pytest.fixture
 def session_db(tmp_path):
     """Create a real SessionDB for testing."""
-    os.environ["HERMES_HOME"] = str(tmp_path / ".kova")
+    os.environ["KOVA_HOME"] = str(tmp_path / ".kova")
     os.makedirs(tmp_path / ".kova", exist_ok=True)
     from kova_state import SessionDB
     db = SessionDB(db_path=tmp_path / ".kova" / "test_sessions.db")

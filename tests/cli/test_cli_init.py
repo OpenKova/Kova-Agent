@@ -108,11 +108,11 @@ class TestFallbackChainInit:
             "fallback_providers": [
                 {"provider": "openrouter", "model": "anthropic/claude-sonnet-4.6"},
             ],
-            "fallback_model": {"provider": "nous", "model": "Hermes-4"},
+            "fallback_model": {"provider": "nous", "model": "Kova-4"},
         })
         assert cli._fallback_model == [
             {"provider": "openrouter", "model": "anthropic/claude-sonnet-4.6"},
-            {"provider": "nous", "model": "Hermes-4"},
+            {"provider": "nous", "model": "Kova-4"},
         ]
 
 
@@ -558,7 +558,7 @@ class TestRootLevelProviderOverride:
 
         kova_home = tmp_path / ".kova"
         kova_home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
         config_path = kova_home / "config.yaml"
         config_path.write_text(yaml.safe_dump({
@@ -581,7 +581,7 @@ class TestRootLevelProviderOverride:
 
         kova_home = tmp_path / ".kova"
         kova_home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
         config_path = kova_home / "config.yaml"
         config_path.write_text(yaml.safe_dump({
@@ -604,7 +604,7 @@ class TestRootLevelProviderOverride:
 
         kova_home = tmp_path / ".kova"
         kova_home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
         config_path = kova_home / "config.yaml"
         config_path.write_text(yaml.safe_dump({
@@ -793,7 +793,7 @@ class TestRootLevelProviderOverride:
 
         home = tmp_path / ".kova"
         home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(home))
+        monkeypatch.setenv("KOVA_HOME", str(home))
         cfg_path = home / "config.yaml"
         cfg_path.write_text("model:\n  name: claude-sonnet-4\n  provider: my-litellm\n")
         # bust the mtime cache

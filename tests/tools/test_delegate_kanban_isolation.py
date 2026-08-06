@@ -31,7 +31,7 @@ def _make_running_kanban_task(monkeypatch, tmp_path):
     attachments_root = tmp_path / "attachments"
     workspace = tmp_path / "parent-workspace"
     workspace.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     monkeypatch.setenv("KOVA_PROFILE", "parent-worker")
     monkeypatch.setenv("KOVA_KANBAN_WORKSPACE", str(workspace))
     monkeypatch.setenv("KOVA_KANBAN_ATTACHMENTS_ROOT", str(attachments_root))
@@ -70,7 +70,7 @@ def test_delegated_child_context_suppresses_env_gated_kanban_tools(monkeypatch, 
     monkeypatch.setenv("KOVA_KANBAN_RUN_ID", "123")
     home = tmp_path / ".kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
 
     import tools.kanban_tools  # noqa: F401 - ensure registered
     from agent.delegation_context import delegated_child_context
@@ -199,13 +199,13 @@ def test_delegate_child_execute_code_env_preserves_process_marker(monkeypatch, t
     """execute_code has its own env scrubber; it must preserve child lineage."""
     home = tmp_path / ".kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
 
     from tools.code_execution_tool import _scrub_child_env
 
     env = _scrub_child_env(
         {
-            "HERMES_HOME": str(home),
+            "KOVA_HOME": str(home),
             "KOVA_DELEGATED_CHILD_CONTEXT": "1",
             "KOVA_KANBAN_TASK": "t_parent",
             "KOVA_KANBAN_RUN_ID": "123",
@@ -217,7 +217,7 @@ def test_delegate_child_execute_code_env_preserves_process_marker(monkeypatch, t
         is_windows=False,
     )
 
-    assert env["HERMES_HOME"] == str(home)
+    assert env["KOVA_HOME"] == str(home)
     assert env["KOVA_DELEGATED_CHILD_CONTEXT"] == "1"
     assert env["PATH"] == "/usr/bin"
     assert "KOVA_KANBAN_TASK" not in env
@@ -239,7 +239,7 @@ def test_delegate_child_execute_code_env_bridges_contextvar_and_scrubs_kanban(
     """
     home = tmp_path / ".kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     monkeypatch.setenv("KOVA_KANBAN_TASK", "t_parent")
     monkeypatch.setenv("KOVA_KANBAN_RUN_ID", "123")
     monkeypatch.setenv("KOVA_KANBAN_DB", str(home / "kanban.db"))
@@ -258,7 +258,7 @@ def test_delegate_child_execute_code_env_bridges_contextvar_and_scrubs_kanban(
         )
 
     assert os.environ.get("KOVA_DELEGATED_CHILD_CONTEXT") is None
-    assert env["HERMES_HOME"] == str(home)
+    assert env["KOVA_HOME"] == str(home)
     assert env["KOVA_DELEGATED_CHILD_CONTEXT"] == "1"
     assert "KOVA_KANBAN_TASK" not in env
     assert "KOVA_KANBAN_RUN_ID" not in env
@@ -291,7 +291,7 @@ def test_delegate_child_execute_code_cannot_complete_parent_by_importing_kanban_
         "    'is_child': is_delegated_child_process_context(),",
         "    'kanban_keys': sorted(k for k in os.environ if k.startswith('KOVA_KANBAN_')),",
         "}",
-        "conn = sqlite3.connect(Path(os.environ['HERMES_HOME']) / 'kanban.db')",
+        "conn = sqlite3.connect(Path(os.environ['KOVA_HOME']) / 'kanban.db')",
         "conn.row_factory = sqlite3.Row",
         "try:",
         f"    kb.complete_task(conn, {tid!r}, summary='child db bypass')",
@@ -418,7 +418,7 @@ def test_delegate_child_subprocess_cannot_complete_parent_by_importing_kanban_db
         "import os, sqlite3; "
         "from pathlib import Path; "
         "from kova_cli import kanban_db as kb; "
-        "conn=sqlite3.connect(Path(os.environ['HERMES_HOME']) / 'kanban.db'); "
+        "conn=sqlite3.connect(Path(os.environ['KOVA_HOME']) / 'kanban.db'); "
         "conn.row_factory=sqlite3.Row; "
         "\ntry:\n"
         f"    kb.complete_task(conn, {tid!r}, summary='child db bypass')\n"

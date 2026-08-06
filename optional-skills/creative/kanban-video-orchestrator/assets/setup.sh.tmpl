@@ -21,9 +21,9 @@ echo "═══ Checking required API keys ═══"
 
 check_key() {
     local var="$1"
-    local kc_account="${2:-hermes}"
+    local kc_account="${2:-kova}"
     local kc_service="${3:-$1}"
-    local _kova_env="${HERMES_HOME:-$HOME/.hermes}/.env"
+    local _kova_env="${KOVA_HOME:-$HOME/.kova}/.env"
     if grep -q "^${var}=" "$_kova_env" 2>/dev/null && \
        [ -n "$(grep "^${var}=" "$_kova_env" | cut -d= -f2-)" ]; then
         echo "  ✓ ${var} (env)"
@@ -83,7 +83,7 @@ profile, toolsets_json, skills_json, workspace = sys.argv[1:5]
 toolsets = json.loads(toolsets_json)
 skills = json.loads(skills_json)
 
-p = os.path.expanduser(f"~/.hermes/profiles/{profile}/config.yaml")
+p = os.path.expanduser(f"~/.kova/profiles/{profile}/config.yaml")
 if not os.path.exists(p):
     print(f"  ✗ profile config not found: {p}", file=sys.stderr)
     sys.exit(1)
@@ -154,7 +154,7 @@ TEAM_EOF
 # ─────────────────────────────────────────────────────────────────────
 echo "═══ Firing initial kanban task ═══"
 
-hermes kanban create "Direct production of {{TITLE}}" \
+kova kanban create "Direct production of {{TITLE}}" \
     --assignee director \
     --workspace dir:"$WORKSPACE" \
     --tenant "$TENANT" \
@@ -179,8 +179,8 @@ echo ""
 echo "═══ Setup complete ═══"
 echo ""
 echo "Monitor with:"
-echo "  hermes kanban watch --tenant $TENANT"
-echo "  hermes kanban list  --tenant $TENANT"
-echo "  hermes dashboard"
+echo "  kova kanban watch --tenant $TENANT"
+echo "  kova kanban list  --tenant $TENANT"
+echo "  kova dashboard"
 echo ""
 echo "Workspace: $WORKSPACE"

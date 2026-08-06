@@ -142,8 +142,8 @@ class TestCronCreateLifecycleBlock:
     def test_block_script_with_lifecycle_command(self, tmp_path, capsys, monkeypatch):
         # A no_agent job whose script IS the job (the issue's real abuse path:
         # restart_kova_gateway_once.sh). The script must live under
-        # HERMES_HOME/scripts so the scheduler — and the guard — resolve it.
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".kova"))
+        # KOVA_HOME/scripts so the scheduler — and the guard — resolve it.
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path / ".kova"))
         scripts_dir = tmp_path / ".kova" / "scripts"
         scripts_dir.mkdir(parents=True)
         (scripts_dir / "restart.sh").write_text("#!/bin/bash\nkova gateway restart\n")
@@ -429,11 +429,11 @@ class TestLifecycleGuardModule:
         check_gateway_lifecycle("clean prompt", str(tmp_path / "nonexistent.sh"))
 
     def test_relative_script_resolved_under_scripts_dir(self, tmp_path, monkeypatch):
-        """A bare/relative script name resolves under HERMES_HOME/scripts (the
+        """A bare/relative script name resolves under KOVA_HOME/scripts (the
         same place the scheduler runs it from) — otherwise the guard would read
         a nonexistent relative path and scan prompt-only content."""
         from cron.lifecycle_guard import GatewayLifecycleBlocked, check_gateway_lifecycle
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".kova"))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path / ".kova"))
         scripts_dir = tmp_path / ".kova" / "scripts"
         scripts_dir.mkdir(parents=True)
         (scripts_dir / "restart.sh").write_text(
@@ -473,7 +473,7 @@ class TestCreateJobBlocksLifecycleCommands:
     def test_cronjob_tool_surfaces_block_as_error(self, tmp_path, monkeypatch):
         """End-to-end through the model tool: the block comes back as
         result['error'] with the #30719 hint, not an unhandled exception."""
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".kova"))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path / ".kova"))
         (tmp_path / ".kova").mkdir(parents=True)
         from tools.cronjob_tools import cronjob
         result = json.loads(cronjob(
@@ -495,7 +495,7 @@ class TestRestartLoopGuard:
 
     @pytest.fixture(autouse=True)
     def _isolate_state(self, tmp_path, monkeypatch):
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".kova"))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path / ".kova"))
         (tmp_path / ".kova").mkdir(parents=True)
         import gateway.restart_loop_guard as rlg
         rlg.clear()

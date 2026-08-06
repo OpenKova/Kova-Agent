@@ -1308,7 +1308,7 @@ export default function SystemPage() {
                   id="import-path"
                   value={importPath}
                   onChange={(e) => setImportPath(e.target.value)}
-                  placeholder="$HERMES_HOME/backups/kova-backup.zip"
+                  placeholder="$KOVA_HOME/backups/kova-backup.zip"
                 />
               </div>
               <Button

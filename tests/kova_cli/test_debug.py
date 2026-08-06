@@ -12,10 +12,10 @@ import pytest
 
 @pytest.fixture
 def kova_home(tmp_path, monkeypatch):
-    """Set up an isolated HERMES_HOME with minimal logs."""
+    """Set up an isolated KOVA_HOME with minimal logs."""
     home = tmp_path / ".kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
 
     # Create log files
     logs_dir = home / "logs"
@@ -155,7 +155,7 @@ class TestCaptureLogSnapshot:
     def test_returns_none_for_missing(self, tmp_path, monkeypatch):
         home = tmp_path / ".kova"
         home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(home))
+        monkeypatch.setenv("KOVA_HOME", str(home))
 
         from kova_cli.debug import _capture_log_snapshot
         snap = _capture_log_snapshot("agent", tail_lines=10)
@@ -291,10 +291,10 @@ class TestCaptureLogSnapshotRedaction:
 
     @pytest.fixture
     def kova_home_with_secret(self, tmp_path, monkeypatch):
-        """Isolated HERMES_HOME whose agent.log contains a vendor-prefixed token."""
+        """Isolated KOVA_HOME whose agent.log contains a vendor-prefixed token."""
         home = tmp_path / ".kova"
         home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(home))
+        monkeypatch.setenv("KOVA_HOME", str(home))
         # Baseline fixture: no explicit env-var opinion. With the post-#17691
         # default of ON, the default-path tests below exercise the
         # secure-default behaviour. The `force=True` regression test
@@ -478,7 +478,7 @@ class TestCollectDebugReport:
     def test_missing_logs_handled(self, tmp_path, monkeypatch):
         home = tmp_path / ".kova"
         home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(home))
+        monkeypatch.setenv("KOVA_HOME", str(home))
 
         from kova_cli.debug import collect_debug_report
 
@@ -658,7 +658,7 @@ class TestRunDebugShare:
         """Only uploads logs that exist."""
         home = tmp_path / ".kova"
         home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(home))
+        monkeypatch.setenv("KOVA_HOME", str(home))
 
         from kova_cli.debug import run_debug_share
 
@@ -740,10 +740,10 @@ class TestRunDebugShareRedaction:
 
     @pytest.fixture
     def kova_home_with_secret(self, tmp_path, monkeypatch):
-        """Isolated HERMES_HOME whose agent.log contains a vendor-prefixed token."""
+        """Isolated KOVA_HOME whose agent.log contains a vendor-prefixed token."""
         home = tmp_path / ".kova"
         home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(home))
+        monkeypatch.setenv("KOVA_HOME", str(home))
         monkeypatch.delenv("KOVA_REDACT_SECRETS", raising=False)
 
         logs_dir = home / "logs"
@@ -946,7 +946,7 @@ class TestScheduleAutoDelete:
     were observed in production.
 
     The new implementation is stateless: it records pending deletions to
-    ``~/.hermes/pastes/pending.json`` and lets ``_sweep_expired_pastes``
+    ``~/.kova/pastes/pending.json`` and lets ``_sweep_expired_pastes``
     handle the DELETE requests synchronously on the next ``kova debug``
     invocation.
     """

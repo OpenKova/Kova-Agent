@@ -6,8 +6,8 @@ depth, NOT a security boundary — but it prevents the agent from silently
 corrupting a profile that belongs to a different session.
 
 Reference: May 2026 incident — a kova-security profile session
-accidentally edited skills under both ~/.hermes/profiles/kova-security/skills/
-AND ~/.hermes/skills/ (the default profile's skills), realizing only
+accidentally edited skills under both ~/.kova/profiles/kova-security/skills/
+AND ~/.kova/skills/ (the default profile's skills), realizing only
 afterwards that the second path belonged to a different profile.
 """
 from __future__ import annotations
@@ -95,7 +95,7 @@ class TestResolveActiveProfileName:
         assert _resolve_active_profile_name() == "kova-security"
 
     def test_falls_back_to_default_on_resolution_failure(self, fake_kova, monkeypatch):
-        """If HERMES_HOME resolution raises, return 'default' rather than crashing the tool."""
+        """If KOVA_HOME resolution raises, return 'default' rather than crashing the tool."""
         import agent.file_safety as fs
 
         def _boom():

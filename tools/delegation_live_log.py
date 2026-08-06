@@ -59,7 +59,7 @@ _STREAM_BUFFER_FLUSH_CHARS = 4000
 
 
 def live_transcript_root() -> Path:
-    """Root directory for live transcripts (profile-safe, never ~/.hermes)."""
+    """Root directory for live transcripts (profile-safe, never ~/.kova)."""
     from kova_constants import get_kova_dir
 
     return get_kova_dir("cache/delegation", "delegation_cache") / "live"

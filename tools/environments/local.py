@@ -55,7 +55,7 @@ def _resolve_local_initial_cwd(cwd: str) -> str:
     ``TERMINAL_CWD`` can be populated from config.yaml before the terminal
     backend is created.  If that value is relative and happens to match the
     directory Kova was already launched from (for example ``kova-agent``
-    while the process cwd is ``~/.hermes/kova-agent``), passing it through
+    while the process cwd is ``~/.kova/kova-agent``), passing it through
     unchanged makes the wrapper run ``cd kova-agent`` *inside* the project
     and fail with a confusing nested-path error.  Anchor relative local cwd
     values once, up front, so both ``subprocess.Popen(cwd=...)`` and the
@@ -396,7 +396,7 @@ def _inject_context_kova_home(env: dict) -> None:
 
         value = get_kova_home_override()
         if value:
-            env["HERMES_HOME"] = value
+            env["KOVA_HOME"] = value
     except Exception:
         pass
 
@@ -632,7 +632,7 @@ def kova_subprocess_env(*, inherit_credentials: bool = False) -> dict[str, str]:
     # Non-terminal subprocess helpers (browser, lazy-deps, TUI/ACP hosts, etc.)
     # also need the delegate_task child lineage marker.  Otherwise a child
     # context that later imports Kanban DB code in the spawned process would
-    # still see the parent's HERMES_HOME but lose the DB mutation guard.
+    # still see the parent's KOVA_HOME but lose the DB mutation guard.
     env = _scrub_delegated_child_kanban_env(env)
 
     return env
@@ -1318,11 +1318,11 @@ class LocalEnvironment(BaseEnvironment):
         can't open the path, and the Windows default temp (``%TEMP%``) often
         contains spaces (``C:\\Users\\Some Name\\AppData\\Local\\Temp``) that
         break unquoted bash interpolations.  Use a dedicated cache dir under
-        ``HERMES_HOME`` instead — single-word path, guaranteed to exist, same
+        ``KOVA_HOME`` instead — single-word path, guaranteed to exist, same
         string resolves in both Git Bash and native Python.
         """
         if _IS_WINDOWS:
-            # Derive a Windows-safe temp dir under HERMES_HOME.  Using
+            # Derive a Windows-safe temp dir under KOVA_HOME.  Using
             # forward slashes makes the same string work unchanged in bash
             # command interpolations AND in Python ``open()`` — Windows
             # accepts forward slashes in filesystem paths, and we control

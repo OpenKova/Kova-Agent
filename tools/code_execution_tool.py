@@ -138,7 +138,7 @@ def _truncate_stdout_text(stdout_text: str) -> Tuple[str, Dict[str, Any]]:
 # OS-essential name.  Delegate-task child context is also an exact-name
 # operational marker: without it, a sandbox script that spawns/imports Kova
 # code can lose the DB-layer Kanban mutation guard while still inheriting
-# HERMES_HOME.
+# KOVA_HOME.
 #
 # NB: the broad "KOVA_" prefix was deliberately removed (#27303) — it leaked
 # KOVA_*-named config that lacks a secret substring (e.g. KOVA_BASE_URL,
@@ -165,7 +165,7 @@ _SECRET_SUBSTRINGS = ("KEY", "TOKEN", "SECRET", "PASSWORD", "CREDENTIAL",
 # runtime location) that repo-root modules a sandbox script imports may read at
 # import time.  None match _SECRET_SUBSTRINGS.
 _KOVA_CHILD_ALLOWED = frozenset({
-    "HERMES_HOME",
+    "KOVA_HOME",
     "KOVA_PROFILE",
     "KOVA_CONFIG",
     "KOVA_ENV",
@@ -1563,7 +1563,7 @@ def execute_code(
 
         # Redact secrets (API keys, tokens, etc.) from sandbox output.
         # The sandbox env-var filter (lines 434-454) blocks os.environ access,
-        # but scripts can still read secrets from disk (e.g. open('~/.hermes/.env')).
+        # but scripts can still read secrets from disk (e.g. open('~/.kova/.env')).
         # This ensures leaked secrets never enter the model context.
         # code_file=True: this is code-execution output — skip false-positive
         # ENV/JSON/f-string-template redaction; real credentials still masked.
@@ -1934,7 +1934,7 @@ def build_execute_code_schema(enabled_sandbox_tools: set = None,
     if mode == "strict":
         cwd_note = (
             "Scripts run in their own temp dir, not the session's CWD — use absolute paths "
-            "(os.path.expanduser('~/.hermes/.env')) or terminal()/read_file() for user files."
+            "(os.path.expanduser('~/.kova/.env')) or terminal()/read_file() for user files."
         )
     else:
         cwd_note = (

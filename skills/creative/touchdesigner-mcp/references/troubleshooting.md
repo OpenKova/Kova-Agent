@@ -137,7 +137,7 @@ actual = str(n.width) + 'x' + str(n.height)
 
 ### Config location
 
-`$HERMES_HOME/config.yaml` (defaults to `~/.hermes/config.yaml` when `HERMES_HOME` is unset)
+`$KOVA_HOME/config.yaml` (defaults to `~/.kova/config.yaml` when `KOVA_HOME` is unset)
 
 ### MCP entry format
 

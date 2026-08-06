@@ -29,7 +29,7 @@ def _reset_auth_registry():
 def kova_home(tmp_path, monkeypatch):
     home = tmp_path / "kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     return home
 
 

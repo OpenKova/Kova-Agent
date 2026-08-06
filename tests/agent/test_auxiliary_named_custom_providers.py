@@ -7,16 +7,16 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def _isolate(tmp_path, monkeypatch):
-    """Redirect HERMES_HOME and clear module caches."""
+    """Redirect KOVA_HOME and clear module caches."""
     kova_home = tmp_path / ".kova"
     kova_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
     # Write a minimal config so load_config doesn't fail
     (kova_home / "config.yaml").write_text("model:\n  default: test-model\n")
 
 
 def _write_config(tmp_path, config_dict):
-    """Write a config.yaml to the test HERMES_HOME."""
+    """Write a config.yaml to the test KOVA_HOME."""
     import yaml
     config_path = tmp_path / ".kova" / "config.yaml"
     config_path.write_text(yaml.dump(config_dict))

@@ -8,7 +8,7 @@ def homes(tmp_path, monkeypatch):
     home.mkdir()
     managed = tmp_path / "managed"
     managed.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     monkeypatch.setenv("KOVA_MANAGED_DIR", str(managed))
     (home / "config.yaml").write_text("model:\n  default: user/model\n", encoding="utf-8")
     (managed / "config.yaml").write_text(
@@ -37,7 +37,7 @@ def test_config_show_no_managed_scope_silent(tmp_path, monkeypatch, capsys):
     """With no managed scope, the managed header must not appear."""
     home = tmp_path / "home"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     monkeypatch.setenv("KOVA_MANAGED_DIR", str(tmp_path / "nope"))
     (home / "config.yaml").write_text("model:\n  default: user/model\n", encoding="utf-8")
     import kova_cli.config as cfg

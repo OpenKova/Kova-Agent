@@ -18,7 +18,7 @@ kova memory off        # disable external provider
 
 You can also select the active memory provider via `kova plugins` → Provider Plugins → Memory Provider.
 
-Or set manually in `~/.hermes/config.yaml`:
+Or set manually in `~/.kova/config.yaml`:
 
 ```yaml
 memory:
@@ -70,7 +70,7 @@ kova memory setup        # select "honcho" — runs the Honcho-specific post-set
 
 The legacy `kova honcho setup` command still works (it now redirects to `kova memory setup`), but is only registered after Honcho is selected as the active memory provider.
 
-**Config:** `$HERMES_HOME/honcho.json` (profile-local) or `~/.honcho/config.json` (global). Resolution order: `$HERMES_HOME/honcho.json` > `~/.hermes/honcho.json` > `~/.honcho/config.json`. See the [config reference](https://github.com/OpenKova/Kova-Agent/blob/main/plugins/memory/honcho/README.md) and the [Honcho integration guide](https://docs.honcho.dev/v3/guides/integrations/kova).
+**Config:** `$KOVA_HOME/honcho.json` (profile-local) or `~/.honcho/config.json` (global). Resolution order: `$KOVA_HOME/honcho.json` > `~/.kova/honcho.json` > `~/.honcho/config.json`. See the [config reference](https://github.com/OpenKova/Kova-Agent/blob/main/plugins/memory/honcho/README.md) and the [Honcho integration guide](https://docs.honcho.dev/v3/guides/integrations/kova).
 
 <details>
 <summary>Full config reference</summary>
@@ -305,8 +305,8 @@ kova config set memory.provider openviking
 
 `kova memory setup` can reuse or copy connection values from
 `~/.openviking/ovcli.conf`. Manual setup uses the active profile's `.env` file;
-for the default profile that is `~/.hermes/.env`, and for named profiles use
-`~/.hermes/profiles/<profile>/.env`.
+for the default profile that is `~/.kova/.env`, and for named profiles use
+`~/.kova/profiles/<profile>/.env`.
 
 ```text
 OPENVIKING_ENDPOINT=http://127.0.0.1:1933
@@ -349,7 +349,7 @@ Server-side LLM fact extraction with semantic search, reranking, and automatic d
 kova memory setup    # select "mem0" → "Platform"
 # Or manually:
 kova config set memory.provider mem0
-echo "MEM0_API_KEY=your-key" >> ~/.hermes/.env
+echo "MEM0_API_KEY=your-key" >> ~/.kova/.env
 ```
 
 **Setup (OSS):**
@@ -375,8 +375,8 @@ kova memory setup mem0 --mode selfhosted --host http://localhost:8888 --api-key 
 Or configure manually — either as env vars:
 
 ```bash
-echo "MEM0_HOST=http://localhost:8888" >> ~/.hermes/.env
-echo "MEM0_API_KEY=your-admin-api-key" >> ~/.hermes/.env
+echo "MEM0_HOST=http://localhost:8888" >> ~/.kova/.env
+echo "MEM0_API_KEY=your-admin-api-key" >> ~/.kova/.env
 ```
 
 or in `mem0.json`:
@@ -387,7 +387,7 @@ or in `mem0.json`:
 
 The plugin authenticates with `X-API-Key` and uses the server's `/search` / `/memories` routes. `api_key` is optional (omit only for `AUTH_DISABLED` servers). Don't set `mode: oss` — it takes precedence over `host`.
 
-**Config:** `$HERMES_HOME/mem0.json` (behavioral settings). Only the secret `MEM0_API_KEY` belongs in `~/.hermes/.env`.
+**Config:** `$KOVA_HOME/mem0.json` (behavioral settings). Only the secret `MEM0_API_KEY` belongs in `~/.kova/.env`.
 
 | Key | Default | Description |
 |-----|---------|-------------|
@@ -427,14 +427,14 @@ Long-term memory with knowledge graph, entity resolution, and multi-strategy ret
 kova memory setup    # select "hindsight"
 # Or manually:
 kova config set memory.provider hindsight
-echo "HINDSIGHT_API_KEY=your-key" >> ~/.hermes/.env
+echo "HINDSIGHT_API_KEY=your-key" >> ~/.kova/.env
 ```
 
 The setup wizard installs dependencies automatically and only installs what's needed for the selected mode (`hindsight-client` for cloud, `hindsight-all` for local). Requires `hindsight-client >= 0.4.22` (auto-upgraded on session start if outdated).
 
 **Local mode UI:** `hindsight-embed -p kova ui start`
 
-**Config:** `$HERMES_HOME/hindsight/config.json`
+**Config:** `$KOVA_HOME/hindsight/config.json`
 
 | Key | Default | Description |
 |-----|---------|-------------|
@@ -480,7 +480,7 @@ kova config set memory.provider holographic
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `db_path` | `$HERMES_HOME/memory_store.db` | SQLite database path |
+| `db_path` | `$KOVA_HOME/memory_store.db` | SQLite database path |
 | `auto_extract` | `false` | Auto-extract facts at session end |
 | `default_trust` | `0.5` | Default trust score (0.0–1.0) |
 
@@ -510,7 +510,7 @@ Cloud memory API with hybrid search (Vector + BM25 + Reranking), 7 memory types,
 kova memory setup    # select "retaindb"
 # Or manually:
 kova config set memory.provider retaindb
-echo "RETAINDB_API_KEY=your-key" >> ~/.hermes/.env
+echo "RETAINDB_API_KEY=your-key" >> ~/.kova/.env
 ```
 
 ---
@@ -541,7 +541,7 @@ kova config set memory.provider byterover
 
 **Key features:**
 - Automatic pre-compression extraction (saves insights before context compression discards them)
-- Knowledge tree stored at `$HERMES_HOME/byterover/` (profile-scoped)
+- Knowledge tree stored at `$KOVA_HOME/byterover/` (profile-scoped)
 - SOC2 Type II certified cloud sync (optional)
 
 ---
@@ -564,7 +564,7 @@ Semantic long-term memory with profile recall, semantic search, explicit memory 
 kova memory setup    # select "supermemory"
 # Or manually:
 kova config set memory.provider supermemory
-echo 'SUPERMEMORY_API_KEY=***' >> ~/.hermes/.env
+echo 'SUPERMEMORY_API_KEY=***' >> ~/.kova/.env
 ```
 
 Self-hosted setup:
@@ -574,7 +574,7 @@ npx supermemory local
 ```
 
 Before running `kova memory setup`, set `base_url` in
-`$HERMES_HOME/supermemory.json`:
+`$KOVA_HOME/supermemory.json`:
 
 ```json
 {
@@ -586,7 +586,7 @@ Then run `kova memory setup` and enter the API key printed by the local
 server. Configuring the endpoint first ensures the setup connection probe also
 stays local.
 
-**Config:** `$HERMES_HOME/supermemory.json`
+**Config:** `$KOVA_HOME/supermemory.json`
 
 | Key | Default | Description |
 |-----|---------|-------------|
@@ -670,8 +670,8 @@ kova memory setup
 
 Each provider's data is isolated per [profile](/user-guide/profiles):
 
-- **Local storage providers** (Holographic, ByteRover) use `$HERMES_HOME/` paths which differ per profile
-- **Config file providers** (Honcho, Mem0, Hindsight, Supermemory) store config in `$HERMES_HOME/` so each profile has its own credentials
+- **Local storage providers** (Holographic, ByteRover) use `$KOVA_HOME/` paths which differ per profile
+- **Config file providers** (Honcho, Mem0, Hindsight, Supermemory) store config in `$KOVA_HOME/` so each profile has its own credentials
 - **Cloud providers** (RetainDB) auto-derive profile-scoped project names
 - **Env var providers** (OpenViking) are configured via each profile's `.env` file
 

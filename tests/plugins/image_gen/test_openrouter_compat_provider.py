@@ -176,7 +176,7 @@ class TestHelpers:
         kova_home.mkdir()
         auth_json = kova_home / "auth.json"
         auth_json.write_text('{"api_key":"sk-secret"}', encoding="utf-8")
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
         with pytest.raises(ValueError, match="credential store"):
             _to_image_url_part(str(auth_json))
@@ -192,7 +192,7 @@ class TestHelpers:
         kova_home.mkdir()
         auth_json = kova_home / "auth.json"
         auth_json.write_text('{"api_key":"sk-secret"}', encoding="utf-8")
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
         real_read_bytes = _P.read_bytes
         read: list = []

@@ -15,7 +15,7 @@ import pytest
 
 @pytest.fixture
 def kova_home(monkeypatch, tmp_path):
-    """Isolate HERMES_HOME so the tests don't pollute the real config.
+    """Isolate KOVA_HOME so the tests don't pollute the real config.
 
     Also clears module-level caches (file_ops, active_environments,
     file-staleness state) after the test so subsequent tests in the
@@ -25,7 +25,7 @@ def kova_home(monkeypatch, tmp_path):
     """
     home = tmp_path / "kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     yield home
     # Cleanup: drop the cached file_ops and active environment so the
     # next test sees a fresh state.  Without this, _get_live_tracking_cwd

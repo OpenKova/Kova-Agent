@@ -29,7 +29,7 @@ def _reset_modules(prefixes: tuple[str, ...]):
 
 @pytest.fixture(autouse=True)
 def _restore_tool_modules():
-    original_kova_home = os.environ.get("HERMES_HOME")
+    original_kova_home = os.environ.get("KOVA_HOME")
     original_modules = {
         name: module
         for name, module in sys.modules.items()
@@ -44,9 +44,9 @@ def _restore_tool_modules():
         yield
     finally:
         if original_kova_home is None:
-            os.environ.pop("HERMES_HOME", None)
+            os.environ.pop("KOVA_HOME", None)
         else:
-            os.environ["HERMES_HOME"] = original_kova_home
+            os.environ["KOVA_HOME"] = original_kova_home
         _reset_modules(("tools", "kova_cli", "modal"))
         sys.modules.update(original_modules)
 
@@ -63,7 +63,7 @@ def _install_modal_test_modules(
     kova_cli.__path__ = []  # type: ignore[attr-defined]
     sys.modules["kova_cli"] = kova_cli
     kova_home = tmp_path / "kova-home"
-    os.environ["HERMES_HOME"] = str(kova_home)
+    os.environ["KOVA_HOME"] = str(kova_home)
     sys.modules["kova_cli.config"] = types.SimpleNamespace(
         get_kova_home=lambda: kova_home,
     )

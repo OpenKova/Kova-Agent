@@ -1,6 +1,6 @@
 """Tests for subprocess HOME handling in profile mode.
 
-Kova state stays profile-scoped through HERMES_HOME. Host subprocesses should
+Kova state stays profile-scoped through KOVA_HOME. Host subprocesses should
 keep the user's real HOME by default so external CLIs find existing credentials.
 Containers still use the profile home for persistence, and users can explicitly
 opt into profile HOME isolation on the host.
@@ -36,14 +36,14 @@ class TestGetSubprocessHome:
         monkeypatch.delenv("KOVA_REAL_HOME", raising=False)
 
     def test_returns_none_when_kova_home_unset(self, monkeypatch):
-        monkeypatch.delenv("HERMES_HOME", raising=False)
+        monkeypatch.delenv("KOVA_HOME", raising=False)
         from kova_constants import get_subprocess_home
         assert get_subprocess_home() is None
 
     def test_returns_none_when_home_dir_missing(self, tmp_path, monkeypatch):
         kova_home = tmp_path / ".kova"
         kova_home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         # No home/ subdirectory created
         from kova_constants import get_subprocess_home
         assert get_subprocess_home() is None
@@ -56,7 +56,7 @@ class TestGetSubprocessHome:
         profile_home = kova_home / "home"
         profile_home.mkdir(parents=True)
         monkeypatch.setenv("HOME", str(real_home))
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         from kova_constants import get_subprocess_home
         assert get_subprocess_home() is None
 
@@ -65,7 +65,7 @@ class TestGetSubprocessHome:
         kova_home = tmp_path / ".kova"
         profile_home = kova_home / "home"
         profile_home.mkdir(parents=True)
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         from kova_constants import get_subprocess_home
         assert get_subprocess_home() == str(profile_home)
 
@@ -77,7 +77,7 @@ class TestGetSubprocessHome:
         profile_home = profile_dir / "home"
         profile_home.mkdir()
         monkeypatch.setenv("TERMINAL_HOME_MODE", "profile")
-        monkeypatch.setenv("HERMES_HOME", str(profile_dir))
+        monkeypatch.setenv("KOVA_HOME", str(profile_dir))
         from kova_constants import get_subprocess_home
         assert get_subprocess_home() == str(profile_home)
 
@@ -89,7 +89,7 @@ class TestGetSubprocessHome:
         real_home = tmp_path / "real-home"
         real_home.mkdir()
         monkeypatch.setenv("TERMINAL_HOME_MODE", "real")
-        monkeypatch.setenv("HERMES_HOME", str(profile_dir))
+        monkeypatch.setenv("KOVA_HOME", str(profile_dir))
         monkeypatch.setenv("HOME", str(profile_home))
         monkeypatch.setenv("KOVA_REAL_HOME", str(real_home))
 
@@ -103,7 +103,7 @@ class TestGetSubprocessHome:
         profile_dir = tmp_path / ".kova" / "profiles" / "coder"
         profile_home = profile_dir / "home"
         profile_home.mkdir(parents=True)
-        monkeypatch.setenv("HERMES_HOME", str(profile_dir))
+        monkeypatch.setenv("KOVA_HOME", str(profile_dir))
         monkeypatch.setenv("HOME", str(profile_home))
 
         from kova_constants import get_real_home
@@ -120,10 +120,10 @@ class TestGetSubprocessHome:
 
         from kova_constants import get_subprocess_home
 
-        monkeypatch.setenv("HERMES_HOME", str(base / "alpha"))
+        monkeypatch.setenv("KOVA_HOME", str(base / "alpha"))
         home_a = get_subprocess_home()
 
-        monkeypatch.setenv("HERMES_HOME", str(base / "beta"))
+        monkeypatch.setenv("KOVA_HOME", str(base / "beta"))
         home_b = get_subprocess_home()
 
         assert home_a is not None
@@ -137,7 +137,7 @@ class TestGetSubprocessHome:
         profile = tmp_path / "profile"
         root.mkdir()
         profile.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(root))
+        monkeypatch.setenv("KOVA_HOME", str(root))
 
         from kova_constants import (
             get_kova_home,
@@ -185,7 +185,7 @@ class TestMakeRunEnvHomeInjection:
         real_home = tmp_path / "real-home"
         real_home.mkdir()
         monkeypatch.setattr(kova_constants, "is_container", lambda: False)
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setenv("HOME", str(real_home))
         monkeypatch.setenv("PATH", "/usr/bin:/bin")
 
@@ -203,7 +203,7 @@ class TestMakeRunEnvHomeInjection:
         real_home.mkdir()
         monkeypatch.setattr(kova_constants, "is_container", lambda: False)
         monkeypatch.setenv("TERMINAL_HOME_MODE", "profile")
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setenv("HOME", str(real_home))
         monkeypatch.setenv("PATH", "/usr/bin:/bin")
 
@@ -217,7 +217,7 @@ class TestMakeRunEnvHomeInjection:
         kova_home = tmp_path / "kova"
         kova_home.mkdir()
         # No home/ subdirectory
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setenv("HOME", "/root")
         monkeypatch.setenv("PATH", "/usr/bin:/bin")
 
@@ -227,7 +227,7 @@ class TestMakeRunEnvHomeInjection:
         assert result["HOME"] == "/root"
 
     def test_no_injection_when_kova_home_unset(self, monkeypatch):
-        monkeypatch.delenv("HERMES_HOME", raising=False)
+        monkeypatch.delenv("KOVA_HOME", raising=False)
         monkeypatch.setenv("HOME", "/home/user")
         monkeypatch.setenv("PATH", "/usr/bin:/bin")
 
@@ -243,7 +243,7 @@ class TestMakeRunEnvHomeInjection:
         root.mkdir()
         profile.mkdir()
         (profile / "home").mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(root))
+        monkeypatch.setenv("KOVA_HOME", str(root))
         monkeypatch.setenv("HOME", "/root")
         monkeypatch.setenv("PATH", "/usr/bin:/bin")
 
@@ -256,7 +256,7 @@ class TestMakeRunEnvHomeInjection:
         finally:
             reset_kova_home_override(token)
 
-        assert result["HERMES_HOME"] == str(profile)
+        assert result["KOVA_HOME"] == str(profile)
         assert result["HOME"] == str(profile / "home")
 
 
@@ -274,7 +274,7 @@ class TestSanitizeSubprocessEnvHomeInjection:
         real_home = tmp_path / "real-home"
         real_home.mkdir()
         monkeypatch.setattr(kova_constants, "is_container", lambda: False)
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
         base_env = {"HOME": str(real_home), "PATH": "/usr/bin", "USER": "root"}
         from tools.environments.local import _sanitize_subprocess_env
@@ -291,7 +291,7 @@ class TestSanitizeSubprocessEnvHomeInjection:
         real_home.mkdir()
         monkeypatch.setattr(kova_constants, "is_container", lambda: False)
         monkeypatch.setenv("TERMINAL_HOME_MODE", "profile")
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
         base_env = {"HOME": str(real_home), "PATH": "/usr/bin", "USER": "root"}
         from tools.environments.local import _sanitize_subprocess_env
@@ -303,7 +303,7 @@ class TestSanitizeSubprocessEnvHomeInjection:
     def test_no_injection_when_home_dir_missing(self, tmp_path, monkeypatch):
         kova_home = tmp_path / "kova"
         kova_home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
         base_env = {"HOME": "/root", "PATH": "/usr/bin"}
         from tools.environments.local import _sanitize_subprocess_env
@@ -318,7 +318,7 @@ class TestSanitizeSubprocessEnvHomeInjection:
         root.mkdir()
         profile.mkdir()
         (profile / "home").mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(root))
+        monkeypatch.setenv("KOVA_HOME", str(root))
 
         base_env = {"HOME": "/root", "PATH": "/usr/bin"}
         from kova_constants import reset_kova_home_override, set_kova_home_override
@@ -330,7 +330,7 @@ class TestSanitizeSubprocessEnvHomeInjection:
         finally:
             reset_kova_home_override(token)
 
-        assert result["HERMES_HOME"] == str(profile)
+        assert result["KOVA_HOME"] == str(profile)
         assert result["HOME"] == str(profile / "home")
 
 
@@ -350,7 +350,7 @@ class TestProfileBootstrap:
         home = tmp_path / ".kova"
         home.mkdir()
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(home))
+        monkeypatch.setenv("KOVA_HOME", str(home))
 
         from kova_cli.profiles import create_profile
         profile_dir = create_profile("testbot", no_alias=True)
@@ -370,7 +370,7 @@ class TestPythonProcessUnchanged:
         kova_home = tmp_path / "kova"
         kova_home.mkdir()
         (kova_home / "home").mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
         original_home = os.environ.get("HOME")
         original_path_home = str(Path.home())

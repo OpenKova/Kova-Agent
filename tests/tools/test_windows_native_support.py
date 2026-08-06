@@ -1039,7 +1039,7 @@ class TestGatewayDetachedWatcherWindowsFlags:
         """The post-update respawn must route through
         ``gateway_windows.windowless_gateway_restart_spec``.
 
-        The spec supplies the stable cwd + env overlay (HERMES_HOME,
+        The spec supplies the stable cwd + env overlay (KOVA_HOME,
         VIRTUAL_ENV, PYTHONPATH) so the respawned gateway doesn't depend on
         the watcher's transient working directory. (The interpreter itself
         stays the venv's console ``python.exe``, launched hidden via
@@ -1070,7 +1070,7 @@ class TestGatewayDetachedWatcherWindowsFlags:
         )
         assert '_popen_kwargs["env"]' in block, (
             "Inlined respawn must overlay env (VIRTUAL_ENV / PYTHONPATH / "
-            "HERMES_HOME) from the restart spec."
+            "KOVA_HOME) from the restart spec."
         )
 
 

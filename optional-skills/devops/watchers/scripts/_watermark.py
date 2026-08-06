@@ -32,8 +32,8 @@ def _state_dir() -> Path:
     override = os.environ.get("WATCHER_STATE_DIR")
     if override:
         return Path(override)
-    # Default: $HERMES_HOME/watcher-state/, falling back to ~/.hermes/watcher-state/.
-    kova_home = os.environ.get("HERMES_HOME") or str(Path.home() / ".kova")
+    # Default: $KOVA_HOME/watcher-state/, falling back to ~/.kova/watcher-state/.
+    kova_home = os.environ.get("KOVA_HOME") or str(Path.home() / ".kova")
     return Path(kova_home) / "watcher-state"
 
 

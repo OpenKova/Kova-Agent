@@ -21,7 +21,7 @@ def test_service_path_includes_node_modules_when_present(tmp_path):
 
 
 def test_service_path_includes_kova_home_node_modules(tmp_path):
-    """Service PATH should include ~/.hermes/node_modules/.bin when it exists."""
+    """Service PATH should include ~/.kova/node_modules/.bin when it exists."""
     kova_nm = tmp_path / ".kova" / "node_modules" / ".bin"
     kova_nm.mkdir(parents=True)
     from kova_cli.gateway import _build_service_path_dirs

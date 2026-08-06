@@ -15,7 +15,7 @@
 
 [Unit]
 Description=Kova Kanban dispatcher (DEPRECATED standalone daemon — prefer gateway-embedded dispatch)
-Documentation=https://hermes-agent.nousresearch.com/docs/user-guide/features/kanban
+Documentation=https://kova-agent.nousresearch.com/docs/user-guide/features/kanban
 After=network.target
 
 [Service]
@@ -24,7 +24,7 @@ ExecStart=/usr/bin/env kova kanban daemon --force --interval 60 --pidfile %t/kov
 Restart=on-failure
 RestartSec=5
 # Log to the journal via stdout/stderr; the dispatcher also writes per-task
-# worker output to $HERMES_HOME/kanban/logs/<task>.log.
+# worker output to $KOVA_HOME/kanban/logs/<task>.log.
 StandardOutput=journal
 StandardError=journal
 

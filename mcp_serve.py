@@ -61,12 +61,12 @@ except ImportError:
 # ---------------------------------------------------------------------------
 
 def _get_sessions_dir() -> Path:
-    """Return the sessions directory using HERMES_HOME."""
+    """Return the sessions directory using KOVA_HOME."""
     try:
         from kova_constants import get_kova_home
         return get_kova_home() / "sessions"
     except ImportError:
-        return Path(os.environ.get("HERMES_HOME", Path.home() / ".kova")) / "sessions"
+        return Path(os.environ.get("KOVA_HOME", Path.home() / ".kova")) / "sessions"
 
 
 def _get_session_db():
@@ -199,7 +199,7 @@ def _load_channel_directory() -> dict:
         directory_file = get_kova_home() / "channel_directory.json"
     except ImportError:
         directory_file = Path(
-            os.environ.get("HERMES_HOME", Path.home() / ".kova")
+            os.environ.get("KOVA_HOME", Path.home() / ".kova")
         ) / "channel_directory.json"
 
     if not directory_file.exists():
@@ -454,7 +454,7 @@ class EventBridge:
             from kova_constants import get_kova_home
             db_file = get_kova_home() / "state.db"
         except ImportError:
-            db_file = Path(os.environ.get("HERMES_HOME", Path.home() / ".kova")) / "state.db"
+            db_file = Path(os.environ.get("KOVA_HOME", Path.home() / ".kova")) / "state.db"
 
         try:
             db_mtime = db_file.stat().st_mtime if db_file.exists() else 0.0

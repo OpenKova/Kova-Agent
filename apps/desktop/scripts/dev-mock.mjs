@@ -204,13 +204,13 @@ async function main() {
 
   const sandbox = createSandbox()
   writeMockConfig(sandbox.kovaHome, mock.url)
-  console.log(`  HERMES_HOME: ${sandbox.kovaHome}`)
+  console.log(`  KOVA_HOME: ${sandbox.kovaHome}`)
 
   const electronBin = findElectron()
 
   const env = {
     ...process.env,
-    HERMES_HOME: sandbox.kovaHome,
+    KOVA_HOME: sandbox.kovaHome,
     KOVA_DESKTOP_USER_DATA_DIR: sandbox.userDataDir,
     KOVA_DESKTOP_IGNORE_EXISTING: '1',
     KOVA_DESKTOP_KOVA_ROOT: REPO_ROOT,

@@ -16,7 +16,7 @@ import pytest
 # ---------------------------------------------------------------------------
 
 def _make_kova_tree(root: Path) -> None:
-    """Create a realistic ~/.hermes directory structure for testing."""
+    """Create a realistic ~/.kova directory structure for testing."""
     (root / "config.yaml").write_text("model:\n  provider: openrouter\n")
     (root / ".env").write_text("OPENROUTER_API_KEY=sk-test-123\n")
     for db_name in ("memory_store.db", "kova_state.db"):
@@ -171,7 +171,7 @@ class TestShouldExclude:
         ],
     )
     def test_excludes_regeneratable_dependency_and_cache_dirs(self, rel):
-        """Python dep trees and tool caches under HERMES_HOME must be skipped —
+        """Python dep trees and tool caches under KOVA_HOME must be skipped —
         these are what balloon a backup to hundreds of thousands of files."""
         from kova_cli.backup import _should_exclude
         assert _should_exclude(Path(rel))
@@ -199,7 +199,7 @@ class TestBackup:
         kova_home.mkdir()
         _make_kova_tree(kova_home)
 
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         # get_default_kova_root needs this
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
@@ -248,7 +248,7 @@ class TestBackup:
         writer.commit()
         assert Path(f"{db_path}-wal").stat().st_size > 0
 
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         import kova_cli.backup as backup_mod
@@ -294,7 +294,7 @@ class TestBackup:
         kova_home.mkdir()
         _make_kova_tree(kova_home)
 
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         out_dir = tmp_path / "external-drive"
@@ -325,7 +325,7 @@ class TestBackup:
         kova_home.mkdir()
         _make_kova_tree(kova_home)
 
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         out_zip = kova_home / "backups" / "pre-update-test.zip"
@@ -352,7 +352,7 @@ class TestBackup:
         kova_home.mkdir()
         _make_kova_tree(kova_home)
 
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         out_zip = tmp_path / "backup.zip"
@@ -367,7 +367,7 @@ class TestBackup:
             assert agent_files == [], f"kova-agent files leaked into backup: {agent_files}"
 
     def test_excludes_dependency_and_cache_trees(self, tmp_path, monkeypatch):
-        """A plugin venv / site-packages / pip cache under HERMES_HOME must be
+        """A plugin venv / site-packages / pip cache under KOVA_HOME must be
         pruned by the walk, while real data (skills, config) is preserved.
         This is the regression guard for the ballooning-backup bug."""
         kova_home = tmp_path / ".kova"
@@ -382,7 +382,7 @@ class TestBackup:
         pip_cache.mkdir(parents=True)
         (pip_cache / "abc.whl").write_bytes(b"\x00")
 
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         out_zip = tmp_path / "backup.zip"
@@ -410,7 +410,7 @@ class TestBackup:
         (nested / "sub").mkdir()
         (nested / "sub" / "item.txt").write_text("nested content\n")
 
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         out_zip = tmp_path / "backup.zip"
@@ -434,7 +434,7 @@ class TestBackup:
         kova_home.mkdir()
         _make_kova_tree(kova_home)
 
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         out_zip = tmp_path / "backup.zip"
@@ -454,7 +454,7 @@ class TestBackup:
         kova_home.mkdir()
         _make_kova_tree(kova_home)
 
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         out_zip = tmp_path / "backup.zip"
@@ -474,7 +474,7 @@ class TestBackup:
         kova_home.mkdir()
         (kova_home / "config.yaml").write_text("model: test\n")
 
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         args = Namespace(output=None)
@@ -487,7 +487,7 @@ class TestBackup:
         assert len(zips) == 1
 
     def test_skips_symlinked_files(self, tmp_path, monkeypatch):
-        """Backup must not dereference symlinks and leak files outside HERMES_HOME."""
+        """Backup must not dereference symlinks and leak files outside KOVA_HOME."""
         kova_home = tmp_path / ".kova"
         kova_home.mkdir()
         _make_kova_tree(kova_home)
@@ -495,7 +495,7 @@ class TestBackup:
         outside.write_text("outside secret\n")
         _symlink_file_or_skip(kova_home / "skills" / "outside-link.txt", outside)
 
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         out_zip = tmp_path / "backup.zip"
@@ -566,7 +566,7 @@ class TestImport:
         """Import extracts files into kova home."""
         kova_home = tmp_path / ".kova"
         kova_home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         zip_path = tmp_path / "backup.zip"
@@ -591,7 +591,7 @@ class TestImport:
         """Import strips .kova/ prefix if all entries share it."""
         kova_home = tmp_path / ".kova"
         kova_home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         zip_path = tmp_path / "backup.zip"
@@ -612,7 +612,7 @@ class TestImport:
         """Import rejects an empty zip."""
         kova_home = tmp_path / ".kova"
         kova_home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         zip_path = tmp_path / "empty.zip"
@@ -629,7 +629,7 @@ class TestImport:
         """Import rejects a zip that doesn't look like a kova backup."""
         kova_home = tmp_path / ".kova"
         kova_home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         zip_path = tmp_path / "random.zip"
@@ -648,7 +648,7 @@ class TestImport:
         """Import blocks zip entries with path traversal."""
         kova_home = tmp_path / ".kova"
         kova_home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         zip_path = tmp_path / "evil.zip"
@@ -678,7 +678,7 @@ class TestImport:
         """
         kova_home = tmp_path / ".kova"
         kova_home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         # The target (e.g. hosted container) already has its own live state.
@@ -707,7 +707,7 @@ class TestImport:
         target has none — a foreign state must never seed the reconciler."""
         kova_home = tmp_path / ".kova"
         kova_home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         zip_path = tmp_path / "backup.zip"
@@ -730,7 +730,7 @@ class TestImport:
         the same way the root profile's is."""
         kova_home = tmp_path / ".kova"
         (kova_home / "profiles" / "coder").mkdir(parents=True)
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         live_state = '{"gateway_state": "running"}'
@@ -760,7 +760,7 @@ class TestImport:
         written over the target's."""
         kova_home = tmp_path / ".kova"
         kova_home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         # Live runtime files belonging to the target's own processes.
@@ -794,7 +794,7 @@ class TestImport:
         kova_home.mkdir()
         # Pre-existing config triggers the confirmation
         (kova_home / "config.yaml").write_text("existing: true\n")
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         zip_path = tmp_path / "backup.zip"
@@ -816,7 +816,7 @@ class TestImport:
         kova_home = tmp_path / ".kova"
         kova_home.mkdir()
         (kova_home / "config.yaml").write_text("existing: true\n")
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         zip_path = tmp_path / "backup.zip"
@@ -835,7 +835,7 @@ class TestImport:
         """Import exits with error for nonexistent file."""
         kova_home = tmp_path / ".kova"
         kova_home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
         args = Namespace(zipfile=str(tmp_path / "nonexistent.zip"), force=True)
 
@@ -848,7 +848,7 @@ class TestImport:
         """Secret files must end up at 0600 after restore (zipfile drops mode bits)."""
         kova_home = tmp_path / ".kova"
         kova_home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         zip_path = tmp_path / "backup.zip"
@@ -882,7 +882,7 @@ class TestRoundTrip:
         src_home.mkdir(parents=True)
         _make_kova_tree(src_home)
 
-        monkeypatch.setenv("HERMES_HOME", str(src_home))
+        monkeypatch.setenv("KOVA_HOME", str(src_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path / "source")
 
         # Backup
@@ -895,7 +895,7 @@ class TestRoundTrip:
         # Import into a different location
         dst_home = tmp_path / "dest" / ".kova"
         dst_home.mkdir(parents=True)
-        monkeypatch.setenv("HERMES_HOME", str(dst_home))
+        monkeypatch.setenv("KOVA_HOME", str(dst_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path / "dest")
 
         run_import(Namespace(zipfile=str(out_zip), force=True))
@@ -1031,7 +1031,7 @@ class TestBackupEdgeCases:
     def test_nonexistent_kova_home(self, tmp_path, monkeypatch):
         """Backup exits when kova home doesn't exist."""
         fake_home = tmp_path / "nonexistent" / ".kova"
-        monkeypatch.setenv("HERMES_HOME", str(fake_home))
+        monkeypatch.setenv("KOVA_HOME", str(fake_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path / "nonexistent")
 
         args = Namespace(output=str(tmp_path / "out.zip"))
@@ -1046,7 +1046,7 @@ class TestBackupEdgeCases:
         kova_home.mkdir()
         (kova_home / "config.yaml").write_text("model: test\n")
 
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         out_dir = tmp_path / "backups"
@@ -1066,7 +1066,7 @@ class TestBackupEdgeCases:
         kova_home.mkdir()
         (kova_home / "config.yaml").write_text("model: test\n")
 
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         out_path = tmp_path / "mybackup.tar"
@@ -1086,7 +1086,7 @@ class TestBackupEdgeCases:
         (kova_home / "__pycache__").mkdir()
         (kova_home / "__pycache__" / "foo.pyc").write_bytes(b"\x00")
 
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         args = Namespace(output=str(tmp_path / "out.zip"))
@@ -1108,7 +1108,7 @@ class TestBackupEdgeCases:
         bad_file.write_text("data")
         bad_file.chmod(0o000)
 
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         out_zip = tmp_path / "out.zip"
@@ -1135,7 +1135,7 @@ class TestBackupEdgeCases:
         old_file.write_text("old data")
         os.utime(old_file, (0, 0))
 
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         out_zip = tmp_path / "out.zip"
@@ -1158,7 +1158,7 @@ class TestBackupEdgeCases:
         kova_home.mkdir()
         (kova_home / "config.yaml").write_text("model: test\n")
 
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         # Output inside kova home
@@ -1184,7 +1184,7 @@ class TestImportEdgeCases:
         """Import rejects a non-zip file."""
         kova_home = tmp_path / ".kova"
         kova_home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
         not_zip = tmp_path / "fake.zip"
         not_zip.write_text("this is not a zip")
@@ -1200,7 +1200,7 @@ class TestImportEdgeCases:
         kova_home = tmp_path / ".kova"
         kova_home.mkdir()
         (kova_home / "config.yaml").write_text("existing\n")
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         zip_path = tmp_path / "backup.zip"
@@ -1218,7 +1218,7 @@ class TestImportEdgeCases:
         kova_home = tmp_path / ".kova"
         kova_home.mkdir()
         (kova_home / ".env").write_text("KEY=val\n")
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         zip_path = tmp_path / "backup.zip"
@@ -1235,7 +1235,7 @@ class TestImportEdgeCases:
         """Import handles permission errors during extraction."""
         kova_home = tmp_path / ".kova"
         kova_home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         # Create a read-only directory so extraction fails
@@ -1264,7 +1264,7 @@ class TestImportEdgeCases:
         """Import shows progress with 500+ files."""
         kova_home = tmp_path / ".kova"
         kova_home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         zip_path = tmp_path / "big.zip"
@@ -1297,7 +1297,7 @@ class TestProfileRestoration:
         """Import auto-creates wrapper scripts for restored profiles."""
         kova_home = tmp_path / ".kova"
         kova_home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         # Mock the wrapper dir to be inside tmp_path
@@ -1333,7 +1333,7 @@ class TestProfileRestoration:
         """Import doesn't create wrappers for profile dirs without config."""
         kova_home = tmp_path / ".kova"
         kova_home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         wrapper_dir = tmp_path / ".local" / "bin"
@@ -1359,7 +1359,7 @@ class TestProfileRestoration:
         """Import gracefully handles missing profiles module (fresh install)."""
         kova_home = tmp_path / ".kova"
         kova_home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         zip_path = tmp_path / "backup.zip"
@@ -1438,7 +1438,7 @@ class TestSafeCopyDb:
 class TestQuickSnapshot:
     @pytest.fixture
     def kova_home(self, tmp_path):
-        """Create a fake HERMES_HOME with critical state files."""
+        """Create a fake KOVA_HOME with critical state files."""
         home = tmp_path / ".kova"
         home.mkdir()
         (home / "config.yaml").write_text("model:\n  provider: openrouter\n")
@@ -1743,7 +1743,7 @@ class TestQuickSnapshot:
     def test_restore_rejects_manifest_rel_traversal(self, kova_home):
         """A snapshot whose manifest.json contains a rel path that escapes
         the snapshot directory (e.g. ``../../outside.txt``) must skip that
-        entry rather than restoring outside HERMES_HOME."""
+        entry rather than restoring outside KOVA_HOME."""
         from kova_cli.backup import create_quick_snapshot, restore_quick_snapshot
 
         snap_id = create_quick_snapshot(kova_home=kova_home)
@@ -1775,7 +1775,7 @@ class TestQuickSnapshot:
         restore_quick_snapshot(snap_id, kova_home=kova_home)
 
         assert not escape_dst.exists(), (
-            f"manifest rel traversal escaped HERMES_HOME: {escape_dst} exists"
+            f"manifest rel traversal escaped KOVA_HOME: {escape_dst} exists"
         )
 
         # Cleanup the seeded escape source so the test is hermetic.
@@ -2175,7 +2175,7 @@ class TestPreUpdateBackup:
         )
 
     def test_skips_symlinked_files(self, kova_home, tmp_path):
-        """Pre-update backups must not dereference symlinks outside HERMES_HOME."""
+        """Pre-update backups must not dereference symlinks outside KOVA_HOME."""
         from kova_cli.backup import create_pre_update_backup
 
         outside = tmp_path / "outside-secret.txt"
@@ -2200,11 +2200,11 @@ class TestRunPreUpdateBackup:
         root = tmp_path / ".kova"
         root.mkdir()
         _make_kova_tree(root)
-        # Point HERMES_HOME at the temp dir so config + backup paths resolve here
-        monkeypatch.setenv("HERMES_HOME", str(root))
+        # Point KOVA_HOME at the temp dir so config + backup paths resolve here
+        monkeypatch.setenv("KOVA_HOME", str(root))
         # Make Path.home() point at tmp_path for anything that uses it
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        # Bust caches for kova_cli.config + kova_constants so they pick up HERMES_HOME
+        # Bust caches for kova_cli.config + kova_constants so they pick up KOVA_HOME
         for mod in list(__import__("sys").modules.keys()):
             if mod.startswith("kova_cli.config") or mod == "kova_constants":
                 del __import__("sys").modules[mod]
@@ -2357,7 +2357,7 @@ class TestRunPreUpdateBackup:
 
 class TestPreMigrationBackup:
     """Tests for create_pre_migration_backup — the auto-backup
-    ``kova claw migrate`` runs before mutating ~/.hermes/."""
+    ``kova claw migrate`` runs before mutating ~/.kova/."""
 
     @pytest.fixture
     def kova_home(self, tmp_path):
@@ -2429,7 +2429,7 @@ class TestPreMigrationBackup:
         assert len(remaining) <= 3, f"expected <=3 backups retained, got {len(remaining)}"
 
     def test_missing_kova_home_returns_none(self, tmp_path):
-        """Fresh install with no ~/.hermes yet — nothing to back up."""
+        """Fresh install with no ~/.kova yet — nothing to back up."""
         from kova_cli.backup import create_pre_migration_backup
         missing = tmp_path / "does-not-exist"
         out = create_pre_migration_backup(kova_home=missing)
@@ -2602,7 +2602,7 @@ class TestRestoreCronJobsIfEmptied:
 # ---------------------------------------------------------------------------
 # Memory-provider external paths (~/.honcho, ~/.hindsight, ...) — captured via
 # MemoryProvider.backup_paths() and restored to their original home-relative
-# location, NOT under HERMES_HOME. (backup/import cycle data-loss fix)
+# location, NOT under KOVA_HOME. (backup/import cycle data-loss fix)
 # ---------------------------------------------------------------------------
 
 class TestMemoryProviderExternalPaths:
@@ -2617,14 +2617,14 @@ class TestMemoryProviderExternalPaths:
         encoded relative to the home directory."""
         kova_home = tmp_path / ".kova"
         self._make_min_tree(kova_home)
-        # External provider state living OUTSIDE HERMES_HOME.
+        # External provider state living OUTSIDE KOVA_HOME.
         honcho = tmp_path / ".honcho"
         honcho.mkdir()
         (honcho / "config.json").write_text('{"peer":"alice"}')
         (honcho / "sub").mkdir()
         (honcho / "sub" / "x.json").write_text('{"a":1}')
 
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         import kova_cli.backup as backup_mod
@@ -2651,7 +2651,7 @@ class TestMemoryProviderExternalPaths:
         outside.mkdir(exist_ok=True)
         (outside / "leak.json").write_text('{"secret":1}')
 
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
 
         import kova_cli.backup as backup_mod
@@ -2670,7 +2670,7 @@ class TestMemoryProviderExternalPaths:
         outside.rmdir()
 
     def test_import_restores_external_to_home_relative_location(self, tmp_path, monkeypatch):
-        """_external/ members restore to ~/<relpath>, not under HERMES_HOME,
+        """_external/ members restore to ~/<relpath>, not under KOVA_HOME,
         and credential-shaped files get 0600."""
         dst_home = tmp_path / "dst"
         dst_home.mkdir()
@@ -2684,7 +2684,7 @@ class TestMemoryProviderExternalPaths:
             zf.writestr("state.db", "")
             zf.writestr("_external/.honcho/config.json", '{"peer":"bob"}')
 
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: dst_home)
 
         from kova_cli.backup import run_import
@@ -2695,7 +2695,7 @@ class TestMemoryProviderExternalPaths:
         assert restored.read_text() == '{"peer":"bob"}'
         # Credential-shaped file tightened.
         assert (restored.stat().st_mode & 0o777) == 0o600
-        # External state did NOT leak into HERMES_HOME.
+        # External state did NOT leak into KOVA_HOME.
         assert not (kova_home / "_external").exists()
 
     def test_import_blocks_external_path_traversal(self, tmp_path, monkeypatch):
@@ -2713,7 +2713,7 @@ class TestMemoryProviderExternalPaths:
             zf.writestr("state.db", "")
             zf.writestr("_external/../../PWNED", "pwned")
 
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         monkeypatch.setattr(Path, "home", lambda: dst_home)
 
         from kova_cli.backup import run_import

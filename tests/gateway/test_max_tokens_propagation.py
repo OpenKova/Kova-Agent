@@ -20,7 +20,7 @@ import pytest
 
 @pytest.fixture
 def isolated_home(tmp_path, monkeypatch):
-    """Isolated HERMES_HOME with a writable config.yaml and a clean module cache.
+    """Isolated KOVA_HOME with a writable config.yaml and a clean module cache.
 
     These tests deliberately re-import ``kova_cli`` / ``gateway`` so each
     config write is read fresh. To avoid leaking that purge into sibling test
@@ -29,7 +29,7 @@ def isolated_home(tmp_path, monkeypatch):
     """
     kova_home = tmp_path / ".kova"
     kova_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
     monkeypatch.delenv("KOVA_MAX_TOKENS", raising=False)
 
     _saved = {

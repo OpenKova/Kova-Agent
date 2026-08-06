@@ -10,7 +10,7 @@ def test_recommended_update_command_defaults_to_kova_update(monkeypatch):
     monkeypatch.delenv("KOVA_MANAGED", raising=False)
 
     # Also short-circuit the .managed marker path — CI runners may have an
-    # ambient ~/.hermes/.managed if a prior test left HERMES_HOME pointing
+    # ambient ~/.kova/.managed if a prior test left KOVA_HOME pointing
     # somewhere with that marker, which would make get_managed_update_command()
     # return "Update your Nix flake input ..." instead of falling through to
     # detect_install_method().

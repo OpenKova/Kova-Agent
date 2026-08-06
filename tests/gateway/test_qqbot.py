@@ -1687,7 +1687,7 @@ class TestDefaultInteractionDispatch:
 
     @pytest.mark.asyncio
     async def test_update_prompt_click_writes_response_file(self, tmp_path, monkeypatch):
-        """update_prompt:y click writes 'y' to ~/.hermes/.update_response."""
+        """update_prompt:y click writes 'y' to ~/.kova/.update_response."""
         adapter = self._make_adapter()
         kova_home = tmp_path / "kova_home"
         kova_home.mkdir()

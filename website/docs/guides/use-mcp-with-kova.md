@@ -42,7 +42,7 @@ If you installed Kova with the standard install script, MCP support is already i
 If you installed without extras and need to add MCP separately:
 
 ```bash
-cd ~/.hermes/kova-agent
+cd ~/.kova/kova-agent
 uv pip install -e ".[mcp]"
 ```
 

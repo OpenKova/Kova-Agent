@@ -1,4 +1,4 @@
-"""Tests for xAI Grok OAuth — tokens stored in Kova auth store (~/.hermes/auth.json)."""
+"""Tests for xAI Grok OAuth — tokens stored in Kova auth store (~/.kova/auth.json)."""
 
 import base64
 import json
@@ -261,7 +261,7 @@ def test_save_and_read_xai_oauth_tokens_roundtrip(tmp_path, monkeypatch):
     kova_home = tmp_path / "kova"
     kova_home.mkdir(parents=True, exist_ok=True)
     (kova_home / "auth.json").write_text(json.dumps({"version": 1, "providers": {}}))
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     _save_xai_oauth_tokens(
         {
@@ -285,7 +285,7 @@ def test_read_xai_oauth_tokens_missing(tmp_path, monkeypatch):
     kova_home = tmp_path / "kova"
     kova_home.mkdir(parents=True, exist_ok=True)
     (kova_home / "auth.json").write_text(json.dumps({"version": 1, "providers": {}}))
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     with pytest.raises(AuthError) as exc:
         _read_xai_oauth_tokens()
@@ -296,7 +296,7 @@ def test_read_xai_oauth_tokens_missing(tmp_path, monkeypatch):
 def test_read_xai_oauth_tokens_missing_access_token(tmp_path, monkeypatch):
     kova_home = tmp_path / "kova"
     _setup_kova_auth(kova_home, access_token="")
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     with pytest.raises(AuthError) as exc:
         _read_xai_oauth_tokens()
@@ -307,7 +307,7 @@ def test_read_xai_oauth_tokens_missing_access_token(tmp_path, monkeypatch):
 def test_read_xai_oauth_tokens_missing_refresh_token(tmp_path, monkeypatch):
     kova_home = tmp_path / "kova"
     _setup_kova_auth(kova_home, refresh_token="")
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     with pytest.raises(AuthError) as exc:
         _read_xai_oauth_tokens()
@@ -324,7 +324,7 @@ def test_resolve_xai_runtime_credentials_returns_singleton_state(tmp_path, monke
     kova_home = tmp_path / "kova"
     fresh = _jwt_with_exp(int(time.time()) + 2 * 60 * 60)
     _setup_kova_auth(kova_home, access_token=fresh)
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
     monkeypatch.delenv("KOVA_XAI_BASE_URL", raising=False)
     monkeypatch.delenv("XAI_BASE_URL", raising=False)
 
@@ -347,7 +347,7 @@ def test_resolve_xai_runtime_credentials_refreshes_expiring_token(tmp_path, monk
         refresh_token="rt-old",
         discovery={"token_endpoint": "https://auth.x.ai/oauth2/token"},
     )
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     new_access = _jwt_with_exp(int(time.time()) + 2 * 60 * 60)
     called = {"count": 0}
@@ -374,7 +374,7 @@ def test_resolve_xai_runtime_credentials_force_refresh(tmp_path, monkeypatch):
         access_token=fresh,
         discovery={"token_endpoint": "https://auth.x.ai/oauth2/token"},
     )
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     forced = _jwt_with_exp(int(time.time()) + 7200)
     called = {"count": 0}
@@ -396,7 +396,7 @@ def test_resolve_xai_runtime_credentials_honours_env_base_url(tmp_path, monkeypa
     kova_home = tmp_path / "kova"
     fresh = _jwt_with_exp(int(time.time()) + 2 * 60 * 60)
     _setup_kova_auth(kova_home, access_token=fresh)
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
     monkeypatch.setenv("KOVA_XAI_BASE_URL", "https://custom.x.ai/v1/")
 
     creds = resolve_xai_oauth_runtime_credentials()
@@ -519,7 +519,7 @@ def test_resolve_xai_runtime_credentials_rejects_off_origin_env_base_url(tmp_pat
     kova_home = tmp_path / "kova"
     fresh = _jwt_with_exp(int(time.time()) + 2 * 60 * 60)
     _setup_kova_auth(kova_home, access_token=fresh)
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
     monkeypatch.setenv("XAI_BASE_URL", "https://attacker.example/v1")
     monkeypatch.delenv("KOVA_XAI_BASE_URL", raising=False)
 
@@ -573,7 +573,7 @@ def test_resolve_credentials_quarantines_dead_tokens_on_terminal_refresh_failure
     """
     kova_home = tmp_path / "kova"
     _seed_xai_oauth_state(kova_home, dict(_STALE_XAI_OAUTH_STATE), active_provider="nous")
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     def _terminal_refresh(tokens, **kwargs):
         raise AuthError(
@@ -623,7 +623,7 @@ def test_resolve_credentials_does_not_quarantine_on_transient_refresh_failure(
     """
     kova_home = tmp_path / "kova"
     _seed_xai_oauth_state(kova_home, dict(_STALE_XAI_OAUTH_STATE))
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     def _transient_refresh(tokens, **kwargs):
         raise AuthError(
@@ -657,7 +657,7 @@ def test_get_xai_oauth_auth_status_logged_in_via_singleton(tmp_path, monkeypatch
     kova_home = tmp_path / "kova"
     fresh = _jwt_with_exp(int(time.time()) + 2 * 60 * 60)
     _setup_kova_auth(kova_home, access_token=fresh)
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     status = get_xai_oauth_auth_status()
     assert status["logged_in"] is True
@@ -671,7 +671,7 @@ def test_get_xai_oauth_auth_status_logged_out(tmp_path, monkeypatch):
     kova_home = tmp_path / "kova"
     kova_home.mkdir(parents=True, exist_ok=True)
     (kova_home / "auth.json").write_text(json.dumps({"version": 1, "providers": {}}))
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     status = get_xai_oauth_auth_status()
     assert status["logged_in"] is False
@@ -1027,7 +1027,7 @@ def test_credential_pool_seeds_xai_oauth_from_singleton(tmp_path, monkeypatch):
     kova_home = tmp_path / "kova"
     fresh = _jwt_with_exp(int(time.time()) + 2 * 60 * 60)
     _setup_kova_auth(kova_home, access_token=fresh, refresh_token="rt-1")
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     pool = load_pool("xai-oauth")
     assert pool.has_credentials()
@@ -1052,7 +1052,7 @@ def test_credential_pool_seeds_xai_oauth_device_code_source(tmp_path, monkeypatc
         refresh_token="rt-1",
         auth_mode="oauth_device_code",
     )
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     pool = load_pool("xai-oauth")
     entry = pool.entries()[0]
@@ -1075,7 +1075,7 @@ def test_credential_pool_does_not_seed_when_singleton_missing_access_token(tmp_p
         },
     }
     (kova_home / "auth.json").write_text(json.dumps(auth_store))
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     pool = load_pool("xai-oauth")
     assert not pool.has_credentials()
@@ -1092,7 +1092,7 @@ def test_credential_pool_device_code_seed_respects_suppression(tmp_path, monkeyp
         access_token=fresh,
         auth_mode="oauth_device_code",
     )
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     suppress_credential_source("xai-oauth", "device_code")
 
@@ -1121,7 +1121,7 @@ def test_auth_remove_xai_oauth_clears_singleton_and_sticks(tmp_path, monkeypatch
     kova_home = tmp_path / "kova"
     fresh = _jwt_with_exp(int(time.time()) + 2 * 60 * 60)
     _setup_kova_auth(kova_home, access_token=fresh, refresh_token="rt-1")
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     # Confirm pre-state: pool sees the seeded entry, auth.json has the singleton.
     pool = load_pool("xai-oauth")
@@ -1174,7 +1174,7 @@ def test_login_xai_oauth_relogin_clears_suppression_and_reseeds(tmp_path, monkey
     kova_home = tmp_path / "kova"
     kova_home.mkdir(parents=True, exist_ok=True)
     (kova_home / "auth.json").write_text(json.dumps({"version": 1, "providers": {}}))
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
     monkeypatch.delenv("KOVA_XAI_BASE_URL", raising=False)
     monkeypatch.delenv("XAI_BASE_URL", raising=False)
 
@@ -1236,7 +1236,7 @@ def test_pool_sync_back_writes_to_singleton(tmp_path, monkeypatch):
     kova_home = tmp_path / "kova"
     expired = _jwt_with_exp(int(time.time()) - 10)
     _setup_kova_auth(kova_home, access_token=expired, refresh_token="rt-old")
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     new_access = _jwt_with_exp(int(time.time()) + 2 * 60 * 60)
 
@@ -1280,7 +1280,7 @@ def test_runtime_provider_uses_pool_entry_for_xai_oauth(tmp_path, monkeypatch):
     kova_home = tmp_path / "kova"
     fresh = _jwt_with_exp(int(time.time()) + 2 * 60 * 60)
     _setup_kova_auth(kova_home, access_token=fresh)
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
     monkeypatch.delenv("KOVA_XAI_BASE_URL", raising=False)
     monkeypatch.delenv("XAI_BASE_URL", raising=False)
 
@@ -1300,7 +1300,7 @@ def test_runtime_provider_default_base_url_when_pool_entry_missing_url(tmp_path,
     kova_home = tmp_path / "kova"
     kova_home.mkdir(parents=True, exist_ok=True)
     (kova_home / "auth.json").write_text(json.dumps({"version": 1, "providers": {}}))
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
     monkeypatch.delenv("KOVA_XAI_BASE_URL", raising=False)
     monkeypatch.delenv("XAI_BASE_URL", raising=False)
 
@@ -1346,7 +1346,7 @@ def test_pool_entry_needs_refresh_when_jwt_within_skew(tmp_path, monkeypatch):
     kova_home = tmp_path / "kova"
     kova_home.mkdir(parents=True, exist_ok=True)
     (kova_home / "auth.json").write_text(json.dumps({"version": 1, "providers": {}}))
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     # Token expires in 30s — well inside the proactive refresh skew window.
     near_expiry = _jwt_with_exp(int(time.time()) + 30)
@@ -1375,7 +1375,7 @@ def test_pool_entry_no_refresh_for_fresh_jwt(tmp_path, monkeypatch):
     kova_home = tmp_path / "kova"
     kova_home.mkdir(parents=True, exist_ok=True)
     (kova_home / "auth.json").write_text(json.dumps({"version": 1, "providers": {}}))
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     fresh = _jwt_with_exp(int(time.time()) + 2 * 60 * 60)
     pool = load_pool("xai-oauth")
@@ -1404,7 +1404,7 @@ def test_pool_select_proactively_refreshes_expiring_token(tmp_path, monkeypatch)
     kova_home = tmp_path / "kova"
     kova_home.mkdir(parents=True, exist_ok=True)
     (kova_home / "auth.json").write_text(json.dumps({"version": 1, "providers": {}}))
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     near_expiry = _jwt_with_exp(int(time.time()) + 30)
     new_access = _jwt_with_exp(int(time.time()) + 2 * 60 * 60)
@@ -1458,7 +1458,7 @@ def test_pool_try_refresh_current_handles_xai_oauth(tmp_path, monkeypatch):
     kova_home = tmp_path / "kova"
     kova_home.mkdir(parents=True, exist_ok=True)
     (kova_home / "auth.json").write_text(json.dumps({"version": 1, "providers": {}}))
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     # Even a "fresh-looking" token gets force-refreshed via try_refresh_current.
     # We simulate the scenario where the server rejected the token (401)
@@ -1513,7 +1513,7 @@ def test_pool_refresh_marks_entry_exhausted_on_failure(tmp_path, monkeypatch):
     kova_home = tmp_path / "kova"
     kova_home.mkdir(parents=True, exist_ok=True)
     (kova_home / "auth.json").write_text(json.dumps({"version": 1, "providers": {}}))
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     def _fake_refresh_fail(*args, **kwargs):
         raise AuthError("refresh_token_reused", code="xai_refresh_failed", relogin_required=True)
@@ -1551,7 +1551,7 @@ def test_pool_seeded_entry_sync_back_after_refresh(tmp_path, monkeypatch):
     kova_home = tmp_path / "kova"
     near_expiry = _jwt_with_exp(int(time.time()) + 30)
     _setup_kova_auth(kova_home, access_token=near_expiry, refresh_token="rt-singleton")
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     new_access = _jwt_with_exp(int(time.time()) + 2 * 60 * 60)
 
@@ -1595,7 +1595,7 @@ def test_pool_refresh_adopts_singleton_tokens_when_consumed_elsewhere(tmp_path, 
     kova_home = tmp_path / "kova"
     in_memory_at = _jwt_with_exp(int(time.time()) + 30)  # near-expiry
     _setup_kova_auth(kova_home, access_token=in_memory_at, refresh_token="rt-stale")
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     # Load the pool once so the in-memory entry is seeded with rt-stale.
     pool = load_pool("xai-oauth")
@@ -1648,7 +1648,7 @@ def test_pool_refresh_recovers_when_other_process_already_refreshed(tmp_path, mo
     kova_home = tmp_path / "kova"
     in_memory_at = _jwt_with_exp(int(time.time()) + 30)
     _setup_kova_auth(kova_home, access_token=in_memory_at, refresh_token="rt-shared")
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     pool = load_pool("xai-oauth")
 
@@ -1696,7 +1696,7 @@ def test_pool_exhausted_xai_entry_recovers_after_singleton_refresh(tmp_path, mon
     kova_home = tmp_path / "kova"
     stale_at = _jwt_with_exp(int(time.time()) + 2 * 60 * 60)
     _setup_kova_auth(kova_home, access_token=stale_at, refresh_token="rt-stale")
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     pool = load_pool("xai-oauth")
     seeded = pool.entries()[0]
@@ -1750,7 +1750,7 @@ def test_pool_manual_xai_entry_not_synced_from_singleton(tmp_path, monkeypatch):
     kova_home = tmp_path / "kova"
     singleton_at = _jwt_with_exp(int(time.time()) + 2 * 60 * 60)
     _setup_kova_auth(kova_home, access_token=singleton_at, refresh_token="rt-singleton")
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     pool = load_pool("xai-oauth")
 
@@ -1788,7 +1788,7 @@ def test_pool_manual_entry_does_not_sync_back_to_singleton(tmp_path, monkeypatch
     # Singleton has its own tokens (separate login).
     singleton_at = _jwt_with_exp(int(time.time()) + 2 * 60 * 60)
     _setup_kova_auth(kova_home, access_token=singleton_at, refresh_token="rt-singleton")
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     manual_at_old = _jwt_with_exp(int(time.time()) + 30)
     manual_at_new = _jwt_with_exp(int(time.time()) + 7200)
@@ -1857,7 +1857,7 @@ def test_auxiliary_client_routes_xai_oauth_through_responses_api(tmp_path, monke
     kova_home = tmp_path / "kova"
     fresh = _jwt_with_exp(int(time.time()) + 2 * 60 * 60)
     _setup_kova_auth(kova_home, access_token=fresh)
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
     monkeypatch.delenv("KOVA_XAI_BASE_URL", raising=False)
     monkeypatch.delenv("XAI_BASE_URL", raising=False)
 
@@ -1885,7 +1885,7 @@ def test_auxiliary_client_xai_oauth_returns_none_when_unauthenticated(tmp_path, 
     kova_home = tmp_path / "kova"
     kova_home.mkdir(parents=True, exist_ok=True)
     (kova_home / "auth.json").write_text(json.dumps({"version": 1, "providers": {}}))
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     client, model = resolve_provider_client("xai-oauth", model="grok-4")
     assert client is None
@@ -1901,7 +1901,7 @@ def test_auxiliary_client_xai_oauth_requires_explicit_model(tmp_path, monkeypatc
     kova_home = tmp_path / "kova"
     fresh = _jwt_with_exp(int(time.time()) + 2 * 60 * 60)
     _setup_kova_auth(kova_home, access_token=fresh)
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     client, model = resolve_provider_client("xai-oauth", model=None)
     assert client is None
@@ -1926,7 +1926,7 @@ def test_pool_sync_back_preserves_active_provider(tmp_path, monkeypatch):
     kova_home = tmp_path / "kova"
     near_expiry = _jwt_with_exp(int(time.time()) + 30)
     _setup_kova_auth(kova_home, access_token=near_expiry, refresh_token="rt-xai")
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     # Simulate a multi-provider user whose actual chosen provider is
     # OpenRouter — xai-oauth tokens exist in the singleton but are NOT

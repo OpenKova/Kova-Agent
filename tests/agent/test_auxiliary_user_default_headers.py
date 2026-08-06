@@ -16,10 +16,10 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def _isolate(tmp_path, monkeypatch):
-    """Redirect HERMES_HOME so load_config() reads our test config.yaml."""
+    """Redirect KOVA_HOME so load_config() reads our test config.yaml."""
     kova_home = tmp_path / ".kova"
     kova_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
     (kova_home / "config.yaml").write_text("model:\n  default: test-model\n")
 
 

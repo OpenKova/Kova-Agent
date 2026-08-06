@@ -160,7 +160,7 @@ A systemd-managed gateway can opt into process recovery when Python's asyncio
 event loop stops receiving scheduling time. This covers whole-process stalls
 that also prevent platform-specific liveness tasks from running:
 
-```yaml title="~/.hermes/config.yaml"
+```yaml title="~/.kova/config.yaml"
 gateway:
   systemd_watchdog_seconds: 120
 ```
@@ -238,7 +238,7 @@ old behavior: in-flight responses are lost on crash).
 
 **By default sessions never auto-reset** — context lives until you `/reset`
 manually or context compression kicks in. If you want automatic resets, opt in
-with the `session_reset` section in `~/.hermes/config.yaml`:
+with the `session_reset` section in `~/.kova/config.yaml`:
 
 ```yaml
 session_reset:
@@ -263,7 +263,7 @@ guard. Set it to `0` to disable the cutoff (any live process blocks reset, the
 old behavior), or raise it if you run legitimate multi-day jobs whose liveness
 should keep the conversation open.
 
-Configure per-platform overrides in `~/.hermes/gateway.json`:
+Configure per-platform overrides in `~/.kova/gateway.json`:
 
 ```json
 {
@@ -380,7 +380,7 @@ If you find the busy acknowledgment noisy, set `display.busy_ack_enabled: false`
 
 ## Tool Progress Notifications
 
-Control how much tool activity is displayed in `~/.hermes/config.yaml`:
+Control how much tool activity is displayed in `~/.kova/config.yaml`:
 
 ```yaml
 display:
@@ -446,7 +446,7 @@ Each `/background` prompt spawns a **separate agent instance** that runs asynchr
 
 ### Background Process Notifications
 
-When the agent running a background session uses `terminal(background=true)` to start long-running processes (servers, builds, etc.), the gateway can push status updates to your chat. Control this with `display.background_process_notifications` in `~/.hermes/config.yaml`:
+When the agent running a background session uses `terminal(background=true)` to start long-running processes (servers, builds, etc.), the gateway can push status updates to your chat. Control this with `display.background_process_notifications` in `~/.kova/config.yaml`:
 
 ```yaml
 display:
@@ -524,7 +524,7 @@ kova ALL=(root) NOPASSWD: /usr/bin/systemctl --no-ask-password reset-failed kova
 Avoid keeping both the user and system gateway units installed at once unless you really mean to. Kova will warn if it detects both because start/stop/status behavior gets ambiguous.
 
 :::info Multiple installations
-If you run multiple Kova installations on the same machine (with different `HERMES_HOME` directories), each gets its own systemd service name. The default `~/.hermes` uses `kova-gateway`; other installations use `kova-gateway-<hash>`. The `kova gateway` commands automatically target the correct service for your current `HERMES_HOME`.
+If you run multiple Kova installations on the same machine (with different `KOVA_HOME` directories), each gets its own systemd service name. The default `~/.kova` uses `kova-gateway`; other installations use `kova-gateway-<hash>`. The `kova gateway` commands automatically target the correct service for your current `KOVA_HOME`.
 :::
 
 ### macOS (launchd)
@@ -534,21 +534,21 @@ kova gateway install               # Install as launchd agent
 kova gateway start                 # Start the service
 kova gateway stop                  # Stop the service
 kova gateway status                # Check status
-tail -f ~/.hermes/logs/gateway.log   # View logs
+tail -f ~/.kova/logs/gateway.log   # View logs
 ```
 
 The generated plist lives at `~/Library/LaunchAgents/ai.kova.gateway.plist`. It includes three environment variables:
 
 - **PATH** — your full shell PATH at install time, with the venv `bin/` and `node_modules/.bin` prepended. This ensures user-installed tools (Node.js, ffmpeg, etc.) are available to gateway subprocesses like the WhatsApp bridge.
 - **VIRTUAL_ENV** — points to the Python virtualenv so tools can resolve packages correctly.
-- **HERMES_HOME** — scopes the gateway to your Kova installation.
+- **KOVA_HOME** — scopes the gateway to your Kova installation.
 
 :::tip PATH changes after install
 launchd plists are static — if you install new tools (e.g. a new Node.js version via nvm, or ffmpeg via Homebrew) after setting up the gateway, run `kova gateway install` again to capture the updated PATH. The gateway will detect the stale plist and reload automatically.
 :::
 
 :::info Multiple installations
-Like the Linux systemd service, each `HERMES_HOME` directory gets its own launchd label. The default `~/.hermes` uses `ai.kova.gateway`; other installations use `ai.kova.gateway-<suffix>`.
+Like the Linux systemd service, each `KOVA_HOME` directory gets its own launchd label. The default `~/.kova` uses `ai.kova.gateway`; other installations use `ai.kova.gateway-<suffix>`.
 :::
 
 ## Platform-Specific Toolsets
@@ -611,7 +611,7 @@ The breaker does **not** auto-resume — it stays open until you run `/platform 
 
 When an adapter is paused, check:
 
-1. **Gateway log** (`~/.hermes/logs/gateway.log` or the systemd / launchd unit log). Search for the platform name and `circuit breaker`, `paused`, or `disabled`. The trip event includes the failure count and the last error.
+1. **Gateway log** (`~/.kova/logs/gateway.log` or the systemd / launchd unit log). Search for the platform name and `circuit breaker`, `paused`, or `disabled`. The trip event includes the failure count and the last error.
 2. **`/platform list`** output — shows the current state and last reason.
 3. **The provider's status page** (Telegram bot API status, Discord status, etc.). The breaker tripped because the platform was unhealthy; don't try to resume until it's back.
 

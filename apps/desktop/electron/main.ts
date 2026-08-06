@@ -449,24 +449,24 @@ if (INSTALL_STAMP) {
   )
 }
 
-// HERMES_HOME — the user-facing root for everything Kova-related. Mirrors
-// scripts/install.ps1's $KovaHome and scripts/install.sh's $HERMES_HOME.
+// KOVA_HOME — the user-facing root for everything Kova-related. Mirrors
+// scripts/install.ps1's $KovaHome and scripts/install.sh's $KOVA_HOME.
 //
 // Defaults:
 //   Windows: %LOCALAPPDATA%\kova (matches install.ps1)
-//   macOS / Linux: ~/.hermes (matches install.sh)
+//   macOS / Linux: ~/.kova (matches install.sh)
 //
-// Special case for Windows: if the user has a legacy ~/.hermes directory
+// Special case for Windows: if the user has a legacy ~/.kova directory
 // (e.g., from a prior pip install or a manual setup) AND no
 // %LOCALAPPDATA%\kova yet, prefer the legacy path so we don't orphan their
 // existing config / sessions / .env. New installs go to %LOCALAPPDATA%.
 //
 // KOVA_DESKTOP_USER_DATA_DIR (used by test:desktop:fresh) puts the sandbox
-// HERMES_HOME beneath the throwaway userData dir so a fresh-install run never
-// touches the user's real ~/.hermes / %LOCALAPPDATA%\kova.
+// KOVA_HOME beneath the throwaway userData dir so a fresh-install run never
+// touches the user's real ~/.kova / %LOCALAPPDATA%\kova.
 function resolveKovaHome() {
-  if (process.env.HERMES_HOME) {
-    return normalizeKovaHomeRoot(process.env.HERMES_HOME)
+  if (process.env.KOVA_HOME) {
+    return normalizeKovaHomeRoot(process.env.KOVA_HOME)
   }
 
   if (USER_DATA_OVERRIDE) {
@@ -475,12 +475,12 @@ function resolveKovaHome() {
 
   if (IS_WINDOWS) {
     // A GUI app launched from Explorer inherits the environment block captured
-    // at login, so a HERMES_HOME set via `setx` AFTER login is invisible in
+    // at login, so a KOVA_HOME set via `setx` AFTER login is invisible in
     // process.env even though the CLI (a fresh shell) sees it. Without this the
     // backend silently falls back to %LOCALAPPDATA%\kova and reports "No
     // inference provider configured" despite a valid configured home (#45471).
     // Consult the live User-scoped registry value before the default below.
-    const fromRegistry = readWindowsUserEnvVar('HERMES_HOME')
+    const fromRegistry = readWindowsUserEnvVar('KOVA_HOME')
 
     if (fromRegistry) {
       return normalizeKovaHomeRoot(fromRegistry)
@@ -492,7 +492,7 @@ function resolveKovaHome() {
     const legacy = path.join(app.getPath('home'), '.kova')
 
     // Migrate transparently to LOCALAPPDATA, but honour an existing legacy
-    // ~/.hermes setup (no LOCALAPPDATA install yet) so users don't lose state.
+    // ~/.kova setup (no LOCALAPPDATA install yet) so users don't lose state.
     if (!directoryExists(localappdata) && directoryExists(legacy)) {
       return legacy
     }
@@ -503,13 +503,13 @@ function resolveKovaHome() {
   return path.join(app.getPath('home'), '.kova')
 }
 
-const HERMES_HOME = resolveKovaHome()
+const KOVA_HOME = resolveKovaHome()
 
 function kovaManagedNodePathEntries() {
   // NOTE: keep this ordering in sync with iter_kova_node_dirs() in
   // kova_constants.py — this Node main process cannot import the Python
   // module, so the platform-ordering rule is mirrored here.
-  const root = path.join(HERMES_HOME, 'node')
+  const root = path.join(KOVA_HOME, 'node')
   const bin = path.join(root, 'bin')
   const entries = IS_WINDOWS ? [root, bin] : [bin, root]
 
@@ -523,7 +523,7 @@ function pathWithKovaManagedNode(...entries) {
 // ACTIVE_KOVA_ROOT — the canonical mutable Kova install. Same path
 // install.ps1 / install.sh use, so a desktop-only user and a CLI-only user end
 // up with identical layouts and can share one install.
-const ACTIVE_KOVA_ROOT = path.join(HERMES_HOME, 'hermes-agent')
+const ACTIVE_KOVA_ROOT = path.join(KOVA_HOME, 'kova-agent')
 // VENV_ROOT — venv lives inside the repo, exactly like install.ps1 does it.
 const VENV_ROOT = path.join(ACTIVE_KOVA_ROOT, 'venv')
 // BOOTSTRAP_COMPLETE_MARKER — written by the first-launch bootstrap runner
@@ -537,7 +537,7 @@ const VENV_ROOT = path.join(ACTIVE_KOVA_ROOT, 'venv')
 // We deliberately put the marker INSIDE ACTIVE_KOVA_ROOT (not alongside)
 // so that deleting the checkout to start fresh also deletes the marker --
 // avoids the confusing "marker exists but checkout is gone" state.
-const BOOTSTRAP_COMPLETE_MARKER = path.join(ACTIVE_KOVA_ROOT, '.hermes-bootstrap-complete')
+const BOOTSTRAP_COMPLETE_MARKER = path.join(ACTIVE_KOVA_ROOT, '.kova-bootstrap-complete')
 const BOOTSTRAP_MARKER_SCHEMA_VERSION = 1
 
 const DESKTOP_CONNECTION_CONFIG_PATH = path.join(app.getPath('userData'), 'connection.json')
@@ -546,9 +546,9 @@ const DESKTOP_UPDATE_CONFIG_PATH = path.join(app.getPath('userData'), 'updates.j
 const DESKTOP_WINDOW_STATE_PATH = path.join(app.getPath('userData'), 'window-state.json')
 // active-profile.json records which Kova profile the desktop launches its
 // local backend as. When set, startKova() passes `kova --profile <name>
-// dashboard …`, which deterministically pins HERMES_HOME (see
+// dashboard …`, which deterministically pins KOVA_HOME (see
 // _apply_profile_override in kova_cli/main.py) and bypasses the sticky
-// ~/.hermes/active_profile file. Unset (null) preserves the legacy behavior:
+// ~/.kova/active_profile file. Unset (null) preserves the legacy behavior:
 // no --profile flag, so the backend honors active_profile / default.
 const DESKTOP_PROFILE_CONFIG_PATH = path.join(app.getPath('userData'), 'active-profile.json')
 // Mirrors kova_cli.profiles._PROFILE_ID_RE so we never hand the backend a
@@ -558,10 +558,10 @@ const PROFILE_NAME_RE = /^[a-z0-9][a-z0-9_-]{0,63}$/
 // tracks main. User can also override at runtime via
 // kovaDesktop.updates.setBranch().
 const DEFAULT_UPDATE_BRANCH = 'main'
-// desktop.log lives under HERMES_HOME/logs/ so it sits next to agent.log,
+// desktop.log lives under KOVA_HOME/logs/ so it sits next to agent.log,
 // errors.log, gateway.log produced by kova_logging.setup_logging — one log
 // directory per user, regardless of which UI surface produced the line.
-const DESKTOP_LOG_PATH = path.join(HERMES_HOME, 'logs', 'desktop.log')
+const DESKTOP_LOG_PATH = path.join(KOVA_HOME, 'logs', 'desktop.log')
 const DESKTOP_LOG_FLUSH_MS = 120
 const DESKTOP_LOG_BUFFER_MAX_CHARS = 64 * 1024
 // Bound desktop.log on disk. It is an append-only forensic log, so a boot loop
@@ -1513,7 +1513,7 @@ function directoryExists(filePath) {
 }
 
 // --- in-app update mutual exclusion (#50238) -------------------------------
-// The Tauri updater writes HERMES_HOME/.kova-update-in-progress for the whole
+// The Tauri updater writes KOVA_HOME/.kova-update-in-progress for the whole
 // duration of an `--update` run (see update.rs UpdateMarkerGuard). If the user
 // relaunches the desktop mid-update — because the window vanished with no
 // progress and looks crashed — a fresh instance must NOT spawn its own local
@@ -1543,7 +1543,7 @@ const UPDATE_HANDOFF_DWELL_MS = 2500
 // Emits a boot-progress phase so the renderer shows "Update in progress…"
 // rather than a frozen splash. Returns true if it parked at all.
 async function waitForUpdateToFinish() {
-  let marker = readLiveUpdateMarker(HERMES_HOME)
+  let marker = readLiveUpdateMarker(KOVA_HOME)
 
   if (!marker) {
     return false
@@ -1559,7 +1559,7 @@ async function waitForUpdateToFinish() {
       12
     )
     await new Promise(r => setTimeout(r, UPDATE_WAIT_POLL_MS))
-    marker = readLiveUpdateMarker(HERMES_HOME)
+    marker = readLiveUpdateMarker(KOVA_HOME)
   }
 
   if (marker) {
@@ -1632,7 +1632,7 @@ function unwrapWindowsVenvKovaCommand(command, backendArgs) {
     getVenvPython,
     getVenvSitePackagesEntries,
     buildDesktopBackendEnv,
-    kovaHome: HERMES_HOME,
+    kovaHome: KOVA_HOME,
     resolvePath: (...segments) => path.resolve(...segments),
     dirname: p => path.dirname(p),
     basename: p => path.basename(p),
@@ -1679,7 +1679,7 @@ function backendSupportsServe(backend) {
       const prefix = backend.args && backend.args[0] === '-m' ? backend.args.slice(0, 2) : []
       execFileSync(backend.command, [...prefix, 'serve', '--help'], {
         cwd: backend.root || undefined,
-        env: { ...process.env, HERMES_HOME, ...(backend.env || {}) },
+        env: { ...process.env, KOVA_HOME, ...(backend.env || {}) },
         timeout: 15000,
         stdio: 'ignore',
         windowsHide: true
@@ -2355,7 +2355,7 @@ let updateInFlight = false
 let isQuittingForHandoff = false
 
 // Resolve the staged updater binary. The Tauri installer copies itself to
-// HERMES_HOME/kova-setup.exe on a successful install (see
+// KOVA_HOME/kova-setup.exe on a successful install (see
 // apps/bootstrap-installer paths::copy_self_to_kova_home). That binary owns
 // ALL repo mutation — running `kova update` + rebuilding the desktop — so
 // the desktop never touches its own bits while running. Returns null when the
@@ -2363,7 +2363,7 @@ let isQuittingForHandoff = false
 // installer); callers degrade gracefully.
 function resolveUpdaterBinary() {
   const name = IS_WINDOWS ? 'kova-setup.exe' : 'kova-setup'
-  const candidate = path.join(HERMES_HOME, name)
+  const candidate = path.join(KOVA_HOME, name)
 
   return fileExists(candidate) ? candidate : null
 }
@@ -2605,7 +2605,7 @@ async function applyUpdates(opts = {}) {
     if (!updater) {
       // No staged updater binary — this is a CLI-installed user (they ran
       // `kova desktop`, never the Tauri installer that self-copies
-      // kova-setup.exe into HERMES_HOME). They DO have a working `kova`
+      // kova-setup.exe into KOVA_HOME). They DO have a working `kova`
       // on PATH / in the venv, so the correct path is the one-liner in their
       // native medium. We show the EXACT command, branch-pinned to the
       // checkout they're on — bare `kova update` defaults to main and would
@@ -2681,10 +2681,10 @@ async function applyUpdates(opts = {}) {
     // Detached so the updater outlives this process — it needs us GONE before
     // `kova update` will run (the venv shim is locked while we live).
     const child = spawnUpdaterProcess(updater, updaterArgs, {
-      cwd: HERMES_HOME,
+      cwd: KOVA_HOME,
       env: {
         ...process.env,
-        HERMES_HOME,
+        KOVA_HOME,
         PATH: pathWithKovaManagedNode(venvBin)
       },
       detached: true,
@@ -2699,7 +2699,7 @@ async function applyUpdates(opts = {}) {
     // waitForUpdateToFinish() gate sees a live update and parks instead.
     // The updater overwrites this with its own PID later; same format.
     if (Number.isInteger(child.pid)) {
-      writeUpdateMarker(HERMES_HOME, child.pid)
+      writeUpdateMarker(KOVA_HOME, child.pid)
     }
 
     rememberLog(`[updates] launched updater: ${updater} ${updaterArgs.join(' ')}; exiting desktop to release venv shim`)
@@ -2749,17 +2749,17 @@ async function handOffWindowsBootstrapRecovery(reason) {
   // --repair (full venv recreate) and drove reinstall loops. The venv interpreter
   // and the bootstrap-complete marker are present earlier and are better signals.
   const haveRealInstall =
-    fileExists(venvPython) || fileExists(venvKova) || fileExists(path.join(updateRoot, '.hermes-bootstrap-complete'))
+    fileExists(venvPython) || fileExists(venvKova) || fileExists(path.join(updateRoot, '.kova-bootstrap-complete'))
 
   const updaterArgs = chooseUpdaterArgs(haveRealInstall, branch)
 
   await releaseBackendLockForUpdate(updateRoot)
 
   const child = spawnUpdaterProcess(updater, updaterArgs, {
-    cwd: HERMES_HOME,
+    cwd: KOVA_HOME,
     env: {
       ...process.env,
-      HERMES_HOME,
+      KOVA_HOME,
       PATH: pathWithKovaManagedNode(venvBin)
     },
     detached: true,
@@ -2770,7 +2770,7 @@ async function handOffWindowsBootstrapRecovery(reason) {
   // hand-off has the same window where the renderer can respawn a backend
   // before the updater writes its own marker.
   if (Number.isInteger(child.pid)) {
-    writeUpdateMarker(HERMES_HOME, child.pid)
+    writeUpdateMarker(KOVA_HOME, child.pid)
   }
 
   rememberLog(
@@ -2879,7 +2879,7 @@ async function applyUpdatesPosixInApp(opts: any) {
   // multi-GB archives for minutes) stream nothing to the progress UI — users
   // read the silence as a hang and cancel a healthy update.
   const env: Record<string, string> = {
-    HERMES_HOME,
+    KOVA_HOME,
     PYTHONUNBUFFERED: '1',
     PATH: pathWithKovaManagedNode(path.join(updateRoot, 'venv', 'bin'))
   }
@@ -3420,7 +3420,7 @@ function createPythonBackend(root, label, backendArgs, options: any = {}) {
     command,
     args: ['-m', `${cliModule}.main`, ...backendArgs],
     env: buildDesktopBackendEnv({
-      kovaHome: HERMES_HOME,
+      kovaHome: KOVA_HOME,
       pythonPathEntries: [root, ...getVenvSitePackagesEntries(venvRoot)],
       venvRoot
     }),
@@ -3445,7 +3445,7 @@ function createActiveBackend(backendArgs) {
     command,
     args: ['-m', `${cliModule}.main`, ...backendArgs],
     env: buildDesktopBackendEnv({
-      kovaHome: HERMES_HOME,
+      kovaHome: KOVA_HOME,
       pythonPathEntries: [ACTIVE_KOVA_ROOT, ...getVenvSitePackagesEntries(VENV_ROOT)],
       venvRoot: VENV_ROOT
     }),
@@ -3481,7 +3481,7 @@ function resolveKovaBackend(backendArgs) {
   }
 
   // 3. Bootstrap-complete ACTIVE_KOVA_ROOT -- the canonical install at
-  //    %LOCALAPPDATA%\kova\kova-agent (Windows) or ~/.hermes/kova-agent.
+  //    %LOCALAPPDATA%\kova\kova-agent (Windows) or ~/.kova/kova-agent.
   //    The bootstrap marker means install.ps1 stages finished and the user
   //    completed initial configuration; we trust the install and go straight
   //    to spawning kova. Updates flow through the in-app update path
@@ -3667,8 +3667,8 @@ async function ensureRuntime(backend) {
       installStamp: backend.installStamp,
       activeRoot: backend.activeRoot,
       sourceRepoRoot: SOURCE_REPO_ROOT,
-      kovaHome: HERMES_HOME,
-      logRoot: path.join(HERMES_HOME, 'logs'),
+      kovaHome: KOVA_HOME,
+      logRoot: path.join(KOVA_HOME, 'logs'),
       abortSignal: bootstrapAbortController.signal,
       onEvent: ev => {
         // Tee every bootstrap event to (a) the desktop log for forensics
@@ -3704,7 +3704,7 @@ async function ensureRuntime(backend) {
       const bootstrapError = new Error(
         `Kova bootstrap failed${bootstrapResult.failedStage ? ` at stage '${bootstrapResult.failedStage}'` : ''}: ` +
           `${bootstrapResult.error || 'unknown error'}. ` +
-          `Check ${path.join(HERMES_HOME, 'logs', 'desktop.log')} for the full transcript.`
+          `Check ${path.join(KOVA_HOME, 'logs', 'desktop.log')} for the full transcript.`
       ) as any
 
       bootstrapError.isBootstrapFailure = true
@@ -6372,7 +6372,7 @@ function writeDesktopConnectionConfig(config) {
 }
 
 // Returns the desktop's chosen profile name, or null when unset. "default" is
-// a valid stored value (pins the root HERMES_HOME explicitly); null means "no
+// a valid stored value (pins the root KOVA_HOME explicitly); null means "no
 // preference" and preserves the legacy launch (no --profile flag).
 function readActiveDesktopProfile() {
   try {
@@ -7565,7 +7565,7 @@ async function spawnPoolBackend(profile, entry) {
   }
 
   const token = crypto.randomBytes(32).toString('base64url')
-  // --profile wins over the inherited HERMES_HOME env (see _apply_profile_override
+  // --profile wins over the inherited KOVA_HOME env (see _apply_profile_override
   // step 3 in kova_cli/main.py), so the child re-homes to this profile.
   // --port 0: the OS assigns an ephemeral port; the child announces it on stdout.
   const backendArgs = ['--profile', profile, 'serve', '--host', '127.0.0.1', '--port', '0']
@@ -7585,7 +7585,7 @@ async function spawnPoolBackend(profile, entry) {
       cwd: kovaCwd,
       env: {
         ...process.env,
-        HERMES_HOME,
+        KOVA_HOME,
         ...backend.env,
         // Pin the gateway's tool/terminal cwd to the same directory we chose for
         // the child process. Inherited TERMINAL_CWD (or a stale config bridge)
@@ -7815,8 +7815,8 @@ async function startKova() {
     // --port 0: the OS assigns an ephemeral port; the child announces it on stdout.
     const backendArgs = ['serve', '--host', '127.0.0.1', '--port', '0']
     // Pin the desktop's chosen profile via the global --profile flag. This is
-    // deterministic (it wins over the sticky ~/.hermes/active_profile file) and
-    // resolves HERMES_HOME the same way `kova -p <name>` does on the CLI. An
+    // deterministic (it wins over the sticky ~/.kova/active_profile file) and
+    // resolves KOVA_HOME the same way `kova -p <name>` does on the CLI. An
     // unset preference keeps the legacy launch so existing installs are
     // unaffected.
     const activeProfile = readActiveDesktopProfile()
@@ -7843,15 +7843,15 @@ async function startKova() {
         cwd: kovaCwd,
         env: {
           ...process.env,
-          // Explicitly pin HERMES_HOME for the child so Python's get_kova_home()
+          // Explicitly pin KOVA_HOME for the child so Python's get_kova_home()
           // resolves to the SAME location our resolveKovaHome() picked. Without
-          // this pin, Python falls back to ~/.hermes on every platform — fine on
+          // this pin, Python falls back to ~/.kova on every platform — fine on
           // mac/linux (where our default matches), but on Windows our default is
           // %LOCALAPPDATA%\kova, which differs from C:\Users\<u>\.kova.
           // Mismatch would split config / sessions / .env / logs across two
-          // directories. install.ps1 sets HERMES_HOME via setx; the desktop
+          // directories. install.ps1 sets KOVA_HOME via setx; the desktop
           // can't reliably do that, so we set it inline for every spawn.
-          HERMES_HOME,
+          KOVA_HOME,
           ...backend.env,
           TERMINAL_CWD: kovaCwd,
           KOVA_DASHBOARD_SESSION_TOKEN: token,
@@ -9023,7 +9023,7 @@ ipcMain.handle('kova:profile:set', async (_event, name) => {
   const next = writeActiveDesktopProfile(name)
 
   // Switching profiles is a backend re-home: relaunch the dashboard under the
-  // new HERMES_HOME. Pool backends keep their own homes, so only the primary
+  // new KOVA_HOME. Pool backends keep their own homes, so only the primary
   // is torn down.
   await teardownPrimaryBackendAndWait()
   mainWindow?.reload()
@@ -10290,7 +10290,7 @@ async function getUninstallSummary() {
   // Fast JS-side fallback used when the agent venv is gone (lite client) or the
   // probe fails — the renderer still needs *something* to render options from.
   const fallback = () => ({
-    kova_home: HERMES_HOME,
+    kova_home: KOVA_HOME,
     agent_installed: isKovaSourceRoot(agentRoot) && fileExists(py),
     gui_installed: true,
     source_built_artifacts: [],
@@ -10325,7 +10325,7 @@ async function getUninstallSummary() {
         ['-m', uninstallCli, 'uninstall', '--gui-summary'],
         hiddenWindowsChildOptions({
           cwd: agentRoot,
-          env: { ...process.env, HERMES_HOME, NO_COLOR: '1' },
+          env: { ...process.env, KOVA_HOME, NO_COLOR: '1' },
           stdio: ['ignore', 'pipe', 'ignore']
         })
       )
@@ -10425,7 +10425,7 @@ async function runDesktopUninstall(mode) {
     agentRoot: ACTIVE_KOVA_ROOT,
     uninstallArgs,
     appPath: removeBundle,
-    kovaHome: HERMES_HOME
+    kovaHome: KOVA_HOME
   }
 
   let scriptPath

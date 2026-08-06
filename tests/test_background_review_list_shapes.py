@@ -47,7 +47,7 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def _isolate_kova_home():
-    os.environ.setdefault("HERMES_HOME", "/tmp/kova-bg-review-test")
+    os.environ.setdefault("KOVA_HOME", "/tmp/kova-bg-review-test")
 
 
 def _load_module():

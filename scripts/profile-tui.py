@@ -5,7 +5,7 @@ Usage:
   scripts/profile-tui.py [--session SID] [--hold KEY] [--seconds N] [--rate HZ]
 
 Defaults: picks the session with the most messages, holds PageUp for 8s at
-~30 Hz (matching xterm key-repeat), summarizes ~/.hermes/perf.log on exit.
+~30 Hz (matching xterm key-repeat), summarizes ~/.kova/perf.log on exit.
 
 The --tui build must exist (run `npm run build` in ui-tui first). This script
 launches `node dist/entry.js` directly with KOVA_TUI_RESUME set so it
@@ -13,7 +13,7 @@ bypasses the kova_cli wrapper — we want repeatable timing, not the CLI's
 session-picker flow.
 
 Environment overrides:
-  KOVA_PERF_LOG     (default ~/.hermes/perf.log)
+  KOVA_PERF_LOG     (default ~/.kova/perf.log)
   KOVA_PERF_NODE    (default node from $PATH)
   KOVA_TUI_DIR      (default: <repo>/ui-tui relative to this script)
 
@@ -41,7 +41,7 @@ try:
     from kova_constants import get_kova_home
 except ImportError:
     def get_kova_home() -> Path:  # type: ignore[misc]
-        val = (os.environ.get("HERMES_HOME") or "").strip()
+        val = (os.environ.get("KOVA_HOME") or "").strip()
         return Path(val) if val else Path.home() / ".kova"
 
 DEFAULT_TUI_DIR = Path(

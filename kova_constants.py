@@ -52,15 +52,15 @@ def _get_platform_default_kova_home() -> Path:
 
 
 def _kova_home_from_env() -> Path:
-    """Resolve HERMES_HOME from the process environment only.
+    """Resolve KOVA_HOME from the process environment only.
 
-    Reads the ``HERMES_HOME`` env var, falling back to the platform-native
+    Reads the ``KOVA_HOME`` env var, falling back to the platform-native
     default.  Deliberately ignores the context-local override installed by
     :func:`set_kova_home_override`, so this reflects the process/launch
     scope rather than a per-task profile.  Shared by :func:`get_kova_home`
     and :func:`get_process_kova_home` so the two never drift.
     """
-    val = os.environ.get("HERMES_HOME", "").strip()
+    val = os.environ.get("KOVA_HOME", "").strip()
     if val:
         return Path(val)
     return _get_platform_default_kova_home()
@@ -69,7 +69,7 @@ def _kova_home_from_env() -> Path:
 def _warn_profile_fallback_once() -> None:
     """Warn once when falling back to the default home while a profile is active.
 
-    Guard: if a non-default profile is sticky-active but ``HERMES_HOME`` is
+    Guard: if a non-default profile is sticky-active but ``KOVA_HOME`` is
     unset, the fallback to the default profile is almost certainly wrong.
     """
     global _profile_fallback_warned
@@ -89,11 +89,11 @@ def _warn_profile_fallback_once() -> None:
         # configured, and (b) root-logger propagation would double-emit
         # on consoles where a StreamHandler is already attached.
         msg = (
-            f"[HERMES_HOME fallback] HERMES_HOME is unset but active "
+            f"[KOVA_HOME fallback] KOVA_HOME is unset but active "
             f"profile is {active!r}. Falling back to {fallback_home}, which "
             f"is the DEFAULT profile — not {active!r}. Any data this "
             f"process writes will land in the wrong profile. The "
-            f"subprocess spawner should pass HERMES_HOME explicitly "
+            f"subprocess spawner should pass KOVA_HOME explicitly "
             f"(see issue #18594)."
         )
         try:
@@ -107,17 +107,17 @@ def get_kova_home() -> Path:
     """Return the Kova home directory (default: platform-native path).
 
     Resolution order: context-local override (see
-    :func:`set_kova_home_override`) → ``HERMES_HOME`` env var → the
+    :func:`set_kova_home_override`) → ``KOVA_HOME`` env var → the
     platform-native default.  This is the single source of truth — all other
     copies should import this.
 
-    When ``HERMES_HOME`` is unset but an ``active_profile`` file indicates
+    When ``KOVA_HOME`` is unset but an ``active_profile`` file indicates
     a non-default profile is active, logs a loud one-shot warning to
     ``errors.log`` so cross-profile data corruption is diagnosable instead
     of silent.  Behavior is unchanged otherwise — we still return
     the platform-native default — because raising here would brick 30+ module-level
     callers that import this at load time.  Subprocess spawners are
-    expected to propagate ``HERMES_HOME`` explicitly (see the systemd
+    expected to propagate ``KOVA_HOME`` explicitly (see the systemd
     template in ``kova_cli/gateway.py`` and the kanban dispatcher in
     ``kova_cli/kanban_db.py``).  See https://github.com/Kova/kova-agent/issues/18594.
     """
@@ -125,7 +125,7 @@ def get_kova_home() -> Path:
     if override:
         return Path(override)
 
-    if not os.environ.get("HERMES_HOME", "").strip():
+    if not os.environ.get("KOVA_HOME", "").strip():
         _warn_profile_fallback_once()
 
     return _kova_home_from_env()
@@ -136,7 +136,7 @@ def get_process_kova_home() -> Path:
 
     Unlike :func:`get_kova_home`, this never follows the context-local
     override set by :func:`set_kova_home_override`.  It resolves only the
-    process ``HERMES_HOME`` env var (falling back to the platform default),
+    process ``KOVA_HOME`` env var (falling back to the platform default),
     so it reflects the scope the process was launched under **as long as
     nothing mutates ``os.environ`` in-process**.
 
@@ -154,27 +154,27 @@ def get_default_kova_root() -> Path:
     """Return the root Kova directory for profile-level operations.
 
     In standard deployments this is the platform-native Kova home
-    (``~/.hermes`` on POSIX, ``%LOCALAPPDATA%\\kova`` on native Windows).
+    (``~/.kova`` on POSIX, ``%LOCALAPPDATA%\\kova`` on native Windows).
 
-    In Docker or custom deployments where ``HERMES_HOME`` points outside
-    ``~/.hermes`` (e.g. ``/opt/data``), returns ``HERMES_HOME`` directly
+    In Docker or custom deployments where ``KOVA_HOME`` points outside
+    ``~/.kova`` (e.g. ``/opt/data``), returns ``KOVA_HOME`` directly
     — that IS the root.
 
-    In profile mode where ``HERMES_HOME`` is ``<root>/profiles/<name>``,
+    In profile mode where ``KOVA_HOME`` is ``<root>/profiles/<name>``,
     returns ``<root>`` so that ``profile list`` can see all profiles.
-    Works both for standard (``~/.hermes/profiles/coder``) and Docker
+    Works both for standard (``~/.kova/profiles/coder``) and Docker
     (``/opt/data/profiles/coder``) layouts.
 
     Import-safe — no dependencies beyond stdlib.
     """
     native_home = _get_platform_default_kova_home()
-    env_home = os.environ.get("HERMES_HOME", "")
+    env_home = os.environ.get("KOVA_HOME", "")
     if not env_home:
         return native_home
     env_path = Path(env_home)
     try:
         env_path.resolve().relative_to(native_home.resolve())
-        # HERMES_HOME is under ~/.hermes (normal or profile mode)
+        # KOVA_HOME is under ~/.kova (normal or profile mode)
         return native_home
     except ValueError:
         pass
@@ -186,7 +186,7 @@ def get_default_kova_root() -> Path:
     if env_path.parent.name == "profiles":
         return env_path.parent.parent
 
-    # Not a profile path — HERMES_HOME itself is the root
+    # Not a profile path — KOVA_HOME itself is the root
     return env_path
 
 
@@ -226,7 +226,7 @@ def get_bundled_skills_dir(default: Path | None = None) -> Path:
     Resolution order:
         1. ``KOVA_BUNDLED_SKILLS`` env var (Nix wrapper / explicit override)
         2. Caller-supplied ``default`` (typically the source-checkout path)
-        3. ``<HERMES_HOME>/skills`` last-resort
+        3. ``<KOVA_HOME>/skills`` last-resort
     """
     override = os.getenv("KOVA_BUNDLED_SKILLS", "").strip()
     if override:
@@ -252,8 +252,8 @@ def get_kova_dir(new_subpath: str, old_name: str) -> Path:
     ``platforms/pairing/``.
 
     Args:
-        new_subpath: Preferred path relative to HERMES_HOME (e.g. ``"cache/images"``).
-        old_name: Legacy path relative to HERMES_HOME (e.g. ``"image_cache"``).
+        new_subpath: Preferred path relative to KOVA_HOME (e.g. ``"cache/images"``).
+        old_name: Legacy path relative to KOVA_HOME (e.g. ``"image_cache"``).
 
     Returns:
         Absolute ``Path`` — legacy location if it exists with content,
@@ -271,7 +271,7 @@ def iter_kova_node_dirs(home: Path | None = None) -> list[Path]:
 
     Windows installs from ``scripts/install.ps1`` unpack portable Node directly
     into ``%LOCALAPPDATA%\\kova\\node``. POSIX installs use
-    ``$HERMES_HOME/node/bin``. Include both shapes on every platform so mixed
+    ``$KOVA_HOME/node/bin``. Include both shapes on every platform so mixed
     or migrated installs still work.
     """
     root = home or get_kova_home()
@@ -308,8 +308,8 @@ _NODE_BOOTSTRAP_SCRIPT = Path(__file__).resolve().parent / "scripts" / "lib" / "
 def node_tool_runnable(path: str | None) -> bool:
     """Return True only when *path* is a Node/npm/npx binary that actually runs.
 
-    Kova-managed Node trees live under ``$HERMES_HOME/node`` (or a profile's
-    ``HERMES_HOME``). A partial upgrade or interrupted install can leave
+    Kova-managed Node trees live under ``$KOVA_HOME/node`` (or a profile's
+    ``KOVA_HOME``). A partial upgrade or interrupted install can leave
     ``bin/npm`` behind while ``lib/cli.js`` is missing — the wrapper exists but
     immediately throws ``MODULE_NOT_FOUND``. ``find_kova_node_executable``
     used to trust file presence alone, so ``kova update`` would pick that
@@ -360,7 +360,7 @@ def kova_managed_node_tree_present(home: Path | None = None) -> bool:
 
 
 def _heal_managed_node_windows() -> bool:
-    """Redownload the portable Node zip into ``%HERMES_HOME%\\node`` on Windows."""
+    """Redownload the portable Node zip into ``%KOVA_HOME%\\node`` on Windows."""
     import re
     import tempfile
     import urllib.request
@@ -450,7 +450,7 @@ def heal_kova_managed_node() -> bool:
                 "-c",
                 f'source "{_NODE_BOOTSTRAP_SCRIPT}" && heal_managed_node',
             ],
-            env={**os.environ, "HERMES_HOME": str(get_kova_home())},
+            env={**os.environ, "KOVA_HOME": str(get_kova_home())},
             capture_output=True,
             timeout=300,
             check=False,
@@ -642,16 +642,16 @@ def _legacy_path_has_content(path: Path) -> bool:
 
 
 def display_kova_home() -> str:
-    """Return a user-friendly display string for the current HERMES_HOME.
+    """Return a user-friendly display string for the current KOVA_HOME.
 
     Uses ``~/`` shorthand for readability::
 
-        default:  ``~/.hermes``
-        profile:  ``~/.hermes/profiles/coder``
+        default:  ``~/.kova``
+        profile:  ``~/.kova/profiles/coder``
         custom:   ``/opt/kova-custom``
 
     Use this in **user-facing** print/log messages instead of hardcoding
-    ``~/.hermes``.  For code that needs a real ``Path``, use
+    ``~/.kova``.  For code that needs a real ``Path``, use
     :func:`get_kova_home` instead.
     """
     home = get_kova_home()
@@ -666,7 +666,7 @@ def secure_parent_dir(path: Path) -> None:
 
     Refuses to chmod ``/`` or any top-level directory (resolved parent with
     fewer than 3 parts, i.e. ``/`` or any direct child like ``/usr``) to
-    prevent catastrophic host bricking when ``HERMES_HOME`` or other path
+    prevent catastrophic host bricking when ``KOVA_HOME`` or other path
     env vars resolve to an unexpected location.
 
     See https://github.com/Kova/kova-agent/issues/25821.
@@ -693,8 +693,8 @@ def _norm_home_path(path: str | None) -> str:
 
 
 def _profile_home_path(env: dict[str, str] | None = None) -> str | None:
-    """Return ``{HERMES_HOME}/home`` when the profile-home directory exists."""
-    kova_home = get_kova_home_override() or (env or {}).get("HERMES_HOME") or os.getenv("HERMES_HOME")
+    """Return ``{KOVA_HOME}/home`` when the profile-home directory exists."""
+    kova_home = get_kova_home_override() or (env or {}).get("KOVA_HOME") or os.getenv("KOVA_HOME")
     if not kova_home:
         return None
     profile_home = os.path.join(kova_home, "home")
@@ -741,9 +741,9 @@ def _iter_real_home_candidates(env: dict[str, str] | None = None) -> list[str]:
 def get_real_home(env: dict[str, str] | None = None) -> str:
     """Return the OS user's real home directory, avoiding Kova profile HOME.
 
-    ``HERMES_HOME`` scopes Kova state. ``HOME`` is reserved for the OS/user
+    ``KOVA_HOME`` scopes Kova state. ``HOME`` is reserved for the OS/user
     account and the many external CLIs that store credentials under ``~``.
-    If a parent process is already running with ``HOME={HERMES_HOME}/home``,
+    If a parent process is already running with ``HOME={KOVA_HOME}/home``,
     this helper repairs back to the account home when possible.
     """
     profile_home = _profile_home_path(env)
@@ -765,10 +765,10 @@ def get_subprocess_home(env: dict[str, str] | None = None) -> str | None:
     ``TERMINAL_HOME_MODE``):
 
     * ``auto`` (default): host installs keep the real user HOME; containers use
-      ``{HERMES_HOME}/home`` for persistent state. If a host parent already has
+      ``{KOVA_HOME}/home`` for persistent state. If a host parent already has
       HOME pointed at the profile home, repair subprocesses back to real HOME.
     * ``real``: always prefer the real OS-user HOME.
-    * ``profile``: use ``{HERMES_HOME}/home`` when it exists, preserving the
+    * ``profile``: use ``{KOVA_HOME}/home`` when it exists, preserving the
       older strict per-profile tool-config isolation.
     """
     env = env or {}
@@ -1156,7 +1156,7 @@ def is_container() -> bool:
 
 
 def get_config_path() -> Path:
-    """Return the path to ``config.yaml`` under HERMES_HOME.
+    """Return the path to ``config.yaml`` under KOVA_HOME.
 
     Replaces the ``get_kova_home() / "config.yaml"`` pattern repeated
     in 7+ files (skill_utils.py, kova_logging.py, kova_time.py, etc.).
@@ -1165,13 +1165,13 @@ def get_config_path() -> Path:
 
 
 def get_skills_dir() -> Path:
-    """Return the path to the skills directory under HERMES_HOME."""
+    """Return the path to the skills directory under KOVA_HOME."""
     return get_kova_home() / "skills"
 
 
 
 def get_env_path() -> Path:
-    """Return the path to the ``.env`` file under HERMES_HOME."""
+    """Return the path to the ``.env`` file under KOVA_HOME."""
     return get_kova_home() / ".env"
 
 

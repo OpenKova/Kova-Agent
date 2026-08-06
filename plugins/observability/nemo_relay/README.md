@@ -44,26 +44,26 @@ kova plugins enable observability/nemo_relay
 The `KOVA_NEMO_RELAY_*` environment variables below only configure an
 already-enabled plugin. They do not enable plugin discovery by themselves.
 
-For isolated test homes, enable the plugin in the same `HERMES_HOME` that the
+For isolated test homes, enable the plugin in the same `KOVA_HOME` that the
 agent run will use:
 
 ```bash
-env HERMES_HOME=/tmp/kova-nemo-relay-test \
+env KOVA_HOME=/tmp/kova-nemo-relay-test \
   kova plugins enable observability/nemo_relay
 ```
 
 Runs started with `--ignore_user_config` skip the enabled-plugin state from
-`HERMES_HOME`, so local E2E tests should omit that flag unless the test harness
+`KOVA_HOME`, so local E2E tests should omit that flag unless the test harness
 loads `observability/nemo_relay` explicitly another way.
 
-`HERMES_HOME` is the Kova profile/config home used by both
+`KOVA_HOME` is the Kova profile/config home used by both
 `kova plugins enable ...` and the later `kova chat ...` run. If unset,
-Kova uses the user's default home, usually `~/.hermes`. For isolated smoke
+Kova uses the user's default home, usually `~/.kova`. For isolated smoke
 tests, choose any writable temporary directory and use the same value for every
 command in that test:
 
 ```bash
-export HERMES_HOME=/tmp/kova-nemo-relay-test
+export KOVA_HOME=/tmp/kova-nemo-relay-test
 kova plugins enable observability/nemo_relay
 kova chat --query 'Reply exactly ok' --provider custom --model qwen3.6:35b
 ```
@@ -260,10 +260,10 @@ OpenAI-compatible API.
 ```bash
 pip install "nemo-relay>=0.5,<1.0"
 
-export HERMES_HOME=/tmp/kova-nemo-relay-docs/kova-home
-mkdir -p "$HERMES_HOME"
+export KOVA_HOME=/tmp/kova-nemo-relay-docs/kova-home
+mkdir -p "$KOVA_HOME"
 
-cat > "$HERMES_HOME/config.yaml" <<'YAML'
+cat > "$KOVA_HOME/config.yaml" <<'YAML'
 model:
   provider: custom
   default: qwen3.6:35b
@@ -508,10 +508,10 @@ supports `[components.config.tool_parallelism]`, as provided by the supported
 0.x release range beginning with 0.5.
 
 ```bash
-export HERMES_HOME=/tmp/kova-middleware-test/kova-home
-mkdir -p "$HERMES_HOME" /tmp/kova-middleware-test/nemo-relay
+export KOVA_HOME=/tmp/kova-middleware-test/kova-home
+mkdir -p "$KOVA_HOME" /tmp/kova-middleware-test/nemo-relay
 
-cat > "$HERMES_HOME/config.yaml" <<'YAML'
+cat > "$KOVA_HOME/config.yaml" <<'YAML'
 model:
   provider: custom
   default: qwen3.6:35b

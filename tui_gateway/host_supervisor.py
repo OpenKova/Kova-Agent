@@ -350,7 +350,7 @@ class HostSupervisor:
             raise RuntimeError("compute host missing hello")
         got_home = str(hello.get("kova_home") or "")
         if got_home and got_home != self.expected_kova_home:
-            raise RuntimeError(f"compute host HERMES_HOME mismatch: {got_home} != {self.expected_kova_home}")
+            raise RuntimeError(f"compute host KOVA_HOME mismatch: {got_home} != {self.expected_kova_home}")
         got_sha = str(hello.get("build_sha") or "")
         if self.expected_build_sha != "unknown" and got_sha not in {"", "unknown", self.expected_build_sha}:
             raise RuntimeError(f"compute host build mismatch: {got_sha} != {self.expected_build_sha}")

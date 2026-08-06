@@ -82,7 +82,7 @@ def kova_home(tmp_path, monkeypatch):
     home = tmp_path / ".kova"
     home.mkdir()
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
 
     from kova_cli import goals
 

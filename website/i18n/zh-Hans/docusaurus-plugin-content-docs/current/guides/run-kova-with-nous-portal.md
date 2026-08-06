@@ -31,8 +31,8 @@ kova setup --portal
 这条命令会完成五件事：
 
 1. 打开浏览器跳转至 portal.nousresearch.com 进行 OAuth 登录
-2. 将 refresh token 存储至 `~/.hermes/auth.json`
-3. 在 `~/.hermes/config.yaml` 中设置 `model.provider: nous`
+2. 将 refresh token 存储至 `~/.kova/auth.json`
+3. 在 `~/.kova/config.yaml` 中设置 `model.provider: nous`
 4. 选择一个默认的 agentic 模型（`anthropic/claude-sonnet-4.6` 或类似模型）
 5. 为网页搜索、图像生成、TTS 和浏览器自动化开启 Tool Gateway
 
@@ -118,9 +118,9 @@ Hey, search the web for "Kova Agent release notes" and summarize the top 3 hits.
 kova config set model.default anthropic/claude-sonnet-4.6
 ```
 
-### 不要在 agent 任务中使用 Hermes-4
+### 不要在 agent 任务中使用 Kova-4
 
-Hermes-4-70B 和 Hermes-4-405B 在 Portal 上以大幅折扣提供，但它们是**对话/推理模型**，并非针对工具调用优化的模型。它们在多步骤 agent 循环中表现不佳。请通过[订阅代理](/user-guide/features/subscription-proxy)从非 agent 工具中将它们用于对话或研究工作。对于 Kova Agent 本身，请坚持使用上述前沿 agentic 模型。
+Kova-4-70B 和 Kova-4-405B 在 Portal 上以大幅折扣提供，但它们是**对话/推理模型**，并非针对工具调用优化的模型。它们在多步骤 agent 循环中表现不佳。请通过[订阅代理](/user-guide/features/subscription-proxy)从非 agent 工具中将它们用于对话或研究工作。对于 Kova Agent 本身，请坚持使用上述前沿 agentic 模型。
 
 Portal 的[信息页面](https://portal.nousresearch.com/info)也有此说明——这是 Nous 官方指导，并非仅代表 Kova 一方的意见。
 
@@ -171,7 +171,7 @@ kova cron add "Daily AI news summary" "every day at 9am" \
 
 如果你使用 [Kova profiles](/user-guide/profiles)（例如每个项目单独一套配置），Portal refresh token 会通过共享 token 存储自动在所有 profiles 之间共享。在任意 profile 上登录一次，其余 profiles 会自动获取。
 
-对于多人共用一台机器的团队场景，每个人有自己的 Portal 账号 → 每个 home 目录保存各自的 `~/.hermes/auth.json` → 用户之间不共享 token。这是正确的边界划分。
+对于多人共用一台机器的团队场景，每个人有自己的 Portal 账号 → 每个 home 目录保存各自的 `~/.kova/auth.json` → 用户之间不共享 token。这是正确的边界划分。
 
 ## 故障排查
 

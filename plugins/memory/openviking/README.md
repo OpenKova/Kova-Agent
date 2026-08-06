@@ -36,8 +36,8 @@ kova config set memory.provider openviking
 ```
 
 Add the connection settings to the active profile's `.env` file. For the
-default profile that is `~/.hermes/.env`; for a named profile use
-`~/.hermes/profiles/<profile>/.env`.
+default profile that is `~/.kova/.env`; for a named profile use
+`~/.kova/profiles/<profile>/.env`.
 
 ```text
 OPENVIKING_ENDPOINT=http://127.0.0.1:1933

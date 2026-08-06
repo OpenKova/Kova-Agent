@@ -20,7 +20,7 @@ JPEG = b"\xff\xd8\xff" + b"\x00" * 64
 
 
 def _reload(monkeypatch, kova_home: Path):
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
     import kova_constants
     importlib.reload(kova_constants)
     import tools.image_source as isrc

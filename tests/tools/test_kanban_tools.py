@@ -25,7 +25,7 @@ def test_kanban_tools_hidden_without_env_var(monkeypatch, tmp_path):
     monkeypatch.delenv("KOVA_KANBAN_TASK", raising=False)
     home = tmp_path / ".kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
 
     import tools.kanban_tools  # ensure registered
     from tools.registry import invalidate_check_fn_cache, registry
@@ -45,7 +45,7 @@ def test_kanban_tools_visible_with_env_var(monkeypatch, tmp_path):
     monkeypatch.setenv("KOVA_KANBAN_TASK", "t_fake")
     home = tmp_path / ".kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
 
     import tools.kanban_tools  # ensure registered
     from tools.registry import invalidate_check_fn_cache, registry
@@ -70,7 +70,7 @@ def test_kanban_worker_env_overrides_profile_toolset_filter(monkeypatch, tmp_pat
     monkeypatch.setenv("KOVA_KANBAN_TASK", "t_fake")
     home = tmp_path / ".kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
 
     import tools.kanban_tools  # ensure registered
     from model_tools import _clear_tool_defs_cache, get_tool_definitions
@@ -100,7 +100,7 @@ def test_worker_with_kanban_toolset_still_hides_board_routing(monkeypatch, tmp_p
     home = tmp_path / ".kova"
     home.mkdir()
     (home / "config.yaml").write_text("toolsets:\n  - kanban\n")
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
 
     import tools.kanban_tools  # ensure registered
     from tools.registry import invalidate_check_fn_cache, registry
@@ -125,7 +125,7 @@ def test_kanban_tools_visible_with_toolset_config(monkeypatch, tmp_path):
     home = tmp_path / ".kova"
     home.mkdir()
     (home / "config.yaml").write_text("toolsets:\n  - kanban\n")
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
 
     import tools.kanban_tools  # ensure registered
     from tools.registry import invalidate_check_fn_cache, registry
@@ -151,11 +151,11 @@ def test_kanban_tools_visible_with_toolset_config(monkeypatch, tmp_path):
 
 @pytest.fixture
 def worker_env(monkeypatch, tmp_path):
-    """Simulate being a worker: HERMES_HOME isolated, KOVA_KANBAN_TASK set
+    """Simulate being a worker: KOVA_HOME isolated, KOVA_KANBAN_TASK set
     after we've created the task."""
     home = tmp_path / ".kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     monkeypatch.setenv("KOVA_PROFILE", "test-worker")
     monkeypatch.delenv("KOVA_SESSION_ID", raising=False)
     from pathlib import Path as _Path
@@ -625,10 +625,10 @@ def test_complete_goal_mode_rejected_by_judge(monkeypatch, tmp_path):
     from kova_cli import kanban_db as kb
     from tools import kanban_tools as kt
 
-    # Set up isolated HERMES_HOME
+    # Set up isolated KOVA_HOME
     home = tmp_path / ".kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     monkeypatch.setenv("KOVA_PROFILE", "test-worker")
     monkeypatch.delenv("KOVA_SESSION_ID", raising=False)
     monkeypatch.setattr(_Path, "home", lambda: tmp_path)
@@ -686,7 +686,7 @@ def test_complete_goal_mode_allows_when_judge_unavailable(monkeypatch, tmp_path)
 
     home = tmp_path / ".kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     monkeypatch.setenv("KOVA_PROFILE", "test-worker")
     monkeypatch.delenv("KOVA_SESSION_ID", raising=False)
     monkeypatch.setattr(_Path, "home", lambda: tmp_path)
@@ -744,14 +744,14 @@ def test_block_rejects_empty_reason(worker_env):
 
 
 def _make_goal_mode_worker_env(monkeypatch, tmp_path):
-    """Set up an isolated HERMES_HOME with one claimed goal_mode task,
+    """Set up an isolated KOVA_HOME with one claimed goal_mode task,
     matching the pattern used by the kanban_complete judge gate tests."""
     from pathlib import Path as _Path
     from kova_cli import kanban_db as kb
 
     home = tmp_path / ".kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     monkeypatch.setenv("KOVA_PROFILE", "test-worker")
     monkeypatch.delenv("KOVA_SESSION_ID", raising=False)
     monkeypatch.setattr(_Path, "home", lambda: tmp_path)
@@ -1271,7 +1271,7 @@ def test_create_cross_profile_project_children_keep_isolated_worktree_routing(
 
     monkeypatch.setattr(_Path, "home", lambda: tmp_path)
     monkeypatch.setenv("KOVA_KANBAN_DB", str(shared_db))
-    monkeypatch.setenv("HERMES_HOME", str(profile_a))
+    monkeypatch.setenv("KOVA_HOME", str(profile_a))
     monkeypatch.setenv("KOVA_PROFILE", "creator")
     kb._INITIALIZED_PATHS.clear()
     kb.init_db()
@@ -1292,7 +1292,7 @@ def test_create_cross_profile_project_children_keep_isolated_worktree_routing(
 
     # Dispatcher switches to profile B but pins the shared board DB. Profile B
     # intentionally has no copy of profile A's first-class Project row.
-    monkeypatch.setenv("HERMES_HOME", str(profile_b))
+    monkeypatch.setenv("KOVA_HOME", str(profile_b))
     monkeypatch.setenv("KOVA_PROFILE", "worker")
     monkeypatch.setenv("KOVA_KANBAN_TASK", parent_id)
     assert not (profile_b / "projects.db").exists()
@@ -1613,7 +1613,7 @@ def test_unblock_with_pending_parents_returns_todo(monkeypatch, tmp_path):
     monkeypatch.delenv("KOVA_KANBAN_TASK", raising=False)
     home = tmp_path / ".kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     monkeypatch.setenv("KOVA_PROFILE", "orchestrator")
     from pathlib import Path as _Path
     monkeypatch.setattr(_Path, "home", lambda: tmp_path)
@@ -1719,7 +1719,7 @@ def test_kanban_guidance_not_in_normal_prompt(monkeypatch, tmp_path):
     monkeypatch.delenv("KOVA_KANBAN_TASK", raising=False)
     home = tmp_path / ".kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     from pathlib import Path as _P
     monkeypatch.setattr(_P, "home", lambda: tmp_path)
 
@@ -1747,7 +1747,7 @@ def test_kanban_guidance_in_worker_prompt(monkeypatch, tmp_path):
     monkeypatch.setenv("KOVA_KANBAN_TASK", "t_fake")
     home = tmp_path / ".kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     from pathlib import Path as _P
     monkeypatch.setattr(_P, "home", lambda: tmp_path)
 
@@ -1790,7 +1790,7 @@ def test_kanban_guidance_prompt_size_bounded(monkeypatch, tmp_path):
     monkeypatch.setenv("KOVA_KANBAN_TASK", "t_fake")
     home = tmp_path / ".kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     from pathlib import Path as _P
     monkeypatch.setattr(_P, "home", lambda: tmp_path)
 
@@ -2012,7 +2012,7 @@ def test_orchestrator_complete_any_task_allowed(monkeypatch, tmp_path):
     monkeypatch.delenv("KOVA_KANBAN_TASK", raising=False)
     home = tmp_path / ".kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     from pathlib import Path as _P
     monkeypatch.setattr(_P, "home", lambda: tmp_path)
 
@@ -2056,7 +2056,7 @@ def multi_board_env(monkeypatch, tmp_path):
     """
     home = tmp_path / ".kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     # Make sure neither KOVA_KANBAN_DB nor KOVA_KANBAN_BOARD pin a
     # board — the test is specifically about the per-call override.
     monkeypatch.delenv("KOVA_KANBAN_DB", raising=False)
@@ -2268,7 +2268,7 @@ def test_board_param_routes_heartbeat_to_alt_board(monkeypatch, tmp_path):
     to a task that exists in the alt board)."""
     home = tmp_path / ".kova"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     monkeypatch.setenv("KOVA_PROFILE", "alt-worker")
     monkeypatch.delenv("KOVA_KANBAN_DB", raising=False)
     monkeypatch.delenv("KOVA_KANBAN_BOARD", raising=False)
@@ -2508,7 +2508,7 @@ def test_create_respects_auto_subscribe_on_create_false(monkeypatch, worker_env,
     (home / "config.yaml").write_text(
         "kanban:\n  auto_subscribe_on_create: false\n"
     )
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("KOVA_HOME", str(home))
     monkeypatch.setenv("KOVA_SESSION_PLATFORM", "discord")
     monkeypatch.setenv("KOVA_SESSION_CHAT_ID", "channel-1")
 

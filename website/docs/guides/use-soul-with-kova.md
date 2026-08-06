@@ -44,13 +44,13 @@ A good rule:
 Kova now uses only the global SOUL file for the current instance:
 
 ```text
-~/.hermes/SOUL.md
+~/.kova/SOUL.md
 ```
 
 If you run Kova with a custom home directory, it becomes:
 
 ```text
-$HERMES_HOME/SOUL.md
+$KOVA_HOME/SOUL.md
 ```
 
 ## First-run behavior
@@ -65,7 +65,7 @@ Important:
 
 ## How Kova uses it
 
-When Kova starts a session, it reads `SOUL.md` from `HERMES_HOME`, scans it for prompt-injection patterns, truncates it if needed, and uses it as the **agent identity** — slot #1 in the system prompt. This means SOUL.md completely replaces the built-in default identity text.
+When Kova starts a session, it reads `SOUL.md` from `KOVA_HOME`, scans it for prompt-injection patterns, truncates it if needed, and uses it as the **agent identity** — slot #1 in the system prompt. This means SOUL.md completely replaces the built-in default identity text.
 
 If SOUL.md is missing, empty, or cannot be loaded, Kova falls back to a built-in default identity.
 
@@ -212,13 +212,13 @@ This is the most common mistake.
 ## How to edit it
 
 ```bash
-nano ~/.hermes/SOUL.md
+nano ~/.kova/SOUL.md
 ```
 
 or
 
 ```bash
-vim ~/.hermes/SOUL.md
+vim ~/.kova/SOUL.md
 ```
 
 Then restart Kova or start a new session.
@@ -238,7 +238,7 @@ That iterative approach works better than trying to design the perfect personali
 ### I edited SOUL.md but Kova still sounds the same
 
 Check:
-- you edited `~/.hermes/SOUL.md` or `$HERMES_HOME/SOUL.md`
+- you edited `~/.kova/SOUL.md` or `$KOVA_HOME/SOUL.md`
 - not some repo-local `SOUL.md`
 - the file is not empty
 - your session was restarted after the edit

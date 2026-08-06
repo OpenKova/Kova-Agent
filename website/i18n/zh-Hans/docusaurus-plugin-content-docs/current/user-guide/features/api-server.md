@@ -18,7 +18,7 @@ Kova 本身需要配置好 provider（提供商）和工具后端，API 服务�
 
 ### 1. 启用 API 服务器
 
-在 `~/.hermes/.env` 中添加：
+在 `~/.kova/.env` 中添加：
 
 ```bash
 API_SERVER_ENABLED=true
@@ -352,7 +352,7 @@ API 服务器提供对 kova-agent 工具集的完整访问权限，**包括终�
 
 ### config.yaml
 
-相同的设置也可以写在 `~/.hermes/config.yaml` 中嵌套的 `gateway.api_server:` 小节下：
+相同的设置也可以写在 `~/.kova/config.yaml` 中嵌套的 `gateway.api_server:` 小节下：
 
 ```yaml
 gateway:
@@ -419,13 +419,13 @@ kova profile create bob
 
 # 在不同端口上配置每个 profile 的 API 服务器。API_SERVER_* 是环境变量
 # （不是 config.yaml 键），因此将它们写入每个 profile 的 .env：
-cat >> ~/.hermes/profiles/alice/.env <<EOF
+cat >> ~/.kova/profiles/alice/.env <<EOF
 API_SERVER_ENABLED=true
 API_SERVER_PORT=8643
 API_SERVER_KEY=alice-secret
 EOF
 
-cat >> ~/.hermes/profiles/bob/.env <<EOF
+cat >> ~/.kova/profiles/bob/.env <<EOF
 API_SERVER_ENABLED=true
 API_SERVER_PORT=8644
 API_SERVER_KEY=bob-secret

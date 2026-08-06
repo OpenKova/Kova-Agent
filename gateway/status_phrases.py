@@ -5,17 +5,17 @@ Kova' long-running gateway status surface into short status lines suitable
 for chat surfaces.
 
 Built-in defaults live in ``gateway/assets/status_phrases.yaml``. Users can add
-portable, profile-relative phrase catalogs under ``HERMES_HOME`` either by using
+portable, profile-relative phrase catalogs under ``KOVA_HOME`` either by using
 conventional paths::
 
-    ~/.hermes/status_phrases.yaml
-    ~/.hermes/status_phrases/*.yaml
+    ~/.kova/status_phrases.yaml
+    ~/.kova/status_phrases/*.yaml
 
 or by pointing config at a relative file/directory::
 
     display:
       status_phrases:
-        path: status_phrases/whatsapp.yaml  # relative to HERMES_HOME
+        path: status_phrases/whatsapp.yaml  # relative to KOVA_HOME
         mode: append                        # append (default) or replace
 
 Absolute paths and ``..`` escapes are ignored on purpose so config stays

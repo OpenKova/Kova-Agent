@@ -19,7 +19,7 @@ import pytest
 def _fake_api_key(monkeypatch, tmp_path):
     """Ensure XAI_API_KEY is set for all tests."""
     monkeypatch.setenv("XAI_API_KEY", "test-key-12345")
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("KOVA_HOME", str(tmp_path))
     try:
         import kova_cli.config as cfg_mod
 
@@ -504,7 +504,7 @@ class TestXAIImageFieldReadGuard:
         kova_home.mkdir()
         auth_json = kova_home / "auth.json"
         auth_json.write_text('{"api_key":"sk-secret"}', encoding="utf-8")
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
         with pytest.raises(ValueError, match="credential store"):
             _xai_image_field(str(auth_json))
@@ -519,7 +519,7 @@ class TestXAIImageFieldReadGuard:
         kova_home.mkdir()
         auth_json = kova_home / "auth.json"
         auth_json.write_text('{"api_key":"sk-secret"}', encoding="utf-8")
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
         real_open = builtins.open
         opened: list = []

@@ -36,7 +36,7 @@ Kova 使用专为编辑器工作流设计的精选 `kova-acp` 工具集运行，
 正常安装 Kova 后，从安装检出目录添加 ACP 扩展：
 
 ```bash
-cd ~/.hermes/kova-agent && uv pip install -e '.[acp]'
+cd ~/.kova/kova-agent && uv pip install -e '.[acp]'
 ```
 
 这将安装 `agent-client-protocol` 依赖并启用：
@@ -83,7 +83,7 @@ kova acp --setup-browser --yes     # 非交互式接受下载
 
 具体操作：
 
-- 若缺少 Node.js 22 LTS，将其安装到 `~/.hermes/node/`
+- 若缺少 Node.js 22 LTS，将其安装到 `~/.kova/node/`
 - 将 `npm install -g agent-browser @askjo/camofox-browser` 安装到该前缀（无需 sudo — `npm` 的 `--prefix` 指向用户可写的 Kova 管理 Node）
 - 安装 Playwright Chromium，或在检测到系统 Chrome/Chromium 时使用已有版本
 
@@ -137,7 +137,7 @@ kova acp --setup-browser --yes     # 非交互式接受下载
 
 前提条件：
 
-- 先通过 `kova model` 配置 Kova provider 凭据，或在 `~/.hermes/.env` / `~/.hermes/config.yaml` 中设置。
+- 先通过 `kova model` 配置 Kova provider 凭据，或在 `~/.kova/.env` / `~/.kova/config.yaml` 中设置。
 
 ### JetBrains
 
@@ -147,10 +147,10 @@ kova acp --setup-browser --yes     # 非交互式接受下载
 
 ACP 模式使用与 CLI 相同的 Kova 配置：
 
-- `~/.hermes/.env`
-- `~/.hermes/config.yaml`
-- `~/.hermes/skills/`
-- `~/.hermes/state.db`
+- `~/.kova/.env`
+- `~/.kova/config.yaml`
+- `~/.kova/skills/`
+- `~/.kova/state.db`
 
 Provider 解析使用 Kova 的正常运行时解析器，因此 ACP 继承当前配置的 provider 和凭据。Kova 还为首次运行的 ACP 客户端提供终端认证方法（`--setup`）；这将打开 Kova 的交互式模型/provider 设置。
 
@@ -205,7 +205,7 @@ ACP 桥接将这些选项映射到 Kova 的内部审批语义——`allow_always
 
 - 对于手动/本地开发，验证自定义 `agent_servers` 命令是否指向 `kova acp`。
 - Kova 已安装且在 PATH 中。
-- ACP 扩展已安装（`cd ~/.hermes/kova-agent && uv pip install -e '.[acp]'`）。
+- ACP 扩展已安装（`cd ~/.kova/kova-agent && uv pip install -e '.[acp]'`）。
 
 ### ACP 启动后立即报错
 
@@ -226,7 +226,7 @@ ACP 模式使用 Kova 现有的 provider 设置。通过以下方式配置凭据
 kova model
 ```
 
-或编辑 `~/.hermes/.env`。终端认证流程（`kova acp --setup`）也可以触发交互式 provider/模型设置。
+或编辑 `~/.kova/.env`。终端认证流程（`kova acp --setup`）也可以触发交互式 provider/模型设置。
 
 ## 另请参阅
 

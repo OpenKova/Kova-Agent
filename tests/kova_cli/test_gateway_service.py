@@ -250,11 +250,11 @@ class TestSystemdServiceRefresh:
         """Defense in depth: ``refresh_systemd_unit_if_needed()`` runs every
         time ``run_gateway()`` starts. The user-scope unit path resolves
         under ``Path.home()`` (NOT sandboxed by conftest), and
-        ``generate_systemd_unit()`` bakes ``HERMES_HOME`` into the unit's
+        ``generate_systemd_unit()`` bakes ``KOVA_HOME`` into the unit's
         ``Environment=`` line. Without this guard, any test that drives
         ``run_gateway()`` end-to-end on a real Linux dev box silently
         rewrites the developer's installed gateway unit with a
-        ``/tmp/pytest-of-.../kova_test`` HERMES_HOME — silently breaking
+        ``/tmp/pytest-of-.../kova_test`` KOVA_HOME — silently breaking
         their gateway on the next boot. The guard sniffs the generated
         unit body for tmpdir markers and refuses the write. Tests that
         legitimately exercise the refresh flow patch
@@ -267,10 +267,10 @@ class TestSystemdServiceRefresh:
         monkeypatch.setattr(
             gateway_cli, "get_systemd_unit_path", lambda system=False: unit_path
         )
-        # Realistic generated unit referencing a pytest tmpdir HERMES_HOME
+        # Realistic generated unit referencing a pytest tmpdir KOVA_HOME
         polluted_unit = (
             "[Service]\n"
-            'Environment="HERMES_HOME=/tmp/pytest-of-alice/pytest-42/'
+            'Environment="KOVA_HOME=/tmp/pytest-of-alice/pytest-42/'
             'popen-gw0/test_x/kova_test"\n'
         )
         monkeypatch.setattr(
@@ -301,13 +301,13 @@ class TestSystemdServiceRefresh:
     def test_refresh_refuses_to_bake_any_tempdir_home_into_real_user_unit(
         self, tmp_path, monkeypatch
     ):
-        """Structural guard: a manual E2E HERMES_HOME like
+        """Structural guard: a manual E2E KOVA_HOME like
         ``/tmp/kova-e2e-41264`` carries none of the pytest markers but
         poisons the unit identically (seen live 2026-06-11 — an E2E probe ran
-        ``kova gateway restart`` with a /tmp HERMES_HOME exported; the
+        ``kova gateway restart`` with a /tmp KOVA_HOME exported; the
         restart's unit refresh baked it into the production unit and the
         post-update restart produced a 7-hour zombie gateway). The refresh
-        must refuse ANY temp-dir HERMES_HOME, not just pytest-shaped ones.
+        must refuse ANY temp-dir KOVA_HOME, not just pytest-shaped ones.
         """
         unit_path = tmp_path / "kova-gateway.service"
         unit_path.write_text("old unit\n", encoding="utf-8")
@@ -317,7 +317,7 @@ class TestSystemdServiceRefresh:
         )
         polluted_unit = (
             "[Service]\n"
-            'Environment="HERMES_HOME=/tmp/kova-e2e-41264"\n'
+            'Environment="KOVA_HOME=/tmp/kova-e2e-41264"\n'
             "WorkingDirectory=/tmp/kova-e2e-41264\n"
         )
         monkeypatch.setattr(
@@ -349,26 +349,26 @@ class TestTempHomeServiceDefinitionGuard:
     """_temp_home_in_service_definition() — structural temp-dir detection."""
 
     def test_detects_tmp_home_in_systemd_unit(self):
-        unit = '[Service]\nEnvironment="HERMES_HOME=/tmp/kova-e2e-41264"\n'
+        unit = '[Service]\nEnvironment="KOVA_HOME=/tmp/kova-e2e-41264"\n'
         assert (
             gateway_cli._temp_home_in_service_definition(unit)
             == "/tmp/kova-e2e-41264"
         )
 
     def test_detects_var_tmp_home(self):
-        unit = '[Service]\nEnvironment="HERMES_HOME=/var/tmp/kova-x"\n'
+        unit = '[Service]\nEnvironment="KOVA_HOME=/var/tmp/kova-x"\n'
         assert gateway_cli._temp_home_in_service_definition(unit) is not None
 
     def test_detects_tempdir_env_home(self, monkeypatch, tmp_path):
         import tempfile as _tempfile
 
         monkeypatch.setattr(_tempfile, "gettempdir", lambda: str(tmp_path))
-        unit = f'[Service]\nEnvironment="HERMES_HOME={tmp_path}/kova-home"\n'
+        unit = f'[Service]\nEnvironment="KOVA_HOME={tmp_path}/kova-home"\n'
         assert gateway_cli._temp_home_in_service_definition(unit) is not None
 
     def test_detects_tmp_home_in_launchd_plist(self):
         plist = (
-            "<dict>\n  <key>HERMES_HOME</key>\n"
+            "<dict>\n  <key>KOVA_HOME</key>\n"
             "  <string>/tmp/kova-e2e-99999</string>\n</dict>\n"
         )
         assert (
@@ -377,12 +377,12 @@ class TestTempHomeServiceDefinitionGuard:
         )
 
     def test_accepts_real_home(self):
-        unit = '[Service]\nEnvironment="HERMES_HOME=/home/alice/.hermes"\n'
+        unit = '[Service]\nEnvironment="KOVA_HOME=/home/alice/.kova"\n'
         assert gateway_cli._temp_home_in_service_definition(unit) is None
 
     def test_accepts_macos_real_home_plist(self):
         plist = (
-            "<dict>\n  <key>HERMES_HOME</key>\n"
+            "<dict>\n  <key>KOVA_HOME</key>\n"
             "  <string>/Users/alice/.kova</string>\n</dict>\n"
         )
         assert gateway_cli._temp_home_in_service_definition(plist) is None
@@ -394,7 +394,7 @@ class TestTempHomeServiceDefinitionGuard:
     def test_tmp_prefixed_non_temp_path_is_accepted(self):
         # /tmpfs-data is NOT under /tmp — prefix matching must be
         # component-wise, not string startswith.
-        unit = '[Service]\nEnvironment="HERMES_HOME=/tmpfs-data/.hermes"\n'
+        unit = '[Service]\nEnvironment="KOVA_HOME=/tmpfs-data/.kova"\n'
         assert gateway_cli._temp_home_in_service_definition(unit) is None
 
 
@@ -534,7 +534,7 @@ class TestGeneratedSystemdUnits:
             "_system_service_identity",
             lambda run_as_user=None: ("alice", "alice", "/home/alice"),
         )
-        monkeypatch.setattr(gateway_cli, "_kova_home_for_target_user", lambda home: "/home/alice/.hermes")
+        monkeypatch.setattr(gateway_cli, "_kova_home_for_target_user", lambda home: "/home/alice/.kova")
         monkeypatch.setenv("PATH", "/usr/local/bin:/mnt/c/WINDOWS/system32")
         monkeypatch.setattr(gateway_cli.shutil, "which", lambda cmd: None)
 
@@ -656,12 +656,12 @@ class TestLaunchdServiceRecovery:
         monkeypatch.setattr(gateway_cli, "get_launchd_plist_path", lambda: plist_path)
         # Patch the generator with synthetic content carrying a real-looking
         # home — the temp-home guard refuses to write plists whose
-        # HERMES_HOME resolves under the (pytest tmp) test HERMES_HOME.
+        # KOVA_HOME resolves under the (pytest tmp) test KOVA_HOME.
         monkeypatch.setattr(
             gateway_cli,
             "generate_launchd_plist",
             lambda: (
-                "<plist>--replace\n<key>HERMES_HOME</key>"
+                "<plist>--replace\n<key>KOVA_HOME</key>"
                 "<string>/Users/alice/.kova</string></plist>"
             ),
         )
@@ -702,7 +702,7 @@ class TestLaunchdServiceRecovery:
             gateway_cli,
             "generate_launchd_plist",
             lambda: (
-                "<plist>--replace\n<key>HERMES_HOME</key>"
+                "<plist>--replace\n<key>KOVA_HOME</key>"
                 "<string>/Users/alice/.kova</string></plist>"
             ),
         )
@@ -756,7 +756,7 @@ class TestLaunchdServiceRecovery:
             gateway_cli,
             "generate_launchd_plist",
             lambda: (
-                "<plist>--replace\n<key>HERMES_HOME</key>"
+                "<plist>--replace\n<key>KOVA_HOME</key>"
                 "<string>/Users/alice/.kova</string></plist>"
             ),
         )
@@ -1075,13 +1075,13 @@ class TestLaunchdServiceRecovery:
         plist_path = tmp_path / "ai.kova.gateway.plist"
         monkeypatch.setattr(gateway_cli, "get_launchd_plist_path", lambda: plist_path)
         # Synthetic plist with a non-temp home so the temp-home write guard
-        # (which would trip on the pytest-tmp test HERMES_HOME) stays out of
+        # (which would trip on the pytest-tmp test KOVA_HOME) stays out of
         # the way — this test exercises the bootstrap-error fallback.
         monkeypatch.setattr(
             gateway_cli,
             "generate_launchd_plist",
             lambda: (
-                "<plist><key>HERMES_HOME</key>"
+                "<plist><key>KOVA_HOME</key>"
                 "<string>/Users/alice/.kova</string></plist>"
             ),
         )
@@ -1982,12 +1982,12 @@ class TestDetectVenvDir:
 
 
 class TestSystemUnitKovaHome:
-    """HERMES_HOME in system units must reference the target user, not root."""
+    """KOVA_HOME in system units must reference the target user, not root."""
 
     def test_system_unit_uses_target_user_home_not_calling_user(self, monkeypatch):
         # Simulate sudo: Path.home() returns /root, target user is alice
         monkeypatch.setattr(Path, "home", staticmethod(lambda: Path("/root")))
-        monkeypatch.delenv("HERMES_HOME", raising=False)
+        monkeypatch.delenv("KOVA_HOME", raising=False)
         monkeypatch.setattr(
             gateway_cli, "_system_service_identity",
             lambda run_as_user=None: ("alice", "alice", "/home/alice"),
@@ -1999,13 +1999,13 @@ class TestSystemUnitKovaHome:
 
         unit = gateway_cli.generate_systemd_unit(system=True, run_as_user="alice")
 
-        assert 'HERMES_HOME=/home/alice/.hermes' in unit
-        assert '/root/.hermes' not in unit
+        assert 'KOVA_HOME=/home/alice/.kova' in unit
+        assert '/root/.kova' not in unit
 
     def test_system_unit_remaps_profile_to_target_user(self, monkeypatch):
-        # Simulate sudo with a profile: HERMES_HOME was resolved under root
+        # Simulate sudo with a profile: KOVA_HOME was resolved under root
         monkeypatch.setattr(Path, "home", staticmethod(lambda: Path("/root")))
-        monkeypatch.setenv("HERMES_HOME", "/root/.hermes/profiles/coder")
+        monkeypatch.setenv("KOVA_HOME", "/root/.kova/profiles/coder")
         monkeypatch.setattr(
             gateway_cli, "_system_service_identity",
             lambda run_as_user=None: ("alice", "alice", "/home/alice"),
@@ -2017,13 +2017,13 @@ class TestSystemUnitKovaHome:
 
         unit = gateway_cli.generate_systemd_unit(system=True, run_as_user="alice")
 
-        assert 'HERMES_HOME=/home/alice/.hermes/profiles/coder' in unit
+        assert 'KOVA_HOME=/home/alice/.kova/profiles/coder' in unit
         assert '/root/' not in unit
 
     def test_system_unit_preserves_custom_kova_home(self, monkeypatch):
-        # Custom HERMES_HOME not under any user's home — keep as-is
+        # Custom KOVA_HOME not under any user's home — keep as-is
         monkeypatch.setattr(Path, "home", staticmethod(lambda: Path("/root")))
-        monkeypatch.setenv("HERMES_HOME", "/opt/kova-shared")
+        monkeypatch.setenv("KOVA_HOME", "/opt/kova-shared")
         monkeypatch.setattr(
             gateway_cli, "_system_service_identity",
             lambda run_as_user=None: ("alice", "alice", "/home/alice"),
@@ -2035,14 +2035,14 @@ class TestSystemUnitKovaHome:
 
         unit = gateway_cli.generate_systemd_unit(system=True, run_as_user="alice")
 
-        assert 'HERMES_HOME=/opt/kova-shared' in unit
+        assert 'KOVA_HOME=/opt/kova-shared' in unit
 
     def test_user_unit_unaffected_by_change(self):
-        # User-scope units should still use the calling user's HERMES_HOME
+        # User-scope units should still use the calling user's KOVA_HOME
         unit = gateway_cli.generate_systemd_unit(system=False)
 
         kova_home = str(gateway_cli.get_kova_home().resolve())
-        assert f'HERMES_HOME={kova_home}' in unit
+        assert f'KOVA_HOME={kova_home}' in unit
 
 
 class TestSystemUnitRefreshSyncsKovaHome:
@@ -2077,22 +2077,22 @@ class TestSystemUnitRefreshSyncsKovaHome:
         monkeypatch.setattr(gateway_cli, "_run_systemctl", lambda *a, **k: None)
         monkeypatch.delenv("KOVA_RESTART_DRAIN_TIMEOUT", raising=False)
 
-        # Correct installed unit (operator's HERMES_HOME + drain timeout).
-        monkeypatch.setenv("HERMES_HOME", str(alice_kova))
+        # Correct installed unit (operator's KOVA_HOME + drain timeout).
+        monkeypatch.setenv("KOVA_HOME", str(alice_kova))
         good_unit = gateway_cli.generate_systemd_unit(system=True, run_as_user="alice")
         assert "TimeoutStopSec=210" in good_unit
         unit_path.write_text(good_unit, encoding="utf-8")
 
-        # Simulate sudo without inherited HERMES_HOME (falls back to root).
-        monkeypatch.setenv("HERMES_HOME", str(root_kova))
+        # Simulate sudo without inherited KOVA_HOME (falls back to root).
+        monkeypatch.setenv("KOVA_HOME", str(root_kova))
         assert gateway_cli.refresh_systemd_unit_if_needed(system=True) is False
         assert unit_path.read_text(encoding="utf-8") == good_unit
-        assert os.environ["HERMES_HOME"] == str(alice_kova)
+        assert os.environ["KOVA_HOME"] == str(alice_kova)
         assert gateway_cli.systemd_unit_is_current(system=True) is True
 
     def test_is_current_syncs_before_reading_unit(self, tmp_path, monkeypatch):
         """CHOKEPOINT INVARIANT: systemd_unit_is_current() must adopt the
-        unit's pinned HERMES_HOME *before* it reads/compares the unit.
+        unit's pinned KOVA_HOME *before* it reads/compares the unit.
 
         This is the single site that enforces sync-before-compare for every
         path (refresh gates on it; status/install call it). If a future edit
@@ -2181,31 +2181,31 @@ class TestKovaHomeForTargetUser:
 
     def test_remaps_default_home(self, monkeypatch):
         monkeypatch.setattr(Path, "home", staticmethod(lambda: Path("/root")))
-        monkeypatch.delenv("HERMES_HOME", raising=False)
+        monkeypatch.delenv("KOVA_HOME", raising=False)
 
         result = gateway_cli._kova_home_for_target_user("/home/alice")
-        assert result == "/home/alice/.hermes"
+        assert result == "/home/alice/.kova"
 
     def test_remaps_profile_path(self, monkeypatch):
         monkeypatch.setattr(Path, "home", staticmethod(lambda: Path("/root")))
-        monkeypatch.setenv("HERMES_HOME", "/root/.hermes/profiles/coder")
+        monkeypatch.setenv("KOVA_HOME", "/root/.kova/profiles/coder")
 
         result = gateway_cli._kova_home_for_target_user("/home/alice")
-        assert result == "/home/alice/.hermes/profiles/coder"
+        assert result == "/home/alice/.kova/profiles/coder"
 
     def test_keeps_custom_path(self, monkeypatch):
         monkeypatch.setattr(Path, "home", staticmethod(lambda: Path("/root")))
-        monkeypatch.setenv("HERMES_HOME", "/opt/kova")
+        monkeypatch.setenv("KOVA_HOME", "/opt/kova")
 
         result = gateway_cli._kova_home_for_target_user("/home/alice")
         assert result == "/opt/kova"
 
     def test_noop_when_same_user(self, monkeypatch):
         monkeypatch.setattr(Path, "home", staticmethod(lambda: Path("/home/alice")))
-        monkeypatch.delenv("HERMES_HOME", raising=False)
+        monkeypatch.delenv("KOVA_HOME", raising=False)
 
         result = gateway_cli._kova_home_for_target_user("/home/alice")
-        assert result == "/home/alice/.hermes"
+        assert result == "/home/alice/.kova"
 
 
 class TestGeneratedUnitUsesDetectedVenv:
@@ -2495,20 +2495,20 @@ class TestProfileArg:
     """Tests for _profile_arg — returns '--profile <name>' for named profiles."""
 
     def test_default_kova_home_returns_empty(self, tmp_path, monkeypatch):
-        """Default ~/.hermes should not produce a --profile flag."""
+        """Default ~/.kova should not produce a --profile flag."""
         kova_home = tmp_path / ".kova"
         kova_home.mkdir()
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(kova_home))
+        monkeypatch.setenv("KOVA_HOME", str(kova_home))
         result = gateway_cli._profile_arg(str(kova_home))
         assert result == ""
 
     def test_named_profile_returns_flag(self, tmp_path, monkeypatch):
-        """~/.hermes/profiles/mybot should return '--profile mybot'."""
+        """~/.kova/profiles/mybot should return '--profile mybot'."""
         profile_dir = tmp_path / ".kova" / "profiles" / "mybot"
         profile_dir.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".kova"))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path / ".kova"))
         result = gateway_cli._profile_arg(str(profile_dir))
         assert result == "--profile mybot"
 
@@ -2523,20 +2523,20 @@ class TestProfileArg:
         assert result == "--profile mybot"
 
     def test_hash_path_returns_empty(self, tmp_path, monkeypatch):
-        """Arbitrary non-profile HERMES_HOME should return empty string."""
+        """Arbitrary non-profile KOVA_HOME should return empty string."""
         custom_home = tmp_path / "custom" / "kova"
         custom_home.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".kova"))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path / ".kova"))
         result = gateway_cli._profile_arg(str(custom_home))
         assert result == ""
 
     def test_nested_profile_path_returns_empty(self, tmp_path, monkeypatch):
-        """~/.hermes/profiles/mybot/subdir should NOT match — too deep."""
+        """~/.kova/profiles/mybot/subdir should NOT match — too deep."""
         nested = tmp_path / ".kova" / "profiles" / "mybot" / "subdir"
         nested.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".kova"))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path / ".kova"))
         result = gateway_cli._profile_arg(str(nested))
         assert result == ""
 
@@ -2545,7 +2545,7 @@ class TestProfileArg:
         bad_profile = tmp_path / ".kova" / "profiles" / "My Bot!"
         bad_profile.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path / ".kova"))
+        monkeypatch.setenv("KOVA_HOME", str(tmp_path / ".kova"))
         result = gateway_cli._profile_arg(str(bad_profile))
         assert result == ""
 
@@ -2554,7 +2554,7 @@ class TestProfileArg:
         profile_dir = tmp_path / ".kova" / "profiles" / "mybot"
         profile_dir.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(profile_dir))
+        monkeypatch.setenv("KOVA_HOME", str(profile_dir))
         monkeypatch.setattr(gateway_cli, "get_kova_home", lambda: profile_dir)
         unit = gateway_cli.generate_systemd_unit(system=False)
         assert "--profile mybot" in unit
@@ -2573,7 +2573,7 @@ class TestProfileArg:
         root_profile.mkdir(parents=True)
 
         monkeypatch.setattr(Path, "home", lambda: root_home)
-        monkeypatch.setenv("HERMES_HOME", str(root_profile))
+        monkeypatch.setenv("KOVA_HOME", str(root_profile))
         monkeypatch.setattr(gateway_cli, "get_kova_home", lambda: root_profile)
         monkeypatch.setattr(
             gateway_cli,
@@ -2585,14 +2585,14 @@ class TestProfileArg:
 
         assert "ExecStart=" in unit
         assert "--profile mybot gateway run" in unit
-        assert f'HERMES_HOME={target_home / ".kova" / "profiles" / "mybot"}' in unit
+        assert f'KOVA_HOME={target_home / ".kova" / "profiles" / "mybot"}' in unit
 
     def test_launchd_plist_includes_profile(self, tmp_path, monkeypatch):
         """generate_launchd_plist should include --profile in ProgramArguments for named profiles."""
         profile_dir = tmp_path / ".kova" / "profiles" / "mybot"
         profile_dir.mkdir(parents=True)
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        monkeypatch.setenv("HERMES_HOME", str(profile_dir))
+        monkeypatch.setenv("KOVA_HOME", str(profile_dir))
         monkeypatch.setattr(gateway_cli, "get_kova_home", lambda: profile_dir)
         plist = gateway_cli.generate_launchd_plist()
         assert "<string>--profile</string>" in plist
@@ -2615,7 +2615,7 @@ class TestProfileArg:
         profile_home.mkdir()
 
         monkeypatch.setattr(Path, "home", lambda: profile_home)
-        monkeypatch.setenv("HERMES_HOME", str(profile_dir))
+        monkeypatch.setenv("KOVA_HOME", str(profile_dir))
         monkeypatch.setattr(gateway_cli, "get_kova_home", lambda: profile_dir)
         monkeypatch.setattr(pwd, "getpwuid", lambda uid: SimpleNamespace(pw_dir=str(machine_home)))
 
@@ -2665,7 +2665,7 @@ class TestSystemUnitPathRemapping:
         target_home = "/home/alice"
 
         monkeypatch.setattr(Path, "home", lambda: root_home)
-        monkeypatch.setenv("HERMES_HOME", str(root_home / ".kova"))
+        monkeypatch.setenv("KOVA_HOME", str(root_home / ".kova"))
         monkeypatch.setattr(gateway_cli, "get_kova_home", lambda: root_home / ".kova")
         monkeypatch.setattr(gateway_cli, "PROJECT_ROOT", project)
         monkeypatch.setattr(gateway_cli, "_detect_venv_dir", lambda: project / "venv")
@@ -2681,12 +2681,12 @@ class TestSystemUnitPathRemapping:
         assert str(root_home) not in unit
         # Target user paths should be present
         assert "/home/alice" in unit
-        # WorkingDirectory is anchored at the target user's HERMES_HOME (stable,
+        # WorkingDirectory is anchored at the target user's KOVA_HOME (stable,
         # always exists) — NOT the source checkout under it. Pinning cwd to the
         # checkout is the rot bug fixed alongside this: a relocated/removed
         # checkout would crash-loop the unit on CHDIR (status=200).
-        assert "WorkingDirectory=/home/alice/.hermes" in unit
-        assert "WorkingDirectory=/home/alice/.hermes/kova-agent" not in unit
+        assert "WorkingDirectory=/home/alice/.kova" in unit
+        assert "WorkingDirectory=/home/alice/.kova/kova-agent" not in unit
 
 
 class TestDockerAwareGateway:
@@ -3517,7 +3517,7 @@ class TestGatewayCommandCatchesSystemScopeError:
 
 class TestServiceWorkingDirIsStable:
     """The gateway service must anchor WorkingDirectory at a stable path
-    (HERMES_HOME), never the source checkout / worktree, so a relocated or
+    (KOVA_HOME), never the source checkout / worktree, so a relocated or
     deleted checkout can't crash-loop the unit on CHDIR (status=200).
     """
 
@@ -3528,7 +3528,7 @@ class TestServiceWorkingDirIsStable:
         assert Path(gateway_cli._stable_service_working_dir()) == home.resolve()
 
     def test_stable_working_dir_falls_back_to_project_root(self, tmp_path, monkeypatch):
-        # HERMES_HOME points somewhere that does not exist -> fall back.
+        # KOVA_HOME points somewhere that does not exist -> fall back.
         missing = tmp_path / "does-not-exist" / ".kova"
         monkeypatch.setattr(gateway_cli, "get_kova_home", lambda: missing)
         assert gateway_cli._stable_service_working_dir() == str(gateway_cli.PROJECT_ROOT)

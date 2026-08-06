@@ -11,12 +11,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 @pytest.fixture
 def cron_env(tmp_path, monkeypatch):
-    """Isolated cron environment with temp HERMES_HOME."""
+    """Isolated cron environment with temp KOVA_HOME."""
     kova_home = tmp_path / ".kova"
     kova_home.mkdir()
     (kova_home / "cron").mkdir()
     (kova_home / "cron" / "output").mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(kova_home))
+    monkeypatch.setenv("KOVA_HOME", str(kova_home))
 
     import cron.jobs as jobs_mod
     monkeypatch.setattr(jobs_mod, "KOVA_DIR", kova_home)
