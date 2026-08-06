@@ -1,9 +1,4 @@
-import type {
-  KovaConnection,
-  KovaReadDirResult,
-  KovaReadFileTextResult,
-  KovaSelectPathsOptions
-} from '@/global'
+import type { KovaConnection, KovaReadDirResult, KovaReadFileTextResult, KovaSelectPathsOptions } from '@/global'
 import { $connection } from '@/store/session'
 
 export interface DesktopFsRemotePicker {

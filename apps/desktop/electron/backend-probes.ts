@@ -174,4 +174,12 @@ function verifyKovaCli(kovaCommand: string, opts?: { shell?: boolean }) {
   }
 }
 
-export { canImportKovaCli, canImportLegacyCli, kovaRuntimeImportProbe, legacyRuntimeImportProbe, PROBE_TIMEOUT_MS, shouldTrustKovaOverride, verifyKovaCli }
+export {
+  canImportKovaCli,
+  canImportLegacyCli,
+  kovaRuntimeImportProbe,
+  legacyRuntimeImportProbe,
+  PROBE_TIMEOUT_MS,
+  shouldTrustKovaOverride,
+  verifyKovaCli
+}

@@ -3554,9 +3554,7 @@ function resolveKovaBackend(backendArgs) {
         )
       }
 
-      rememberLog(
-        `Ignoring existing Kova CLI at ${kovaCommand}: --version probe failed; falling through to bootstrap.`
-      )
+      rememberLog(`Ignoring existing Kova CLI at ${kovaCommand}: --version probe failed; falling through to bootstrap.`)
     }
   }
 
@@ -7942,10 +7940,7 @@ async function startKova() {
     await advanceBootProgress('backend.port', 'Waiting for Kova backend to launch', 86)
 
     // Discover the ephemeral port the child bound to
-    const port = await Promise.race([
-      waitForDashboardPortAnnouncement(kovaProcess, { readyFile }),
-      backendStartFailed
-    ])
+    const port = await Promise.race([waitForDashboardPortAnnouncement(kovaProcess, { readyFile }), backendStartFailed])
 
     if (readyFile) {
       fs.unlink(readyFile, () => {})

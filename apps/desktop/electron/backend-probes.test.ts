@@ -13,7 +13,6 @@ import path from 'node:path'
 import { test } from 'vitest'
 
 import {
-  canImportKovaCli,
   canImportLegacyCli,
   kovaRuntimeImportProbe,
   legacyRuntimeImportProbe,
