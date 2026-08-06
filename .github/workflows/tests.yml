@@ -148,11 +148,19 @@ jobs:
       - name: Merge into single durations file
         run: |
           python3 -c "
-          import json, glob, os
+          import json, glob
           merged = {}
           for f in glob.glob('durations/*test_durations.json'):
             with open(f) as fh:
-              merged.update(json.load(fh))
+              text = fh.read()
+            # Tolerate concatenated JSON: download-artifact merge-multiple can
+            # append same-named files (Extra data). Keep the first valid object.
+            try:
+              data = json.loads(text)
+            except json.JSONDecodeError:
+              decoder = json.JSONDecoder()
+              data, _ = decoder.raw_decode(text.lstrip())
+            merged.update(data)
           with open('test_durations.json', 'w') as fh:
             json.dump(merged, fh, indent=2, sort_keys=True)
           print(f'Merged {len(merged)} file durations')
