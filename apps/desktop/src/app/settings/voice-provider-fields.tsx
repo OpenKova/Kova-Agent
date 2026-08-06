@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-import { getElevenLabsVoices, getKovaConfigSchema, saveKovaConfig } from '@/kova'
 import { useI18n } from '@/i18n'
+import { getElevenLabsVoices, getKovaConfigSchema, saveKovaConfig } from '@/kova'
 import { notifyError } from '@/store/notifications'
 import type { KovaConfigRecord } from '@/types/kova'
 

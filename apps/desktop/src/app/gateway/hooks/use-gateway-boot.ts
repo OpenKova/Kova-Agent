@@ -2,8 +2,8 @@ import { isGatewayReauthRequired, resolveGatewayWsUrl } from '@kova/shared'
 import { useEffect, useRef } from 'react'
 
 import type { KovaConnection } from '@/global'
-import { KovaGateway } from '@/kova'
 import { translateNow } from '@/i18n'
+import { KovaGateway } from '@/kova'
 import { desktopDefaultCwd } from '@/lib/desktop-fs'
 import {
   $desktopBoot,

@@ -52,19 +52,19 @@ _GATEWAY_LIFECYCLE_PATTERN = re.compile(
     # gateway from inside a gateway is benign (a no-op or "already running"
     # error), and a legitimate cron job might start a sibling profile's
     # gateway.
-    r"(?:(?:kova|kova)\s+gateway\s+(?:restart|stop))"
+    r"(?:(?:hermes|kova)\s+gateway\s+(?:restart|stop))"
     # Branch B: launchctl ops on a kova-gateway / kova-gateway label.
     # macOS launchd labels look like `ai.kova.gateway` / `kova-gateway`
     # (and the kova equivalents). Requiring the gateway identifier prevents
     # blocking unrelated kova/kova services (e.g. `launchctl unload
     # ai.kova.update-checker.plist`).
-    r"|(?:launchctl\s+(?:kickstart|unload|load|stop|restart)\b[^\n]*\b(?:kova|kova)[.\-]?gateway)"
+    r"|(?:launchctl\s+(?:kickstart|unload|load|stop|restart)\b[^\n]*\b(?:hermes|kova)[.\-]?gateway)"
     # Branch C: systemctl ops on a kova-gateway / kova-gateway unit.
-    r"|(?:systemctl\s+(?:-\S+\s+)*(?:restart|stop|start)\b[^\n]*\b(?:kova|kova)[.\-]?gateway)"
+    r"|(?:systemctl\s+(?:-\S+\s+)*(?:restart|stop|start)\b[^\n]*\b(?:hermes|kova)[.\-]?gateway)"
     # Branch D: pkill / kill targeting the kova/kova gateway process. Both
     # token orders because real reproductions show both.
-    r"|(?:p?kill\b[^\n]*\b(?:kova|kova)\b[^\n]*\bgateway)"
-    r"|(?:p?kill\b[^\n]*\bgateway\b[^\n]*\b(?:kova|kova))"
+    r"|(?:p?kill\b[^\n]*\b(?:hermes|kova)\b[^\n]*\bgateway)"
+    r"|(?:p?kill\b[^\n]*\bgateway\b[^\n]*\b(?:hermes|kova))"
 )
 
 

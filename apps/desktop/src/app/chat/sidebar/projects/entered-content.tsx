@@ -13,8 +13,8 @@ import {
   DialogTitle
 } from '@/components/ui/dialog'
 import type { KovaGitWorktree } from '@/global'
-import type { SessionInfo } from '@/kova'
 import { useI18n } from '@/i18n'
+import type { SessionInfo } from '@/kova'
 import { $dismissedWorktreeIds, dismissWorktree, setWorkspaceNodeOpen } from '@/store/layout'
 import { notifyError } from '@/store/notifications'
 import { removeWorktreePath } from '@/store/projects'

@@ -1210,11 +1210,8 @@ def slack_native_slashes() -> list[tuple[str, str, str]]:
     entries: list[tuple[str, str, str]] = []
     seen: set[str] = set()
 
-    # Reserve /kova and /kova as the catch-all top-level commands so the
-    # legacy /kova <subcommand> form keeps working (old workspace
-    # manifests) alongside the new /kova form.
-    entries.append(("kova", "Talk to Kova or run a subcommand", "[subcommand] [args]"))
-    seen.add("kova")
+    # Reserve /kova as the catch-all top-level command so the legacy
+    # /kova <subcommand> form keeps working for anything the clamp drops.
     entries.append(("kova", "Talk to Kova or run a subcommand", "[subcommand] [args]"))
     seen.add("kova")
 

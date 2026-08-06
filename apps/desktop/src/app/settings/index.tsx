@@ -3,8 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 
 import { codiconIcon } from '@/components/ui/codicon'
 import { Tip } from '@/components/ui/tooltip'
-import { getKovaConfigDefaults, getKovaConfigRecord, saveKovaConfig } from '@/kova'
 import { useI18n } from '@/i18n'
+import { getKovaConfigDefaults, getKovaConfigRecord, saveKovaConfig } from '@/kova'
 import { triggerHaptic } from '@/lib/haptics'
 import {
   Archive,

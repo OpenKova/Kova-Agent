@@ -34,7 +34,7 @@ import { stopBackendChild as stopBackendChildImpl } from './backend-child'
 import { dashboardFallbackArgs, sourceDeclaresServe } from './backend-command'
 import { createBackendConnectionState } from './backend-connection-state'
 import { buildDesktopBackendEnv, normalizeKovaHomeRoot } from './backend-env'
-import { canImportLegacyCli, canImportKovaCli, shouldTrustKovaOverride, verifyKovaCli } from './backend-probes'
+import { canImportKovaCli, canImportLegacyCli, shouldTrustKovaOverride, verifyKovaCli } from './backend-probes'
 import { waitForDashboardPortAnnouncement } from './backend-ready'
 import { shouldLatchBackendStartFailure } from './backend-start-failure'
 import { detectRemoteDisplay, isWindowsBinaryPathInWsl, isWslEnvironment } from './bootstrap-platform'
@@ -10320,6 +10320,7 @@ async function getUninstallSummary() {
 
     try {
       const uninstallCli = canImportKovaCli(py) ? 'kova_cli' : 'kova_cli'
+
       const child = spawn(
         py,
         ['-m', uninstallCli, 'uninstall', '--gui-summary'],

@@ -16,8 +16,8 @@ import {
   DropdownMenuSubTrigger
 } from '@/components/ui/dropdown-menu'
 import { Skeleton } from '@/components/ui/skeleton'
-import type { KovaGateway } from '@/kova'
 import { useI18n } from '@/i18n'
+import type { KovaGateway } from '@/kova'
 import { ChevronDown, ChevronRight } from '@/lib/icons'
 import { modelOptionsQueryKey, requestModelOptions } from '@/lib/model-options'
 import {

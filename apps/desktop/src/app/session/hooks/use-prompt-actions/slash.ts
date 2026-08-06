@@ -1,7 +1,7 @@
 import { type MutableRefObject, useCallback, useRef } from 'react'
 
-import { getProfiles } from '@/kova'
 import type { Translations } from '@/i18n'
+import { getProfiles } from '@/kova'
 import { type ChatMessage, toChatMessages } from '@/lib/chat-messages'
 import { parseCommandDispatch, parseSlashCommand, sessionTitle } from '@/lib/chat-runtime'
 import {

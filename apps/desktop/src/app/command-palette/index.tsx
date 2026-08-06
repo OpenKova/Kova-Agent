@@ -8,8 +8,8 @@ import { HUD_HEADING, HUD_ITEM, HUD_POSITION, HUD_SURFACE, HUD_TEXT } from '@/ap
 import { setTerminalTakeover } from '@/app/right-sidebar/store'
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { KbdCombo } from '@/components/ui/kbd'
-import { getKovaConfigRecord, listAllProfileSessions } from '@/kova'
 import { useI18n } from '@/i18n'
+import { getKovaConfigRecord, listAllProfileSessions } from '@/kova'
 import { sessionTitle } from '@/lib/chat-runtime'
 import {
   Activity,

@@ -1,6 +1,6 @@
+import { translateNow } from '@/i18n'
 import type { SessionInfo } from '@/kova'
 import { getSessionMessages } from '@/kova'
-import { translateNow } from '@/i18n'
 import { notify, notifyError } from '@/store/notifications'
 
 interface ExportSessionParams {
