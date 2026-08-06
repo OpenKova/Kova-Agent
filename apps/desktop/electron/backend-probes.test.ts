@@ -13,7 +13,9 @@ import path from 'node:path'
 import { test } from 'vitest'
 
 import {
+  canImportKovaCli,
   canImportLegacyCli,
+  kovaRuntimeImportProbe,
   legacyRuntimeImportProbe,
   shouldTrustKovaOverride,
   verifyKovaCli
@@ -46,12 +48,21 @@ test('canImportLegacyCli returns false when binary does not exist', () => {
   assert.equal(canImportLegacyCli(ghost), false)
 })
 
-test('kova runtime import probe checks config dependencies', () => {
+test('legacy runtime import probe checks hermes_cli config dependencies', () => {
   const probe = legacyRuntimeImportProbe()
   assert.match(probe, /\bimport yaml\b/)
   // dotenv is the first third-party import on the CLI boot path
   // (kova_cli/env_loader.py); a mid-update venv missing python-dotenv
   // passed the old probe and produced an unrecoverable boot loop.
+  assert.match(probe, /\bimport dotenv\b/)
+  // The legacy probe must target the pre-rename module name so a runtime
+  // that only answers `hermes_cli` is still recognized as a Kova backend.
+  assert.match(probe, /\bimport hermes_cli\.config\b/)
+})
+
+test('kova runtime import probe checks kova_cli config dependencies', () => {
+  const probe = kovaRuntimeImportProbe()
+  assert.match(probe, /\bimport yaml\b/)
   assert.match(probe, /\bimport dotenv\b/)
   assert.match(probe, /\bimport kova_cli\.config\b/)
 })

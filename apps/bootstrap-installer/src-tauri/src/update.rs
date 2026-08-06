@@ -710,29 +710,32 @@ fn venv_kova(install_root: &Path) -> PathBuf {
     }
 }
 
-/// Legacy venv shim name from before the CLI rename; kept so installs that
-/// still carry the old entry point can update without a manual repair.
-fn venv_kova_legacy(install_root: &Path) -> PathBuf {
+/// Legacy venv shim name from before the CLI rename (`hermes` -> `kova`);
+/// kept so installs that still carry the old entry point can update without
+/// a manual repair. Installs that booted from the transitional
+/// `kova = hermes_cli.main:main` entry point ALSO carry this `hermes` shim,
+/// so it must be probed before falling back to PATH.
+fn venv_hermes_legacy(install_root: &Path) -> PathBuf {
     if cfg!(target_os = "windows") {
-        install_root.join("venv").join("Scripts").join("kova.exe")
+        install_root.join("venv").join("Scripts").join("hermes.exe")
     } else {
-        install_root.join("venv").join("bin").join("kova")
+        install_root.join("venv").join("bin").join("hermes")
     }
 }
 
 /// Resolve the kova CLI to drive. Prefer the venv shim in the install we
-/// just updated; fall back to the legacy `kova` shim, then the CLI on PATH.
+/// just updated; fall back to the legacy `hermes` shim, then the CLI on PATH.
 fn resolve_kova(install_root: &Path) -> Option<PathBuf> {
-    for shim in [venv_kova(install_root), venv_kova_legacy(install_root)] {
+    for shim in [venv_kova(install_root), venv_hermes_legacy(install_root)] {
         if shim.exists() {
             return Some(shim);
         }
     }
     // PATH fallback. which-style probe via env, kept dependency-free.
     let names: &[&str] = if cfg!(target_os = "windows") {
-        &["kova.exe", "kova.exe"]
+        &["kova.exe", "hermes.exe"]
     } else {
-        &["kova", "kova"]
+        &["kova", "hermes"]
     };
     if let Ok(path) = std::env::var("PATH") {
         let sep = if cfg!(target_os = "windows") { ';' } else { ':' };
@@ -761,6 +764,14 @@ fn update_child_env(install_root: &Path) -> Vec<(String, OsString)> {
     // a frozen stage, and users cancel a healthy update. Force line-by-line
     // output instead.
     envs.push(("PYTHONUNBUFFERED".to_string(), OsString::from("1")));
+    // Expose the install root to the child interpreter. A transitional
+    // console-script shim from the rename era still imports `hermes_cli`
+    // (see hermes_cli/__init__.py), which resolves to the tree through the
+    // legacy alias only when the tree is on sys.path. Venvs whose editable
+    // finder was regenerated during the rename no longer map hermes_cli, so
+    // an unconditional PYTHONPATH keeps the shim bootable until `kova update`
+    // rewrites the console scripts to `kova_cli`.
+    envs.push(("PYTHONPATH".to_string(), install_root.as_os_str().to_os_string()));
     if let Some(path) = path_with_prepended_entries(&[
         kova_home.join("node").join("bin"),
         venv_bin_dir(install_root),
@@ -1070,6 +1081,20 @@ mod tests {
     }
 
     #[test]
+    fn venv_hermes_legacy_points_at_the_prerename_shim() {
+        let root = Path::new("/x/kova-agent");
+        let shim = venv_hermes_legacy(root);
+        assert!(shim.starts_with(root));
+        assert!(shim.to_string_lossy().contains("venv"));
+        let leaf = shim.file_name().unwrap().to_str().unwrap();
+        if cfg!(target_os = "windows") {
+            assert_eq!(leaf, "hermes.exe");
+        } else {
+            assert_eq!(leaf, "hermes");
+        }
+    }
+
+    #[test]
     fn missing_file_is_not_locked() {
         assert!(!is_locked(Path::new("/nonexistent/does/not/exist/xyz")));
     }
@@ -1081,6 +1106,17 @@ mod tests {
             envs.iter()
                 .any(|(k, v)| k == "PYTHONUNBUFFERED" && v.to_str() == Some("1")),
             "update children must run unbuffered so long steps stream to the live log"
+        );
+    }
+
+    #[test]
+    fn update_child_env_exposes_install_root_for_legacy_shims() {
+        let root = Path::new("/x/kova-agent");
+        let envs = update_child_env(root);
+        assert!(
+            envs.iter()
+                .any(|(k, v)| k == "PYTHONPATH" && v == root.as_os_str()),
+            "the install root must be on PYTHONPATH so a transitional hermes_cli shim can boot via the alias"
         );
     }
 

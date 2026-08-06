@@ -3188,7 +3188,7 @@ function isActiveRuntimeUsable() {
   return (
     isKovaSourceRoot(ACTIVE_KOVA_ROOT) &&
     fileExists(venvPython) &&
-    canImportLegacyCli(venvPython, {
+    canImportKovaCli(venvPython, {
       env: {
         PYTHONPATH: [ACTIVE_KOVA_ROOT, process.env.PYTHONPATH].filter(Boolean).join(path.delimiter)
       }
@@ -3412,7 +3412,7 @@ function createPythonBackend(root, label, backendArgs, options: any = {}) {
   const venvRoot = path.join(root, 'venv')
   const venvPython = getVenvPython(venvRoot)
   const command = IS_WINDOWS && fileExists(venvPython) ? venvPython : python
-  const cliModule = canImportKovaCli(command) ? 'kova_cli' : 'kova_cli'
+  const cliModule = canImportKovaCli(command) ? 'kova_cli' : 'hermes_cli'
 
   return {
     kind: 'python',
@@ -3437,7 +3437,7 @@ function createPythonBackend(root, label, backendArgs, options: any = {}) {
 function createActiveBackend(backendArgs) {
   const venvPython = getVenvPython(VENV_ROOT)
   const command = fileExists(venvPython) ? venvPython : findSystemPython()
-  const cliModule = canImportKovaCli(command) ? 'kova_cli' : 'kova_cli'
+  const cliModule = canImportKovaCli(command) ? 'kova_cli' : 'hermes_cli'
 
   return {
     kind: 'python',
@@ -3574,12 +3574,15 @@ function resolveKovaBackend(backendArgs) {
     // Verify the import works before trusting the candidate; on
     // failure, fall through to step 6 so the bootstrap runner pulls
     // a uv-managed 3.11 into %LOCALAPPDATA%\kova\kova-agent\venv.
-    if (canImportLegacyCli(python)) {
+    const hasKovaCli = canImportKovaCli(python)
+    const hasLegacyCli = canImportLegacyCli(python)
+
+    if (hasKovaCli || hasLegacyCli) {
       return {
         kind: 'python',
-        label: `installed kova_cli module via ${python}`,
+        label: `installed Kova CLI module via ${python}`,
         command: python,
-        args: ['-m', `${canImportKovaCli(python) ? 'kova_cli' : 'kova_cli'}.main`, ...backendArgs],
+        args: ['-m', `${hasKovaCli ? 'kova_cli' : 'hermes_cli'}.main`, ...backendArgs],
         bootstrap: false,
         env: {},
         shell: false
@@ -10319,7 +10322,7 @@ async function getUninstallSummary() {
     }
 
     try {
-      const uninstallCli = canImportKovaCli(py) ? 'kova_cli' : 'kova_cli'
+      const uninstallCli = canImportKovaCli(py) ? 'kova_cli' : 'hermes_cli'
 
       const child = spawn(
         py,

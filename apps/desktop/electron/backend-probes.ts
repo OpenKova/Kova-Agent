@@ -37,14 +37,15 @@ import { execFileSync } from 'node:child_process'
 const PROBE_TIMEOUT_MS = 5000
 
 /**
- * Return the Python snippet used to verify Kova can import far enough to
- * launch the CLI. Kept exported for tests so dependency regressions are
- * caught without needing a real broken venv fixture.
+ * Return the Python snippet used to verify the LEGACY (pre-rename
+ * ``hermes_cli``) runtime can import far enough to launch the CLI. Kept
+ * exported for tests so dependency regressions are caught without needing a
+ * real broken venv fixture.
  *
  * @returns {string}
  */
 function legacyRuntimeImportProbe() {
-  return 'import yaml; import dotenv; import kova_cli.config'
+  return 'import yaml; import dotenv; import hermes_cli.config'
 }
 
 function kovaRuntimeImportProbe() {
@@ -52,18 +53,17 @@ function kovaRuntimeImportProbe() {
 }
 
 /**
- * Return true iff the Kova runtime import probe exits 0.
+ * Return true iff the LEGACY runtime import probe exits 0.
  *
- * Used to gate the "fallback to system Python with kova_cli installed"
- * rung of resolveKovaBackend. Without this, a system Python 3.11-3.13
- * registered in PEP 514 makes findSystemPython() succeed regardless of
- * whether kova_cli has actually been pip-installed into its
- * site-packages -- and the resolver returns a backend that immediately
- * dies on spawn.
+ * The legacy probe imports ``hermes_cli.config`` — the pre-rename module
+ * name. It stays loadable on installs that crossed the hermes -> kova
+ * rename without regenerating their console scripts because the tree ships
+ * a ``hermes_cli`` alias package that forwards to ``kova_cli``; on a true
+ * pre-rename install the real ``hermes_cli`` package answers instead. A
+ * runtime that answers NEITHER name is not a Kova backend.
  *
- * The probe intentionally imports kova_cli.config, not just the top-level
- * package: a broken/empty Windows launcher venv can still see the source tree
- * through PYTHONPATH but lack PyYAML, then die on the first real CLI import.
+ * Used by resolvers that must keep serving a legacy (pre-rename) runtime
+ * while preferring the modern ``kova_cli`` when it is importable.
  *
  * @param {string} pythonPath - Absolute path to a python.exe / python.
  * @param {object} [opts.env] - Additional environment for the probe.
@@ -88,6 +88,24 @@ function canImportLegacyCli(pythonPath: string, opts: { env?: Record<string, str
   }
 }
 
+/**
+ * Return true iff the Kova runtime import probe exits 0.
+ *
+ * Used to gate the "fallback to system Python with kova_cli installed"
+ * rung of resolveKovaBackend. Without this, a system Python 3.11-3.13
+ * registered in PEP 514 makes findSystemPython() succeed regardless of
+ * whether kova_cli has actually been pip-installed into its
+ * site-packages -- and the resolver returns a backend that immediately
+ * dies on spawn.
+ *
+ * The probe intentionally imports kova_cli.config, not just the top-level
+ * package: a broken/empty Windows launcher venv can still see the source tree
+ * through PYTHONPATH but lack PyYAML, then die on the first real CLI import.
+ *
+ * @param {string} pythonPath - Absolute path to a python.exe / python.
+ * @param {object} [opts.env] - Additional environment for the probe.
+ * @returns {boolean}
+ */
 function canImportKovaCli(pythonPath: string, opts: { env?: Record<string, string> } = {}) {
   if (!pythonPath) {
     return false

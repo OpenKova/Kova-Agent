@@ -284,7 +284,7 @@ export function resolveVenvKovaCommand(
     }
   })
     ? 'kova_cli'
-    : 'kova_cli'
+    : 'hermes_cli'
 
   return {
     label: `existing Kova Python at ${python}`,
