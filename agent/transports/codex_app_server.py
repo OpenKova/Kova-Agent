@@ -107,7 +107,7 @@ class CodexAppServerClient:
                 else spawn_env.get(
                     "KOVA_KANBAN_ROOT",
                     os.path.join(
-                        spawn_env.get("HERMES_HOME", os.path.expanduser("~/.hermes")),
+                        spawn_env.get("HERMES_HOME", os.path.expanduser("~/.kova")),
                         "kanban",
                     ),
                 )
@@ -394,7 +394,7 @@ def check_codex_binary(
         proc = subprocess.run(
             [codex_bin, "--version"],
             capture_output=True,
-            text=True,
+            text=True, encoding='utf-8', errors='replace',
             timeout=10,
             stdin=subprocess.DEVNULL,
         )

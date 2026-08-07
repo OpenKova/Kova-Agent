@@ -9,6 +9,9 @@
       ...
     }:
     let
+
+      sandbox = pkgs.callPackage ./sandbox.nix { };
+
       minimal = pkgs.callPackage ./kova-agent.nix {
         inherit (inputs) uv2nix pyproject-nix pyproject-build-systems;
         npm-lockfile-fix = inputs'.npm-lockfile-fix.packages.default;
@@ -36,6 +39,7 @@
           "modal"
           "parallel-web"
           "tts-premium"
+          "vercel"
           "voice"
         ]
         # matrix is Linux-only (oqs/liboqs lacks aarch64-darwin wheels).
@@ -44,7 +48,13 @@
     in
     {
       packages = {
+        node-gyp =
+          (pkgs.callPackage ./lib.nix {
+            inherit (pkgs) npm-lockfile-fix;
+          }).node-gyp;
         default = full;
+
+        inherit sandbox;
 
         inherit minimal;
 
@@ -55,11 +65,11 @@
           extraDependencyGroups = [ "messaging" ];
         };
 
-        tui = full.kovaTui;
-        web = full.kovaWeb;
-        desktop = full.kovaDesktop;
+        tui = full.hermesTui;
+        web = full.hermesWeb;
+        desktop = full.hermesDesktop;
 
-        update-npm-lockfile = full.kovaNpmLib.updateNpmLockfile;
+        update-npm-lockfile = full.hermesNpmLib.updateNpmLockfile;
       };
     };
 }

@@ -51,7 +51,7 @@ That does not stop Kova from working well as a phone-native CLI agent — it jus
 Kova now ships a Termux-aware installer path:
 
 ```bash
-curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+curl -fsSL https://kova-agent.nousresearch.com/install.sh | bash
 ```
 
 On Termux, the installer automatically:
@@ -145,7 +145,7 @@ kova
 kova model
 ```
 
-Or set keys directly in `~/.hermes/.env`.
+Or set keys directly in `~/.kova/.env`.
 
 ### Re-run the full interactive setup wizard later
 

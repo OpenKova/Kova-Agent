@@ -63,14 +63,7 @@ def log_warn(msg: str):
 
 
 def _agent_root(kova_home: Path) -> Path:
-    """The agent checkout root — same layout install.sh / install.ps1 use.
-
-    Prefers the current ``kova-agent`` checkout dir name, falling back to
-    the legacy pre-rebrand ``kova-agent`` name for older installs.
-    """
-    kova = kova_home / "kova-agent"
-    if kova.is_dir():
-        return kova
+    """The agent checkout root — same layout install.sh / install.ps1 use."""
     return kova_home / "kova-agent"
 
 
@@ -149,10 +142,15 @@ def packaged_gui_app_paths() -> "list[Path]":
         # hint rather than guessing. deb/rpm installs are owned by the system
         # package manager and must be removed via apt/dnf — see the message in
         # ``uninstall_gui``.
+        from kova_cli.linux_desktop_entry import desktop_entry_path
+
         data = os.environ.get("XDG_DATA_HOME")
         data_base = Path(data) if data else (home / ".local" / "share")
         paths += [
-            data_base / "applications" / "kova.desktop",
+            # The launcher entry `kova desktop` installs. Its icon lives
+            # in the checkout, not in the installed app.
+            desktop_entry_path(),
+            # Some packaged builds emit this casing.
             data_base / "applications" / "Kova.desktop",
         ]
     return paths
@@ -282,6 +280,22 @@ def uninstall_gui(kova_home: "Path | None" = None, *, remove_userdata: bool = Tr
     # shouldn't) rmtree files under /usr. Surface the hint so the user can
     # finish the job. AppImages live wherever the user dropped them.
     if sys.platform.startswith("linux"):
+        # The desktop entry was removed above (it is in
+        # ``packaged_gui_app_paths``), but the menu caches still list it.
+        # Reindex so Kova disappears from the launcher.
+        try:
+            from kova_cli.linux_desktop_entry import (
+                desktop_entry_path,
+                refresh_desktop_databases,
+            )
+
+            entry = desktop_entry_path()
+            if entry in removed:
+                for tool in refresh_desktop_databases(entry.parent):
+                    log_success(f"Refreshed the application menu cache ({tool})")
+        except Exception as e:
+            log_warn(f"Could not refresh the application menu cache: {e}")
+
         log_info(
             "If you installed the desktop via a .deb / .rpm package, remove it "
             "with your package manager (e.g. 'sudo apt remove kova' or "

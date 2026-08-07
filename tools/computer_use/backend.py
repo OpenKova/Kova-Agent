@@ -25,7 +25,7 @@ class UIElement:
     window_id: int = 0               # SkyLight / CG window ID
     attributes: Dict[str, Any] = field(default_factory=dict)
     # Opaque per-snapshot element handle from cua-driver
-    # (trycua/cua#1961 — Surface 6 of NousResearch/kova-agent#47072).
+    # (trycua/cua#1961 — Surface 6 of OpenKova/Kova-Agent#47072).
     # When set, downstream calls can pass it alongside `index` for
     # explicit stale-detection: a stale token returns an error from
     # cua-driver rather than silently re-resolving to a different
@@ -61,7 +61,7 @@ class CaptureResult:
     png_bytes_len: int = 0
     # Explicit MIME type for `png_b64` when the backend supplied it
     # (cua-driver-rs emits `mimeType` on every image part as of
-    # trycua/cua#1961 — Surface 7 of NousResearch/kova-agent#47072).
+    # trycua/cua#1961 — Surface 7 of OpenKova/Kova-Agent#47072).
     # When None, downstream consumers fall back to base64-prefix
     # sniffing for back-compat with older drivers.
     image_mime_type: Optional[str] = None
@@ -73,7 +73,7 @@ class ActionResult:
 
     Beyond the transport-level ``ok`` flag, this carries cua-driver's
     structured action verdict so the model can follow the documented
-    verify → escalate ladder (NousResearch/kova-agent#67052). ``ok`` stays
+    verify → escalate ladder (OpenKova/Kova-Agent#67052). ``ok`` stays
     tool/transport success only — it is NOT the semantic verdict. Read
     ``effect`` / ``escalation`` to decide the next rung. All structured
     fields are optional and additive: an older driver that omits
@@ -211,6 +211,35 @@ class ComputerUseBackend(ABC):
 
         `element` is the 1-based SOM index returned by a prior capture call.
         """
+
+    # ── Optional typed-browser adapter ──────────────────────────────
+    @staticmethod
+    def _typed_browser_unavailable() -> Dict[str, Any]:
+        return {
+            "ok": False,
+            "status": "refused",
+            "code": "typed_browser_unavailable",
+            "message": "This computer-use backend has no typed browser route; use native capture/input.",
+            "native_fallback_required": True,
+        }
+
+    def typed_browser_state(self, **kwargs: Any) -> Dict[str, Any]:
+        """Optional exact-bind/read hook; native-only backends fail closed."""
+        return self._typed_browser_unavailable()
+
+    def typed_browser_prepare(self, **kwargs: Any) -> Dict[str, Any]:
+        """Optional setup hook; native-only backends fail closed."""
+        return self._typed_browser_unavailable()
+
+    def typed_browser_action(
+        self,
+        driver_tool: str,
+        *,
+        tab_id: Optional[str] = None,
+        args: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Optional mutation hook; native-only backends fail closed."""
+        return self._typed_browser_unavailable()
 
     # ── Timing ──────────────────────────────────────────────────────
     def wait(self, seconds: float) -> ActionResult:

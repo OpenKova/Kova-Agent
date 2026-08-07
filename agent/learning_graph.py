@@ -49,11 +49,10 @@ def _frontmatter(text: str) -> dict[str, Any]:
 
 
 def _kova_meta(fm: dict[str, Any]) -> dict[str, Any]:
-    """``metadata.kova`` (legacy ``metadata.kova``) as a dict, tolerant of the
-    string-valued frontmatter that ``parse_frontmatter``'s malformed-YAML
-    fallback produces."""
+    """``metadata.kova`` as a dict, tolerant of the string-valued frontmatter
+    that ``parse_frontmatter``'s malformed-YAML fallback produces."""
     meta = fm.get("metadata")
-    kova = (meta.get("kova") or meta.get("kova")) if isinstance(meta, dict) else None
+    kova = meta.get("kova") if isinstance(meta, dict) else None
     return kova if isinstance(kova, dict) else {}
 
 

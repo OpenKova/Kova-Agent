@@ -76,10 +76,10 @@ describe('collectArtifactsForSession', () => {
       throw new Error(`unexpected path ${path}`)
     })
 
-    vi.stubGlobal('window', { kovaDesktop: { api } })
+    vi.stubGlobal('window', { hermesDesktop: { api } })
     $connection.set({ baseUrl: 'https://gw', mode: 'remote', token: 'secret' } as never)
 
-    const path = '/Users/me/.hermes/skills/work-esab/references/images/manual-step03.jpeg'
+    const path = '/Users/me/.kova/skills/work-esab/references/images/manual-step03.jpeg'
     const downloadHref = `https://gw/api/files/download?path=${encodeURIComponent(path)}&token=secret`
 
     await expect(artifactImageSrc(path, downloadHref)).resolves.toBe('data:image/jpeg;base64,cmVtb3Rl')

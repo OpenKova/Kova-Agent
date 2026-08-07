@@ -26,7 +26,7 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 logger = logging.getLogger("kova.security_audit")
 
@@ -168,9 +168,12 @@ def _path_is_mounted(path: Path) -> bool:
 def _container_no_volume_mount(kova_home: Optional[Path]) -> Optional[str]:
     if not _in_container():
         return None
-    home = kova_home or Path(
-        os.environ.get("HERMES_HOME", os.path.expanduser("~/.hermes"))
-    )
+    if kova_home is not None:
+        home = kova_home
+    else:
+        from kova_constants import get_kova_home
+
+        home = get_kova_home()
     try:
         if _path_is_mounted(home):
             return None

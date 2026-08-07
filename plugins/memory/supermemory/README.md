@@ -18,7 +18,7 @@ Or manually:
 
 ```bash
 kova config set memory.provider supermemory
-echo 'SUPERMEMORY_API_KEY=***' >> ~/.hermes/.env
+echo 'SUPERMEMORY_API_KEY=***' >> ~/.kova/.env
 ```
 
 For a fully self-hosted setup, start Supermemory local and note the API key it

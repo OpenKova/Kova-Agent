@@ -24,8 +24,8 @@ A quick search before you build saves your time and keeps the PR queue clean —
 
 - **Search both open *and* merged PRs and issues** for your topic or error symptom — the duplicate-check in the PR template fires at review time, after you've already done the work:
   ```bash
-  gh search issues --repo NousResearch/kova-agent "<your terms>"
-  gh search prs --repo NousResearch/kova-agent --state all "<your terms>"
+  gh search issues --repo OpenKova/Kova-Agent "<your terms>"
+  gh search prs --repo OpenKova/Kova-Agent --state all "<your terms>"
   ```
   Or use the web UI: [issues](https://github.com/OpenKova/Kova-Agent/issues?q=) · [PRs (all states)](https://github.com/OpenKova/Kova-Agent/pulls?q=is%3Apr).
 - **The issue tracker can lag the code.** Many requested features are already implemented in-tree, so also search the source (`search_files`, or your editor's grep) for the capability before proposing it.
@@ -69,7 +69,7 @@ If your skill is specialized, community-contributed, or niche, it's better suite
 
 ## Memory Providers: Ship as a Standalone Plugin
 
-**We are no longer accepting new memory providers into this repo.** The set of built-in providers under `plugins/memory/` (honcho, mem0, supermemory, byterover, hindsight, holographic, openviking, retaindb) is closed. If you want to add a new memory backend, publish it as a **standalone plugin repo** that users install into `~/.hermes/plugins/` (or via a pip entry point).
+**We are no longer accepting new memory providers into this repo.** The set of built-in providers under `plugins/memory/` (honcho, mem0, supermemory, byterover, hindsight, holographic, openviking, retaindb) is closed. If you want to add a new memory backend, publish it as a **standalone plugin repo** that users install into `~/.kova/plugins/` (or via a pip entry point).
 
 Standalone memory plugins:
 
@@ -93,7 +93,7 @@ The reason is maintenance load, not quality. Every external product absorbed int
 
 Publish these as a **standalone plugin repo** instead:
 
-- Implement the relevant ABC and use the existing plugin discovery path (`~/.hermes/plugins/`, project `.kova/plugins/`, or a pip entry point) — see [Build a Kova Plugin](https://hermes-agent.nousresearch.com/docs/guides/build-a-kova-plugin)
+- Implement the relevant ABC and use the existing plugin discovery path (`~/.kova/plugins/`, project `.kova/plugins/`, or a pip entry point) — see [Build a Kova Plugin](https://kova-agent.nousresearch.com/docs/guides/build-a-kova-plugin)
 - Register lifecycle hooks (`pre_tool_call`, `post_tool_call`, `pre_llm_call`, `post_llm_call`, `on_session_start`, `on_session_end`), tools (`ctx.register_tool`), and CLI subcommands (`ctx.register_cli_command`) through the surface we already expose — no core changes needed
 - If your plugin needs a capability the framework doesn't expose, that's a feature request to **widen the generic plugin surface** (a new hook or `ctx` method) — never special-case your plugin in core
 - Promote it in the [Nous Research Discord](https://discord.gg/NousResearch) `#plugins-skills-and-skins` channel so users can find and install it
@@ -119,13 +119,13 @@ For most contributors, the best development bootstrap is the same path users
 take: run the standard installer, then work inside the repository it cloned.
 The installer creates the Kova venv, wires the `kova` command, stamps the
 install method for `kova update`, and clones the full git project into
-`$HERMES_HOME/kova-agent` (usually `~/.hermes/kova-agent`). That keeps your
+`$HERMES_HOME/kova-agent` (usually `~/.kova/kova-agent`). That keeps your
 development environment on the same layout the CLI, updater, lazy dependency
 installer, gateway, and docs assume.
 
 ```bash
-curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
-cd "${HERMES_HOME:-$HOME/.hermes}/kova-agent"
+curl -fsSL https://kova-agent.nousresearch.com/install.sh | bash
+cd "${HERMES_HOME:-$HOME/.kova}/kova-agent"
 
 # Add dev/test extras on top of the standard install.
 uv pip install -e ".[all,dev]"
@@ -143,7 +143,7 @@ scripts/run_tests.sh
 
 ### Manual clone fallback
 
-Use this only if you intentionally do not want Kova's managed install layout
+Use this only if you intentionally do not want Kova' managed install layout
 (for example, a throwaway clone inside a container or CI job). If you install
 this way, make sure you run the `kova` entrypoint from this venv; running the
 system `python3 -m kova_cli.main` can pick up unrelated system Python
@@ -160,8 +160,8 @@ git clone https://github.com/OpenKova/Kova-Agent.git
 cd kova-agent
 
 # Create venv with Python 3.11, OUTSIDE the source tree
-uv venv ~/.hermes/venvs/kova-dev --python 3.11
-export VIRTUAL_ENV="$HOME/.hermes/venvs/kova-dev"
+uv venv ~/.kova/venvs/kova-dev --python 3.11
+export VIRTUAL_ENV="$HOME/.kova/venvs/kova-dev"
 export PATH="$VIRTUAL_ENV/bin:$PATH"
 
 # Install with all extras (messaging, cron, CLI menus, dev tools)
@@ -174,12 +174,12 @@ npm install
 ### Configure for development
 
 ```bash
-mkdir -p ~/.hermes/{cron,sessions,logs,memories,skills}
-cp cli-config.yaml.example ~/.hermes/config.yaml
-touch ~/.hermes/.env
+mkdir -p ~/.kova/{cron,sessions,logs,memories,skills}
+cp cli-config.yaml.example ~/.kova/config.yaml
+touch ~/.kova/.env
 
 # Add at minimum an LLM provider key:
-echo "OPENROUTER_API_KEY=***" >> ~/.hermes/.env
+echo "OPENROUTER_API_KEY=***" >> ~/.kova/.env
 ```
 
 ### Run
@@ -201,7 +201,8 @@ ln -sf "$(pwd)/venv/bin/kova" ~/.local/bin/kova
 ### Run tests
 
 ```bash
-# Preferred — matches CI (hermetic env, 4 xdist workers); see AGENTS.md
+# Preferred — matches CI (hermetic `env -i`, per-file subprocess isolation
+# via run_tests_parallel.py, worker count auto-scaled); see AGENTS.md
 scripts/run_tests.sh
 
 # Alternative (activate the venv first). The wrapper is still recommended
@@ -216,7 +217,7 @@ pytest tests/ -v
 ```
 kova-agent/
 ├── run_agent.py              # AIAgent class — core conversation loop, tool dispatch, session persistence
-├── cli.py                    # KovaCLI class — interactive TUI, prompt_toolkit integration
+├── cli.py                    # HermesCLI class — interactive TUI, prompt_toolkit integration
 ├── model_tools.py            # Tool orchestration (thin layer over tools/registry.py)
 ├── toolsets.py               # Tool groupings and presets (kova-cli, kova-telegram, etc.)
 ├── kova_state.py           # SQLite session database with FTS5 full-text search, session titles
@@ -271,28 +272,28 @@ kova-agent/
 │   ├── install.ps1               # Windows PowerShell installer
 │   └── whatsapp-bridge/          # Node.js WhatsApp bridge (Baileys)
 │
-├── skills/                   # Bundled skills (copied to ~/.hermes/skills/ on install)
+├── skills/                   # Bundled skills (copied to ~/.kova/skills/ on install)
 ├── optional-skills/          # Official optional skills (discoverable via hub, not activated by default)
 ├── tests/                    # Test suite
-├── website/                  # Documentation site (hermes-agent.nousresearch.com)
+├── website/                  # Documentation site (kova-agent.nousresearch.com)
 │
-├── cli-config.yaml.example   # Example configuration (copied to ~/.hermes/config.yaml)
+├── cli-config.yaml.example   # Example configuration (copied to ~/.kova/config.yaml)
 └── AGENTS.md                 # Development guide for AI coding assistants
 ```
 
-### User configuration (stored in `~/.hermes/`)
+### User configuration (stored in `~/.kova/`)
 
 | Path | Purpose |
 |------|---------|
-| `~/.hermes/config.yaml` | Settings (model, terminal, toolsets, compression, etc.) |
-| `~/.hermes/.env` | API keys and secrets |
-| `~/.hermes/auth.json` | OAuth credentials (Nous Portal) |
-| `~/.hermes/skills/` | All active skills (bundled + hub-installed + agent-created) |
-| `~/.hermes/memories/` | Persistent memory (MEMORY.md, USER.md) |
-| `~/.hermes/state.db` | SQLite session database |
-| `~/.hermes/sessions/` | Gateway routing index (`sessions.json`), request-dump breadcrumbs, gateway `*.jsonl` transcripts, and (optionally) per-session JSON snapshots when `sessions.write_json_snapshots: true` is set. The per-session snapshots are off by default; state.db is canonical. |
-| `~/.hermes/cron/` | Scheduled job data |
-| `~/.hermes/whatsapp/session/` | WhatsApp bridge credentials |
+| `~/.kova/config.yaml` | Settings (model, terminal, toolsets, compression, etc.) |
+| `~/.kova/.env` | API keys and secrets |
+| `~/.kova/auth.json` | OAuth credentials (Nous Portal) |
+| `~/.kova/skills/` | All active skills (bundled + hub-installed + agent-created) |
+| `~/.kova/memories/` | Persistent memory (MEMORY.md, USER.md) |
+| `~/.kova/state.db` | SQLite session database |
+| `~/.kova/sessions/` | Gateway routing index (`sessions.json`), request-dump breadcrumbs, gateway `*.jsonl` transcripts, and (optionally) per-session JSON snapshots when `sessions.write_json_snapshots: true` is set. The per-session snapshots are off by default; state.db is canonical. |
+| `~/.kova/cron/` | Scheduled job data |
+| `~/.kova/whatsapp/session/` | WhatsApp bridge credentials |
 
 ---
 
@@ -319,7 +320,7 @@ User message → AIAgent._run_agent_loop()
 
 - **Self-registering tools**: Each tool file calls `registry.register()` at import time. `model_tools.py` triggers discovery by importing all tool modules.
 - **Toolset grouping**: Tools are grouped into toolsets (`web`, `terminal`, `file`, `browser`, etc.) that can be enabled/disabled per platform.
-- **Session persistence**: All conversations are stored in SQLite (`kova_state.py`) with full-text search and unique session titles. Per-session JSON snapshots in `~/.hermes/sessions/` were superseded by the SQLite store and are off by default; opt back in with `sessions.write_json_snapshots: true` if you have external tooling that consumes the JSON files directly.
+- **Session persistence**: All conversations are stored in SQLite (`kova_state.py`) with full-text search and unique session titles. Per-session JSON snapshots in `~/.kova/sessions/` were superseded by the SQLite store and are off by default; opt back in with `sessions.write_json_snapshots: true` if you have external tooling that consumes the JSON files directly.
 - **Ephemeral injection**: System prompts and prefill messages are injected at API call time, never persisted to the database or logs.
 - **Provider abstraction**: The agent works with any OpenAI-compatible API. Provider resolution happens at init time (Nous Portal OAuth, OpenRouter API key, or custom endpoint).
 - **Provider routing**: When using OpenRouter, `provider_routing` in config.yaml controls provider selection (sort by throughput/latency/price, allow/ignore specific providers, data retention policies). These are injected as `extra_body.provider` in API requests.
@@ -549,7 +550,7 @@ prerequisites:
   commands: [curl, jq]            # Advisory CLI checks
 ```
 
-Gateway and messaging sessions never collect secrets in-band; they instruct the user to run `kova setup` or update `~/.hermes/.env` locally.
+Gateway and messaging sessions never collect secrets in-band; they instruct the user to run `kova setup` or update `~/.kova/.env` locally.
 
 **When to declare required environment variables:**
 - The skill uses an API key or token that should be collected securely at load time
@@ -628,7 +629,7 @@ Kova uses a data-driven skin system — no code changes needed to add a new skin
 
 **Option A: User skin (YAML file)**
 
-Create `~/.hermes/skins/<name>.yaml`:
+Create `~/.kova/skins/<name>.yaml`:
 
 ```yaml
 name: mytheme
@@ -848,7 +849,7 @@ that touches the OS, assume *any* platform can hit your code path.
 Tests that use POSIX-only syscalls need a skip marker. Common ones:
 - Symlinks → `@pytest.mark.skipif(sys.platform == "win32", ...)`
 - `0o600` file modes → `@pytest.mark.skipif(sys.platform.startswith("win"), ...)`
-- `signal.SIGALRM` → Unix-only (see `tests/conftest.py::_enforce_test_timeout`)
+- `signal.SIGALRM` → Unix-only (per-test timeouts no longer use it directly; see the win32 timeout-method shim in `tests/conftest.py::pytest_configure`)
 - `os.setsid` / `os.fork` → Unix-only
 - Live Winsock / Windows-specific regression tests →
   `@pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific regression")`

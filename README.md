@@ -2,16 +2,16 @@
   <img src="assets/banner.png" alt="Kova Agent" width="100%">
 </p>
 
-# Kova Agent
+# Kova Agent ☤
 <p align="center">
   <a href="https://docs.kova.ai/">Kova Agent</a> | <a href="https://docs.kova.ai/">Kova Desktop</a>
 </p>
 <p align="center">
   <a href="https://docs.kova.ai/docs/"><img src="https://img.shields.io/badge/Docs-docs.kova.ai-FFD700?style=for-the-badge" alt="Documentation"></a>
   <a href="https://github.com/OpenKova/Kova-Agent/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
-  <a href="README.zh-CN.md"><img src="https://img.shields.io/badge/Lang-%E4%B8%AD%E6%96%87-red?style=for-the-badge" alt="中文"></a>
-  <a href="README.ur-pk.md"><img src="https://img.shields.io/badge/Lang-%D8%A7%D8%B1%D8%AF%D9%88-green?style=for-the-badge" alt="اردو"></a>
-  <a href="README.es.md"><img src="https://img.shields.io/badge/Lang-Espa%C3%B1ol-orange?style=for-the-badge" alt="Español"></a>
+  <a href="README.zh-CN.md"><img src="https://img.shields.io/badge/Lang-中文-red?style=for-the-badge" alt="中文"></a>
+  <a href="README.ur-pk.md"><img src="https://img.shields.io/badge/Lang-اردو-green?style=for-the-badge" alt="اردو"></a>
+  <a href="README.es.md"><img src="https://img.shields.io/badge/Lang-Español-orange?style=for-the-badge" alt="Español"></a>
 </p>
 
 **The self-improving AI agent.** It's the only agent with a built-in learning loop — it creates skills from experience, improves them during use, nudges itself to persist knowledge, searches its own past conversations, and builds a deepening model of who you are across sessions. Run it on a $5 VPS, a GPU cluster, or serverless infrastructure that costs nearly nothing when idle. It's not tied to your laptop — talk to it from Telegram while it works on a cloud VM.
@@ -24,7 +24,7 @@ Use any model you want — OpenRouter, OpenAI, your own endpoint, and [many othe
 <tr><td><b>A closed learning loop</b></td><td>Agent-curated memory with periodic nudges. Autonomous skill creation after complex tasks. Skills self-improve during use. FTS5 session search with LLM summarization for cross-session recall. <a href="https://github.com/plastic-labs/honcho">Honcho</a> dialectic user modeling. Compatible with the <a href="https://agentskills.io">agentskills.io</a> open standard.</td></tr>
 <tr><td><b>Scheduled automations</b></td><td>Built-in cron scheduler with delivery to any platform. Daily reports, nightly backups, weekly audits — all in natural language, running unattended.</td></tr>
 <tr><td><b>Delegates and parallelizes</b></td><td>Spawn isolated subagents for parallel workstreams. Write Python scripts that call tools via RPC, collapsing multi-step pipelines into zero-context-cost turns.</td></tr>
-<tr><td><b>Runs anywhere, not just your laptop</b></td><td>Six terminal backends — local, Docker, SSH, Singularity, Modal, and Daytona. Daytona and Modal offer serverless persistence — your agent's environment hibernates when idle and wakes on demand, costing nearly nothing between sessions. Run it on a $5 VPS or a GPU cluster.</td></tr>
+<tr><td><b>Runs anywhere, not just your laptop</b></td><td>Seven terminal backends — local, Docker, SSH, Singularity, Modal, Daytona, and Vercel Sandbox. Daytona and Modal offer serverless persistence — your agent's environment hibernates when idle and wakes on demand, costing nearly nothing between sessions. Run it on a $5 VPS or a GPU cluster.</td></tr>
 <tr><td><b>Research-ready</b></td><td>Batch trajectory generation, trajectory compression for training the next generation of tool-calling models.</td></tr>
 </table>
 
@@ -40,7 +40,7 @@ curl -fsSL https://docs.kova.ai/install.sh | bash
 
 ### Windows (native, PowerShell)
 
-> **Heads up:** Native Windows runs Kova without WSL — CLI, gateway, TUI, and tools all work natively. If you'd rather use WSL2, the Linux/macOS one-liner above works there too.
+> **Heads up:** Native Windows runs Kova without WSL — CLI, gateway, TUI, and tools all work natively. If you'd rather use WSL2, the Linux/macOS one-liner above works there too. Found a bug? Please [file issues](https://github.com/OpenKova/Kova-Agent/issues).
 
 Run this in PowerShell:
 
@@ -198,13 +198,13 @@ See `kova claw migrate --help` for all options, or use the `openclaw-migration` 
 We welcome contributions! See the [Contributing Guide](https://docs.kova.ai/docs/developer-guide/contributing) for development setup, code style, and PR process.
 
 Quick start for contributors — use the standard installer, then work from the
-full git checkout it creates at `$KOVA_HOME/kova-agent` (usually
+full git checkout it creates at `$HERMES_HOME/kova-agent` (usually
 `~/.kova/kova-agent`). This matches the layout used by `kova update`, the
 managed venv, lazy dependencies, gateway, and docs tooling.
 
 ```bash
 curl -fsSL https://docs.kova.ai/install.sh | bash
-cd "${KOVA_HOME:-$HOME/.kova}/kova-agent"
+cd "${HERMES_HOME:-$HOME/.kova}/kova-agent"
 uv pip install -e ".[all,dev]"
 scripts/run_tests.sh
 ```
@@ -231,6 +231,8 @@ scripts/run_tests.sh
 - 💬 [Discord](https://discord.gg/openkova)
 - 📚 [Skills Hub](https://agentskills.io)
 - 🐛 [Issues](https://github.com/OpenKova/Kova-Agent/issues)
+- 🔌 [computer-use-linux](https://github.com/avifenesh/computer-use-linux) — Linux desktop-control MCP server for Kova and other MCP hosts, with AT-SPI accessibility trees, Wayland/X11 input, screenshots, and compositor window targeting.
+- 🔌 [HermesClaw](https://github.com/AaronWong1999/hermesclaw) — Community WeChat bridge: Run Kova Agent and OpenClaw on the same WeChat account.
 
 ---
 

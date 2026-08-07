@@ -1,10 +1,10 @@
 import ignore from 'ignore'
 
-import type { KovaReadDirEntry, KovaReadDirResult } from '@/global'
+import type { HermesReadDirEntry, HermesReadDirResult } from '@/global'
 import { desktopFsCacheKey, desktopGitRoot, readDesktopDir, readDesktopFileDataUrl } from '@/lib/desktop-fs'
 import { ALWAYS_EXCLUDED } from '@/lib/excluded-paths'
 
-export type ProjectTreeEntry = KovaReadDirEntry
+export type ProjectTreeEntry = HermesReadDirEntry
 
 interface GitignoreRule {
   base: string
@@ -32,16 +32,25 @@ function clean(path: string) {
   return path.replace(/\\/g, '/').replace(/\/+$/, '') || '/'
 }
 
+// Windows path identity is case-insensitive. Fold only comparison keys so the
+// relative path returned below keeps the filesystem's original spelling;
+// POSIX paths remain case-sensitive.
+function comparisonPath(path: string) {
+  return /^[A-Za-z]:(?:\/|$)/.test(path) || path.startsWith('//') ? path.toLowerCase() : path
+}
+
 /** Strict POSIX-style relative path; null if `child` is not inside `root`. */
 function relativeTo(root: string, child: string) {
   const r = clean(root)
   const c = clean(child)
+  const rKey = comparisonPath(r)
+  const cKey = comparisonPath(c)
 
-  if (c === r) {
+  if (cKey === rKey) {
     return ''
   }
 
-  return c.startsWith(`${r}/`) ? c.slice(r.length + 1) : null
+  return cKey.startsWith(`${rKey}/`) ? c.slice(r.length + 1) : null
 }
 
 /** Repo-root → repo-root/a → repo-root/a/b → … for every dir between root and `dir`. */
@@ -105,7 +114,7 @@ async function gitignoreFor(dir: string) {
   return cached
 }
 
-function ignoredBy(rules: GitignoreRule[], entry: KovaReadDirEntry) {
+function ignoredBy(rules: GitignoreRule[], entry: HermesReadDirEntry) {
   return rules.some(rule => {
     const rel = relativeTo(rule.base, entry.path)
 
@@ -117,7 +126,7 @@ function ignoredBy(rules: GitignoreRule[], entry: KovaReadDirEntry) {
   })
 }
 
-async function filterIgnored(entries: KovaReadDirEntry[], rootPath: string, dirPath: string) {
+async function filterIgnored(entries: HermesReadDirEntry[], rootPath: string, dirPath: string) {
   const root = await gitRootFor(rootPath)
 
   if (!root) {
@@ -131,8 +140,8 @@ async function filterIgnored(entries: KovaReadDirEntry[], rootPath: string, dirP
   return rules.length > 0 ? entries.filter(entry => !ignoredBy(rules, entry)) : entries
 }
 
-export async function readProjectDir(dirPath: string, rootPath = dirPath): Promise<KovaReadDirResult> {
-  if (!window.kovaDesktop) {
+export async function readProjectDir(dirPath: string, rootPath = dirPath): Promise<HermesReadDirResult> {
+  if (!window.hermesDesktop) {
     return { entries: [], error: 'no-bridge' }
   }
 

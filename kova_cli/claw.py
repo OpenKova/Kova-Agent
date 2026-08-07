@@ -39,7 +39,7 @@ _OPENCLAW_SCRIPT = (
     / "migration"
     / "openclaw-migration"
     / "scripts"
-    / "openclaw_to_kova.py"
+    / "openclaw_to_hermes.py"
 )
 
 # Fallback: user may have installed the skill from the Hub
@@ -49,7 +49,7 @@ _OPENCLAW_SCRIPT_INSTALLED = (
     / "migration"
     / "openclaw-migration"
     / "scripts"
-    / "openclaw_to_kova.py"
+    / "openclaw_to_hermes.py"
 )
 
 # Known OpenClaw directory names (current + legacy)
@@ -68,7 +68,7 @@ def _detect_openclaw_processes() -> list[str]:
         try:
             result = subprocess.run(
                 ["systemctl", "--user", "is-active", "openclaw-gateway.service"],
-                capture_output=True, text=True, timeout=5,
+                capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=5,
             )
             if result.stdout.strip() == "active":
                 found.append("systemd service: openclaw-gateway.service")
@@ -81,7 +81,7 @@ def _detect_openclaw_processes() -> list[str]:
             for exe in ("openclaw.exe", "clawd.exe"):
                 result = subprocess.run(
                     ["tasklist", "/FI", f"IMAGENAME eq {exe}"],
-                    capture_output=True, text=True, timeout=5,
+                    capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=5,
                 )
                 if exe in result.stdout.lower():
                     found.append(f"process: {exe}")
@@ -95,7 +95,7 @@ def _detect_openclaw_processes() -> list[str]:
             )
             result = subprocess.run(
                 ["powershell", "-NoProfile", "-Command", ps_cmd],
-                capture_output=True, text=True, timeout=5,
+                capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=5,
             )
             if result.stdout.strip():
                 found.append(f"node.exe process with openclaw in command line (PID {result.stdout.strip()})")
@@ -105,7 +105,7 @@ def _detect_openclaw_processes() -> list[str]:
         try:
             result = subprocess.run(
                 ["pgrep", "-f", "openclaw"],
-                capture_output=True, text=True, timeout=3,
+                capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=3,
             )
             if result.returncode == 0:
                 pids = result.stdout.strip().split()
@@ -194,7 +194,7 @@ _WORKSPACE_STATE_GLOBS = (
 
 
 def _find_migration_script() -> Path | None:
-    """Find the openclaw_to_kova.py script in known locations."""
+    """Find the openclaw_to_hermes.py script in known locations."""
     for candidate in [_OPENCLAW_SCRIPT, _OPENCLAW_SCRIPT_INSTALLED]:
         if candidate.exists():
             return candidate
@@ -203,7 +203,7 @@ def _find_migration_script() -> Path | None:
 
 def _load_migration_module(script_path: Path):
     """Dynamically load the migration script as a module."""
-    spec = importlib.util.spec_from_file_location("openclaw_to_kova", script_path)
+    spec = importlib.util.spec_from_file_location("openclaw_to_hermes", script_path)
     if spec is None or spec.loader is None:
         return None
     mod = importlib.util.module_from_spec(spec)
@@ -348,7 +348,7 @@ def _cmd_migrate(args):
     )
     print(
         color(
-            "│          ⚕ Kova — OpenClaw Migration                   │",
+            "│          ⚕ Kova — OpenClaw Migration                 │",
             Colors.MAGENTA,
         )
     )
@@ -480,7 +480,7 @@ def _cmd_migrate(args):
             f"Plan has {preview_conflicts} conflict(s). Refusing to apply."
         )
         print_info(
-            "Each conflict is an item whose target already exists in ~/.hermes/. "
+            "Each conflict is an item whose target already exists in ~/.kova/. "
             "Re-run with --overwrite to replace conflicting targets (item-level "
             "backups are written to the migration report directory)."
         )
@@ -574,7 +574,7 @@ def _cmd_cleanup(args):
     )
     print(
         color(
-            "│          ⚕ Kova — OpenClaw Cleanup                     │",
+            "│          ⚕ Kova — OpenClaw Cleanup                   │",
             Colors.MAGENTA,
         )
     )

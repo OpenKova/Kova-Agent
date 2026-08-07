@@ -13,7 +13,7 @@ Kova 从托管于文档站点旁的 JSON 清单中获取 **OpenRouter** 和 **No
 ## 线上清单 URL
 
 ```
-https://hermes-agent.nousresearch.com/docs/api/model-catalog.json
+https://kova-agent.nousresearch.com/docs/api/model-catalog.json
 ```
 
 每次合并到 `main` 时，通过现有的 `deploy-site.yml` GitHub Pages 流水线发布。真实来源位于仓库的 `website/static/api/model-catalog.json`。
@@ -61,14 +61,14 @@ https://hermes-agent.nousresearch.com/docs/api/model-catalog.json
 | 网络故障且无缓存 | 静默回退到仓库内置快照 |
 | 清单未通过 schema 校验 | 视为不可达 |
 
-缓存位置：`~/.hermes/cache/model_catalog.json`。
+缓存位置：`~/.kova/cache/model_catalog.json`。
 
 ## 配置
 
 ```yaml
 model_catalog:
   enabled: true
-  url: https://hermes-agent.nousresearch.com/docs/api/model-catalog.json
+  url: https://kova-agent.nousresearch.com/docs/api/model-catalog.json
   ttl_hours: 1
   providers: {}
 ```

@@ -16,7 +16,7 @@ kova memory setup    # select "retaindb"
 Or manually:
 ```bash
 kova config set memory.provider retaindb
-echo "RETAINDB_API_KEY=your-key" >> ~/.hermes/.env
+echo "RETAINDB_API_KEY=your-key" >> ~/.kova/.env
 ```
 
 ## Config

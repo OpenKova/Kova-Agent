@@ -562,9 +562,9 @@ export async function refreshOnboarding(ctx: OnboardingContext) {
 // the flow never silently stalls in a waiting state. Mirrors the pattern in
 // apps/desktop/src/app/artifacts/index.tsx.
 async function openSignInUrl(url: string) {
-  if (window.kovaDesktop?.openExternal) {
+  if (window.hermesDesktop?.openExternal) {
     try {
-      await window.kovaDesktop.openExternal(url)
+      await window.hermesDesktop.openExternal(url)
 
       return
     } catch {

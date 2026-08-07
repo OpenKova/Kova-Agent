@@ -31,7 +31,7 @@ import {
   getLogs,
   getMcpCatalog,
   getMcpOAuthFlow,
-  type KovaGateway,
+  type HermesGateway,
   installMcpCatalogEntry,
   type McpCatalogEntry,
   type McpTestResult,
@@ -45,9 +45,9 @@ import { cn } from '@/lib/utils'
 import { notify, notifyError } from '@/store/notifications'
 import { $activeGatewayProfile, normalizeProfileKey } from '@/store/profile'
 import { $activeSessionId } from '@/store/session'
-import type { KovaConfigRecord } from '@/types/kova'
+import type { HermesConfigRecord } from '@/types/kova'
 
-import { setKovaConfigCache, useKovaConfigRecord } from '../hooks/use-config-record'
+import { setHermesConfigCache, useHermesConfigRecord } from '../hooks/use-config-record'
 import { useOnProfileSwitch } from '../hooks/use-on-profile-switch'
 import { DetailPane, ICON_BUTTON, MASTER_DETAIL_WIDE_COLS } from '../master-detail'
 import { PanelAddButton, PanelEmpty } from '../overlays/panel'
@@ -102,7 +102,7 @@ function parseServersDoc(raw: string): McpServers {
   return Object.fromEntries(Object.entries(map).map(([name, entry]) => [name, normalizeEntry(entry)]))
 }
 
-function getServers(config: KovaConfigRecord | null): McpServers {
+function getServers(config: HermesConfigRecord | null): McpServers {
   const raw = config?.mcp_servers
 
   return raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw as McpServers) : {}
@@ -341,7 +341,7 @@ function scanServerBlocks(text: string): ServerBlock[] {
   return blocks
 }
 
-export function McpTab({ gateway }: { gateway: KovaGateway | null }) {
+export function McpTab({ gateway }: { gateway: HermesGateway | null }) {
   const { t } = useI18n()
   const m = t.settings.mcp
   const activeSessionId = useStore($activeSessionId)
@@ -357,9 +357,9 @@ export function McpTab({ gateway }: { gateway: KovaGateway | null }) {
     refetch: refetchConfig,
     dataUpdatedAt: configUpdatedAt,
     errorUpdatedAt: configErroredAt
-  } = useKovaConfigRecord()
+  } = useHermesConfigRecord()
 
-  const setConfig = setKovaConfigCache
+  const setConfig = setHermesConfigCache
 
   // True from a profile switch until the config query resettles for the new
   // profile. Until then `config` (and thus `servers`) still holds profile A's
@@ -463,6 +463,7 @@ export function McpTab({ gateway }: { gateway: KovaGateway | null }) {
   // in-progress edit — the draft is the user's until they save or reset.
   const draftSeeded = useRef(false)
 
+  // eslint-disable-next-line no-restricted-syntax -- legitimate non-atom ref write (see eslint rule comment)
   useEffect(() => {
     // profilePending: config still holds the PREVIOUS profile's record right
     // after a switch — seeding from it would latch the wrong profile's doc.
@@ -525,6 +526,7 @@ export function McpTab({ gateway }: { gateway: KovaGateway | null }) {
   // on a fresh success, errorUpdatedAt on a fresh failure. Releasing on error too
   // means a failed refetch surfaces the retry UI instead of leaving mutations
   // silently no-op forever.
+  // eslint-disable-next-line no-restricted-syntax -- legitimate non-atom ref write (see eslint rule comment)
   useEffect(() => {
     if (
       profilePending &&
@@ -584,7 +586,7 @@ export function McpTab({ gateway }: { gateway: KovaGateway | null }) {
         serverName,
         start: authMcpServer,
         status: getMcpOAuthFlow,
-        openExternal: url => window.kovaDesktop.openExternal(url)
+        openExternal: url => window.hermesDesktop.openExternal(url)
       })
 
       const result: McpTestResult = { ok: true, tools: flow.tools ?? [] }
@@ -675,7 +677,7 @@ export function McpTab({ gateway }: { gateway: KovaGateway | null }) {
     }
   }
 
-  // Whole-map replace (NOT saveKovaConfig, which deep-merges and so can never
+  // Whole-map replace (NOT saveHermesConfig, which deep-merges and so can never
   // delete a server, drop `enabled: false`, or remove a nested field). Only
   // after the replace lands do we write the cache through + reload live sessions.
   // Returns false when the profile switched mid-save: the write hit profile A's
@@ -728,7 +730,7 @@ export function McpTab({ gateway }: { gateway: KovaGateway | null }) {
     return next
   }
 
-  const toggleServer = async (serverName: string, enabled: boolean) => {
+  const setServerEnabled = async (serverName: string, enabled: boolean) => {
     if (profilePending) {
       return
     }
@@ -976,7 +978,7 @@ export function McpTab({ gateway }: { gateway: KovaGateway | null }) {
             onBack={() => setCursor(0)}
             onProbe={() => void runProbe(selected)}
             onRemove={() => void removeServer(selected)}
-            onToggle={checked => void toggleServer(selected, checked)}
+            onToggle={checked => void setServerEnabled(selected, checked)}
             onToggleTool={toolName => void toggleTool(selected, toolName)}
             probe={probes[selected]}
             saved={savedEntry !== undefined}
@@ -1017,7 +1019,7 @@ export function McpTab({ gateway }: { gateway: KovaGateway | null }) {
                         onProbe={() => void runProbe(serverName)}
                         onRemove={() => void removeServer(serverName)}
                         onSelect={() => focusServer(serverName)}
-                        onToggle={checked => void toggleServer(serverName, checked)}
+                        onToggle={checked => void setServerEnabled(serverName, checked)}
                         status={status}
                         statusText={statusLine(m, status, probes[serverName], server)}
                       />

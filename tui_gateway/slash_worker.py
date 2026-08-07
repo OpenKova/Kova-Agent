@@ -1,4 +1,4 @@
-"""Persistent slash-command worker — one KovaCLI per TUI session.
+"""Persistent slash-command worker — one HermesCLI per TUI session.
 
 Protocol: reads JSON lines from stdin {id, command}, writes {id, ok, output|error} to stdout.
 """
@@ -20,13 +20,14 @@ import argparse
 import contextlib
 import io
 import json
+import logging
 import os
 import sys
 import threading
 import time
 
 import cli as cli_mod
-from cli import KovaCLI
+from cli import HermesCLI
 from tui_gateway._stdin_recovery import handle_spurious_eof
 from rich.console import Console
 
@@ -48,6 +49,7 @@ def _env_float(name: str, default: float) -> float:
 _WATCHDOG_POLL_S = max(0.05, _env_float("KOVA_SLASH_WATCHDOG_POLL_S", 2.0))
 _ORPHAN_GRACE_S = max(0.0, _env_float("KOVA_SLASH_WATCHDOG_GRACE_S", 5.0))
 _in_flight = threading.Event()  # set while a command is executing
+logger = logging.getLogger(__name__)
 
 
 def _is_orphaned(original_ppid, getppid=os.getppid) -> bool:
@@ -56,7 +58,7 @@ def _is_orphaned(original_ppid, getppid=os.getppid) -> bool:
 
 
 def _prepare_slash_worker_runtime() -> None:
-    """Start bounded MCP discovery before KovaCLI snapshots tools.
+    """Start bounded MCP discovery before HermesCLI snapshots tools.
 
     Each slash_worker child is its own process — the parent ``kova serve``
     discovery thread does not populate this registry (issue #61891).
@@ -88,7 +90,7 @@ def _start_parent_death_watchdog(original_ppid) -> None:
     threading.Thread(target=_loop, daemon=True).start()
 
 
-def _run(cli: KovaCLI, command: str) -> str:
+def _run(cli: HermesCLI, command: str) -> str:
     cmd = (command or "").strip()
     if not cmd:
         return ""
@@ -132,14 +134,14 @@ def main():
     os.environ["KOVA_SESSION_KEY"] = args.session_key
     os.environ["KOVA_INTERACTIVE"] = "1"
 
-    # Start before the (hundreds-of-ms) KovaCLI build — that window is itself
+    # Start before the (hundreds-of-ms) HermesCLI build — that window is itself
     # an orphan risk if the gateway dies mid-spawn.
     orig_ppid = os.getppid()
     _start_parent_death_watchdog(orig_ppid)
     _prepare_slash_worker_runtime()
 
     with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-        cli = KovaCLI(model=args.model or None, compact=True, resume=args.session_key, verbose=False)
+        cli = HermesCLI(model=args.model or None, compact=True, resume=args.session_key, verbose=False)
 
     # Spurious stdin-EOF recovery (same O_NONBLOCK shared file-description
     # issue as the gateway entry point — any child inheriting fd 0 can flip
@@ -173,6 +175,21 @@ def main():
             sys.stdout.flush()
         finally:
             _in_flight.clear()
+            # Workers persist for the TUI session, so release allocator pages at
+            # the same command boundary as other long-lived gateway processes.
+            # trim_memory's shared cooldown coalesces this with nearby activity.
+            try:
+                from kova_cli.mem_trim import trim_memory
+
+                trim_memory(reason="slash worker command completion")
+            except Exception as exc:
+                # debug, not warning — a persistent failure would repeat on
+                # every slash command forever.
+                logger.debug(
+                    "slash worker memory trim failed: %s: %s",
+                    type(exc).__name__,
+                    exc,
+                )
 
 
 if __name__ == "__main__":

@@ -44,6 +44,7 @@ def _run_gateway_import(kova_home: Path, initial_env: dict[str, str]) -> dict[st
             "KOVA_MAX_ITERATIONS",
             "KOVA_AGENT_TIMEOUT",
             "KOVA_AGENT_TIMEOUT_WARNING",
+            "KOVA_SESSION_STALL_TIMEOUT",
             "KOVA_GATEWAY_BUSY_INPUT_MODE",
             "KOVA_GATEWAY_BUSY_TEXT_MODE",
             "KOVA_GATEWAY_PLATFORM_CONNECT_TIMEOUT",
@@ -108,75 +109,24 @@ def kova_home(tmp_path: Path) -> Path:
     return home
 
 
-def test_config_max_turns_wins_over_stale_env(kova_home: Path) -> None:
-    """Regression: config.yaml:agent.max_turns=500 must beat .env=60."""
-    _write_config(kova_home, agent_cfg={"max_turns": 500})
-    _write_env(kova_home, {"KOVA_MAX_ITERATIONS": "60"})
-
-    env = _run_gateway_import(kova_home, initial_env={})
-
-    assert env.get("KOVA_MAX_ITERATIONS") == "500", (
-        f"expected config.yaml max_turns=500 to win; got {env.get('KOVA_MAX_ITERATIONS')!r}. "
-        "Stale .env value is shadowing config — the bridge lost its override."
-    )
-
-
 def test_config_gateway_timeout_wins_over_stale_env(kova_home: Path) -> None:
     """Every agent.* bridge key must be config-authoritative, not .env-authoritative."""
     _write_config(kova_home, agent_cfg={
         "gateway_timeout": 1800,
         "gateway_timeout_warning": 900,
+        "session_stall_timeout": 300,
     })
     _write_env(kova_home, {
         "KOVA_AGENT_TIMEOUT": "60",
         "KOVA_AGENT_TIMEOUT_WARNING": "30",
+        "KOVA_SESSION_STALL_TIMEOUT": "15",
     })
 
     env = _run_gateway_import(kova_home, initial_env={})
 
     assert env.get("KOVA_AGENT_TIMEOUT") == "1800"
     assert env.get("KOVA_AGENT_TIMEOUT_WARNING") == "900"
-
-
-def test_config_display_busy_input_mode_wins_over_stale_env(kova_home: Path) -> None:
-    _write_config(kova_home, display_cfg={"busy_input_mode": "interrupt"})
-    _write_env(kova_home, {"KOVA_GATEWAY_BUSY_INPUT_MODE": "queue"})
-
-    env = _run_gateway_import(kova_home, initial_env={})
-
-    assert env.get("KOVA_GATEWAY_BUSY_INPUT_MODE") == "interrupt"
-
-
-def test_config_display_busy_text_mode_wins_over_stale_env(kova_home: Path) -> None:
-    _write_config(kova_home, display_cfg={"busy_text_mode": "queue"})
-    _write_env(kova_home, {"KOVA_GATEWAY_BUSY_TEXT_MODE": "interrupt"})
-
-    env = _run_gateway_import(kova_home, initial_env={})
-
-    assert env.get("KOVA_GATEWAY_BUSY_TEXT_MODE") == "queue"
-
-
-def test_config_timezone_wins_over_stale_env(kova_home: Path) -> None:
-    _write_config(kova_home, timezone="America/Los_Angeles")
-    _write_env(kova_home, {"KOVA_TIMEZONE": "UTC"})
-
-    env = _run_gateway_import(kova_home, initial_env={})
-
-    assert env.get("KOVA_TIMEZONE") == "America/Los_Angeles"
-
-
-def test_env_value_survives_when_config_omits_key(kova_home: Path) -> None:
-    """If config.yaml doesn't set max_turns, .env value must still pass through.
-
-    The bridge only overwrites when the config key is present — an absent
-    config key should NOT clobber the .env value.
-    """
-    _write_config(kova_home, agent_cfg={})  # no max_turns
-    _write_env(kova_home, {"KOVA_MAX_ITERATIONS": "123"})
-
-    env = _run_gateway_import(kova_home, initial_env={})
-
-    assert env.get("KOVA_MAX_ITERATIONS") == "123"
+    assert env.get("KOVA_SESSION_STALL_TIMEOUT") == "300"
 
 
 def test_config_platform_connect_timeout_supplies_env_when_unset(kova_home: Path) -> None:

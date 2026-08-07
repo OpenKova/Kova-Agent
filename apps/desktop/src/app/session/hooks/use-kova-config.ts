@@ -1,6 +1,7 @@
 import { type MutableRefObject, useCallback, useRef, useState } from 'react'
 
-import { getKovaConfig, getKovaConfigDefaults } from '@/kova'
+import { setTerminalFontFamilyFromConfig } from '@/app/right-sidebar/terminal/terminal-font'
+import { getHermesConfig, getHermesConfigDefaults } from '@/kova'
 import { BUILTIN_PERSONALITIES, normalizePersonalityValue, personalityNamesFromConfig } from '@/lib/chat-runtime'
 import { normalize } from '@/lib/text'
 import {
@@ -11,9 +12,14 @@ import {
   setCurrentPersonality,
   setCurrentReasoningEffort,
   setCurrentServiceTier,
+  setDefaultReasoningEffort,
   setIntroPersonality
 } from '@/store/session'
-import { applyAutoSpeakFromConfig } from '@/store/voice-prefs'
+import {
+  applyAutoSpeakFromConfig,
+  applyThinkingSoundFromConfig,
+  applyVoiceStopPhraseFromConfig
+} from '@/store/voice-prefs'
 
 const DEFAULT_VOICE_SECONDS = 120
 const FAST_TIERS = new Set(['fast', 'priority', 'on'])
@@ -39,16 +45,16 @@ function normalizeConfigEffort(value: unknown): string {
   return effort === 'false' || effort === 'disabled' ? 'none' : effort
 }
 
-interface KovaConfigOptions {
+interface HermesConfigOptions {
   activeSessionIdRef: MutableRefObject<string | null>
 }
 
-export function useKovaConfig({ activeSessionIdRef }: KovaConfigOptions) {
+export function useHermesConfig({ activeSessionIdRef }: HermesConfigOptions) {
   const [voiceMaxRecordingSeconds, setVoiceMaxRecordingSeconds] = useState(DEFAULT_VOICE_SECONDS)
   const [sttEnabled, setSttEnabled] = useState(true)
   const profileRefreshEpochRef = useRef(0)
 
-  const refreshKovaConfig = useCallback(
+  const refreshHermesConfig = useCallback(
     async (force = false) => {
       if (force) {
         profileRefreshEpochRef.current += 1
@@ -58,7 +64,7 @@ export function useKovaConfig({ activeSessionIdRef }: KovaConfigOptions) {
       const selectionGeneration = getComposerSelectionGeneration()
 
       try {
-        const [config, defaults] = await Promise.all([getKovaConfig(), getKovaConfigDefaults().catch(() => ({}))])
+        const [config, defaults] = await Promise.all([getHermesConfig(), getHermesConfigDefaults().catch(() => ({}))])
 
         if (profileRefreshEpochRef.current !== profileRefreshEpoch) {
           return
@@ -83,6 +89,12 @@ export function useKovaConfig({ activeSessionIdRef }: KovaConfigOptions) {
         const reasoning = normalizeConfigEffort(config.agent?.reasoning_effort)
         const tier = (config.agent?.service_tier ?? '').trim()
 
+        // Publish the profile default regardless of whether the composer is
+        // reseeded below: picker rows and preset application resolve "the
+        // default" from here, so a manual model pick must not leave them
+        // rendering/applying Kova' built-in medium over the user's config.
+        setDefaultReasoningEffort(reasoning)
+
         const shouldSeedComposer =
           !activeSessionIdRef.current &&
           getComposerSelectionGeneration() === selectionGeneration &&
@@ -97,7 +109,10 @@ export function useKovaConfig({ activeSessionIdRef }: KovaConfigOptions) {
 
         setVoiceMaxRecordingSeconds(recordingLimit(config.voice?.max_recording_seconds))
         setSttEnabled(config.stt?.enabled !== false)
+        setTerminalFontFamilyFromConfig(config.terminal?.font_family)
         applyAutoSpeakFromConfig(config)
+        applyVoiceStopPhraseFromConfig(config)
+        applyThinkingSoundFromConfig(config)
       } catch {
         // Config is nice-to-have; chat still works without it.
       }
@@ -105,5 +120,5 @@ export function useKovaConfig({ activeSessionIdRef }: KovaConfigOptions) {
     [activeSessionIdRef]
   )
 
-  return { refreshKovaConfig, sttEnabled, voiceMaxRecordingSeconds }
+  return { refreshHermesConfig, sttEnabled, voiceMaxRecordingSeconds }
 }

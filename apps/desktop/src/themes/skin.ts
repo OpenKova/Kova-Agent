@@ -15,7 +15,7 @@
  * still picks `.dark` from the real background luminance.
  */
 
-import type { KovaSkin, SkinColors } from '@kova/shared/skin'
+import type { HermesSkin, SkinColors } from '@kova/shared/skin'
 
 import { ensureContrast, luminance, mix, normalizeHex, readableOn } from './color'
 import type { DesktopTheme, DesktopThemeColors } from './types'
@@ -43,7 +43,7 @@ const titleCase = (name: string): string => name.charAt(0).toUpperCase() + name.
  * Convert a resolved skin into a `DesktopTheme`, or null when it carries no
  * usable colors (so a broken/empty skin never registers junk).
  */
-export function skinToDesktopTheme(skin: KovaSkin): DesktopTheme | null {
+export function skinToDesktopTheme(skin: HermesSkin): DesktopTheme | null {
   const name = (skin.name ?? '').trim()
   const colors = skin.colors
 

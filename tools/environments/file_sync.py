@@ -50,12 +50,12 @@ DeleteFn = Callable[[list[str]], None]  # (remote_paths) -> raises on failure
 GetFilesFn = Callable[[], list[tuple[str, str]]]  # () -> [(host_path, remote_path), ...]
 
 
-def iter_sync_files(container_base: str = "/root/.hermes") -> list[tuple[str, str]]:
+def iter_sync_files(container_base: str = "/root/.kova") -> list[tuple[str, str]]:
     """Enumerate all files that should be synced to a remote environment.
 
     Combines credentials, skills, and cache into a single flat list of
     (host_path, remote_path) pairs.  Credential paths are remapped from
-    the hardcoded /root/.hermes to *container_base* because the remote
+    the hardcoded /root/.kova to *container_base* because the remote
     user's home may differ (e.g. /home/daytona, /home/user).
     """
     # Late import: credential_files imports agent modules that create
@@ -69,7 +69,7 @@ def iter_sync_files(container_base: str = "/root/.hermes") -> list[tuple[str, st
     files: list[tuple[str, str]] = []
     for entry in get_credential_file_mounts():
         remote = entry["container_path"].replace(
-            "/root/.hermes", container_base, 1
+            "/root/.kova", container_base, 1
         )
         files.append((entry["host_path"], remote))
     for entry in iter_skills_files(container_base=container_base):
@@ -156,6 +156,7 @@ class FileSyncManager:
         self._bulk_upload_fn = bulk_upload_fn
         self._bulk_download_fn = bulk_download_fn
         self._delete_fn = delete_fn
+        self._transaction_lock = threading.Lock()
         self._synced_files: dict[str, tuple[float, int]] = {}  # remote_path -> (mtime, size)
         self._pushed_hashes: dict[str, str] = {}  # remote_path -> sha256 hex digest
         self._upload_only_host_paths: set[str] = set()
@@ -171,6 +172,11 @@ class FileSyncManager:
         Transactional: state only committed if ALL operations succeed.
         On failure, state rolls back so the next cycle retries everything.
         """
+        with self._transaction_lock:
+            self._sync_transaction(force=force)
+
+    def _sync_transaction(self, *, force: bool = False) -> None:
+        """Execute one sync cycle while holding the per-manager lock."""
         if not force and not os.environ.get(_FORCE_SYNC_ENV):
             now = _monotonic()
             if now - self._last_sync_time < self._sync_interval:
@@ -257,6 +263,11 @@ class FileSyncManager:
         Protected against SIGINT (defers the signal until complete) and
         serialized across concurrent gateway sandboxes via file lock.
         """
+        with self._transaction_lock:
+            self._sync_back_transaction(kova_home=kova_home)
+
+    def _sync_back_transaction(self, kova_home: Path | None = None) -> None:
+        """Execute sync-back against a stable snapshot of manager state."""
         if self._bulk_download_fn is None:
             return
 
@@ -448,9 +459,9 @@ class FileSyncManager:
 
         Uses the existing file mapping to find a remote->host directory
         pair, then applies the same prefix substitution to the new file.
-        For example, if the mapping has ``/root/.hermes/skills/a.md`` →
-        ``~/.hermes/skills/a.md``, a new remote file at
-        ``/root/.hermes/skills/b.md`` maps to ``~/.hermes/skills/b.md``.
+        For example, if the mapping has ``/root/.kova/skills/a.md`` →
+        ``~/.kova/skills/a.md``, a new remote file at
+        ``/root/.kova/skills/b.md`` maps to ``~/.kova/skills/b.md``.
         """
         mapping = file_mapping if file_mapping is not None else []
         upload_only_host_paths = upload_only_host_paths or set()

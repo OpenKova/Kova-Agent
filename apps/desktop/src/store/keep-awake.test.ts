@@ -5,18 +5,18 @@ import { storedBoolean } from '@/lib/storage'
 import { $keepAwake, setKeepAwake } from './keep-awake'
 
 const KEY = 'kova.desktop.keepAwake.v1'
-const desktopWindow = window as unknown as { kovaDesktop?: Window['kovaDesktop'] }
-const initialKovaDesktop = desktopWindow.kovaDesktop
+const desktopWindow = window as unknown as { hermesDesktop?: Window['hermesDesktop'] }
+const initialHermesDesktop = desktopWindow.hermesDesktop
 const setKeepAwakeBridge = vi.fn()
 
 beforeEach(() => {
-  desktopWindow.kovaDesktop = { setKeepAwake: setKeepAwakeBridge } as unknown as Window['kovaDesktop']
+  desktopWindow.hermesDesktop = { setKeepAwake: setKeepAwakeBridge } as unknown as Window['hermesDesktop']
   setKeepAwake(false)
   setKeepAwakeBridge.mockClear()
 })
 
 afterEach(() => {
-  desktopWindow.kovaDesktop = initialKovaDesktop
+  desktopWindow.hermesDesktop = initialHermesDesktop
 })
 
 describe('keep-awake store', () => {

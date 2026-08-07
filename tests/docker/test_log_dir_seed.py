@@ -10,7 +10,11 @@ s6-log crash-loops on mkdir: Permission denied.
 """
 from __future__ import annotations
 
-from tests.docker.conftest import docker_exec_sh, start_container
+from tests.docker.conftest import (
+    docker_exec_sh,
+    restart_container,
+    start_container,
+)
 
 
 def test_logs_gateways_seeded_and_kova_owned(
@@ -45,3 +49,5 @@ def test_logs_gateways_seeded_and_kova_owned(
     assert "gateways=kova" in r.stdout, (
         f"logs/gateways/ not owned by kova: {r.stdout}"
     )
+
+

@@ -45,7 +45,7 @@ The picker has two columns:
 
 Type in the filter box to narrow by provider name, slug, or model ID.
 
-Pick a model, hit **Switch**, and Kova writes it to `~/.hermes/config.yaml` under the `model` section. **This applies to new sessions only** — any chat tab you already have open keeps running whatever model it started with. To hot-swap the current chat, use the `/model` slash command inside it.
+Pick a model, hit **Switch**, and Kova writes it to `~/.kova/config.yaml` under the `model` section. **This applies to new sessions only** — any chat tab you already have open keeps running whatever model it started with. To hot-swap the current chat, use the `/model` slash command inside it.
 
 ### Mid-session switches and context warnings
 
@@ -103,7 +103,7 @@ Cards are badged with `main` or `aux · <task>` when they're currently assigned 
 
 ## What gets written to `config.yaml`
 
-When you save via the dashboard, Kova writes to `~/.hermes/config.yaml`:
+When you save via the dashboard, Kova writes to `~/.kova/config.yaml`:
 
 **Main model:**
 ```yaml
@@ -152,6 +152,42 @@ auxiliary:
 ```
 
 When `fallback_chain` is absent, `auto` uses the top-level `fallback_providers` chain before the built-in auxiliary discovery chain.
+
+## Per-provider request options
+
+Provider entries (`providers.<name>` in the `providers:` dict, or items in the legacy `custom_providers` list) accept two knobs that shape how Kova talks to the endpoint:
+
+**`extra_headers`** — a mapping of extra HTTP headers attached to every LLM request routed to that provider's base URL. They are applied last, after URL/profile defaults and user header overrides, so they survive credential swaps and client rebuilds. Useful for Cloudflare Access service tokens, proxy auth, or custom bearer schemes:
+
+```yaml
+providers:
+  my-gateway:
+    api: https://llm.internal.example.com/v1
+    api_key: sk-...
+    extra_headers:
+      CF-Access-Client-Id: "xxxx.access"
+      CF-Access-Client-Secret: "yyyy"
+```
+
+Header values routinely carry credentials — Kova never logs them. `extra_headers` applies to OpenAI-compatible routes; the `anthropic_messages` and `bedrock_converse` API modes do not use it.
+
+**`discover_models`** — set to `false` (default `true`) to skip querying the endpoint's `/models` listing and use only the `models` you configured on the entry. Handy for gateways whose model listing is slow, unreliable, or noisy:
+
+```yaml
+providers:
+  my-gateway:
+    api: https://llm.internal.example.com/v1
+    discover_models: false
+    models:
+      - my-finetune-v2
+      - my-finetune-v1
+```
+
+With discovery off, the model picker (`kova model`, `/model`) shows the configured list instead of a live probe.
+
+:::note Legacy format
+Older configs used a top-level `custom_providers:` list (with `base_url` instead of `api`). It still works and is auto-migrated to the `providers:` dict on `kova update` (config v12).
+:::
 
 ## When does it take effect?
 
@@ -210,7 +246,7 @@ Define your own short names for models you reach for often, then use `/model <al
 **Canonical (top-level `model_aliases:`)** — full control over provider + base_url:
 
 ```yaml
-# ~/.hermes/config.yaml
+# ~/.kova/config.yaml
 model_aliases:
   fav:
     model: claude-sonnet-4.6
@@ -237,13 +273,13 @@ Then `/model fav` or `/model grok` in chat. User aliases shadow built-in short n
 kova model            # Interactive provider + model picker (the canonical way to switch defaults)
 ```
 
-`kova model` walks you through picking a provider, authenticating (OAuth flows open a browser; API-key providers prompt for the key), and then choosing a specific model from that provider's curated catalog. The choice is written to `model.provider` and `model.default` in `~/.hermes/config.yaml`.
+`kova model` walks you through picking a provider, authenticating (OAuth flows open a browser; API-key providers prompt for the key), and then choosing a specific model from that provider's curated catalog. The choice is written to `model.provider` and `model.default` in `~/.kova/config.yaml`.
 
 To list providers/models without launching the picker, use the dashboard or the REST endpoints below. To inspect what the CLI will actually use right now: `kova config get model --json` and `kova status`.
 
 ### Direct config edit
 
-Edit `~/.hermes/config.yaml` and restart whatever reads it. See the [Configuration reference](./configuration.md) for the full schema.
+Edit `~/.kova/config.yaml` and restart whatever reads it. See the [Configuration reference](./configuration.md) for the full schema.
 
 ### REST API
 

@@ -1,7 +1,7 @@
 """Billing and subscription handlers for the interactive CLI (god-file decomposition).
 
 This module hosts the Nous billing/subscription methods lifted out of
-``cli.py``'s ``KovaCLI`` class. ``KovaCLI`` inherits
+``cli.py``'s ``HermesCLI`` class. ``HermesCLI`` inherits
 ``CLIBillingMixin`` so every ``self.<handler>`` call resolves unchanged
 via the MRO — behavior-neutral apart from focused billing fixes.
 
@@ -15,7 +15,6 @@ Import discipline mirrors ``kova_cli.cli_commands_mixin``:
 
 from __future__ import annotations
 
-import time
 
 
 class CLIBillingMixin:
@@ -1109,7 +1108,7 @@ class CLIBillingMixin:
                 _cprint(f"  {_d('Your card saved on the portal will be charged.')}")
         print(f"  {'─' * 41}")
         _consent = (
-            "By confirming, you allow Kova AI to charge your card."
+            "By confirming, you allow Nous Research to charge your card."
         )
         _cprint(f"  {_d(_consent)}")
 
@@ -1479,7 +1478,7 @@ class CLIBillingMixin:
 
         print()
         _ar_consent = (
-            f"By confirming, you authorize Kova AI to charge {card.masked} "
+            f"By confirming, you authorize Nous Research to charge {card.masked} "
             f"whenever your balance reaches {format_money(threshold_amt)}. "
             f"Turn off any time here or on the portal."
         )

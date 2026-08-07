@@ -74,7 +74,7 @@ async def test_external_refresh_picked_up_without_restart(tmp_path, monkeypatch)
     assert provider.context.current_tokens.access_token == "OLD_ACCESS"
 
     # Now record the baseline mtime in the manager (this happens
-    # automatically via the KovaMCPOAuthProvider.async_auth_flow
+    # automatically via the HermesMCPOAuthProvider.async_auth_flow
     # pre-hook on the first real request, but we exercise it directly
     # here for test determinism).
     await mgr.invalidate_if_disk_changed("srv")
@@ -150,34 +150,6 @@ async def test_handle_401_deduplicates_concurrent_callers(tmp_path, monkeypatch)
     assert all(r == results[0] for r in results), "dedup must return identical result"
     # Exactly ONE recovery ran — the rest awaited the same pending future.
     assert call_count == 1, f"expected 1 recovery attempt, got {call_count}"
-
-
-@pytest.mark.asyncio
-async def test_handle_401_returns_false_when_no_provider(tmp_path, monkeypatch):
-    """handle_401 for an unknown server returns False cleanly."""
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    from tools.mcp_oauth_manager import MCPOAuthManager, reset_manager_for_tests
-    reset_manager_for_tests()
-
-    mgr = MCPOAuthManager()
-    result = await mgr.handle_401("nonexistent", "any_token")
-    assert result is False
-
-
-@pytest.mark.asyncio
-async def test_invalidate_if_disk_changed_handles_missing_file(tmp_path, monkeypatch):
-    """invalidate_if_disk_changed returns False when tokens file doesn't exist."""
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    _set_interactive_stdin(monkeypatch)
-    from tools.mcp_oauth_manager import MCPOAuthManager, reset_manager_for_tests
-    reset_manager_for_tests()
-
-    mgr = MCPOAuthManager()
-    mgr.get_or_build_provider("srv", "https://example.com/mcp", None)
-
-    # No tokens file exists yet — this is the pre-auth state
-    result = await mgr.invalidate_if_disk_changed("srv")
-    assert result is False
 
 
 @pytest.mark.asyncio

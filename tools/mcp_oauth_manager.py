@@ -99,7 +99,7 @@ class _ProviderEntry:
 
 
 # ---------------------------------------------------------------------------
-# KovaMCPOAuthProvider — OAuthClientProvider subclass with disk-watch
+# HermesMCPOAuthProvider — OAuthClientProvider subclass with disk-watch
 # ---------------------------------------------------------------------------
 
 
@@ -114,7 +114,7 @@ def _make_kova_provider_class() -> Optional[type]:
     except ImportError:  # pragma: no cover — SDK required in CI
         return None
 
-    class KovaMCPOAuthProvider(OAuthClientProvider):
+    class HermesMCPOAuthProvider(OAuthClientProvider):
         """OAuthClientProvider with pre-flow disk-mtime reload.
 
         Before every ``async_auth_flow`` invocation, asks the manager to
@@ -174,7 +174,7 @@ def _make_kova_provider_class() -> Optional[type]:
             ``async_auth_flow`` takes the ``can_refresh_token()`` branch,
             and the SDK quietly refreshes before the first real request.
 
-            Paired with :class:`KovaTokenStorage` persisting an absolute
+            Paired with :class:`HermesTokenStorage` persisting an absolute
             ``expires_at`` timestamp (``mcp_oauth.py:set_tokens``) so the
             remaining TTL we compute here reflects real wall-clock age.
             """
@@ -189,9 +189,9 @@ def _make_kova_provider_class() -> Optional[type]:
             # guessed ``{server_url}/token`` path (returns 404 on most real
             # providers) and require a full browser re-authorization.
             storage = self.context.storage
-            from tools.mcp_oauth import KovaTokenStorage
+            from tools.mcp_oauth import HermesTokenStorage
             if (
-                isinstance(storage, KovaTokenStorage)
+                isinstance(storage, HermesTokenStorage)
                 and self.context.oauth_metadata is None
             ):
                 meta = storage.load_oauth_metadata()
@@ -288,8 +288,8 @@ def _make_kova_provider_class() -> Optional[type]:
                         # Persist immediately so a subsequent cold-load can
                         # skip discovery entirely.
                         storage = self.context.storage
-                        from tools.mcp_oauth import KovaTokenStorage
-                        if isinstance(storage, KovaTokenStorage):
+                        from tools.mcp_oauth import HermesTokenStorage
+                        if isinstance(storage, HermesTokenStorage):
                             storage.save_oauth_metadata(asm)
                         logger.debug(
                             "MCP OAuth '%s': pre-flight ASM discovered "
@@ -309,8 +309,8 @@ def _make_kova_provider_class() -> Optional[type]:
             if meta is None:
                 return
             storage = self.context.storage
-            from tools.mcp_oauth import KovaTokenStorage
-            if not isinstance(storage, KovaTokenStorage):
+            from tools.mcp_oauth import HermesTokenStorage
+            if not isinstance(storage, HermesTokenStorage):
                 return
             existing = storage.load_oauth_metadata()
             if (
@@ -375,8 +375,8 @@ def _make_kova_provider_class() -> Optional[type]:
                     return
 
                 storage = self.context.storage
-                from tools.mcp_oauth import KovaTokenStorage
-                if isinstance(storage, KovaTokenStorage):
+                from tools.mcp_oauth import HermesTokenStorage
+                if isinstance(storage, HermesTokenStorage):
                     storage.poison_client_registration()
                 # Drop the in-memory client so the SDK re-registers next flow.
                 self.context.client_info = None
@@ -431,7 +431,7 @@ def _make_kova_provider_class() -> Optional[type]:
                 self._persist_oauth_metadata_if_changed()
                 return
 
-    return KovaMCPOAuthProvider
+    return HermesMCPOAuthProvider
 
 
 # Cached at import time. Tested and used by :class:`MCPOAuthManager`.
@@ -516,7 +516,7 @@ class MCPOAuthManager:
     ) -> Optional[Any]:
         """Build the underlying OAuth provider.
 
-        Constructs :class:`KovaMCPOAuthProvider` directly using the helpers
+        Constructs :class:`HermesMCPOAuthProvider` directly using the helpers
         extracted from ``tools.mcp_oauth``. The subclass injects a pre-flow
         disk-watch hook so external token refreshes (cron, other CLI
         instances) are visible to running MCP sessions.
@@ -531,7 +531,7 @@ class MCPOAuthManager:
 
         # Local imports avoid circular deps at module import time.
         from tools.mcp_oauth import (
-            KovaTokenStorage,
+            HermesTokenStorage,
             OAuthNonInteractiveError,
             _OAUTH_AVAILABLE,
             _build_client_metadata,
@@ -546,7 +546,12 @@ class MCPOAuthManager:
             return None
 
         cfg = dict(entry.oauth_config or {})
-        storage = KovaTokenStorage(server_name)
+        from tools.mcp_oauth import apply_oauth_provider_defaults
+
+        apply_oauth_provider_defaults(
+            cfg, server_name=server_name, server_url=entry.server_url
+        )
+        storage = HermesTokenStorage(server_name)
 
         from tools.mcp_dashboard_oauth import get_dashboard_oauth_flow
 

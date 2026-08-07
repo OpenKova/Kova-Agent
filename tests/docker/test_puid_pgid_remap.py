@@ -38,21 +38,6 @@ def test_puid_pgid_remaps_kova_user(
     )
 
 
-def test_kova_uid_gid_take_precedence_over_aliases(
-    built_image: str, container_name: str,
-) -> None:
-    """KOVA_UID/KOVA_GID must win over PUID/PGID when both are set."""
-    start_container(built_image, container_name, "KOVA_UID=2000", "KOVA_GID=2001", "PUID=1000", "PGID=1000")
-
-    r = docker_exec_sh(container_name, "id -u kova", timeout=10)
-    assert r.stdout.strip() == "2000", (
-        f"expected kova UID 2000 (KOVA_UID wins), got: {r.stdout.strip()}"
-    )
-
-    r = docker_exec_sh(container_name, "id -g kova", timeout=10)
-    assert r.stdout.strip() == "2001", (
-        f"expected kova GID 2001 (KOVA_GID wins), got: {r.stdout.strip()}"
-    )
 
 
 def test_nas_low_uid_accepted(

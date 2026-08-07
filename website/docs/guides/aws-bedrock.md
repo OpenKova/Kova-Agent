@@ -15,7 +15,7 @@ Kova Agent supports Amazon Bedrock as a native provider using the **Converse API
   - `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY` environment variables
   - `AWS_PROFILE` for SSO or named profiles
   - `aws configure` for local development
-- **boto3** — install with `cd ~/.hermes/kova-agent && uv pip install -e ".[bedrock]"`
+- **boto3** — install with `cd ~/.kova/kova-agent && uv pip install -e ".[bedrock]"`
 - **IAM permissions** — at minimum:
   - `bedrock:InvokeModel` and `bedrock:InvokeModelWithResponseStream` (for inference)
   - `bedrock:ListFoundationModels` and `bedrock:ListInferenceProfiles` (for model discovery)
@@ -28,7 +28,7 @@ On AWS compute, attach an IAM role with `AmazonBedrockFullAccess` and you're don
 
 ```bash
 # Install with Bedrock support
-cd ~/.hermes/kova-agent && uv pip install -e ".[bedrock]"
+cd ~/.kova/kova-agent && uv pip install -e ".[bedrock]"
 
 # Select Bedrock as your provider
 kova model
@@ -41,7 +41,7 @@ kova chat
 
 ## Configuration
 
-After running `kova model`, your `~/.hermes/config.yaml` will contain:
+After running `kova model`, your `~/.kova/config.yaml` will contain:
 
 ```yaml
 model:
@@ -87,6 +87,14 @@ bedrock:
     provider_filter: ["anthropic", "amazon"]  # Only show these providers
     refresh_interval: 3600                     # Cache for 1 hour
 ```
+
+### Prompt caching (cachePoint)
+
+Kova automatically applies prompt caching on the Bedrock **Converse API** path by inserting `cachePoint` markers after the system prompt, tool definitions, and the latest message. Because sending a `cachePoint` block to a model that doesn't support it raises a `ValidationException`, markers are only added for models on a known-good allowlist (Anthropic Claude and Amazon Nova model IDs); unknown models default to no cache markers. Claude models normally use the AnthropicBedrock SDK path, which has its own prompt caching — the Converse `cachePoint` path covers Nova and the bearer-token Claude fallback. No configuration needed; cache reads/writes show up in usage accounting.
+
+### Context-window probing
+
+For models whose context window isn't in Kova' static table, Kova can probe the real limit by sending oversized requests at fixed tiers (~1.3M and ~2.2M tokens) and parsing the `maximum` reported in Bedrock's length-validation error. Probed values feed the same metadata cache as the static table; stale cached entries that under-report a model's window (e.g. entries seeded before a model's 1M window went GA) are dropped automatically in favor of the larger known value.
 
 ## Available Models
 

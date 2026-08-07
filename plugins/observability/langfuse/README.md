@@ -18,7 +18,7 @@ kova plugins enable observability/langfuse
 
 ## Required credentials
 
-Set these in `~/.hermes/.env` (or via `kova tools`):
+Set these in `~/.kova/.env` (or via `kova tools`):
 
 ```bash
 KOVA_LANGFUSE_PUBLIC_KEY=pk-lf-...

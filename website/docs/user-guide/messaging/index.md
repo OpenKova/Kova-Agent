@@ -23,7 +23,8 @@ Bots need both a model provider and tool providers (TTS, web). A [Nous Portal](/
 | Slack | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Google Chat | — | ✅ | ✅ | ✅ | — | ✅ | — |
 | WhatsApp | — | ✅ | ✅ | — | — | ✅ | ✅ |
-| Signal | — | ✅ | ✅ | — | — | ✅ | ✅ |
+| WhatsApp Cloud API | ✅ | ✅ | ✅ | — | — | ✅ | — |
+| Signal | — | ✅ | ✅ | — | — | ✅ | — |
 | SMS | — | — | — | — | — | — | — |
 | Email | — | ✅ | ✅ | ✅ | — | — | — |
 | Home Assistant | — | — | — | — | — | — | — |
@@ -33,8 +34,9 @@ Bots need both a model provider and tool providers (TTS, web). A [Nous Portal](/
 | Feishu/Lark | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | WeCom | ✅ | ✅ | ✅ | — | — | — | — |
 | WeCom Callback | — | — | — | — | — | — | — |
-| Weixin | ✅ | ✅ | ✅ | — | — | ✅ | ✅ |
+| Weixin | ✅ | ✅ | ✅ | — | — | ✅ | — |
 | BlueBubbles | — | ✅ | ✅ | — | ✅ | ✅ | — |
+| Photon (iMessage) | ✅ | ✅ | ✅ | — | ✅ | ✅ | — |
 | QQ | ✅ | ✅ | ✅ | — | — | ✅ | — |
 | Yuanbao | ✅ | ✅ | ✅ | — | — | ✅ | ✅ |
 | Microsoft Teams | — | ✅ | — | ✅ | — | ✅ | — |
@@ -42,8 +44,14 @@ Bots need both a model provider and tool providers (TTS, web). A [Nous Portal](/
 | ntfy | — | — | — | — | — | — | — |
 | Raft | — | — | — | — | — | — | — |
 | IRC | — | — | — | — | — | — | — |
+| Buzz | — | ✅ | — | ✅ | — | — | — |
+| SimpleX | ✅ | ✅ | ✅ | — | — | ✅ | — |
 
 **Voice** = TTS audio replies and/or voice message transcription. **Images** = send/receive images. **Files** = send/receive file attachments. **Threads** = threaded conversations. **Reactions** = emoji reactions on messages. **Typing** = typing indicator while processing. **Streaming** = progressive message updates via editing.
+
+:::note Kova Relay
+[Kova Relay](/user-guide/messaging/relay) (experimental) is not a chat platform itself — it is a connector system that fronts platforms like Discord, Telegram, Slack, and WhatsApp through an external connector that owns the platform credentials. Capabilities (media, native approval/clarify prompts, reactions, threads, typing, streaming) are negotiated per connector at handshake rather than fixed in the table above.
+:::
 
 ## Architecture
 
@@ -160,7 +168,7 @@ A systemd-managed gateway can opt into process recovery when Python's asyncio
 event loop stops receiving scheduling time. This covers whole-process stalls
 that also prevent platform-specific liveness tasks from running:
 
-```yaml title="~/.hermes/config.yaml"
+```yaml title="~/.kova/config.yaml"
 gateway:
   systemd_watchdog_seconds: 120
 ```
@@ -184,7 +192,7 @@ platform network disconnect as an event-loop failure.
 |---------|-------------|
 | `/new` or `/reset` | Start a fresh conversation |
 | `/model [provider:model]` | Show or change the model (supports `provider:model` syntax) |
-| `/personality [name]` | Set a personality |
+| `/personality [name]` | Set a personality (`none` to reset) |
 | `/retry` | Retry the last message |
 | `/undo` | Remove the last exchange |
 | `/status` | Show session info |
@@ -196,6 +204,7 @@ platform network disconnect as an event-loop failure.
 | `/compress` | Manually compress conversation context |
 | `/title [name]` | Set or show the session title |
 | `/resume [name]` | Resume a previously named session |
+| `/sessions [all] [search <query>]` | List previous sessions; `search <query>` filters by title or id |
 | `/usage` | Show token usage for this session (`/usage reset [--force]` redeems a banked Codex limit reset) |
 | `/insights [days]` | Show usage insights and analytics |
 | `/reasoning [level\|show\|hide]` | Change reasoning effort or toggle reasoning display |
@@ -212,6 +221,14 @@ platform network disconnect as an event-loop failure.
 ### Session Persistence
 
 Sessions persist across messages until they reset. The agent remembers your conversation context.
+
+### Finding Past Sessions (`/sessions`)
+
+`/sessions` lists your previous sessions for the current chat, and `/sessions <name>` resumes one (shorthand for `/resume`). When the list grows long, `/sessions search <query>` (alias `find`) filters by title or session-id match, ordered by most recently active. Cross-origin listing with `/sessions all` is admin-only — regular users only ever see sessions from their own chat origin.
+
+### Persistent `/model` Overrides
+
+A `/model` switch in a gateway chat applies to that session and now **survives gateway restarts**: the model/provider choice is persisted to the session store and rehydrated on first use after a restart (credentials are re-resolved at load time and never written to disk). `/new` (or `/reset`) clears the override, and `/model <name> --global` writes it through to `config.yaml` instead. `/model <name> --once` applies for a single turn only.
 
 ### Delivery Reliability
 
@@ -238,7 +255,7 @@ old behavior: in-flight responses are lost on crash).
 
 **By default sessions never auto-reset** — context lives until you `/reset`
 manually or context compression kicks in. If you want automatic resets, opt in
-with the `session_reset` section in `~/.hermes/config.yaml`:
+with the `session_reset` section in `~/.kova/config.yaml`:
 
 ```yaml
 session_reset:
@@ -263,7 +280,7 @@ guard. Set it to `0` to disable the cutoff (any live process blocks reset, the
 old behavior), or raise it if you run legitimate multi-day jobs whose liveness
 should keep the conversation open.
 
-Configure per-platform overrides in `~/.hermes/gateway.json`:
+Configure per-platform overrides in `~/.kova/gateway.json`:
 
 ```json
 {
@@ -273,6 +290,30 @@ Configure per-platform overrides in `~/.hermes/gateway.json`:
   }
 }
 ```
+
+## Per-Channel Model & System Prompt Overrides
+
+Different channels can run different models and personas from a **single gateway** — e.g. a cheap fast model in `#daily` and a frontier model with a specialist prompt in `#dev`. Configure `channel_overrides` under the platform in `~/.kova/gateway-config.yaml`:
+
+```yaml
+platforms:
+  discord:
+    enabled: true
+    channel_overrides:
+      "123456789012345678":        # channel/thread id
+        model: anthropic/claude-sonnet-4.6
+        provider: anthropic
+        system_prompt: "You are the #dev channel code-review specialist."
+      "987654321098765432":
+        model: openai/gpt-5-mini
+```
+
+Details:
+
+- All three keys are optional — set only `model`, only `system_prompt`, or any combination. Unset fields fall back to the global defaults.
+- Lookup order is exact channel/thread id first, then the **parent** channel/forum id — so Discord threads inherit their parent channel's override automatically.
+- Resolution priority for the model is: session `/model` override → `channel_overrides` → global config. A user running `/model` in a chat still wins over the channel default.
+- The `system_prompt` override replaces the global gateway prompt for that channel (it is ephemeral — injected per turn, not stored in history).
 
 ## Security
 
@@ -378,13 +419,22 @@ The first time you message a busy agent on any platform, Kova appends a one-line
 
 If you find the busy acknowledgment noisy, set `display.busy_ack_enabled: false`. Input handling is unchanged; only the confirmation message is hidden.
 
+## Clarify Questions (Multi-Select)
+
+When the agent uses the `clarify` tool to ask you a question, the gateway renders the choices as a numbered prompt (or native buttons on platforms that support them). Clarify supports **multi-select** questions too — the agent can let you pick several options at once:
+
+- **Messaging platforms** — the prompt says "Multiple selections allowed"; reply with the numbers separated by commas or spaces (e.g. `1, 3`), the option text, or your own free-form answer.
+- **Classic CLI / TUI** — multi-select renders as checkboxes: **Space** toggles an option, **Enter** submits the selection.
+
+Single-select prompts behave as before: pick one option by number, button, or text, or type your own answer via the "Other" path.
+
 ## Tool Progress Notifications
 
-Control how much tool activity is displayed in `~/.hermes/config.yaml`:
+Control how much tool activity is displayed in `~/.kova/config.yaml`:
 
 ```yaml
 display:
-  tool_progress: all    # off | new | all | verbose
+  tool_progress: all    # off | new | all | verbose | log
   tool_progress_command: false  # set to true to enable /verbose in messaging
   # How progress is grouped on platforms that support message editing:
   #   accumulate (default) — edit one bubble in place as tools run
@@ -392,6 +442,26 @@ display:
   # Only applies where tool_progress is already enabled.
   tool_progress_grouping: accumulate   # accumulate | separate
 ```
+
+### `log` mode — audit file instead of chat messages
+
+Setting `display.tool_progress: log` sends **no** progress bubbles to chat. Instead, each tool call is appended as a line to `~/.kova/logs/tool_calls.log` — a rotating audit file (5 MB × 3 backups) run through the same secret-redacting formatter as regular logs, so credentials never land on disk. Use it when you want a full tool-call trail without any chat noise.
+
+### Configurable status phrases
+
+Long-running gateway status lines ("still working…"-style heartbeats) draw from a phrase catalog. Built-in defaults ship in `gateway/assets/status_phrases.yaml`; you can add your own with profile-portable files under `HERMES_HOME`:
+
+- `~/.kova/status_phrases.yaml` or any `*.yaml` in `~/.kova/status_phrases/` (conventional paths, auto-loaded), or
+- point config at a relative path:
+
+```yaml
+display:
+  status_phrases:
+    path: status_phrases/whatsapp.yaml  # relative to HERMES_HOME
+    mode: append                        # append (default) or replace
+```
+
+Phrase files map a surface (`status`, `generic`) to a list of strings (max 80 phrases per surface, 160 chars each). Absolute paths and `..` escapes are ignored so config stays profile-portable. Only your configured phrase strings are used — raw tool arguments, commands, and reasoning text are never interpolated into a status phrase.
 
 ### Message timestamps in model context
 
@@ -446,7 +516,7 @@ Each `/background` prompt spawns a **separate agent instance** that runs asynchr
 
 ### Background Process Notifications
 
-When the agent running a background session uses `terminal(background=true)` to start long-running processes (servers, builds, etc.), the gateway can push status updates to your chat. Control this with `display.background_process_notifications` in `~/.hermes/config.yaml`:
+When the agent running a background session uses `terminal(background=true)` to start long-running processes (servers, builds, etc.), the gateway can push status updates to your chat. Control this with `display.background_process_notifications` in `~/.kova/config.yaml`:
 
 ```yaml
 display:
@@ -524,7 +594,7 @@ kova ALL=(root) NOPASSWD: /usr/bin/systemctl --no-ask-password reset-failed kova
 Avoid keeping both the user and system gateway units installed at once unless you really mean to. Kova will warn if it detects both because start/stop/status behavior gets ambiguous.
 
 :::info Multiple installations
-If you run multiple Kova installations on the same machine (with different `HERMES_HOME` directories), each gets its own systemd service name. The default `~/.hermes` uses `kova-gateway`; other installations use `kova-gateway-<hash>`. The `kova gateway` commands automatically target the correct service for your current `HERMES_HOME`.
+If you run multiple Kova installations on the same machine (with different `HERMES_HOME` directories), each gets its own systemd service name. The default `~/.kova` uses `kova-gateway`; other installations use `kova-gateway-<hash>`. The `kova gateway` commands automatically target the correct service for your current `HERMES_HOME`.
 :::
 
 ### macOS (launchd)
@@ -534,7 +604,7 @@ kova gateway install               # Install as launchd agent
 kova gateway start                 # Start the service
 kova gateway stop                  # Stop the service
 kova gateway status                # Check status
-tail -f ~/.hermes/logs/gateway.log   # View logs
+tail -f ~/.kova/logs/gateway.log   # View logs
 ```
 
 The generated plist lives at `~/Library/LaunchAgents/ai.kova.gateway.plist`. It includes three environment variables:
@@ -548,7 +618,7 @@ launchd plists are static — if you install new tools (e.g. a new Node.js versi
 :::
 
 :::info Multiple installations
-Like the Linux systemd service, each `HERMES_HOME` directory gets its own launchd label. The default `~/.hermes` uses `ai.kova.gateway`; other installations use `ai.kova.gateway-<suffix>`.
+Like the Linux systemd service, each `HERMES_HOME` directory gets its own launchd label. The default `~/.kova` uses `ai.kova.gateway`; other installations use `ai.kova.gateway-<suffix>`.
 :::
 
 ## Platform-Specific Toolsets
@@ -611,7 +681,7 @@ The breaker does **not** auto-resume — it stays open until you run `/platform 
 
 When an adapter is paused, check:
 
-1. **Gateway log** (`~/.hermes/logs/gateway.log` or the systemd / launchd unit log). Search for the platform name and `circuit breaker`, `paused`, or `disabled`. The trip event includes the failure count and the last error.
+1. **Gateway log** (`~/.kova/logs/gateway.log` or the systemd / launchd unit log). Search for the platform name and `circuit breaker`, `paused`, or `disabled`. The trip event includes the failure count and the last error.
 2. **`/platform list`** output — shows the current state and last reason.
 3. **The provider's status page** (Telegram bot API status, Discord status, etc.). The breaker tripped because the platform was unhealthy; don't try to resume until it's back.
 
@@ -720,11 +790,18 @@ Defaults to `false`. Only platforms whose adapter implements `delete_message` ho
 - [WeCom Callback Setup](wecom-callback.md)
 - [Weixin Setup (WeChat)](weixin.md)
 - [BlueBubbles Setup (iMessage)](bluebubbles.md)
+- [Photon Setup (iMessage)](photon.md)
 - [QQBot Setup](qqbot.md)
 - [Yuanbao Setup](yuanbao.md)
 - [Microsoft Teams Setup](teams.md)
 - [Teams Meetings Pipeline](teams-meetings.md)
+- [Microsoft Graph Webhook Listener](msgraph-webhook.md)
+- [LINE Setup](line.md)
+- [ntfy Setup](ntfy.md)
+- [SimpleX Chat Setup](simplex.md)
 - [Open WebUI + API Server](open-webui.md)
 - [Raft Setup](raft.md)
 - [IRC Setup](irc.md)
+- [Buzz Setup](buzz.md)
+- [A2A (Agent-to-Agent) Setup](a2a.md)
 - [Webhooks](webhooks.md)

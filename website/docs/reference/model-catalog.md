@@ -13,7 +13,7 @@ When the manifest is unreachable (offline, network blocked, hosting failure), Ko
 ## Live manifest URL
 
 ```
-https://hermes-agent.nousresearch.com/docs/api/model-catalog.json
+https://kova-agent.nousresearch.com/docs/api/model-catalog.json
 ```
 
 Published on every merge to `main` via the existing `deploy-site.yml` GitHub Pages pipeline. The source of truth lives in the repo at `website/static/api/model-catalog.json`.
@@ -64,14 +64,14 @@ Field notes:
 | Network failure, no cache | Silent fallback to in-repo snapshot |
 | Manifest fails schema validation | Treated as unreachable |
 
-Cache location: `~/.hermes/cache/model_catalog.json`.
+Cache location: `~/.kova/cache/model_catalog.json`.
 
 ## Config
 
 ```yaml
 model_catalog:
   enabled: true
-  url: https://hermes-agent.nousresearch.com/docs/api/model-catalog.json
+  url: https://kova-agent.nousresearch.com/docs/api/model-catalog.json
   ttl_hours: 1
   providers: {}
 ```

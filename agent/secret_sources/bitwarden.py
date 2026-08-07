@@ -1,7 +1,7 @@
 """Bitwarden Secrets Manager (`bws` CLI) integration.
 
 Kova pulls API keys from Bitwarden Secrets Manager at process startup
-so they don't have to live in plaintext in ``~/.hermes/.env``.
+so they don't have to live in plaintext in ``~/.kova/.env``.
 
 Design summary
 --------------
@@ -10,7 +10,7 @@ Design summary
   first use.  Kova pins one version (``_BWS_VERSION``) and downloads
   the matching asset from the official GitHub Releases page, verifying
   the SHA-256 against the release's published checksum file.
-* The access token is stored in ``~/.hermes/.env`` as
+* The access token is stored in ``~/.kova/.env`` as
   ``BWS_ACCESS_TOKEN`` (or whatever name the user picked in
   ``secrets.bitwarden.access_token_env``).  This is the one
   bootstrap secret — every other provider key can live in Bitwarden.
@@ -58,6 +58,7 @@ from agent.secret_sources._cache import (
     is_valid_env_name as _is_valid_env_name,
 )
 from agent.secret_sources.base import ErrorKind, SecretSource
+from agent.secret_sources.base import get_source_environment
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +93,7 @@ _CACHE: Dict[_CacheKey, _CachedFetch] = {}
 #
 # Layout: one JSON object per cache key, written atomically with mode 0600 in
 # <kova_home>/cache/bws_cache.json. The file holds only the secret VALUES,
-# never the access token. It's plaintext-equivalent to ~/.hermes/.env (which
+# never the access token. It's plaintext-equivalent to ~/.kova/.env (which
 # we already accept) but kept out of the .env file so users editing it won't
 # accidentally commit BSM-sourced secrets. The atomic-write/0600/TTL mechanics
 # live in agent.secret_sources._cache.DiskCache, shared with the other backends.
@@ -117,7 +118,7 @@ def _disk_cache_path(home_path: Optional[Path] = None) -> Path:
     """Return the disk cache path under kova_home/cache/.
 
     Thin wrapper over the shared DiskCache, kept for tests and any direct
-    callers; falls back to `$HERMES_HOME` / `~/.hermes` when home is None.
+    callers; falls back to `$HERMES_HOME` / `~/.kova` when home is None.
     """
     return _DISK_CACHE.path(home_path)
 
@@ -200,7 +201,7 @@ def _platform_asset_name() -> str:
             res = subprocess.run(
                 ["ldd", "--version"],
                 capture_output=True,
-                text=True,
+                text=True, encoding='utf-8', errors='replace',
                 timeout=2,
                 stdin=subprocess.DEVNULL,
             )
@@ -667,7 +668,15 @@ def _run_bws_list(
     bws: Path, access_token: str, project_id: str, server_url: str = ""
 ) -> Tuple[Dict[str, str], List[str]]:
     cmd = [str(bws), "secret", "list", project_id, "--output", "json"]
-    env = os.environ.copy()
+    # bws child intentionally receives the access token.  Under a profile-local
+    # fetch it must not inherit sibling credentials from process-global env.
+    source_env = get_source_environment()
+    if source_env is os.environ:
+        from tools.environments.local import build_subprocess_env
+
+        env = build_subprocess_env(scrub_secrets=False, inherit_profile_home=False)
+    else:
+        env = dict(source_env)
     env["BWS_ACCESS_TOKEN"] = access_token
     # Make sure we're not echoing telemetry / colour codes into json.
     env.setdefault("NO_COLOR", "1")
@@ -684,7 +693,7 @@ def _run_bws_list(
             cmd,
             env=env,
             capture_output=True,
-            text=True,
+            text=True, encoding='utf-8', errors='replace',
             timeout=_BWS_RUN_TIMEOUT,
             stdin=subprocess.DEVNULL,
         )
@@ -905,7 +914,7 @@ class BitwardenSource(SecretSource):
         result = FetchResult()
 
         access_token_env = str(cfg.get("access_token_env") or "BWS_ACCESS_TOKEN")
-        access_token = os.environ.get(access_token_env, "").strip()
+        access_token = get_source_environment().get(access_token_env, "").strip()
         if not access_token:
             result.error = (
                 f"secrets.bitwarden.enabled is true but {access_token_env} is "

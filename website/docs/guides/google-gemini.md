@@ -22,7 +22,7 @@ Set `GOOGLE_API_KEY` or `GEMINI_API_KEY`. Kova checks both names for the `gemini
 
 ```bash
 # Add your Gemini API key
-echo "GOOGLE_API_KEY=..." >> ~/.hermes/.env
+echo "GOOGLE_API_KEY=..." >> ~/.kova/.env
 
 # Select Gemini as your provider
 kova model
@@ -45,7 +45,7 @@ model:
 
 ## Configuration
 
-After running `kova model`, your `~/.hermes/config.yaml` will contain:
+After running `kova model`, your `~/.kova/config.yaml` will contain:
 
 ```yaml
 model:
@@ -54,7 +54,7 @@ model:
   base_url: https://generativelanguage.googleapis.com/v1beta
 ```
 
-And in `~/.hermes/.env`:
+And in `~/.kova/.env`:
 
 ```bash
 GOOGLE_API_KEY=...
@@ -90,7 +90,7 @@ Google also exposes an OpenAI-compatible endpoint:
 https://generativelanguage.googleapis.com/v1beta/openai/
 ```
 
-For Kova Agent sessions, prefer the native Gemini endpoint above. Kova includes a native Gemini adapter so it can map multi-turn tool use, tool-call results, streaming, multimodal inputs, and Gemini response metadata directly onto Gemini's `generateContent` API. The OpenAI-compatible endpoint is still useful when you specifically need OpenAI API compatibility.
+For Kova agent sessions, prefer the native Gemini endpoint above. Kova includes a native Gemini adapter so it can map multi-turn tool use, tool-call results, streaming, multimodal inputs, and Gemini response metadata directly onto Gemini's `generateContent` API. The OpenAI-compatible endpoint is still useful when you specifically need OpenAI API compatibility.
 
 If you previously set `GEMINI_BASE_URL` to the `/openai` URL, remove it or change it:
 
@@ -144,7 +144,7 @@ Useful evaluation IDs include:
 | Gemma 4 31B IT | `gemma-4-31b-it` | Larger Gemma model; useful for compatibility and quality evaluation |
 | Gemma 4 26B A4B IT | `gemma-4-26b-a4b-it` | Smaller active-parameter variant when available |
 
-These models are best treated as evaluation options on Gemini API keys. Google's Gemma API pricing is free-tier-only and the usage caps are low compared with production Gemini models, so sustained Kova Agent use should normally move to a paid Gemini model, a self-hosted deployment, or another provider with appropriate quota.
+These models are best treated as evaluation options on Gemini API keys. Google's Gemma API pricing is free-tier-only and the usage caps are low compared with production Gemini models, so sustained Kova agent use should normally move to a paid Gemini model, a self-hosted deployment, or another provider with appropriate quota.
 
 To use a Gemma model that is hidden from the picker, set it directly:
 
@@ -196,7 +196,7 @@ The gateway reads `config.yaml` and uses the same Gemini provider configuration.
 
 ### "Gemini native client requires an API key"
 
-Kova could not find a usable API key. Add one of these to `~/.hermes/.env`:
+Kova could not find a usable API key. Add one of these to `~/.kova/.env`:
 
 ```bash
 GOOGLE_API_KEY=...
@@ -222,7 +222,7 @@ The selected model is not available for your account, region, or key. Run `kova 
 
 ### Gemma model is not shown in `kova model`
 
-Kova may hide low-throughput Gemma models from the picker by default. If you intentionally want to evaluate one, set the model ID directly in `~/.hermes/config.yaml`.
+Kova may hide low-throughput Gemma models from the picker by default. If you intentionally want to evaluate one, set the model ID directly in `~/.kova/config.yaml`.
 
 ### "429 quota exceeded" on Gemma
 
@@ -230,7 +230,7 @@ Gemma models exposed through the Gemini API are useful for evaluation, but their
 
 ### OpenAI-compatible endpoint is configured
 
-Check `~/.hermes/.env` for:
+Check `~/.kova/.env` for:
 
 ```bash
 GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/

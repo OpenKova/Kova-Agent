@@ -45,12 +45,16 @@ The center of the app. You get:
 - **Drag-and-drop files** anywhere in the chat area to attach them to your next message.
 - **A right-hand preview rail** — render web pages, files, and tool outputs side by side while you keep chatting.
 - **Composer history and queue editing** — press the up/down arrow keys in an empty composer to recall and reuse previous prompts, and edit messages you've queued up before they're sent. Pressing Stop (or Esc) while turns are queued pauses the queue and expands it above the composer; resume it from there, or send, edit, and delete individual entries.
+- **A conversation timeline rail** — long chats get a slim rail of markers along the edge of the transcript, one per prompt. Hover it to pop open the list of prompts, click one to jump straight to that point in the conversation. (It appears once the chat has a handful of turns.)
+- **Find in page** — press **Cmd/Ctrl+F** to open a find bar that searches the rendered chat transcript. Enter / Shift+Enter (or Cmd/Ctrl+G / Cmd/Ctrl+Shift+G while the bar is open) step through matches; Esc closes it.
 
 #### Status bar
 
 The bar along the bottom of the chat shows live session state and exposes quick controls without opening Settings:
 
 - **Per-session YOLO toggle** — flip YOLO on or off for just this session (matching the TUI). YOLO bypasses the dangerous-command approval prompts, so know what you're turning off — see [Security → YOLO Mode](./security.md#yolo-mode).
+- **Context-usage meter** — a live "% full" meter of the session's context window. Click it to open the **Context Usage** popover with a token breakdown by category (system prompt, tool definitions, skills, memory, rules, MCP, subagent definitions, and the conversation itself) so you can see exactly what's eating the window before compression kicks in.
+- **Customizable items** — right-click the status bar (**Show in status bar**) to choose what appears: the context meter, workspace, model, approvals, turn/session timers, terminal, Command Center, backend version, and more — or hide the bar entirely (**Cmd/Ctrl+Shift+S** toggles it).
 
 Chatting against a Kova instance on another machine instead of the bundled local backend? See [Connecting to a remote backend](#connecting-to-a-remote-backend) below — and for the full picture of how the remote-hosted dashboard connection works (the auth gate, the `/api/ws` chat socket, and WebSocket close-code triage), see [Web Dashboard → Connecting Kova Desktop to a remote backend](./features/web-dashboard.md#connecting-kova-desktop-to-a-remote-backend).
 
@@ -84,6 +88,41 @@ The model picker lives in the **composer**, just left of the microphone. Click i
 
 Explore and preview the working directory without leaving the app — useful for following along as the agent reads, writes, and edits files. Set the initial project directory with `kova desktop --cwd <path>` (or the `KOVA_DESKTOP_CWD` environment variable).
 
+### Artifacts
+
+The **Artifacts** view collects what your sessions generate — **images, files, and links** — into one searchable, browsable gallery. Open it from the sidebar, the command palette (**Artifacts — Browse generated outputs**), or a `nav.artifacts` shortcut you bind yourself. It indexes recent session outputs automatically; every artifact shows which session produced it with a jump back to that chat, and images and files open in a preview with download / open-in-browser / copy actions.
+
+### Windows, tabs & panes
+
+The app is built for working on several things at once:
+
+- **Tabs** — **Cmd/Ctrl+T** opens a new session tab; **Ctrl+Tab** / **Ctrl+Shift+Tab** cycle sessions, and **Ctrl+1…9** jump to a recent session by position. **Cmd/Ctrl+W** closes the focused tab and **Cmd/Ctrl+Shift+T** reopens the last closed one.
+- **Multiple windows** — **Cmd/Ctrl+Shift+N** opens a new window, and any session can be popped out via its context menu (**New window**) or from the command palette. A popped-out window renders that single chat without the global sidebar — handy for parking a long-running session on another monitor. Live agent output streams into every window showing the session.
+- **Panes** — **Cmd/Ctrl+B** toggles the left sidebar, **Cmd/Ctrl+J** the right one, and **Cmd/Ctrl+\\** swaps which side the sidebars sit on.
+
+### Terminal
+
+A real terminal lives in the right sidebar, next to the file browser:
+
+- **Ctrl+`** shows the terminal (opening one if none exist); **Ctrl+Shift+`** spawns an additional one. Multiple terminals stack in a tab rail — **Ctrl+Shift+↓/↑** walk between them, **Ctrl+Shift+W** closes the active one.
+- **Shells persist while hidden.** Closing or hiding the panel doesn't kill your shell — every open terminal stays mounted with its scrollback and running processes intact until you explicitly close it.
+- **Add to chat** — select terminal output and send it into the composer as context for your next message.
+
+### Git review & worktrees
+
+For sessions running inside a Git repository, the app has a built-in source-control surface:
+
+- **Review pane** — **Cmd/Ctrl+G** toggles the working-tree review pane: branch and ahead/behind status, changed files (list or tree view), and diffs scoped to **Uncommitted**, **Branch**, or **Last turn** (just what the agent changed in its most recent turn). Stage/unstage files, revert changes, write a commit message (or **Generate commit message**), then **Commit** or **Commit & Push** — and **Create PR** via the GitHub CLI (`gh`), or hand the whole thing to the agent with **Ask Kova to open PR**. You can also create and switch branches from here.
+- **Worktrees** — **Cmd/Ctrl+Shift+B** (or **New worktree** on a project in the sidebar) creates a Git worktree on a new branch so an agent can work on a parallel copy of the repo without touching your checkout. Worktrees show up as their own lanes under the project; removing one offers to delete the worktree directory (the branch stays) or just hide the lane and leave it on disk, with a force option when it has uncommitted changes.
+
+### Memory Graph
+
+The **Memory Graph** (command palette → *Memory Graph*, or the status-bar item) is an interactive map of what Kova has learned for you — skills and memories laid out as a zoomable node graph with a timeline, filterable by **All / Used / Learned**. A share control exports the map layout as a compact code you can paste to someone else (layout only — none of your memory or skill text is included) and imports codes the same way.
+
+### Quick Entry
+
+Quick Entry is a small always-available composer summoned by a **global hotkey from anywhere on your system** — fire off a prompt without switching to (or even opening) the main window. Enable it in **Settings → Advanced → Quick Entry**; the default shortcut is **Ctrl/Cmd+Shift+Space** and you can set your own (it needs at least one modifier). If another app already owns the chord, the settings row tells you so you can pick a different one.
+
 ### Voice
 
 Talk to Kova and hear it back, the same [voice mode](./features/voice-mode.md) available elsewhere. On macOS the OS will prompt once for microphone access.
@@ -96,7 +135,10 @@ Manage providers, models, tools, and credentials from a real UI instead of editi
 - **Every provider and model in the menus** — the GUI surfaces the full provider list and every model that `kova model` knows about, so you pick from the same catalog the CLI sees rather than a curated subset.
 - **xAI Grok OAuth** — Grok is a first-class OAuth provider in the launcher; sign in through the browser flow like the other OAuth providers.
 - **Tool-backend installs from the GUI** — run a tool backend's post-setup install steps directly from the app instead of dropping to a terminal.
+- **Terminal font picker** — choose an installed font in **Settings → Appearance**. Nerd Fonts such as `MesloLGS NF` render Powerlevel10k separators and icons in both interactive and agent terminals; the setting is saved per profile.
 - **Auxiliary-model warning** — if you switch the main model to a new provider while auxiliary tasks (titling, summarization, and similar helpers) are still pinned to another provider, the app warns you so you don't unknowingly split work across two providers.
+- **VS Code Marketplace themes** — beyond the built-in theme presets, the appearance settings include a live VS Code Marketplace search: pick any color theme and the app downloads, converts, and installs it as a desktop theme. The same importer is available from the command palette (*Install theme*), and imported themes can be removed again from the appearance settings.
+- **Keep computer awake** — **Settings → Advanced → Keep computer awake** stops the machine from sleeping so long or overnight agent runs keep going (the display can still dim). This is a per-computer setting.
 
 First-run onboarding has been redesigned on a unified overlay design system, and you can pick **Choose provider later** to skip provider setup and get into the app first.
 
@@ -105,6 +147,7 @@ First-run onboarding has been redesigned on a unified overlay design system, and
 The app also surfaces the broader Kova management surface so you don't have to drop to a terminal:
 
 - **Skills** — browse, install, and manage [skills](./features/skills.md).
+- **Memory graph (Star Map)** — type `/journey` (aliases `/learning`, `/memory-graph`) in chat to open an interactive constellation of learned skills and memories over time, with a playback scrubber. Nodes can be edited or deleted right from the panel (skills are archived, memories removed). See [Learning Journey](./features/memory.md#learning-journey-journey).
 - **Cron** — view and manage [scheduled jobs](../reference/cli-commands.md#kova-cron).
 - **Profiles** — switch between [Kova profiles](./profiles.md) (isolated config/skills/sessions).
 - **Messaging** — set up gateway channels.
@@ -112,8 +155,8 @@ The app also surfaces the broader Kova management surface so you don't have to d
 
 ### Keyboard & navigation
 
-- **Command palette** — press **Cmd+K** (Ctrl+K on Windows/Linux) to jump to actions and navigate the app from the keyboard.
-- **Rebindable shortcuts** — a shortcuts panel in Settings lets you remap the app's keyboard shortcuts to your own keys.
+- **Command palette** — press **Cmd+K** or **Cmd+P** (Ctrl+K / Ctrl+P on Windows/Linux) to jump to actions and navigate the app from the keyboard: open any page or settings section, jump to a session by title or id, switch model/theme/color mode, spawn a terminal, restart the gateway, update Kova, and more.
+- **Rebindable shortcuts** — **Settings → Keyboard Shortcuts** (or **Cmd/Ctrl+/**) opens the shortcuts panel where you can remap almost every binding — profile switching, session navigation, view toggles, and any shortcuts contributed by desktop plugins. Duplicate assignments are flagged as conflicts. A few defaults worth knowing: **Cmd/Ctrl+N** new session, **Cmd/Ctrl+.** Command Center, **Cmd/Ctrl+,** Settings, **Cmd/Ctrl+Shift+F** search sessions, **Cmd/Ctrl+1–9** switch profiles, **Shift+X** toggle light/dark.
 - **Custom zoom shortcuts** — zoom the interface in half-step increments for finer control over text size.
 - **UI language switcher** — change the app's interface language in-app, including Simplified Chinese (zh-Hans).
 
@@ -127,13 +170,13 @@ The app also surfaces the broader Kova management surface so you don't have to d
 
 The app checks for updates in the background and offers a one-click update when one is ready.
 
-The [manual update process](https://hermes-agent.nousresearch.com/docs/getting-started/updating) also works with the GUI.
+The [manual update process](https://kova-agent.nousresearch.com/docs/getting-started/updating) also works with the GUI.
 
 ## Uninstalling
 
 Open **Settings → About → Danger zone** and pick how much to remove:
 
-- **Uninstall Chat GUI only** — removes the desktop app and its data; the Kova Agent, your config, and your chats stay. (Same as `kova uninstall --gui`.)
+- **Uninstall Chat GUI only** — removes the desktop app and its data; the Kova agent, your config, and your chats stay. (Same as `kova uninstall --gui`.)
 - **Uninstall GUI + agent, keep my data** — removes the app and the agent but keeps config, chats, and secrets for a future reinstall. (Same as `kova uninstall`.)
 - **Uninstall everything** — removes the app, the agent, and all user data. (Same as `kova uninstall --full`.)
 
@@ -162,11 +205,18 @@ To launch via the CLI, simply run `kova desktop`. By default it installs workspa
 
 ## How it works
 
-The packaged app ships the Electron shell and a native React chat surface. On first launch it can install the Kova Agent runtime into `HERMES_HOME` (`~/.hermes`, or `%LOCALAPPDATA%\kova` on Windows) — **the same layout a CLI install uses**, which is why the two are interchangeable. Backend resolution first honours `KOVA_DESKTOP_KOVA_ROOT`, then a completed managed install, then a probed `kova` on `PATH` (unless `--ignore-existing` / `KOVA_DESKTOP_IGNORE_EXISTING=1` is set), and finally an explicit `KOVA_DESKTOP_BIN` command override for packagers such as Nix. The React renderer talks to a headless backend the app launches for you — a `kova serve` process that serves the `tui_gateway` JSON-RPC/WebSocket API — and reuses the agent runtime rather than embedding `kova --tui`. The desktop app is **self-contained**: it runs its own `kova serve` backend and never opens or requires the [web dashboard](./features/web-dashboard.md). (Runtimes older than the `serve` command fall back to a headless `dashboard --no-open` automatically, so an app update never outruns its backend.) Install, backend-resolution, and self-update logic live in the Electron main process.
+The packaged app ships the Electron shell and a native React chat surface. On first launch it can install the Kova Agent runtime into `HERMES_HOME` (`~/.kova`, or `%LOCALAPPDATA%\kova` on Windows) — **the same layout a CLI install uses**, which is why the two are interchangeable. Backend resolution first honours `KOVA_DESKTOP_KOVA_ROOT`, then a completed managed install, then a probed `kova` on `PATH` (unless `--ignore-existing` / `KOVA_DESKTOP_IGNORE_EXISTING=1` is set), and finally an explicit `KOVA_DESKTOP_HERMES` command override for packagers such as Nix. The React renderer talks to a headless backend the app launches for you — a `kova serve` process that serves the `tui_gateway` JSON-RPC/WebSocket API — and reuses the agent runtime rather than embedding `kova --tui`. The desktop app is **self-contained**: it runs its own `kova serve` backend and never opens or requires the [web dashboard](./features/web-dashboard.md). (Runtimes older than the `serve` command fall back to a headless `dashboard --no-open` automatically, so an app update never outruns its backend.) Install, backend-resolution, and self-update logic live in the Electron main process.
 
 ## Connecting to a remote backend
 
 By default the app starts and manages its own **local** backend. You can instead point it at a Kova backend running on another machine — a VPS, a home server, or a Mini behind Tailscale.
+
+**Settings → Gateway → Connection mode** offers the alternatives to the local gateway:
+
+- **Remote gateway** — enter the URL of a `kova serve` backend you run yourself and sign in. This is the mode the rest of this section walks through.
+- **Kova Cloud** — sign in once to Kova Cloud and pick from the agents on your account; no URL to paste. The app discovers your agents (with an organization picker if your account spans several orgs), and connecting to one switches the session over automatically. The status bar shows the cloud connection while it's active.
+
+Connection modes are configured **per profile** — a per-profile override can point one profile at a remote or cloud backend while others stay local (**Use default gateway** removes an override).
 
 :::info The remote backend is a running `kova serve` process
 "Remote backend" means a **`kova serve`** server running on the remote machine — that is the process the desktop app connects to. Nothing in this section works unless that backend is actually up and reachable. The desktop app does not start it for you; you (or a `systemd` service) keep `kova serve` running on the remote host, and the app attaches to it. If you also use messaging channels (Telegram, Discord, etc.), the **gateway** is a *separate* long-running process you start independently — see the note after the setup steps.
@@ -183,11 +233,11 @@ The rest of this section shows the username/password path because it's the quick
 
 ### On the backend (the remote machine)
 
-Set a username and password, then start the backend bound to a reachable address. The credentials live in `~/.hermes/.env` (the secrets file, mode 0600):
+Set a username and password, then start the backend bound to a reachable address. The credentials live in `~/.kova/.env` (the secrets file, mode 0600):
 
 ```bash
 # 1. Set the dashboard login credentials.
-cat >> ~/.hermes/.env <<'EOF'
+cat >> ~/.kova/.env <<'EOF'
 KOVA_DASHBOARD_BASIC_AUTH_USERNAME=admin
 KOVA_DASHBOARD_BASIC_AUTH_PASSWORD=choose-a-strong-password
 # Recommended: a stable signing secret so sessions survive restarts.
@@ -195,7 +245,7 @@ KOVA_DASHBOARD_BASIC_AUTH_PASSWORD=choose-a-strong-password
 # on every restart.
 KOVA_DASHBOARD_BASIC_AUTH_SECRET=$(openssl rand -base64 32)
 EOF
-chmod 600 ~/.hermes/.env
+chmod 600 ~/.kova/.env
 
 # 2. Run the backend bound to a reachable address. The non-loopback bind
 #    engages the auth gate; the username/password provider handles login.
@@ -208,7 +258,7 @@ Separately, make sure the **gateway is running** on the remote host if you rely 
 
 Prefer not to keep a plaintext password at rest? Set `KOVA_DASHBOARD_BASIC_AUTH_PASSWORD_HASH` to a scrypt hash instead — compute it with `python -c "from plugins.dashboard_auth.basic import hash_password; print(hash_password('PW'))"`. Full configuration surface (config.yaml keys, every env var, the rate limiter): [Web Dashboard → Username/password provider](./features/web-dashboard.md#usernamepassword-provider-no-oauth-idp).
 
-Running the backend as a systemd service? Give the unit `EnvironmentFile=%h/.hermes/.env` so the credentials are in the environment at boot.
+Running the backend as a systemd service? Give the unit `EnvironmentFile=%h/.kova/.env` so the credentials are in the environment at boot.
 
 :::warning
 The backend reads and writes your `.env` (API keys, secrets) and can run agent commands. The **username/password** setup shown above is for a trusted network — never expose a password-protected backend directly to the open internet; put it behind a VPN. [Tailscale](https://tailscale.com/) is the clean option: bind to the machine's tailscale IP (`--host <tailscale-ip>`) and use `http://<tailscale-ip>:9119` as the Remote URL so only your tailnet can reach it. To reach a backend over the public internet, use the **OAuth (Nous Portal)** provider instead.
@@ -231,7 +281,7 @@ The remote gateway host is configured per [profile](./profiles.md), so each prof
 ### Troubleshooting
 
 - **Sign-in fails with 401 / "Invalid credentials"** — the username or password doesn't match the backend's `KOVA_DASHBOARD_BASIC_AUTH_USERNAME` / `KOVA_DASHBOARD_BASIC_AUTH_PASSWORD`. The backend returns the same generic error for an unknown user and a wrong password (no enumeration oracle), so double-check both. Confirm the gate is on with `curl -s http://<host>:9119/api/status | jq '.auth_required, .auth_providers'` — it should report `true` and include `"basic"`.
-- **No "Sign in" button — it asks for a session token instead** — the backend's username/password provider isn't active. `/api/status` won't list `"basic"` in `auth_providers`. Make sure both the username and a password (or password hash) are set in `~/.hermes/.env` and that the dashboard process actually loaded them.
+- **No "Sign in" button — it asks for a session token instead** — the backend's username/password provider isn't active. `/api/status` won't list `"basic"` in `auth_providers`. Make sure both the username and a password (or password hash) are set in `~/.kova/.env` and that the dashboard process actually loaded them.
 - **Signed out on every restart** — set `KOVA_DASHBOARD_BASIC_AUTH_SECRET` to a stable value. Without it the token-signing key is regenerated per boot, invalidating all sessions.
 - **Connection refused / times out** — the backend bound to `127.0.0.1` (the default) or a firewall/VPN is blocking the port. Bind to `0.0.0.0` or the tailscale IP and open the port to your trusted network.
 
@@ -260,10 +310,10 @@ Common resets:
 
 ```bash
 # Force a clean first-launch setup (macOS/Linux)
-rm "$HOME/.hermes/kova-agent/.hermes-bootstrap-complete"
+rm "$HOME/.kova/kova-agent/.kova-bootstrap-complete"
 
 # Rebuild a broken Python venv (macOS/Linux)
-rm -rf "$HOME/.hermes/hermes-agent/venv"
+rm -rf "$HOME/.kova/kova-agent/venv"
 
 # Reset a stuck macOS microphone prompt
 tccutil reset Microphone com.nousresearch.kova
@@ -279,7 +329,7 @@ To **choose your own mirror** (e.g. a corporate/trusted one), set `ELECTRON_MIRR
 
 ```bash
 ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ \
-  bash -c 'cd "$HOME/.hermes/kova-agent/apps/desktop" && CSC_IDENTITY_AUTO_DISCOVERY=false npm run pack'
+  bash -c 'cd "$HOME/.kova/kova-agent/apps/desktop" && CSC_IDENTITY_AUTO_DISCOVERY=false npm run pack'
 ```
 
 To clear a corrupt cached zip by hand:
@@ -317,6 +367,32 @@ npm run pack         # unpacked app under release/ (no installer)
 ```
 
 macOS/Windows signing and notarization run automatically when the relevant credentials are present in the environment (`CSC_LINK` / `CSC_KEY_PASSWORD` / `APPLE_*` for macOS, `WIN_CSC_*` for Windows).
+
+### macOS permissions and local rebuilds (TCC)
+
+macOS remembers permission grants (Full Disk Access, Desktop/Downloads/Documents,
+Accessibility, Automation, microphone) against the app's *code-signing identity*,
+not its path. Locally built and self-updated apps are signed with a stable
+identifier-pinned ad-hoc signature, so grants persist across updates out of the
+box.
+
+For the strongest guarantee — a certificate-anchored identity, the same
+mechanism yabai/skhd users rely on — create a self-signed code-signing
+certificate once and tell Kova to use it:
+
+1. Keychain Access → Certificate Assistant → **Create a Certificate…**
+2. Name: `Kova Local Signing`, Identity Type: *Self-Signed Root*,
+   Certificate Type: **Code Signing**.
+3. `kova config set desktop.macos_signing_identity "Kova Local Signing"`
+
+The next update re-signs the rebuilt app with that certificate; every TCC grant
+survives. No Apple Developer account is required. Notarized release builds are
+detected and never re-signed.
+
+One-time note: changing the signing identity (including the first update after
+this fix) changes the app's identity once, so macOS will re-prompt one final
+time. Grants are stable from then on. If a permission gets stuck, reset it with
+`tccutil reset All com.nousresearch.kova` and re-grant.
 
 ## See also
 

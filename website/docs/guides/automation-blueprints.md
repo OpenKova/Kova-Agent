@@ -34,9 +34,9 @@ Label, prioritize, and summarize new issues every night. Delivers a digest to yo
 
 ```bash
 kova cron create "0 2 * * *" \
-  "You are a project manager triaging the NousResearch/kova-agent GitHub repo.
+  "You are a project manager triaging the OpenKova/Kova-Agent GitHub repo.
 
-1. Run: gh issue list --repo NousResearch/kova-agent --state open --json number,title,labels,author,createdAt --limit 30
+1. Run: gh issue list --repo OpenKova/Kova-Agent --state open --json number,title,labels,author,createdAt --limit 30
 2. Identify issues opened in the last 24 hours
 3. For each new issue:
    - Suggest a priority label (P0-critical, P1-high, P2-medium, P3-low)
@@ -76,7 +76,7 @@ Review for:
 - Missing tests for new behavior
 
 Post a concise review. If the PR is a trivial docs/typo change, say so briefly." \
-  --skill github-code-review \
+  --skills github-code-review \
   --deliver github_comment
 ```
 
@@ -116,9 +116,9 @@ Weekly scan of merged PRs to find API changes that need documentation updates.
 
 ```bash
 kova cron create "0 9 * * 1" \
-  "Scan the NousResearch/kova-agent repo for documentation drift.
+  "Scan the OpenKova/Kova-Agent repo for documentation drift.
 
-1. Run: gh pr list --repo NousResearch/kova-agent --state merged --json number,title,files,mergedAt --limit 30
+1. Run: gh pr list --repo OpenKova/Kova-Agent --state merged --json number,title,files,mergedAt --limit 30
 2. Filter to PRs merged in the last 7 days
 3. For each merged PR, check if it modified:
    - Tool schemas (tools/*.py) — may need docs/reference/tools-reference.md update
@@ -142,7 +142,7 @@ Daily scan for known vulnerabilities in project dependencies.
 kova cron create "0 6 * * *" \
   "Run a dependency security audit on the kova-agent project.
 
-1. cd ~/.hermes/kova-agent && source .venv/bin/activate
+1. cd ~/.kova/kova-agent && source .venv/bin/activate
 2. Run: pip audit --format json 2>/dev/null || pip audit 2>&1
 3. Run: npm audit --json 2>/dev/null (in website/ directory if it exists)
 4. Check for any CVEs with CVSS score >= 7.0
@@ -228,7 +228,7 @@ Check endpoints every 30 minutes. Only notify when something is down.
 
 **Trigger:** Schedule (every 30 min)
 
-```python title="~/.hermes/scripts/check-uptime.py"
+```python title="~/.kova/scripts/check-uptime.py"
 import urllib.request, json, time
 
 ENDPOINTS = [
@@ -261,7 +261,7 @@ else:
 ```bash
 kova cron create "every 30m" \
   "If the script reports OUTAGE DETECTED, summarize which services are down and suggest likely causes. If NO_ISSUES, respond with [SILENT]." \
-  --script ~/.hermes/scripts/check-uptime.py \
+  --script ~/.kova/scripts/check-uptime.py \
   --name "Uptime monitor" \
   --deliver telegram
 ```
@@ -432,7 +432,7 @@ If action is 'closed' and pull_request.merged is true:
 5. Reference the original PR in the new PR description
 
 If action is not 'closed' or not merged, respond with [SILENT]." \
-  --skill github-pr-workflow \
+  --skills github-pr-workflow \
   --deliver log
 ```
 

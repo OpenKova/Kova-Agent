@@ -57,19 +57,19 @@ What tools do you have available?
 ### CLI 麦克风 + 播放
 
 ```bash
-cd ~/.hermes/kova-agent && uv pip install -e ".[voice]"
+cd ~/.kova/kova-agent && uv pip install -e ".[voice]"
 ```
 
 ### 消息平台
 
 ```bash
-cd ~/.hermes/kova-agent && uv pip install -e ".[messaging]"
+cd ~/.kova/kova-agent && uv pip install -e ".[messaging]"
 ```
 
 ### 高级 ElevenLabs TTS
 
 ```bash
-cd ~/.hermes/kova-agent && uv pip install -e ".[tts-premium]"
+cd ~/.kova/kova-agent && uv pip install -e ".[tts-premium]"
 ```
 
 ### 本地 NeuTTS（可选）
@@ -81,7 +81,7 @@ python -m pip install -U neutts[all]
 ### 全部安装
 
 ```bash
-cd ~/.hermes/kova-agent && uv pip install -e ".[all]"
+cd ~/.kova/kova-agent && uv pip install -e ".[all]"
 ```
 
 ## 第三步：安装系统依赖
@@ -120,7 +120,7 @@ Kova 同时支持本地和云端语音处理方案。
 
 ### 环境变量文件示例
 
-添加到 `~/.hermes/.env`：
+添加到 `~/.kova/.env`：
 
 ```bash
 # 云端 STT 选项（本地无需密钥）

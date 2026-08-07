@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { KovaReviewFile, KovaReviewShipInfo } from '@/global'
+import type { HermesReviewFile, HermesReviewShipInfo } from '@/global'
 
 import {
   $reviewCommitDefault,
@@ -13,6 +13,7 @@ import {
   $reviewMaxChurn,
   $reviewOpen,
   $reviewRevertTarget,
+  $reviewScopeCwd,
   $reviewSelectedPath,
   $reviewShipBusy,
   $reviewShipInfo,
@@ -38,7 +39,7 @@ import {
 import { $currentCwd } from './session'
 
 // requestOneShot is the only cross-module dependency that must be faked (it
-// reaches the gateway); everything else routes through window.kovaDesktop.git,
+// reaches the gateway); everything else routes through window.hermesDesktop.git,
 // which we stub per-test like the sibling coding-status.test.ts does.
 const requestOneShot = vi.fn(async (_args: unknown) => 'generated message')
 vi.mock('@/lib/oneshot', () => ({ requestOneShot: (args: unknown) => requestOneShot(args) }))
@@ -46,13 +47,13 @@ vi.mock('@/lib/oneshot', () => ({ requestOneShot: (args: unknown) => requestOneS
 // doesn't try to hit the (absent) probe and log.
 vi.mock('./coding-status', () => ({ refreshRepoStatus: vi.fn() }))
 
-function file(path: string, over: Partial<KovaReviewFile> = {}): KovaReviewFile {
-  return { path, status: 'modified', staged: false, added: 1, removed: 0, ...over } as KovaReviewFile
+function file(path: string, over: Partial<HermesReviewFile> = {}): HermesReviewFile {
+  return { path, status: 'modified', staged: false, added: 1, removed: 0, ...over } as HermesReviewFile
 }
 
 type ReviewStub = Record<string, ReturnType<typeof vi.fn>>
 
-// Install a review bridge on window.kovaDesktop. Any op not supplied defaults
+// Install a review bridge on window.hermesDesktop. Any op not supplied defaults
 // to a resolved no-op so a test only declares what it exercises.
 function stubReview(over: ReviewStub = {}) {
   const review: ReviewStub = {
@@ -69,7 +70,7 @@ function stubReview(over: ReviewStub = {}) {
     ...over
   }
 
-  ;(window as unknown as { kovaDesktop?: unknown }).kovaDesktop = {
+  ;(window as unknown as { hermesDesktop?: unknown }).hermesDesktop = {
     git: { review },
     openExternal: vi.fn()
   }
@@ -92,11 +93,12 @@ beforeEach(() => {
   $reviewShipBusy.set(false)
   $reviewCommitMsgBusy.set(false)
   $reviewRevertTarget.set(undefined)
+  $reviewScopeCwd.set(null)
   $currentCwd.set('/repo')
 })
 
 afterEach(() => {
-  delete (window as unknown as { kovaDesktop?: unknown }).kovaDesktop
+  delete (window as unknown as { hermesDesktop?: unknown }).hermesDesktop
 })
 
 describe('refreshReview', () => {
@@ -113,7 +115,7 @@ describe('refreshReview', () => {
   })
 
   it('flags not-a-repo (and clears loading) when there is no bridge/cwd', async () => {
-    delete (window as unknown as { kovaDesktop?: unknown }).kovaDesktop
+    delete (window as unknown as { hermesDesktop?: unknown }).hermesDesktop
     $reviewOpen.set(true)
     $reviewLoading.set(true)
 
@@ -205,7 +207,7 @@ describe('selectReviewFile / clearReviewSelection', () => {
   })
 
   it('sets diff null when there is no bridge', async () => {
-    delete (window as unknown as { kovaDesktop?: unknown }).kovaDesktop
+    delete (window as unknown as { hermesDesktop?: unknown }).hermesDesktop
 
     await selectReviewFile(file('a.ts'))
 
@@ -239,23 +241,58 @@ describe('view state', () => {
     const review = stubReview()
     openReview()
     expect($reviewOpen.get()).toBe(true)
+    expect($reviewScopeCwd.get()).toBeNull()
     // openReview fires refreshReview + refreshShipInfo without awaiting.
     await Promise.resolve()
     await Promise.resolve()
-    expect(review.list).toHaveBeenCalled()
+    expect(review.list).toHaveBeenCalledWith('/repo', 'uncommitted', null)
   })
 
-  it('closeReview closes the pane and clears the selection', () => {
+  it('openReview pins the pane to a tile worktree when scoped', async () => {
+    const review = stubReview({
+      list: vi.fn(async () => ({ files: [file('tile.ts')] }))
+    })
+
+    openReview('/tile-worktree')
+    expect($reviewOpen.get()).toBe(true)
+    expect($reviewScopeCwd.get()).toBe('/tile-worktree')
+    await Promise.resolve()
+    await Promise.resolve()
+    expect(review.list).toHaveBeenCalledWith('/tile-worktree', 'uncommitted', null)
+  })
+
+  it('closeReview closes the pane, clears selection, and drops scope', () => {
     stubReview()
     $reviewOpen.set(true)
+    $reviewScopeCwd.set('/tile-worktree')
     $reviewSelectedPath.set('a.ts')
     $reviewDiff.set('x')
 
     closeReview()
 
     expect($reviewOpen.get()).toBe(false)
+    expect($reviewScopeCwd.get()).toBeNull()
     expect($reviewSelectedPath.get()).toBeNull()
     expect($reviewDiff.get()).toBeNull()
+  })
+
+  it('scoped pane ignores main-pane cwd changes', async () => {
+    const review = stubReview({
+      list: vi.fn(async (cwd: string) => ({ files: [file(cwd === '/tile' ? 'tile.ts' : 'main.ts')] }))
+    })
+
+    openReview('/tile')
+    await Promise.resolve()
+    await Promise.resolve()
+    review.list.mockClear()
+
+    // Main session hops repos; the pane is still pinned to the tile.
+    $currentCwd.set('/somewhere-else')
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect($reviewScopeCwd.get()).toBe('/tile')
+    expect(review.list).not.toHaveBeenCalled()
   })
 })
 
@@ -348,13 +385,13 @@ describe('ship flow', () => {
 
   it('createOrOpenPr opens the existing PR without creating a new one', async () => {
     const review = stubReview()
-    $reviewShipInfo.set({ ghReady: true, pr: { url: 'https://example.com/pr/9' } } as KovaReviewShipInfo)
+    $reviewShipInfo.set({ ghReady: true, pr: { url: 'https://example.com/pr/9' } } as HermesReviewShipInfo)
 
     await createOrOpenPr()
 
     expect(review.createPr).not.toHaveBeenCalled()
     expect(
-      (window.kovaDesktop as unknown as { openExternal: ReturnType<typeof vi.fn> }).openExternal
+      (window.hermesDesktop as unknown as { openExternal: ReturnType<typeof vi.fn> }).openExternal
     ).toHaveBeenCalledWith('https://example.com/pr/9')
   })
 
@@ -366,17 +403,17 @@ describe('ship flow', () => {
 
     expect(review.createPr).toHaveBeenCalledWith('/repo')
     expect(
-      (window.kovaDesktop as unknown as { openExternal: ReturnType<typeof vi.fn> }).openExternal
+      (window.hermesDesktop as unknown as { openExternal: ReturnType<typeof vi.fn> }).openExternal
     ).toHaveBeenCalledWith('https://example.com/pr/new')
   })
 })
 
 describe('refreshShipInfo', () => {
   it('populates ship info from the bridge', async () => {
-    const info: KovaReviewShipInfo = {
+    const info: HermesReviewShipInfo = {
       ghReady: true,
       pr: { url: 'https://example.com/pr/3' }
-    } as KovaReviewShipInfo
+    } as HermesReviewShipInfo
 
     stubReview({ shipInfo: vi.fn(async () => info) })
 
@@ -386,8 +423,8 @@ describe('refreshShipInfo', () => {
   })
 
   it('resets ship info when there is no bridge', async () => {
-    delete (window as unknown as { kovaDesktop?: unknown }).kovaDesktop
-    $reviewShipInfo.set({ ghReady: true, pr: { url: 'x' } } as KovaReviewShipInfo)
+    delete (window as unknown as { hermesDesktop?: unknown }).hermesDesktop
+    $reviewShipInfo.set({ ghReady: true, pr: { url: 'x' } } as HermesReviewShipInfo)
 
     await refreshShipInfo()
 
@@ -400,7 +437,7 @@ describe('refreshShipInfo', () => {
         throw new Error('gh missing')
       })
     })
-    $reviewShipInfo.set({ ghReady: true, pr: { url: 'x' } } as KovaReviewShipInfo)
+    $reviewShipInfo.set({ ghReady: true, pr: { url: 'x' } } as HermesReviewShipInfo)
 
     await refreshShipInfo()
 

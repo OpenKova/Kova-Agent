@@ -95,7 +95,7 @@ export async function resolveGatewayWsUrl(deps: ResolveGatewayWsUrlDeps, conn: G
 
 export type WebSocketAuthParam = readonly [name: string, value: string]
 
-export interface KovaWebSocketUrlOptions {
+export interface HermesWebSocketUrlOptions {
   /** Dashboard or gateway-relative endpoint path, e.g. "/api/ws". */
   path: string
   /** Optional URL prefix when the backend is reverse-proxied below a subpath. */
@@ -132,7 +132,7 @@ function normalizeEndpointPath(path: string): string {
   return path.startsWith('/') ? path : `/${path}`
 }
 
-export function buildKovaWebSocketUrl(options: KovaWebSocketUrlOptions): string {
+export function buildHermesWebSocketUrl(options: HermesWebSocketUrlOptions): string {
   const loc = readWindowLocation()
   const protocol = options.protocol ?? loc.protocol
   const host = options.host ?? loc.host

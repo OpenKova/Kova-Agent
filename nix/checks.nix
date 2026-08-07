@@ -7,7 +7,7 @@
   perSystem = { pkgs, lib, self', ... }:
     let
       kova-agent = self'.packages.default;
-      kovaVenv = kova-agent.kovaVenv;
+      hermesVenv = kova-agent.hermesVenv;
 
       configMergeScript = pkgs.callPackage ./configMergeScript.nix { };
 
@@ -15,7 +15,7 @@
       configKeys = pkgs.runCommand "kova-config-keys" {} ''
         set -euo pipefail
         export HOME=$TMPDIR
-        ${kovaVenv}/bin/python3 -c '
+        ${hermesVenv}/bin/python3 -c '
 import json, sys
 from kova_cli.config import DEFAULT_CONFIG
 
@@ -197,7 +197,7 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
           # Verify the wrapper override resolves real strings.
           export HOME=$(mktemp -d)
           RENDERED=$(cd "$HOME" && KOVA_BUNDLED_LOCALES=${kova-agent}/share/kova-agent/locales \
-            ${kovaVenv}/bin/python3 -c "from agent import i18n; print(i18n.t('gateway.reset.header_default', lang='en'))")
+            ${hermesVenv}/bin/python3 -c "from agent import i18n; print(i18n.t('gateway.reset.header_default', lang='en'))")
           echo "rendered: $RENDERED"
           test "$RENDERED" != "gateway.reset.header_default" || (echo "FAIL: i18n returned the raw key with KOVA_BUNDLED_LOCALES set"; exit 1)
           echo "PASS: i18n renders a human string via the wrapper override"
@@ -256,8 +256,8 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
           echo "ok" > $out/result
         '';
 
-        # Verify KOVA_NODE is set in wrapper and points to Node 20+
-        # (string-width uses the /v regex flag which requires Node 20+)
+        # Verify KOVA_NODE is set in wrapper and points to Node 26+
+        # (Kova pins its toolchain to Node 26 everywhere)
         kova-node = pkgs.runCommand "kova-node-version" { } ''
           set -e
           echo "=== Checking KOVA_NODE in wrapper ==="
@@ -270,9 +270,9 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
           echo "PASS: KOVA_NODE executable at $KOVA_NODE"
 
           NODE_MAJOR=$("$KOVA_NODE" --version | sed 's/^v//' | cut -d. -f1)
-          test "$NODE_MAJOR" -ge 20 || \
-            (echo "FAIL: Node v$NODE_MAJOR < 20, TUI needs /v regex flag support"; exit 1)
-          echo "PASS: Node v$NODE_MAJOR >= 20"
+          test "$NODE_MAJOR" -ge 26 || \
+            (echo "FAIL: Node v$NODE_MAJOR < 26, Kova requires Node 26"; exit 1)
+          echo "PASS: Node v$NODE_MAJOR >= 26"
 
           echo "=== All KOVA_NODE checks passed ==="
           mkdir -p $out
@@ -304,18 +304,18 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
         # Verify extraPythonPackages PYTHONPATH injection
         extra-python-packages = let
           testPkg = pkgs.python312Packages.pyfiglet;
-          kovaWithExtra = kova-agent.override {
+          hermesWithExtra = kova-agent.override {
             extraPythonPackages = [ testPkg ];
           };
         in pkgs.runCommand "kova-extra-python-packages" { } ''
           set -e
           echo "=== Checking extraPythonPackages PYTHONPATH injection ==="
 
-          grep -q "PYTHONPATH" ${kovaWithExtra}/bin/kova || \
+          grep -q "PYTHONPATH" ${hermesWithExtra}/bin/kova || \
             (echo "FAIL: PYTHONPATH not in wrapper"; exit 1)
           echo "PASS: PYTHONPATH present in wrapper"
 
-          grep -q "${testPkg}" ${kovaWithExtra}/bin/kova || \
+          grep -q "${testPkg}" ${hermesWithExtra}/bin/kova || \
             (echo "FAIL: test package path not in PYTHONPATH"; exit 1)
           echo "PASS: test package path found in wrapper"
 
@@ -332,7 +332,7 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
 
         # Verify extraDependencyGroups passes through to python.nix
         extra-dependency-groups = let
-          kovaWithGroups = kova-agent.override {
+          hermesWithGroups = kova-agent.override {
             extraDependencyGroups = [ "honcho" ];
           };
         in pkgs.runCommand "kova-extra-dependency-groups" { } ''
@@ -342,8 +342,8 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
           # Eval-only: verify the override produces valid derivation paths
           # without building the full venv (which is expensive and redundant
           # since the mechanism is just list concatenation into python.nix).
-          echo "derivation: ${kovaWithGroups}"
-          echo "venv: ${kovaWithGroups.kovaVenv}"
+          echo "derivation: ${hermesWithGroups}"
+          echo "venv: ${hermesWithGroups.hermesVenv}"
           echo "PASS: extraDependencyGroups override evaluates cleanly"
 
           echo "=== All extraDependencyGroups checks passed ==="
@@ -357,7 +357,7 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
         messaging-variant = pkgs.runCommand "kova-messaging-variant" { } ''
           set -e
           echo "=== Checking discord.py importable from messaging variant ==="
-          ${self'.packages.messaging.kovaVenv}/bin/python3 -c \
+          ${self'.packages.messaging.hermesVenv}/bin/python3 -c \
             "import discord; print(discord.__version__)"
           echo "PASS: discord.py importable from messaging variant venv"
           mkdir -p $out
@@ -438,7 +438,7 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
             local kova_home="$1"
             export HERMES_HOME="$kova_home"
             ${configMergeScript} ${nixSettings} "$kova_home/config.yaml"
-            ${kovaVenv}/bin/python3 -c '
+            ${hermesVenv}/bin/python3 -c '
 import json, sys
 from kova_cli.config import load_config
 json.dump(load_config(), sys.stdout, default=str)

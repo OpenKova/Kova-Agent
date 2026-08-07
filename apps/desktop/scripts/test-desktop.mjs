@@ -50,16 +50,16 @@ const APP = (() => {
 })()
 
 // Default HERMES_HOME for non-sandboxed runs -- matches main.ts's
-// resolveKovaHome(). On Windows it's %LOCALAPPDATA%\kova; elsewhere
-// it's ~/.hermes. The fresh-install sandbox launchFresh() sets its own
+// resolveHermesHome(). On Windows it's %LOCALAPPDATA%\kova; elsewhere
+// it's ~/.kova. The fresh-install sandbox launchFresh() sets its own
 // HERMES_HOME and never touches this.
-const DEFAULT_KOVA_HOME = (() => {
+const DEFAULT_HERMES_HOME = (() => {
   if (PLATFORM === 'win32' && process.env.LOCALAPPDATA) {
     return path.join(process.env.LOCALAPPDATA, 'kova')
   }
   return path.join(os.homedir(), '.kova')
 })()
-const VENV_ROOT = path.join(DEFAULT_KOVA_HOME, 'hermes-agent', 'venv')
+const VENV_ROOT = path.join(DEFAULT_HERMES_HOME, 'kova-agent', 'venv')
 const FRESH_SANDBOX_ROOT = path.join(os.tmpdir(), 'kova-desktop-fresh-install')
 
 function die(message) {
@@ -242,11 +242,11 @@ function launchFresh() {
 
   const sandbox = fs.mkdtempSync(`${FRESH_SANDBOX_ROOT}-`)
   const userDataDir = path.join(sandbox, 'electron-user-data')
-  const kovaHome = path.join(sandbox, 'kova-home')
+  const hermesHome = path.join(sandbox, 'kova-home')
   const cwd = path.join(sandbox, 'workspace')
 
   fs.mkdirSync(userDataDir, { recursive: true })
-  fs.mkdirSync(kovaHome, { recursive: true })
+  fs.mkdirSync(hermesHome, { recursive: true })
   fs.mkdirSync(cwd, { recursive: true })
 
   // Strip every credential-shaped env var so the sandbox is actually fresh.
@@ -260,8 +260,8 @@ function launchFresh() {
   env.KOVA_DESKTOP_IGNORE_EXISTING = '1'
   env.KOVA_DESKTOP_TEST_MODE = 'fresh-install'
   env.KOVA_DESKTOP_USER_DATA_DIR = userDataDir
-  env.HERMES_HOME = kovaHome
-  delete env.KOVA_DESKTOP_BIN
+  env.HERMES_HOME = hermesHome
+  delete env.KOVA_DESKTOP_HERMES
   delete env.KOVA_DESKTOP_KOVA_ROOT
 
   const child = spawn(APP.binary, [], {
@@ -275,10 +275,10 @@ function launchFresh() {
   console.log('\nFresh install sandbox:')
   console.log(`  root: ${sandbox}`)
   console.log(`  electron userData: ${userDataDir}`)
-  console.log(`  HERMES_HOME: ${kovaHome}`)
+  console.log(`  HERMES_HOME: ${hermesHome}`)
   console.log(`  cwd: ${cwd}`)
 
-  return { runtimeRoot: path.join(kovaHome, 'kova-agent', 'venv') }
+  return { runtimeRoot: path.join(hermesHome, 'kova-agent', 'venv') }
 }
 
 // Validate the packaged bundle matches the thin-installer architecture:

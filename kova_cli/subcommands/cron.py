@@ -48,7 +48,7 @@ def build_cron_parser(subparsers, *, cmd_cron: Callable) -> None:
     cron_create.add_argument(
         "--script",
         help=(
-            "Path to a script under ~/.hermes/scripts/. Default mode: "
+            "Path to a script under ~/.kova/scripts/. Default mode: "
             "script stdout is injected into the agent's prompt each run. "
             "With --no-agent: the script IS the job and its stdout is "
             "delivered verbatim. .sh/.bash files run via bash, everything "
@@ -69,6 +69,19 @@ def build_cron_parser(subparsers, *, cmd_cron: Callable) -> None:
     cron_create.add_argument(
         "--workdir",
         help="Absolute path for the job to run from. Injects AGENTS.md / CLAUDE.md / .cursorrules from that directory and uses it as the cwd for terminal/file/code_exec tools. Omit to preserve old behaviour (no project context files).",
+    )
+    cron_create.add_argument(
+        "--model",
+        help=(
+            "Pin this job to a specific inference model (user-owned; the "
+            "agent's cronjob tool cannot set this). Omit to follow "
+            "cron.model / model.default from config.yaml."
+        ),
+    )
+    cron_create.add_argument(
+        "--provider",
+        dest="model_provider",
+        help="Inference provider paired with --model (e.g. 'openrouter', 'nous').",
     )
 
     # cron edit
@@ -107,7 +120,7 @@ def build_cron_parser(subparsers, *, cmd_cron: Callable) -> None:
     cron_edit.add_argument(
         "--script",
         help=(
-            "Path to a script under ~/.hermes/scripts/. Pass empty string to clear. "
+            "Path to a script under ~/.kova/scripts/. Pass empty string to clear. "
             "With --no-agent the script IS the job; otherwise its stdout is "
             "injected into the agent's prompt each run."
         ),
@@ -133,6 +146,19 @@ def build_cron_parser(subparsers, *, cmd_cron: Callable) -> None:
     cron_edit.add_argument(
         "--workdir",
         help="Absolute path for the job to run from (injects AGENTS.md etc. and sets terminal cwd). Pass empty string to clear.",
+    )
+    cron_edit.add_argument(
+        "--model",
+        help=(
+            "Pin this job to a specific inference model (user-owned; the "
+            "agent's cronjob tool cannot set this). Pass empty string to "
+            "clear the pin and follow cron.model / model.default."
+        ),
+    )
+    cron_edit.add_argument(
+        "--provider",
+        dest="model_provider",
+        help="Inference provider paired with --model. Pass empty string to clear.",
     )
 
     # lifecycle actions

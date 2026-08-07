@@ -6,7 +6,7 @@ description: "How to build an image-generation backend plugin for Kova Agent"
 
 # Building an Image Generation Provider Plugin
 
-Image-gen provider plugins register a backend that services every `image_generate` tool call — DALL·E, gpt-image, Grok, Flux, Imagen, Stable Diffusion, fal, Replicate, a local ComfyUI rig, anything. Built-in providers (OpenAI, OpenAI-Codex, xAI) all ship as plugins. You can add a new one, or override a bundled one, by dropping a directory into `plugins/image_gen/<name>/`.
+Image-gen provider plugins register a backend that services every `image_generate` tool call — DALL·E, gpt-image, Grok, Flux, Imagen, Stable Diffusion, fal, Replicate, a local ComfyUI rig, anything. Built-in providers (OpenAI, OpenAI-Codex, xAI, FAL, Krea, DeepInfra, OpenRouter) all ship as plugins. You can add a new one, or override a bundled one, by dropping a directory into `plugins/image_gen/<name>/`.
 
 :::tip
 Image-gen is one of several **backend plugins** Kova supports. The others (with more specialized ABCs) are [Memory Provider Plugins](/developer-guide/memory-provider-plugin), [Context Engine Plugins](/developer-guide/context-engine-plugin), and [Model Provider Plugins](/developer-guide/model-provider-plugin). General tool/hook/CLI plugins live in [Build a Kova Plugin](/developer-guide/plugins).
@@ -17,7 +17,7 @@ Image-gen is one of several **backend plugins** Kova supports. The others (with 
 Kova scans for image-gen backends in three places:
 
 1. **Bundled** — `<repo>/plugins/image_gen/<name>/` (auto-loaded with `kind: backend`, always available)
-2. **User** — `~/.hermes/plugins/image_gen/<name>/` (opt-in via `plugins.enabled`)
+2. **User** — `~/.kova/plugins/image_gen/<name>/` (opt-in via `plugins.enabled`)
 3. **Pip** — packages declaring a `kova_agent.plugins` entry point
 
 Each plugin's `register(ctx)` function calls `ctx.register_image_gen_provider(...)` — that puts it into the registry in `agent/image_gen_registry.py`. The active provider is picked by `image_gen.provider` in `config.yaml`; `kova tools` walks users through selection.
@@ -32,7 +32,7 @@ plugins/image_gen/my-backend/
 └── plugin.yaml      # Manifest with kind: backend
 ```
 
-A bundled plugin is complete at this point. User plugins at `~/.hermes/plugins/image_gen/<name>/` need to be added to `plugins.enabled` in `config.yaml` (or run `kova plugins enable <name>`).
+A bundled plugin is complete at this point. User plugins at `~/.kova/plugins/image_gen/<name>/` need to be added to `plugins.enabled` in `config.yaml` (or run `kova plugins enable <name>`).
 
 ## The ImageGenProvider ABC
 
@@ -271,7 +271,7 @@ Some backends return image URLs (fal, Replicate); others return base64 payloads 
 
 ## User overrides
 
-Drop a user plugin at `~/.hermes/plugins/image_gen/<name>/` with the same `name` property as a bundled one and enable it via `kova plugins enable <name>` — the registry is last-writer-wins, so your version replaces the built-in. Useful for pointing an `openai` plugin at a private proxy, or swapping in a custom model catalog.
+Drop a user plugin at `~/.kova/plugins/image_gen/<name>/` with the same `name` property as a bundled one and enable it via `kova plugins enable <name>` — the registry is last-writer-wins, so your version replaces the built-in. Useful for pointing an `openai` plugin at a private proxy, or swapping in a custom model catalog.
 
 ## Testing
 

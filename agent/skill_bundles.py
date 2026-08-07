@@ -7,7 +7,7 @@ referenced skill's full content into a single user message, the same way
 
 Storage
 -------
-Bundles live in ``~/.hermes/skill-bundles/*.yaml`` (and the equivalent
+Bundles live in ``~/.kova/skill-bundles/*.yaml`` (and the equivalent
 profile-aware directory under ``HERMES_HOME``). Each file looks like::
 
     name: backend-dev
@@ -321,7 +321,7 @@ def build_bundle_invocation_message(
 
         try:
             from tools.skill_usage import bump_use
-            bump_use(skill_name)
+            bump_use(skill_name, task_id=task_id)
         except Exception:
             pass
 

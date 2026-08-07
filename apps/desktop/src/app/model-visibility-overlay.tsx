@@ -1,12 +1,12 @@
 import { useStore } from '@nanostores/react'
 
 import { ModelVisibilityDialog } from '@/components/model-visibility-dialog'
-import type { KovaGateway } from '@/kova'
+import type { HermesGateway } from '@/kova'
 import { $modelVisibilityOpen, setModelVisibilityOpen } from '@/store/model-visibility'
 import { $activeSessionId, $gatewayState } from '@/store/session'
 
 interface ModelVisibilityOverlayProps {
-  gateway?: KovaGateway
+  gateway?: HermesGateway
   onOpenProviders: () => void
   profile: string
 }

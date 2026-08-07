@@ -8,7 +8,7 @@ platforms: [linux, macos, windows]
 metadata:
   kova:
     tags: [TouchDesigner, MCP, twozero, creative-coding, real-time-visuals, generative-art, audio-reactive, VJ, installation, GLSL]
-    related_skills: [native-mcp, ascii-video, manim-video, kova-video]
+    related_skills: [ascii-video, manim-video]
 
 ---
 
@@ -37,7 +37,7 @@ Hub health check: `GET http://localhost:40404/mcp` returns JSON with instance PI
 Run the setup script to handle everything:
 
 ```bash
-bash "${HERMES_HOME:-$HOME/.hermes}/skills/creative/touchdesigner-mcp/scripts/setup.sh"
+bash "${HERMES_HOME:-$HOME/.kova}/skills/creative/touchdesigner-mcp/scripts/setup.sh"
 ```
 
 The script will:

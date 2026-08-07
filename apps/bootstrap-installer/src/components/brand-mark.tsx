@@ -2,7 +2,7 @@ import { cn } from '../lib/utils'
 
 const assetPath = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\/+/, '')}`
 
-// Brand badge: Kova logo on a white tile, identical in light/dark.
+// Brand badge: nous-girl mark on a white tile, identical in light/dark.
 // Ported from apps/desktop's BrandMark; asset lives in this app's public/.
 export function BrandMark({ className, ...props }: React.ComponentProps<'span'>) {
   return (

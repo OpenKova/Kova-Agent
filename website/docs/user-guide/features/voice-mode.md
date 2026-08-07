@@ -10,16 +10,18 @@ Kova Agent supports full voice interaction across CLI and messaging platforms. T
 
 If you want a practical setup walkthrough with recommended configurations and real usage patterns, see [Use Voice Mode with Kova](/guides/use-voice-mode-with-kova).
 
+For hands-free session start — saying "hey kova" (or any phrase) to open a fresh voice session on the CLI, TUI, or desktop app — see [Wake Word](/user-guide/features/wake-word).
+
 ## Prerequisites
 
 Before using voice features, make sure you have:
 
 1. **Kova Agent installed** — via the install script (see [Installation](/getting-started/installation))
-2. **An LLM provider configured** — run `kova model` or set your preferred provider credentials in `~/.hermes/.env`
+2. **An LLM provider configured** — run `kova model` or set your preferred provider credentials in `~/.kova/.env`
 3. **A working base setup** — run `kova` to verify the agent responds to text before enabling voice
 
 :::tip
-The `~/.hermes/` directory and default `config.yaml` are created automatically the first time you run `kova`. You only need to create `~/.hermes/.env` manually for API keys.
+The `~/.kova/` directory and default `config.yaml` are created automatically the first time you run `kova`. You only need to create `~/.kova/.env` manually for API keys.
 :::
 
 :::tip Nous Portal covers both
@@ -40,19 +42,19 @@ A paid [Nous Portal](/user-guide/features/tool-gateway) subscription supplies th
 
 ```bash
 # CLI voice mode (microphone + audio playback)
-cd ~/.hermes/kova-agent && uv pip install -e ".[voice]"
+cd ~/.kova/kova-agent && uv pip install -e ".[voice]"
 
 # Discord + Telegram messaging (includes discord.py[voice] for VC support)
-cd ~/.hermes/kova-agent && uv pip install -e ".[messaging]"
+cd ~/.kova/kova-agent && uv pip install -e ".[messaging]"
 
 # Premium TTS (ElevenLabs)
-cd ~/.hermes/kova-agent && uv pip install -e ".[tts-premium]"
+cd ~/.kova/kova-agent && uv pip install -e ".[tts-premium]"
 
 # Local TTS (NeuTTS, optional)
 python -m pip install -U neutts[all]
 
 # Everything at once
-cd ~/.hermes/kova-agent && uv pip install -e ".[all]"
+cd ~/.kova/kova-agent && uv pip install -e ".[all]"
 ```
 
 | Extra | Packages | Required For |
@@ -88,7 +90,7 @@ sudo apt install espeak-ng   # for NeuTTS
 
 ### API Keys
 
-Add to `~/.hermes/.env`:
+Add to `~/.kova/.env`:
 
 ```bash
 # Speech-to-Text — local provider needs NO key at all
@@ -109,7 +111,7 @@ If `faster-whisper` is installed, voice mode works with **zero API keys** for ST
 
 ## CLI Voice Mode
 
-Voice mode is available in both the **classic CLI** (`kova chat`) and the **TUI** (`kova --tui`). Behavior is identical across both — same slash commands, same VAD silence detection, same streaming TTS, same hallucination filter. The TUI additionally forwards crash-forensic logs to `~/.hermes/logs/` so push-to-talk failures on exotic audio backends can be reported with a full stack trace rather than disappearing silently.
+Voice mode is available in both the **classic CLI** (`kova chat`) and the **TUI** (`kova --tui`). Behavior is identical across both — same slash commands, same VAD silence detection, same streaming TTS, same hallucination filter. The TUI additionally forwards crash-forensic logs to `~/.kova/logs/` so push-to-talk failures on exotic audio backends can be reported with a full stack trace rather than disappearing silently.
 
 ### Quick Start
 
@@ -143,7 +145,7 @@ Then use these commands inside the CLI:
 This loop continues until you press **Ctrl+B** during recording (exits continuous mode) or 3 consecutive recordings detect no speech.
 
 :::tip
-The record key is configurable via `voice.record_key` in `~/.hermes/config.yaml` (default: `ctrl+b`).
+The record key is configurable via `voice.record_key` in `~/.kova/config.yaml` (default: `ctrl+b`).
 :::
 
 ### Silence Detection
@@ -157,6 +159,12 @@ If no speech is detected at all for 15 seconds, recording stops automatically.
 
 Both `silence_threshold` and `silence_duration` are configurable in `config.yaml`. You can also disable the record start/stop beeps with `voice.beep_enabled: false`.
 
+### Ending a voice chat by voice
+
+Say **"stop"** — and nothing else — to end the voice conversation hands-free. The match is deliberately strict: the whole utterance (case-insensitive, surrounding punctuation ignored) must equal a configured phrase, so "stop doing that and try X instead" still reaches the agent normally. Customize the phrase list with `voice.stop_phrases` in `config.yaml` (e.g. `["stop", "goodbye kova"]`), or set it to `[]` to disable. A voice chat also ends on its own after three consecutive silent cycles (no speech detected).
+
+**Typing** a bare stop phrase while a voice chat is active works the same way on every surface (CLI, TUI, desktop): the message ends the voice chat instead of being sent to the agent. Outside a voice chat, typed "stop" is an ordinary message.
+
 ### Streaming TTS
 
 When TTS is enabled, the agent speaks its reply **sentence-by-sentence** as it generates text — you don't wait for the full response. This works with **every TTS provider**:
@@ -169,10 +177,14 @@ The same pipeline runs in the classic CLI, the TUI, and the desktop app. In a de
 
 ### Barge-in
 
-You can interrupt the agent mid-speech:
+You can interrupt the agent at ANY point in its turn — the microphone stays live from the moment you finish speaking until the reply has fully played (full duplex):
 
-- **Talk over it** — in continuous voice mode, a voice-activity monitor listens while the agent speaks and cuts playback the moment you start talking, then goes straight back to recording. The detector calibrates its noise floor against the playback itself, so speaker bleed doesn't self-trigger. Disable with `voice.barge_in: false` in `config.yaml`.
+- **Interject while it's thinking** — in continuous voice mode, speaking during LLM generation (before any audio plays) interrupts the in-flight turn and your interjection becomes the next message, the same as typing over a running turn.
+- **Talk over it** — speaking while the agent's reply plays cuts playback the moment you start talking and submits what you said. The detector calibrates its noise floor against the *quiet room* at turn start (never against the playback itself), so speaker bleed can't deafen it and normal speech reliably trips it.
 - **Type or press the record key** — sending a new message or hitting the push-to-talk key stops playback instantly on every surface.
+- **Say "stop"** — the stop phrase works in both phases: mid-generation it interrupts the turn AND ends the voice chat; mid-playback it cuts the speech and ends the chat.
+
+Tuning (config.yaml): `voice.barge_in: false` disables it; `voice.barge_in_threshold_multiplier` (default `3.0`) scales the speech trigger over the quiet-room floor; `voice.barge_in_grace_seconds` (default `0.5`) suppresses trips right after playback starts. Set `KOVA_VOICE_DEBUG=1` to stream per-block VAD diagnostics (calibrated floor, RMS, trip decisions) to stderr for live tuning.
 
 The agent **knows** it was interrupted: the next message carries a short note telling the model its spoken reply was cut off, so it can react naturally ("rude!") or pick up where it left off instead of being oblivious.
 
@@ -209,7 +221,7 @@ The bot supports two interaction modes on Discord:
 **Server channels:** The bot only responds when you @mention it (e.g. `@hermesbyt4 hello`). Make sure you select the **bot user** from the mention popup, not the role with the same name.
 
 :::tip
-To disable the mention requirement in server channels, add to `~/.hermes/.env`:
+To disable the mention requirement in server channels, add to `~/.kova/.env`:
 ```bash
 DISCORD_REQUIRE_MENTION=false
 ```
@@ -320,7 +332,7 @@ The bot auto-loads the codec from:
 #### 4. Environment Variables
 
 ```bash
-# ~/.hermes/.env
+# ~/.kova/.env
 
 # Discord bot (already configured for text)
 DISCORD_BOT_TOKEN=your-bot-token
@@ -384,7 +396,7 @@ The bot automatically pauses its audio listener while playing TTS replies, preve
 Only users listed in `DISCORD_ALLOWED_USERS` can interact via voice. Other users' audio is silently ignored.
 
 ```bash
-# ~/.hermes/.env
+# ~/.kova/.env
 DISCORD_ALLOWED_USERS=284102345871466496
 ```
 
@@ -403,6 +415,7 @@ voice:
   beep_enabled: true               # Play record start/stop beeps
   silence_threshold: 200           # RMS level (0-32767) below which counts as silence
   silence_duration: 3.0            # Seconds of silence before auto-stop
+  stop_phrases: ["stop"]           # Saying exactly one of these ends the voice chat; [] disables
 
 # Speech-to-Text
 stt:
@@ -414,6 +427,9 @@ stt:
   provider: "local"                  # "local" (free) | "groq" | "openai" | "mistral" | "xai"
   local:
     model: "base"                    # tiny, base, small, medium, large-v3
+    language: ""                     # optional ISO-639-1 hint; blank = use KOVA_LOCAL_STT_LANGUAGE if set, else auto-detect
+  groq:
+    language: ""                     # optional ISO-639-1 hint; blank = use KOVA_LOCAL_STT_LANGUAGE if set, else auto-detect
   # model: "whisper-1"              # Legacy: used when provider is not set
 
 # Text-to-Speech
@@ -428,6 +444,11 @@ tts:
     model: "gpt-4o-mini-tts"
     voice: "alloy"                 # alloy, echo, fable, onyx, nova, shimmer
     base_url: "https://api.openai.com/v1"  # optional: override for self-hosted or OpenAI-compatible endpoints
+    # The `text_to_speech` tool accepts an optional per-call `instructions`
+    # argument (tone, emotion, pacing, accent, whispering) that is forwarded
+    # to `gpt-4o-mini-tts` and to OpenAI-compatible voice-design servers
+    # (e.g. Qwen3-TTS-VoiceDesign via oMLX). See OpenAI's voice-design guide:
+    # https://platform.openai.com/docs/guides/text-to-speech
   neutts:
     ref_audio: ''
     ref_text: ''
@@ -469,6 +490,7 @@ DISCORD_ALLOWED_USERS=...
 | **Groq** | `whisper-large-v3` | Fast (~1s) | Better | Free tier | Yes |
 | **OpenAI** | `whisper-1` | Fast (~1s) | Good | Paid | Yes |
 | **OpenAI** | `gpt-4o-transcribe` | Medium (~2s) | Best | Paid | Yes |
+| **OpenAI** | `gpt-transcribe` | Fast | Best | Paid ($0.0045/min) | Yes |
 | **Mistral** | `voxtral-mini-latest` | Fast | Good | Paid | Yes |
 | **xAI** | `grok-stt` | Fast | Good | Paid | Yes |
 
@@ -484,6 +506,12 @@ Provider priority (automatic fallback): **local** > **groq** > **openai**
 | **NeuTTS** | Good | Free | Depends on CPU/GPU | No |
 
 NeuTTS uses the `tts.neutts` config block above.
+
+For `openai`, the `text_to_speech` tool accepts an optional `instructions`
+argument that unlocks `gpt-4o-mini-tts`'s voice-design capability (tone,
+emotion, pacing, accent, whispering). The same field also routes to
+OpenAI-compatible voice-design servers mounted via `tts.openai.base_url`
+(e.g. Qwen3-TTS-VoiceDesign via oMLX).
 
 ---
 
@@ -506,7 +534,7 @@ The bot requires an @mention by default in server channels. Make sure you:
 
 1. Type `@` and select the **bot user** (with the #discriminator), not the **role** with the same name
 2. Or use DMs instead — no mention needed
-3. Or set `DISCORD_REQUIRE_MENTION=false` in `~/.hermes/.env`
+3. Or set `DISCORD_REQUIRE_MENTION=false` in `~/.kova/.env`
 
 ### Bot joins VC but doesn't hear me
 
@@ -518,7 +546,7 @@ The bot requires an @mention by default in server channels. Make sure you:
 
 - Verify STT is available: install `faster-whisper` (no key needed) or set `GROQ_API_KEY` / `VOICE_TOOLS_OPENAI_KEY`
 - Check the LLM model is configured and accessible
-- Review gateway logs: `tail -f ~/.hermes/logs/gateway.log`
+- Review gateway logs: `tail -f ~/.kova/logs/gateway.log`
 
 ### Bot responds in text but not in voice channel
 

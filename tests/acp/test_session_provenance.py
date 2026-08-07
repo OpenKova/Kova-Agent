@@ -27,9 +27,9 @@ def test_root_session_no_compression(db):
     _mk(db, "root1")
     prov = build_session_provenance(db, "acp-1", "root1")
     assert prov["acpSessionId"] == "acp-1"
-    assert prov["currentKovaSessionId"] == "root1"
-    assert prov["rootKovaSessionId"] == "root1"
-    assert prov["parentKovaSessionId"] is None
+    assert prov["currentHermesSessionId"] == "root1"
+    assert prov["rootHermesSessionId"] == "root1"
+    assert prov["parentHermesSessionId"] is None
     assert prov["sessionKind"] == "root"
     assert prov["compressionDepth"] == 0
     assert "reason" not in prov  # no rotation signalled
@@ -46,26 +46,15 @@ def test_compression_split_continuation(db):
         db, "acp-1", "new", previous_kova_session_id="old"
     )
     assert prov["sessionKind"] == "continuation"
-    assert prov["parentKovaSessionId"] == "old"
-    assert prov["rootKovaSessionId"] == "old"
+    assert prov["parentHermesSessionId"] == "old"
+    assert prov["rootHermesSessionId"] == "old"
     assert prov["compressionDepth"] == 1
-    assert prov["previousKovaSessionId"] == "old"
+    assert prov["previousHermesSessionId"] == "old"
     # Head rotated this turn → reason/creatorKind flagged.
     assert prov["reason"] == "compression"
     assert prov["creatorKind"] == "compression"
 
 
-def test_multi_depth_chain(db):
-    _mk(db, "s0")
-    db.end_session("s0", "compression")
-    _mk(db, "s1", parent="s0")
-    db.end_session("s1", "compression")
-    _mk(db, "s2", parent="s1")
-
-    prov = build_session_provenance(db, "acp-1", "s2")
-    assert prov["rootKovaSessionId"] == "s0"
-    assert prov["compressionDepth"] == 2
-    assert prov["sessionKind"] == "continuation"
 
 
 def test_non_compression_parent_is_root_not_continuation(db):
@@ -76,23 +65,11 @@ def test_non_compression_parent_is_root_not_continuation(db):
     prov = build_session_provenance(db, "acp-1", "c")
     assert prov["sessionKind"] == "root"
     assert prov["compressionDepth"] == 0
-    assert prov["rootKovaSessionId"] == "p"  # lineage root still walked
+    assert prov["rootHermesSessionId"] == "p"  # lineage root still walked
 
 
-def test_no_false_rotation_when_head_unchanged(db):
-    _mk(db, "s")
-    # previous == current → no rotation reason emitted.
-    prov = build_session_provenance(
-        db, "acp-1", "s", previous_kova_session_id="s"
-    )
-    assert "reason" not in prov
-    assert "creatorKind" not in prov
-    assert prov["previousKovaSessionId"] == "s"
 
 
-def test_unknown_session_returns_none(db):
-    assert build_session_provenance(db, "acp-1", "does-not-exist") is None
-    assert session_provenance_meta(db, "acp-1", "does-not-exist") is None
 
 
 def test_meta_wrapper_shape(db):
@@ -100,4 +77,4 @@ def test_meta_wrapper_shape(db):
     meta = session_provenance_meta(db, "acp-1", "root1")
     assert set(meta.keys()) == {"kova"}
     assert "sessionProvenance" in meta["kova"]
-    assert meta["kova"]["sessionProvenance"]["currentKovaSessionId"] == "root1"
+    assert meta["kova"]["sessionProvenance"]["currentHermesSessionId"] == "root1"

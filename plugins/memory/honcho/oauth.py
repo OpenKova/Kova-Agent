@@ -175,6 +175,36 @@ def _http_post_form(url: str, data: dict[str, str], timeout: float) -> dict[str,
     return resp.json()
 
 
+def _http_post_form_status(
+    url: str, data: dict[str, str], timeout: float
+) -> tuple[int, dict[str, Any]]:
+    """POST form-encoded ``data``; return ``(status, parsed JSON body)``.
+
+    Unlike ``_http_post_form``, 4xx does not raise — RFC 8628 polling reads the
+    OAuth error body off a 400. A non-JSON body parses to ``{}``.
+    """
+    import httpx
+
+    resp = httpx.post(url, data=data, timeout=timeout)
+    try:
+        body = resp.json()
+    except ValueError:
+        body = {}
+    if not isinstance(body, dict):
+        body = {}
+    return resp.status_code, body
+
+
+def _http_get_json(url: str, timeout: float) -> dict[str, Any]:
+    """GET ``url`` and return the parsed JSON body. Raises on non-2xx/non-JSON."""
+    import httpx
+
+    resp = httpx.get(url, timeout=timeout)
+    resp.raise_for_status()
+    body = resp.json()
+    return body if isinstance(body, dict) else {}
+
+
 def _exchange_refresh_token(cred: OAuthCredential, *, now: float) -> OAuthCredential:
     """Run the refresh_token grant and return the rotated credential.
 
@@ -276,13 +306,7 @@ def ensure_fresh_token(
             return cached[1], False
 
     source = raw if raw is not None else _read_config(path)
-    from plugins.memory.honcho.client import identity_for_host
-
-    block = (
-        (source.get("hosts") or {}).get(host)
-        or (source.get("hosts") or {}).get(identity_for_host(host))
-        or {}
-    )
+    block = (source.get("hosts") or {}).get(host) or {}
     cred = OAuthCredential.from_host_block(block)
     if cred is None:
         _expiry_cache.pop(key, None)
@@ -295,14 +319,7 @@ def ensure_fresh_token(
     with _refresh_lock, _config_refresh_lock(path):
         # Re-read under both locks: another thread or process may have just
         # rotated the token — adopt theirs instead of replaying the old one.
-        from plugins.memory.honcho.client import identity_for_host
-
-        fresh_hosts = _read_config(path).get("hosts") or {}
-        fresh_block = (
-            fresh_hosts.get(host)
-            or fresh_hosts.get(identity_for_host(host))
-            or {}
-        )
+        fresh_block = (_read_config(path).get("hosts") or {}).get(host) or {}
         current = OAuthCredential.from_host_block(fresh_block) or cred
         if not current.is_expired(now=now):
             return current.access_token, current.access_token != cred.access_token

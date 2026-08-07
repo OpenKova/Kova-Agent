@@ -37,7 +37,7 @@ def _inherited_flag(parser, *args, **kwargs):
     return action
 
 
-_EPILOGUE = """"
+_EPILOGUE = """
 Examples:
     kova                        Start interactive chat
     kova chat -q "Hello"        Single query mode
@@ -147,6 +147,18 @@ def build_top_level_parser():
             "under model.provider — use `kova setup` or edit the file to change it."
         ),
     )
+    _inherited_flag(
+        parser,
+        "--reasoning",
+        default=None,
+        metavar="LEVEL",
+        help=(
+            "Reasoning effort for this invocation: none, minimal, low, medium, "
+            "high, xhigh, max, or ultra. Overrides agent.reasoning_effort in "
+            "config.yaml for this run only; the persistent level lives there "
+            "(or per-model under agent.reasoning_overrides)."
+        ),
+    )
     parser.add_argument(
         "-t",
         "--toolsets",
@@ -222,7 +234,7 @@ def build_top_level_parser():
         "--ignore-user-config",
         action="store_true",
         default=False,
-        help="Ignore ~/.hermes/config.yaml and fall back to built-in defaults (credentials in .env are still loaded)",
+        help="Ignore ~/.kova/config.yaml and fall back to built-in defaults (credentials in .env are still loaded)",
     )
     _inherited_flag(
         parser,
@@ -298,6 +310,17 @@ def build_top_level_parser():
         "-t", "--toolsets",
         default=argparse.SUPPRESS,
         help="Comma-separated toolsets to enable",
+    )
+    _inherited_flag(
+        chat_parser,
+        "--reasoning",
+        default=argparse.SUPPRESS,
+        metavar="LEVEL",
+        help=(
+            "Reasoning effort for this session: none, minimal, low, medium, "
+            "high, xhigh, max, or ultra. Overrides agent.reasoning_effort for "
+            "this run only (same levels as the /reasoning slash command)."
+        ),
     )
     _inherited_flag(
         chat_parser,
@@ -382,7 +405,7 @@ def build_top_level_parser():
         type=int,
         default=None,
         metavar="N",
-        help="Maximum tool-calling iterations per conversation turn (default: 90, or agent.max_turns in config)",
+        help="Maximum tool-calling iterations per conversation turn (default: 500, or agent.max_turns in config)",
     )
     _inherited_flag(
         chat_parser,
@@ -403,7 +426,7 @@ def build_top_level_parser():
         "--ignore-user-config",
         action="store_true",
         default=argparse.SUPPRESS,
-        help="Ignore ~/.hermes/config.yaml and fall back to built-in defaults (credentials in .env are still loaded). Useful for isolated CI runs, reproduction, and third-party integrations.",
+        help="Ignore ~/.kova/config.yaml and fall back to built-in defaults (credentials in .env are still loaded). Useful for isolated CI runs, reproduction, and third-party integrations.",
     )
     _inherited_flag(
         chat_parser,

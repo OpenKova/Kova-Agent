@@ -558,7 +558,7 @@ class _ThreadCountStore:
             self._counts = {}
             return
         try:
-            raw = self._path.read_text()
+            raw = self._path.read_text(encoding="utf-8")
             data = json.loads(raw) if raw.strip() else {}
         except json.JSONDecodeError as exc:
             logger.warning(
@@ -613,7 +613,7 @@ class _ThreadCountStore:
         try:
             self._path.parent.mkdir(parents=True, exist_ok=True)
             tmp = self._path.with_suffix(self._path.suffix + ".tmp")
-            tmp.write_text(json.dumps(self._counts, separators=(",", ":")))
+            tmp.write_text(json.dumps(self._counts, separators=(",", ":")), encoding="utf-8")
             os.replace(tmp, self._path)
         except OSError as exc:
             logger.warning(
@@ -3426,7 +3426,7 @@ def interactive_setup() -> None:
     The setup wizard at ``kova_cli/gateway.py`` calls this for plugin
     platforms instead of using the in-tree ``_PLATFORMS`` data block. The
     flow mirrors the in-tree built-ins: print the GCP setup instructions,
-    prompt for env vars, persist them to ``~/.hermes/.env`` so the next
+    prompt for env vars, persist them to ``~/.kova/.env`` so the next
     gateway restart picks them up.
     """
     from kova_cli.cli_output import (
@@ -3508,7 +3508,7 @@ def interactive_setup() -> None:
         save_env_value("GOOGLE_CHAT_HOME_CHANNEL", home.strip())
 
     print()
-    print_success("Google Chat configuration saved to ~/.hermes/.env")
+    print_success("Google Chat configuration saved to ~/.kova/.env")
     print_info("Restart the gateway: kova gateway restart")
 
 

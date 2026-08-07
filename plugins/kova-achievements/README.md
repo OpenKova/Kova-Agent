@@ -61,14 +61,14 @@ Version `0.2.x` expands the catalog to 60+ achievements, including model/provide
 Clone into your Kova plugins directory:
 
 ```bash
-git clone https://github.com/PCinkusz/kova-achievements ~/.hermes/plugins/kova-achievements
+git clone https://github.com/PCinkusz/kova-achievements ~/.kova/plugins/kova-achievements
 ```
 
 For local development, keep the repo elsewhere and symlink it:
 
 ```bash
 git clone https://github.com/PCinkusz/kova-achievements ~/kova-achievements
-ln -s ~/kova-achievements ~/.hermes/plugins/kova-achievements
+ln -s ~/kova-achievements ~/.kova/plugins/kova-achievements
 ```
 
 Then rescan dashboard plugins:
@@ -84,7 +84,7 @@ If backend API routes 404, restart `kova dashboard`; plugin APIs are mounted at 
 If you installed with git:
 
 ```bash
-cd ~/.hermes/plugins/kova-achievements
+cd ~/.kova/plugins/kova-achievements
 git pull --ff-only
 curl http://127.0.0.1:9119/api/dashboard/plugins/rescan
 ```

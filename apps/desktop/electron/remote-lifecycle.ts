@@ -16,7 +16,7 @@
  *   - clean up a stale dashboard only when it is provably ours.
  *
  * No `import 'electron'` so it's unit-testable with `node --test`. main.ts wires
- * the real SshConnection, fetch, adoptServedDashboardToken, and waitForKova in.
+ * the real SshConnection, fetch, adoptServedDashboardToken, and waitForHermes in.
  *
  * The minted KOVA_DASHBOARD_SESSION_TOKEN is the SPAWN credential. After
  * readiness the caller runs served-token adoption against the tunneled baseUrl
@@ -33,7 +33,7 @@ const LOCKFILE_SCHEMA_VERSION = 2
 // args, served-token reconciliation). A mismatch forces a clean respawn.
 const PROTOCOL_VERSION = 1
 const READY_RE = /^KOVA_(?:BACKEND|DASHBOARD)_READY port=(\d+)/m
-const REMOTE_LOCK_DIR = '~/.hermes/desktop-ssh'
+const REMOTE_LOCK_DIR = '~/.kova/desktop-ssh'
 const SUPPORTED_REMOTE_OS = new Set(['Linux', 'Darwin'])
 const DEFAULT_READY_TIMEOUT_MS = 45_000
 const READY_POLL_INTERVAL_MS = 750
@@ -126,7 +126,7 @@ function expandRemotePath(p) {
 // (throws a path-naming error if not executable — never silently falls back to a
 // different install). A BLANK path auto-detects: login-shell `command -v` (a
 // non-login `ssh host cmd` PATH misses user installs), then known install paths.
-async function locateKova(ssh, remoteKovaPath) {
+async function locateHermes(ssh, remoteHermesPath) {
   const resolveLauncher = async (candidate: string) => {
     const script =
       'import os,shlex,sys\n' +
@@ -159,13 +159,13 @@ async function locateKova(ssh, remoteKovaPath) {
     }
   }
 
-  if (remoteKovaPath) {
-    if (await isExecutable(remoteKovaPath)) {
-      return resolveLauncher(remoteKovaPath)
+  if (remoteHermesPath) {
+    if (await isExecutable(remoteHermesPath)) {
+      return resolveLauncher(remoteHermesPath)
     }
 
     const err: any = new Error(
-      `The Kova path you set is not an executable on the remote host: "${remoteKovaPath}". ` +
+      `The Kova path you set is not an executable on the remote host: "${remoteHermesPath}". ` +
         'Check the path (it must be the full path to the `kova` binary on the remote, e.g. ' +
         '~/kova-agent/.venv/bin/kova), or clear it to auto-detect.'
     )
@@ -190,7 +190,7 @@ async function locateKova(ssh, remoteKovaPath) {
   // command locations (scripts/install.sh) — per-user, root/FHS, legacy venv.
   candidates.push('~/.local/bin/kova')
   candidates.push('/usr/local/bin/kova')
-  candidates.push('~/.hermes/hermes-agent/venv/bin/kova')
+  candidates.push('~/.kova/kova-agent/venv/bin/kova')
 
   for (const candidate of candidates) {
     if (!candidate) {
@@ -215,9 +215,9 @@ async function locateKova(ssh, remoteKovaPath) {
 // Probe the resolved binary's version string (first line of `<kova> --version`,
 // e.g. "Kova Agent v0.18.2 ..."), or '' on failure. Surfaces WHICH kova a
 // connection uses, so a stale/unexpected install is visible.
-async function probeKovaVersion(ssh, kovaPath) {
+async function probeHermesVersion(ssh, hermesPath) {
   try {
-    const out = (await ssh.exec(`${expandRemotePath(kovaPath)} --version 2>&1`)).trim()
+    const out = (await ssh.exec(`${expandRemotePath(hermesPath)} --version 2>&1`)).trim()
 
     return (out.split('\n')[0] || '').trim()
   } catch {
@@ -243,13 +243,13 @@ async function probeRemotePlatform(ssh) {
 }
 
 // The HERMES_HOME the remote dashboard will use (explicit env wins, else
-// ~/.hermes). Recorded in the lockfile so a future reuse can tell it's the same
+// ~/.kova). Recorded in the lockfile so a future reuse can tell it's the same
 // state store; best-effort.
-async function probeRemoteKovaHome(ssh) {
+async function probeRemoteHermesHome(ssh) {
   try {
-    const out = (await ssh.exec('echo "${HERMES_HOME:-$HOME/.hermes}"')).trim().split('\n').pop()
+    const out = (await ssh.exec('echo "${HERMES_HOME:-$HOME/.kova}"')).trim().split('\n').pop()
 
-    return out || '~/.hermes'
+    return out || '~/.kova'
   } catch (cause) {
     const error: any = new Error('Could not resolve the remote Kova home.')
     error.kind = 'transient-transport-error'
@@ -318,7 +318,7 @@ async function readLockfile(ssh, ownershipId) {
     return null
   }
 
-  for (const field of ['profile', 'kovaPath', 'kovaHome', 'logPath', 'startedAt']) {
+  for (const field of ['profile', 'hermesPath', 'hermesHome', 'logPath', 'startedAt']) {
     if (typeof parsed[field] !== 'string' || parsed[field].length > 1024) {
       return null
     }
@@ -368,8 +368,8 @@ async function remotePidAlive(ssh, pid) {
 
 // A pid is "provably ours" only if its remote cmdline carries our dashboard
 // args — never kill a pid we can't positively identify as our dashboard.
-async function pidIsOurDashboard(ssh, pid, spawnNonce, kovaPath = '') {
-  if (!pid || !/^[0-9a-f]{16}$/.test(String(spawnNonce || '')) || !kovaPath) {
+async function pidIsOurDashboard(ssh, pid, spawnNonce, hermesPath = '') {
+  if (!pid || !/^[0-9a-f]{16}$/.test(String(spawnNonce || '')) || !hermesPath) {
     return false
   }
 
@@ -377,7 +377,7 @@ async function pidIsOurDashboard(ssh, pid, spawnNonce, kovaPath = '') {
     const script =
       'import os,shlex,subprocess,sys\n' +
       `pid=${Number(pid)}\n` +
-      `expected=os.path.expanduser(${shq(kovaPath)})\n` +
+      `expected=os.path.expanduser(${shq(hermesPath)})\n` +
       `nonce=${shq(spawnNonce)}\n` +
       'try:\n' +
       ' raw=open(f"/proc/{pid}/cmdline","rb").read()\n' +
@@ -408,7 +408,7 @@ async function pidIsOurDashboard(ssh, pid, spawnNonce, kovaPath = '') {
 
 // Kill the stale dashboard ONLY if provably ours, then drop the lockfile.
 async function cleanupStale(ssh, ownershipId, lock, pidAlive = true) {
-  if (pidAlive && lock && (await pidIsOurDashboard(ssh, lock.pid, lock.spawnNonce, lock.kovaPath))) {
+  if (pidAlive && lock && (await pidIsOurDashboard(ssh, lock.pid, lock.spawnNonce, lock.hermesPath))) {
     try {
       const result = (
         await ssh.exec(
@@ -443,8 +443,8 @@ async function cleanupStale(ssh, ownershipId, lock, pidAlive = true) {
 // Detach so the backend survives the SSH channel closing: setsid (Linux)
 // starts a new session; macOS has no setsid, so fall back to nohup (HUP-immune;
 // fd-detachment is already handled by </dev/null + redirect + &).
-function buildSpawnCommand(kovaPath, profile, opts: any = {}) {
-  const kova = expandRemotePath(kovaPath)
+function buildSpawnCommand(hermesPath, profile, opts: any = {}) {
+  const kova = expandRemotePath(hermesPath)
   const profileArgs = profile ? `--profile ${shq(profile)} ` : ''
   const logPath = expandRemotePath(opts.logPath)
   const tokenFilePath = opts.tokenFilePath
@@ -459,8 +459,8 @@ function buildSpawnCommand(kovaPath, profile, opts: any = {}) {
   )
 }
 
-async function remoteSupportsSshOwnership(ssh, kovaPath) {
-  const kova = expandRemotePath(kovaPath)
+async function remoteSupportsSshOwnership(ssh, hermesPath) {
+  const kova = expandRemotePath(hermesPath)
 
   const out = await ssh.exec(
     `help="$(${kova} serve --help 2>&1)"; ` +
@@ -508,8 +508,8 @@ async function scrapeReadyPort(ssh, logPath, { timeoutMs = DEFAULT_READY_TIMEOUT
   throw err
 }
 
-async function spawnRemoteDashboard(ssh, { kovaPath, profile, token, ownershipId }) {
-  if (!(await remoteSupportsSshOwnership(ssh, kovaPath))) {
+async function spawnRemoteDashboard(ssh, { hermesPath, profile, token, ownershipId }) {
+  if (!(await remoteSupportsSshOwnership(ssh, hermesPath))) {
     const err: any = new Error(
       'The remote Kova install does not support --ssh-session-token-file and --ssh-owner-nonce. ' +
         'Update Kova on the remote host to continue using Desktop SSH mode.'
@@ -569,7 +569,7 @@ async function spawnRemoteDashboard(ssh, { kovaPath, profile, token, ownershipId
   let out
 
   try {
-    out = await ssh.exec(buildSpawnCommand(kovaPath, profile, { spawnNonce, tokenFilePath, logPath }))
+    out = await ssh.exec(buildSpawnCommand(hermesPath, profile, { spawnNonce, tokenFilePath, logPath }))
   } catch (error) {
     try {
       await ssh.exec(`rm -f ${expandRemotePath(tokenFilePath)}`)
@@ -653,7 +653,7 @@ async function openForward(deps, remotePort, attempts = 3) {
 
 /**
  * Establish (or reuse) a remote dashboard and a tunnel to it. `deps` injects the
- * opened SshConnection, forward/pickLocalPort/waitForKova, a token-gated
+ * opened SshConnection, forward/pickLocalPort/waitForHermes, a token-gated
  * probeReuseProof, and adoptServedToken. Returns the connection descriptor
  * { baseUrl, token, tokenFingerprint, remotePort, localPort, pid, reused, platform }.
  */
@@ -676,11 +676,11 @@ async function connect(deps) {
   const {
     ssh,
     profile = '',
-    remoteKovaPath = '',
+    remoteHermesPath = '',
     ownershipId,
     forward,
     pickLocalPort,
-    waitForKova,
+    waitForHermes,
     probeReuseProof,
     adoptServedToken,
     rememberLog = () => {},
@@ -693,30 +693,31 @@ async function connect(deps) {
   assertNotAborted(signal)
   const platform = await probeRemotePlatform(ssh)
   log(`remote platform ${platform.os}/${platform.arch}`)
-  const kovaPath = await locateKova(ssh, remoteKovaPath)
-  log(`located kova at ${kovaPath}`)
-  const kovaVersion = await probeKovaVersion(ssh, kovaPath)
+  const hermesPath = await locateHermes(ssh, remoteHermesPath)
+  log(`located kova at ${hermesPath}`)
+  const hermesVersion = await probeHermesVersion(ssh, hermesPath)
 
-  if (kovaVersion) {
-    log(`remote kova version: ${kovaVersion}`)
+  if (hermesVersion) {
+    log(`remote kova version: ${hermesVersion}`)
   }
 
   const reuseToken = deps.reuseToken || ''
-  const kovaHome = await probeRemoteKovaHome(ssh)
+  const hermesHome = await probeRemoteHermesHome(ssh)
   const lock = await readLockfile(ssh, ownershipId)
 
   if (lock) {
     const pidAlive = await remotePidAlive(ssh, lock.pid)
-    const owned = pidAlive && (await pidIsOurDashboard(ssh, lock.pid, lock.spawnNonce, lock.kovaPath))
+    const owned = pidAlive && (await pidIsOurDashboard(ssh, lock.pid, lock.spawnNonce, lock.hermesPath))
 
     const reusable =
       pidAlive &&
       owned &&
       lock.port > 0 &&
+      lock.profile === profile &&
       Boolean(reuseToken) &&
       lock.tokenFingerprint === fingerprintToken(reuseToken) &&
-      lock.kovaPath === kovaPath &&
-      lock.kovaHome === kovaHome
+      lock.hermesPath === hermesPath &&
+      lock.hermesHome === hermesHome
 
     if (reusable) {
       assertNotAborted(signal)
@@ -761,8 +762,8 @@ async function connect(deps) {
             pid: lock.pid,
             reused: true,
             platform,
-            kovaPath,
-            kovaVersion,
+            hermesPath,
+            hermesVersion,
             ownershipId,
             spawnNonce: lock.spawnNonce,
             logPath: lock.logPath
@@ -786,7 +787,7 @@ async function connect(deps) {
   const spawnToken = mintToken()
 
   const { pid, spawnNonce, logPath, tokenFilePath } = await spawnRemoteDashboard(ssh, {
-    kovaPath,
+    hermesPath,
     profile,
     token: spawnToken,
     ownershipId
@@ -800,8 +801,8 @@ async function connect(deps) {
     pid,
     port: 0,
     profile,
-    kovaPath,
-    kovaHome,
+    hermesPath,
+    hermesHome,
     logPath,
     tokenFingerprint: fingerprintToken(spawnToken),
     protocolVersion: PROTOCOL_VERSION,
@@ -829,7 +830,7 @@ async function connect(deps) {
     localPort = await openForward(deps, remotePort)
     assertNotAborted(signal)
     const baseUrl = `http://127.0.0.1:${localPort}`
-    await waitForKova(baseUrl, spawnToken)
+    await waitForHermes(baseUrl, spawnToken)
     assertNotAborted(signal)
 
     const token = await adoptOwnedServedToken(adoptServedToken, baseUrl, spawnToken, ssh, pid, 'remote dashboard')
@@ -848,8 +849,8 @@ async function connect(deps) {
       pid,
       reused: false,
       platform,
-      kovaPath,
-      kovaVersion,
+      hermesPath,
+      hermesVersion,
       ownershipId,
       spawnNonce,
       logPath
@@ -879,15 +880,15 @@ export {
   expandRemotePath,
   fingerprintToken,
   isForwardBindCollision,
-  locateKova,
+  locateHermes,
   LOCKFILE_SCHEMA_VERSION,
   lockfilePath,
   mintToken,
   openForward,
   ownershipDirectory,
   pidIsOurDashboard,
-  probeKovaVersion,
-  probeRemoteKovaHome,
+  probeHermesVersion,
+  probeRemoteHermesHome,
   probeRemotePlatform,
   PROTOCOL_VERSION,
   readLockfile,

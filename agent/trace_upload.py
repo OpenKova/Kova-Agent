@@ -162,7 +162,7 @@ def build_trace_jsonl(
         if cwd:
             r = subprocess.run(
                 ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-                capture_output=True, text=True, timeout=3, cwd=cwd,
+                capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=3, cwd=cwd,
             )
             if r.returncode == 0:
                 git_branch = r.stdout.strip()
@@ -258,7 +258,7 @@ _NO_TOKEN_MESSAGE = (
     "\n"
     "1. Create a token with WRITE access at https://huggingface.co/settings/tokens\n"
     "   (New token -> type \"Write\" -> copy it).\n"
-    "2. Add it to your environment as HF_TOKEN (e.g. in ~/.hermes/.env):\n"
+    "2. Add it to your environment as HF_TOKEN (e.g. in ~/.kova/.env):\n"
     "     HF_TOKEN=hf_xxxxxxxxxxxxxxxxxxxx\n"
     "3. Run /upload-trace again (or `kova trace upload`)."
 )

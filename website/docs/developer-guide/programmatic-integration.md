@@ -28,7 +28,8 @@ Full lifecycle, event bridge, and approval flow: [ACP Internals](./acp-internals
 
 ```bash
 kova acp                  # serve ACP on stdio
-kova acp --bootstrap      # print install snippet for an ACP-capable IDE
+kova acp --check          # verify ACP dependencies and adapter imports
+kova acp --setup          # interactive provider/model setup for ACP terminal auth
 ```
 
 ---
@@ -49,7 +50,8 @@ clarify.respond         sudo.respond            secret.respond
 approval.respond        config.set / config.get commands.catalog
 command.resolve         command.dispatch        cli.exec
 reload.mcp              reload.env              process.stop
-delegation.status       subagent.interrupt      spawn_tree.save / list / load
+delegation.status       subagent.interrupt      subagent.steer
+spawn_tree.save / list / load
 terminal.resize         clipboard.paste         image.attach
 ```
 
@@ -95,10 +97,35 @@ POST /v1/runs/{id}/approval      Resolve a pending approval
 POST /v1/runs/{id}/stop          Interrupt the run
 GET  /v1/capabilities            Machine-readable feature flags
 GET  /v1/models                  Lists kova-agent
+GET  /api/model/options          Provider-aware picker inventory
 GET  /health, /health/detailed
 ```
 
 Setup, headers (`X-Kova-Session-Id`, `X-Kova-Session-Key`), and frontend wiring: [API Server](../user-guide/features/api-server).
+
+### Model catalog surfaces
+
+The OpenAI-compatible API intentionally keeps `GET /v1/models` minimal: it is
+the compatibility endpoint frontends expect, not the full Kova provider/model
+picker catalog.
+
+If an external control plane needs Kova' curated provider rows, per-model
+pricing, or capability hints, use one of the authenticated picker surfaces:
+
+- API server REST: `GET /api/model/options` with the API-server bearer key
+- Dashboard backend REST: `GET /api/model/options` with `X-Kova-Session-Token`
+- TUI gateway RPC: `model.options`
+
+Those surfaces share the same payload builder and the same custom-provider
+probe policy:
+
+- Normal open: probe only the current custom provider so offline saved
+  endpoints do not stall the picker.
+- Explicit refresh (`refresh=1` or `refresh: true`): bust the provider-model
+  cache and probe all saved custom providers so live catalogs repopulate fully.
+
+Use `/v1/models` for OpenAI-client compatibility. Use `/api/model/options` or
+`model.options` when you are building a Kova-aware model picker.
 
 ---
 

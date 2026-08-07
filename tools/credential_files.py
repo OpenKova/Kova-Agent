@@ -61,7 +61,7 @@ def _resolve_kova_home() -> Path:
 
 def register_credential_file(
     relative_path: str,
-    container_base: str = "/root/.hermes",
+    container_base: str = "/root/.kova",
 ) -> bool:
     """Register a credential file for mounting into remote sandboxes.
 
@@ -150,7 +150,7 @@ def register_credential_file(
 
 def register_credential_files(
     entries: list,
-    container_base: str = "/root/.hermes",
+    container_base: str = "/root/.kova",
 ) -> List[str]:
     """Register multiple credential files from skill frontmatter entries.
 
@@ -206,7 +206,7 @@ def _load_config_files() -> List[Dict[str, str]]:
                         continue
                     resolved_path = host_path.resolve()
                     if resolved_path.is_file():
-                        container_path = f"/root/.hermes/{rel}"
+                        container_path = f"/root/.kova/{rel}"
                         result.append({
                             "host_path": str(resolved_path),
                             "container_path": container_path,
@@ -245,7 +245,7 @@ def get_credential_file_mounts() -> List[Dict[str, str]]:
 
 
 def get_skills_directory_mount(
-    container_base: str = "/root/.hermes",
+    container_base: str = "/root/.kova",
 ) -> list[Dict[str, str]]:
     """Return mount info for all skill directories (local + external).
 
@@ -336,7 +336,7 @@ def _safe_skills_path(skills_dir: Path) -> str:
 
 
 def iter_skills_files(
-    container_base: str = "/root/.hermes",
+    container_base: str = "/root/.kova",
 ) -> List[Dict[str, str]]:
     """Yield individual (host_path, container_path) entries for skills files.
 
@@ -395,11 +395,16 @@ _CACHE_DIRS: list[tuple[str, str]] = [
     ("cache/screenshots", "browser_screenshots"),
     ("cache/web", "web_cache"),
     ("cache/delegation", "delegation_cache"),
+    # Desktop/clipboard/PDF uploads land in the flat top-level ``images/`` dir
+    # (tui_gateway attach RPCs), not under ``cache/``. Mount it so vision can
+    # reach uploads inside sandbox containers (#69575). No legacy alias exists,
+    # so both tuple slots are ``images``.
+    ("images", "images"),
 ]
 
 
 def get_cache_directory_mounts(
-    container_base: str = "/root/.hermes",
+    container_base: str = "/root/.kova",
 ) -> List[Dict[str, str]]:
     """Return mount entries for each cache directory that exists on disk.
 
@@ -424,7 +429,7 @@ def get_cache_directory_mounts(
 
 def map_cache_path_to_container(
     host_path: str,
-    container_base: str = "/root/.hermes",
+    container_base: str = "/root/.kova",
 ) -> Optional[str]:
     """Map a host cache path to its mounted path under *container_base*.
 
@@ -448,7 +453,7 @@ def map_cache_path_to_container(
 
 def from_agent_visible_cache_path(
     container_path: str,
-    container_base: str = "/root/.hermes",
+    container_base: str = "/root/.kova",
 ) -> str:
     """Translate a sandbox/container cache path back to its host path.
 
@@ -472,7 +477,7 @@ def from_agent_visible_cache_path(
 
 def to_agent_visible_cache_path(
     host_path: str,
-    container_base: str = "/root/.hermes",
+    container_base: str = "/root/.kova",
 ) -> str:
     """Translate a host cache path to its mounted path inside the sandbox.
 
@@ -481,7 +486,7 @@ def to_agent_visible_cache_path(
     translation (only Docker for now).
     """
     # Only Docker backend requires translation at this time.  Other backends
-    # (Modal, Daytona) use different mount semantics and will be
+    # (Modal, Daytona, Vercel) use different mount semantics and will be
     # addressed separately if needed.  Backend is identified by TERMINAL_ENV
     # (same env var tools/terminal_tool.py reads in _get_environment_config).
     if os.environ.get("TERMINAL_ENV", "local") != "docker":
@@ -492,7 +497,7 @@ def to_agent_visible_cache_path(
 
 
 def iter_cache_files(
-    container_base: str = "/root/.hermes",
+    container_base: str = "/root/.kova",
 ) -> List[Dict[str, str]]:
     """Return individual (host_path, container_path) entries for cache files.
 

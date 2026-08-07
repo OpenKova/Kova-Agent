@@ -124,7 +124,7 @@ def test_install_ps1_repository_stage_recovers_from_autostash_conflict(
             "-NonInteractive",
             "-InstallDir",
             str(managed),
-            "-KovaHome",
+            "-HermesHome",
             str(tmp_path / "kova-home"),
         ],
         cwd=tmp_path,

@@ -8,13 +8,13 @@ description: "Durable SQLite-backed task board for coordinating multiple Kova pr
 
 > **Want a walkthrough?** Read the [Kanban tutorial](./kanban-tutorial) — four user stories (solo dev, fleet farming, role pipeline with retry, circuit breaker) with dashboard screenshots of each. This page is the reference; the tutorial is the narrative.
 
-Kova Kanban is a durable task board, shared across all your Kova profiles, that lets multiple named agents collaborate on work without fragile in-process subagent swarms. Every task is a row in `~/.hermes/kanban.db`; every handoff is a row anyone can read and write; every worker is a full OS process with its own identity.
+Kova Kanban is a durable task board, shared across all your Kova profiles, that lets multiple named agents collaborate on work without fragile in-process subagent swarms. Every task is a row in `~/.kova/kanban.db`; every handoff is a row anyone can read and write; every worker is a full OS process with its own identity.
 
 ### Two surfaces: the model talks through tools, you talk through the CLI
 
-The board has two front doors, both backed by the same `~/.hermes/kanban.db`:
+The board has two front doors, both backed by the same `~/.kova/kanban.db`:
 
-- **Agents drive the board through a dedicated `kanban_*` toolset** — `kanban_show`, `kanban_list`, `kanban_complete`, `kanban_block`, `kanban_heartbeat`, `kanban_comment`, `kanban_create`, `kanban_link`, `kanban_unblock`. The dispatcher spawns each worker with these tools already in its schema; orchestrator profiles can also enable the `kanban` toolset explicitly. The model reads and routes tasks by calling tools directly, *not* by shelling out to `kova kanban`. See [How workers interact with the board](#how-workers-interact-with-the-board) below.
+- **Agents drive the board through a dedicated `kanban_*` toolset** — `kanban_show`, `kanban_list`, `kanban_complete`, `kanban_block`, `kanban_heartbeat`, `kanban_comment`, `kanban_attach`, `kanban_attach_url`, `kanban_attachments`, `kanban_create`, `kanban_link`, `kanban_unblock`. The dispatcher spawns each worker with these tools already in its schema; orchestrator profiles can also enable the `kanban` toolset explicitly. The model reads and routes tasks by calling tools directly, *not* by shelling out to `kova kanban`. See [How workers interact with the board](#how-workers-interact-with-the-board) below.
 - **You (and scripts, and cron) drive the board through `kova kanban …`** on the CLI, `/kanban …` as a slash command, or the dashboard. These are for humans and automation — the places without a tool-calling model behind them.
 
 Both surfaces route through the same `kanban_db` layer, so reads see a consistent view and writes can't drift. The rest of this page shows CLI examples because they're easy to copy-paste, but every CLI verb has a tool-call equivalent the model uses.
@@ -63,7 +63,7 @@ They coexist: a kanban worker may call `delegate_task` internally during its run
 - **Link** — `task_links` row recording a parent → child dependency. The dispatcher promotes `todo → ready` when all parents are `done`.
 - **Comment** — the inter-agent protocol. Agents and humans append comments; when a worker is (re-)spawned it reads the full comment thread as part of its context.
 - **Workspace** — the directory a worker operates in. Three kinds:
-  - `scratch` (default) — fresh tmp dir under `~/.hermes/kanban/workspaces/<id>/` (or `~/.hermes/kanban/boards/<slug>/workspaces/<id>/` on non-default boards). **Deleted when the task completes** — scratch is ephemeral by design. Files explicitly declared through `kanban_complete(artifacts=[...])` are copied into durable per-task attachment storage before cleanup; existing deliverable paths in legacy completion summaries receive the same treatment. Other scratch files are removed. A missing declared scratch artifact keeps the task in-flight so the worker can correct the path and retry. Use `worktree:` or `dir:<path>` when the whole workspace should remain available. The first time a scratch workspace is created on an install, the dispatcher logs a warning and emits a `tip_scratch_workspace` event on the task (visible via `kova kanban show <id>`).
+  - `scratch` (default) — fresh tmp dir under `~/.kova/kanban/workspaces/<id>/` (or `~/.kova/kanban/boards/<slug>/workspaces/<id>/` on non-default boards). **Deleted when the task completes** — scratch is ephemeral by design. Files explicitly declared through `kanban_complete(artifacts=[...])` are copied into durable per-task attachment storage before cleanup; existing deliverable paths in legacy completion summaries receive the same treatment. Other scratch files are removed. A missing declared scratch artifact keeps the task in-flight so the worker can correct the path and retry. Use `worktree:` or `dir:<path>` when the whole workspace should remain available. The first time a scratch workspace is created on an install, the dispatcher logs a warning and emits a `tip_scratch_workspace` event on the task (visible via `kova kanban show <id>`).
   - `dir:<path>` — an existing shared directory (Obsidian vault, mail ops dir, per-account folder). **Must be an absolute path.** Relative paths like `dir:../tenants/foo/` are rejected at dispatch because they'd resolve against whatever CWD the dispatcher happens to be in, which is ambiguous and a confused-deputy escape vector. The path is otherwise trusted — it's your box, your filesystem, the worker runs with your uid. This is the trusted-local-user threat model; kanban is single-host by design. **Preserved on completion.**
   - `worktree` — a git worktree under `.worktrees/<id>/` for coding tasks. Use `worktree:<path>` to pin the exact target path. Worker-side `git worktree add` creates it, using `--branch` when provided. **Preserved on completion.**
 - **Dispatcher** — a long-lived loop that, every N seconds (default 60): reclaims stale claims, reclaims crashed workers (PID gone but TTL not yet expired), promotes ready tasks, atomically claims, spawns assigned profiles. Runs **inside the gateway** by default (`kanban.dispatch_in_gateway: true`). One dispatcher sweeps all boards per tick; workers are spawned with `KOVA_KANBAN_BOARD` pinned so they can't see other boards. After `kanban.failure_limit` consecutive spawn failures on the same task (default: 2) the dispatcher auto-blocks it with the last error as the reason — prevents thrashing on tasks whose profile doesn't exist, workspace can't mount, etc.
@@ -73,13 +73,13 @@ They coexist: a kanban worker may call `delegate_task` internally during its run
 
 Boards let you separate unrelated streams of work — one per project, repo,
 or domain — into isolated queues. A new install has exactly one board
-called `default` (DB at `~/.hermes/kanban.db` for back-compat). Users who
+called `default` (DB at `~/.kova/kanban.db` for back-compat). Users who
 only want one stream of work never need to know about boards; the feature
 is opt-in.
 
 Per-board isolation is absolute:
 
-- Separate SQLite DB per board (`~/.hermes/kanban/boards/<slug>/kanban.db`).
+- Separate SQLite DB per board (`~/.kova/kanban/boards/<slug>/kanban.db`).
 - Separate `workspaces/` and `logs/` directories.
 - Workers spawned for a task see **only** their board's tasks — the
   dispatcher sets `KOVA_KANBAN_BOARD` in the child env and every
@@ -125,7 +125,7 @@ Board resolution order (highest precedence first):
 1. Explicit `--board <slug>` on the CLI call.
 2. `KOVA_KANBAN_BOARD` env var (set by the dispatcher when spawning a
    worker, so workers can't see other boards).
-3. `~/.hermes/kanban/current` — the slug persisted by `kova kanban
+3. `~/.kova/kanban/current` — the slug persisted by `kova kanban
    boards switch`.
 4. `default`.
 
@@ -296,6 +296,9 @@ parent, missing input, unmet capability) before unblocking, or raise
 | `kanban_block` | Stop work and route by why: `kind=dependency` (waits in `todo`, auto-resumes), `needs_input`/`capability`/`transient` (surface to a human). Repeated same-kind re-blocks auto-escalate to `triage`. | `reason` |
 | `kanban_heartbeat` | Signal liveness during long operations. Pure side-effect. | — |
 | `kanban_comment` | Append a durable note to the task thread. | `task_id`, `body` |
+| `kanban_attach` | Attach a file to a task by passing its bytes inline (base64); stored under the task's attachments dir (25 MB cap). | file bytes + name |
+| `kanban_attach_url` | Attach a file to a task by URL. | `url` |
+| `kanban_attachments` | List a task's attachments. | — |
 | `kanban_create` | (Orchestrators) fan out into child tasks with an `assignee`, optional `parents`, `skills`, etc. | `title`, `assignee` |
 | `kanban_link` | (Orchestrators) add a `parent_id → child_id` dependency edge after the fact. | `parent_id`, `child_id` |
 | `kanban_unblock` | (Orchestrators) move a blocked task to `ready` when all parents are done, or `todo` while any parent remains open. | `task_id` |
@@ -341,7 +344,7 @@ The "(Orchestrators)" tools — `kanban_list`, `kanban_create`, `kanban_link`, `
 
 Three reasons:
 
-1. **Backend portability.** Workers whose terminal tool points at a remote backend (Docker / Modal / Singularity / SSH) would run `kova kanban complete` *inside* the container, where `kova` isn't installed and `~/.hermes/kanban.db` isn't mounted. The kanban tools run in the agent's own Python process and always reach `~/.hermes/kanban.db` regardless of terminal backend.
+1. **Backend portability.** Workers whose terminal tool points at a remote backend (Docker / Modal / Singularity / SSH) would run `kova kanban complete` *inside* the container, where `kova` isn't installed and `~/.kova/kanban.db` isn't mounted. The kanban tools run in the agent's own Python process and always reach `~/.kova/kanban.db` regardless of terminal backend.
 2. **No shell-quoting fragility.** Passing `--metadata '{"files": [...]}'` through shlex + argparse is a latent footgun. Structured tool args skip it entirely.
 3. **Better errors.** Tool results are structured JSON the model can reason about, not stderr strings it has to parse.
 
@@ -454,6 +457,33 @@ kova kanban create "audit auth flow" \
 
 The dispatcher emits one `--skills <name>` flag per skill listed, so the worker spawns with all of them loaded on top of the auto-injected kanban guidance. The skill names must match skills that are actually installed on the assignee's profile (run `kova skills list` to see what's available); there's no runtime install.
 
+### Per-task model override
+
+Pin a task's worker to a specific model (and optionally provider), independent of the assignee profile's default:
+
+```bash
+# At creation
+kova kanban create "hard refactor" --assignee coder \
+    --model claude-opus-4.6 --provider anthropic
+
+# Or later — takes effect on the next dispatch
+kova kanban set-model t_abcd claude-opus-4.6 --provider anthropic
+kova kanban set-model t_abcd none    # clear the override
+```
+
+The dispatcher spawns the worker with the pinned model (`--provider <name>` is passed when set; `--provider` requires a model). The dashboard's per-task model dropdown drives the same `model_override` field. With no override, the worker uses its profile's configured model.
+
+### Lifecycle plugin hooks
+
+Board transitions fire [plugin hooks](/user-guide/features/hooks#plugin-hooks): `kanban_task_claimed`, `kanban_task_completed`, and `kanban_task_blocked`, each carrying `task_id` and `profile_name`. Hooks fire **after** the board DB change commits, so callbacks always see durable state. Note the process split: `kanban_task_claimed` fires in the **dispatcher** process, while `kanban_task_completed`/`kanban_task_blocked` fire in the **worker** process — register the hook in the dispatcher profile to observe every transition centrally.
+
+```python
+def register(ctx):
+    def on_blocked(task_id=None, profile_name=None, **kw):
+        ctx.dispatch_tool("terminal", {"command": f"notify-send 'kanban blocked: {task_id}'"})
+    ctx.register_hook("kanban_task_blocked", on_blocked)
+```
+
 ### Goal-mode cards (`--goal`)
 
 By default each worker gets **one shot** at its card — do the work, call `kanban_complete`/`kanban_block`, exit. Pass `--goal` (CLI) or `goal_mode=True` (the `kanban_create` tool / dashboard) to instead run that worker in a **goal loop**, the same Ralph-style engine behind the `/goal` slash command: after every turn an auxiliary judge checks the worker's output against the card's title + body (treated as the acceptance criteria), and if the work isn't done — and the turn budget remains — the worker keeps going **in the same session** until the judge agrees, the worker terminates the task itself, or the budget runs out (which **blocks** the card for human review rather than exiting silently).
@@ -467,6 +497,10 @@ kova kanban create "Translate the docs site to French" \
 ```
 
 Use it for open-ended, multi-step, or "keep going until X is true" cards. Skip it for cheap one-shot work — the per-turn judge overhead isn't worth it, and the dispatcher's existing retry/circuit-breaker already handles transient worker failures. The judge is only as good as your goal text, so write the body as **explicit acceptance criteria**.
+
+:::note Goal-mode cards borrow the `/goal` engine — they don't connect to it
+`--goal` runs the continuation loop *inside that one card's worker session*. It shares the engine with the [`/goal` slash command](./goals), not the state: setting a `/goal` in a chat session never creates, claims, or moves a kanban card, and a goal-mode card's loop is invisible to any chat session's `/goal status`. If you want this conversation to keep iterating, use [`/goal`](./goals); if you want work on the board, create a card.
+:::
 
 ### How the orchestrator behaves
 
@@ -541,7 +575,7 @@ The decomposer's routing decisions depend on profile descriptions, which is a pe
 
 `kanban.orchestrator_profile` does not load that profile's prompt, skills, or custom logic into the decomposition call. It controls who owns the root/orchestration task after fan-out. To change the decomposer's model/provider, configure `auxiliary.kanban_decomposer`. To use a profile's custom task-splitting logic instead of the built-in decomposer, switch to Manual mode and have that profile create or decompose tasks explicitly.
 
-Config knobs (all under `kanban:` in `~/.hermes/config.yaml`):
+Config knobs (all under `kanban:` in `~/.kova/config.yaml`):
 
 | Key | Default | Purpose |
 |---|---|---|
@@ -578,7 +612,7 @@ The GUI is strictly a **read-through-the-DB + write-through-kanban_db** layer wi
            │                                                  │
            ▼                                                  │
 ┌────────────────────────┐                                    │
-│  ~/.hermes/kanban.db   │ ───── append task_events ──────────┘
+│  ~/.kova/kanban.db   │ ───── append task_events ──────────┘
 │  (WAL, shared)         │
 └────────────────────────┘
 ```
@@ -613,7 +647,7 @@ Every handler is a thin wrapper — the plugin is ~700 lines of Python (router +
 
 ### Dashboard config
 
-Any of these keys under `dashboard.kanban` in `~/.hermes/config.yaml` changes the tab's defaults — the plugin reads them at load time via `GET /config`:
+Any of these keys under `dashboard.kanban` in `~/.kova/config.yaml` changes the tab's defaults — the plugin reads them at load time via `GET /config`:
 
 ```yaml
 dashboard:
@@ -634,7 +668,7 @@ The WebSocket takes one additional step: it requires the dashboard's ephemeral s
 
 If you run `kova dashboard --host 0.0.0.0`, every plugin route — kanban included — becomes reachable from the network. **Don't do that on a shared host.** The board contains task bodies, comments, and workspace paths; an attacker reaching these routes gets read access to your entire collaboration surface and can also create / reassign / archive tasks.
 
-Tasks in `~/.hermes/kanban.db` are profile-agnostic on purpose (that's the coordination primitive). If you open the dashboard with `kova -p <profile> dashboard`, the board still shows tasks created by any other profile on the host. Same user owns all profiles, but this is worth knowing if multiple personas coexist.
+Tasks in `~/.kova/kanban.db` are profile-agnostic on purpose (that's the coordination primitive). If you open the dashboard with `kova -p <profile> dashboard`, the board still shows tasks created by any other profile on the host. Same user owns all profiles, but this is worth knowing if multiple personas coexist.
 
 ### Live updates
 
@@ -700,7 +734,7 @@ kova kanban dispatch [--dry-run] [--max N]           # one-shot pass
 kova kanban daemon --force                           # DEPRECATED — standalone dispatcher (use `kova gateway start` instead)
         [--failure-limit N] [--pidfile PATH] [-v]
 kova kanban stats [--json]                           # per-status + per-assignee counts
-kova kanban log <id> [--tail BYTES]                  # worker log from ~/.hermes/kanban/logs/
+kova kanban log <id> [--tail BYTES]                  # worker log from ~/.kova/kanban/logs/
 kova kanban notify-subscribe <id>                    # gateway bridge hook (used by /kanban in the gateway)
         --platform <name> --chat-id <id> [--thread-id <id>] [--user-id <id>]
 kova kanban notify-list [<id>] [--json]
@@ -794,7 +828,7 @@ Quote multi-word arguments the same way you would on a shell — `run_slash` par
 
 ### Mid-run usage: `/kanban` bypasses the running-agent guard
 
-The gateway normally queues slash commands and user messages while an agent is still thinking — that's what stops you from accidentally starting a second turn while the first is in flight. **`/kanban` is explicitly exempted from this guard.** The board lives in `~/.hermes/kanban.db`, not in the running agent's state, so reads (`list`, `show`, `context`, `tail`, `watch`, `stats`, `runs`) and writes (`comment`, `unblock`, `block`, `assign`, `archive`, `create`, `link`, …) all go through immediately, even mid-turn.
+The gateway normally queues slash commands and user messages while an agent is still thinking — that's what stops you from accidentally starting a second turn while the first is in flight. **`/kanban` is explicitly exempted from this guard.** The board lives in `~/.kova/kanban.db`, not in the running agent's state, so reads (`list`, `show`, `context`, `tail`, `watch`, `stats`, `runs`) and writes (`comment`, `unblock`, `block`, `assign`, `archive`, `create`, `link`, …) all go through immediately, even mid-turn.
 
 This is the whole point of the separation:
 
@@ -873,6 +907,30 @@ kova kanban notify-unsubscribe t_abcd \
 ```
 
 A subscription removes itself automatically once the task reaches `done` or `archived`; no cleanup needed.
+
+### Multi-profile setups: delivery is profile-owned
+
+In a one-gateway-per-profile deployment (one dispatcher, separate gateway
+processes for `writer`, `admin`, etc. — see the [multi-gateway
+guide](https://github.com/OpenKova/Kova-Agent/blob/main/docs/kanban/multi-gateway.md)),
+dispatch and delivery have separate owners:
+
+- **Dispatch stays single-owner.** Exactly one gateway keeps
+  `kanban.dispatch_in_gateway: true` and runs the dispatcher; every other
+  gateway sets it to `false`.
+- **Notification delivery is profile-owned.** Every gateway — including
+  non-dispatch ones — runs the notifier and polls only subscriptions stamped
+  with a profile whose platform adapters it hosts. A task created from the
+  `writer` profile's Telegram gets its `completed`/`blocked` message delivered
+  by the `writer` gateway, even though the `default` gateway did the
+  dispatching.
+- **Legacy subscriptions** created before profile stamping (no
+  `notifier_profile` on the row) are delivered only by the gateway that holds
+  the actual dispatcher singleton lock, so two gateways never race for them.
+
+Duplicate delivery across gateways is prevented by the atomic per-event claim
+in the board DB. No relays, credential sharing, or extra dispatchers are
+needed — each profile gateway simply delivers through its own adapters.
 
 ## Runs — one row per attempt
 
@@ -974,7 +1032,7 @@ Every transition appends a row to `task_events`. Each row carries an optional `r
 
 ## Out of scope
 
-Kanban is deliberately single-host. `~/.hermes/kanban.db` is a local SQLite file and the dispatcher spawns workers on the same machine. Running a shared board across two hosts is not supported — there's no coordination primitive for "worker X on host A, worker Y on host B," and the crash-detection path assumes PIDs are host-local. If you need multi-host, run an independent board per host and use `delegate_task` / a message queue to bridge them.
+Kanban is deliberately single-host. `~/.kova/kanban.db` is a local SQLite file and the dispatcher spawns workers on the same machine. Running a shared board across two hosts is not supported — there's no coordination primitive for "worker X on host A, worker Y on host B," and the crash-detection path assumes PIDs are host-local. If you need multi-host, run an independent board per host and use `delegate_task` / a message queue to bridge them.
 
 ## Design spec
 

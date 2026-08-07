@@ -57,7 +57,7 @@ same precedence convention as the ``nous`` plugin)::
           client_id: kova-dashboard                              # required
           scopes: "openid profile email"                           # optional
           # client_secret: set ONLY for a confidential client. It is a
-          # credential — prefer the env var / ~/.hermes/.env over config.yaml.
+          # credential — prefer the env var / ~/.kova/.env over config.yaml.
 
     # Environment overrides (Docker/Fly secret injection)
     KOVA_DASHBOARD_OIDC_ISSUER
@@ -601,6 +601,10 @@ class SelfHostedOIDCProvider(DashboardAuthProvider):
                 disco["jwks_uri"],
                 cache_keys=True,
                 lifespan=_JWKS_CACHE_SECONDS,
+                headers={
+                    "Accept": "application/json",
+                    "User-Agent": "KovaAgent/1.0",
+                },
             )
         return self._jwks_client
 
@@ -813,7 +817,7 @@ def register(ctx) -> None:
         or _DEFAULT_SCOPES
     )
     # Optional — set only for a confidential client. A credential, so the
-    # canonical home is the env var / ~/.hermes/.env; config.yaml is supported
+    # canonical home is the env var / ~/.kova/.env; config.yaml is supported
     # for precedence symmetry. Empty ⇒ public client (unchanged behaviour).
     client_secret = _resolve_setting(
         "KOVA_DASHBOARD_OIDC_CLIENT_SECRET", oidc_cfg.get("client_secret")

@@ -18,7 +18,7 @@ kova memory off        # 禁用外部提供者
 
 也可以通过 `kova plugins` → Provider Plugins → Memory Provider 选择激活的记忆提供者。
 
-或在 `~/.hermes/config.yaml` 中手动设置：
+或在 `~/.kova/config.yaml` 中手动设置：
 
 ```yaml
 memory:
@@ -68,7 +68,7 @@ kova memory setup        # 选择 "honcho" — 运行 Honcho 专属的安装后�
 
 旧版 `kova honcho setup` 命令仍然有效（现在会重定向到 `kova memory setup`），但只有在 Honcho 被选为激活记忆提供者后才会注册。
 
-**配置：** `$HERMES_HOME/honcho.json`（profile 本地）或 `~/.honcho/config.json`（全局）。解析顺序：`$HERMES_HOME/honcho.json` > `~/.hermes/honcho.json` > `~/.honcho/config.json`。参见[配置参考](https://github.com/kova-ai/kova-agent/blob/main/plugins/memory/honcho/README.md)和 [Honcho 集成指南](https://docs.honcho.dev/v3/guides/integrations/kova)。
+**配置：** `$HERMES_HOME/honcho.json`（profile 本地）或 `~/.honcho/config.json`（全局）。解析顺序：`$HERMES_HOME/honcho.json` > `~/.kova/honcho.json` > `~/.honcho/config.json`。参见[配置参考](https://github.com/kova-ai/kova-agent/blob/main/plugins/memory/honcho/README.md)和 [Honcho 集成指南](https://docs.honcho.dev/v3/guides/integrations/kova)。
 
 <details>
 <summary>完整配置参考</summary>
@@ -283,7 +283,7 @@ openviking-server
 kova memory setup    # 选择 "openviking"
 # 或手动配置：
 kova config set memory.provider openviking
-echo "OPENVIKING_ENDPOINT=http://localhost:1933" >> ~/.hermes/.env
+echo "OPENVIKING_ENDPOINT=http://localhost:1933" >> ~/.kova/.env
 ```
 
 **主要特性：**
@@ -311,7 +311,7 @@ echo "OPENVIKING_ENDPOINT=http://localhost:1933" >> ~/.hermes/.env
 kova memory setup    # 选择 "mem0"
 # 或手动配置：
 kova config set memory.provider mem0
-echo "MEM0_API_KEY=your-key" >> ~/.hermes/.env
+echo "MEM0_API_KEY=your-key" >> ~/.kova/.env
 ```
 
 **配置：** `$HERMES_HOME/mem0.json`
@@ -341,7 +341,7 @@ echo "MEM0_API_KEY=your-key" >> ~/.hermes/.env
 kova memory setup    # 选择 "hindsight"
 # 或手动配置：
 kova config set memory.provider hindsight
-echo "HINDSIGHT_API_KEY=your-key" >> ~/.hermes/.env
+echo "HINDSIGHT_API_KEY=your-key" >> ~/.kova/.env
 ```
 
 安装向导会自动安装依赖，并仅安装所选模式所需的内容（云端用 `hindsight-client`，本地用 `hindsight-all`）。需要 `hindsight-client >= 0.4.22`（会话启动时若版本过旧则自动升级）。
@@ -424,7 +424,7 @@ kova config set memory.provider holographic
 kova memory setup    # 选择 "retaindb"
 # 或手动配置：
 kova config set memory.provider retaindb
-echo "RETAINDB_API_KEY=your-key" >> ~/.hermes/.env
+echo "RETAINDB_API_KEY=your-key" >> ~/.kova/.env
 ```
 
 ---
@@ -478,7 +478,7 @@ kova config set memory.provider byterover
 kova memory setup    # 选择 "supermemory"
 # 或手动配置：
 kova config set memory.provider supermemory
-echo 'SUPERMEMORY_API_KEY=***' >> ~/.hermes/.env
+echo 'SUPERMEMORY_API_KEY=***' >> ~/.kova/.env
 ```
 
 自托管安装：

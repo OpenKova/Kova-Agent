@@ -41,7 +41,7 @@ Select **SimpleX Chat** and follow the prompts.
 
 ### Via environment variables
 
-Add these to `~/.hermes/.env`:
+Add these to `~/.kova/.env`:
 
 ```
 SIMPLEX_WS_URL=ws://127.0.0.1:5225
@@ -84,6 +84,23 @@ SIMPLEX_GROUP_ALLOWED=*              # any group the bot is in
 
 Address groups by prefixing the chat ID with `group:`, e.g.
 `simplex:group:12` as a cron `deliver=` target or in a `kova send` call.
+
+## Sending with `kova send`
+
+SimpleX works as a standalone send target — the daemon must be running,
+but a live gateway is not required for plain text:
+
+```bash
+kova send --to simplex:alice "hello"          # DM by contact display name
+kova send --to simplex:group:12 "hello"       # group by numeric ID
+kova send --to simplex "hello"                # SIMPLEX_HOME_CHANNEL
+```
+
+While the gateway is running, the adapter enumerates your contacts and
+allowed groups into the channel directory (refreshed every 5 minutes), so
+`kova send --list` shows them by name. Before the first gateway run the
+platform still appears in `--list` with a "no channels discovered yet"
+hint — direct targets like the ones above work regardless.
 
 ## Attachments
 

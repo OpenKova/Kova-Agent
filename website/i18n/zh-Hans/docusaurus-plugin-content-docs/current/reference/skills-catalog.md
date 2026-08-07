@@ -6,9 +6,9 @@ description: "随 Kova Agent 附带的内置技能目录"
 
 # 内置技能目录
 
-Kova 附带一个大型内置技能库，安装时会复制到 `~/.hermes/skills/`。下方每个技能均链接至专属页面，包含完整定义、配置和用法说明。
+Kova 附带一个大型内置技能库，安装时会复制到 `~/.kova/skills/`。下方每个技能均链接至专属页面，包含完整定义、配置和用法说明。
 
-Kova 在执行 `kova update` 时也会同步内置技能，但同步清单会尊重本地删除和用户编辑。如果此处列出的某个技能在你的 `~/.hermes/skills/` 目录树中缺失，它仍随 Kova 一同发布；可通过 `kova skills reset <name> --restore` 恢复。
+Kova 在执行 `kova update` 时也会同步内置技能，但同步清单会尊重本地删除和用户编辑。如果此处列出的某个技能在你的 `~/.kova/skills/` 目录树中缺失，它仍随 Kova 一同发布；可通过 `kova skills reset <name> --restore` 恢复。
 
 如果某个技能未出现在此列表中但存在于仓库中，目录由 `website/scripts/generate-skill-docs.py` 重新生成。
 
@@ -99,8 +99,8 @@ Kova 在执行 `kova update` 时也会同步内置技能，但同步清单会尊
 |-------|-------------|------|
 | [`huggingface-hub`](/user-guide/skills/bundled/mlops/mlops-huggingface-hub) | HuggingFace hf CLI：搜索/下载/上传模型、数据集。 | `mlops/huggingface-hub` |
 | [`llama-cpp`](/user-guide/skills/bundled/mlops/mlops-inference-llama-cpp) | llama.cpp 本地 GGUF 推理 + HF Hub 模型发现。 | `mlops/inference/llama-cpp` |
-| [`evaluating-llms-harness`](/user-guide/skills/bundled/mlops/mlops-evaluation-lm-evaluation-harness) | lm-eval-harness：对 LLM 进行基准测试（MMLU、GSM8K 等）。 | `mlops/evaluation/lm-evaluation-harness` |
-| [`serving-llms-vllm`](/user-guide/skills/bundled/mlops/mlops-inference-vllm) | vLLM：高吞吐量 LLM 服务、OpenAI API 兼容、量化支持。 | `mlops/inference/vllm` |
+| [`evaluating-llms-harness`](/user-guide/skills/bundled/mlops/mlops-evaluation-evaluating-llms-harness) | lm-eval-harness：对 LLM 进行基准测试（MMLU、GSM8K 等）。 | `mlops/evaluation/evaluating-llms-harness` |
+| [`serving-llms-vllm`](/user-guide/skills/bundled/mlops/mlops-inference-serving-llms-vllm) | vLLM：高吞吐量 LLM 服务、OpenAI API 兼容、量化支持。 | `mlops/inference/serving-llms-vllm` |
 | [`weights-and-biases`](/user-guide/skills/bundled/mlops/mlops-evaluation-weights-and-biases) | W&B：记录 ML 实验、超参数搜索、模型注册表、仪表盘。 | `mlops/evaluation/weights-and-biases` |
 
 ## note-taking
@@ -129,7 +129,6 @@ Kova 在执行 `kova update` 时也会同步内置技能，但同步清单会尊
 | [`arxiv`](/user-guide/skills/bundled/research/research-arxiv) | 按关键词、作者、分类或 ID 搜索 arXiv 论文。 | `research/arxiv` |
 | [`blogwatcher`](/user-guide/skills/bundled/research/research-blogwatcher) | 通过 blogwatcher-cli 工具监控博客和 RSS/Atom 订阅源。 | `research/blogwatcher` |
 | [`llm-wiki`](/user-guide/skills/bundled/research/research-llm-wiki) | Karpathy 的 LLM Wiki：构建/查询互联 Markdown 知识库。 | `research/llm-wiki` |
-| [`polymarket`](/user-guide/skills/bundled/research/research-polymarket) | 查询 Polymarket：市场、价格、订单簿、历史数据。 | `research/polymarket` |
 | [`research-paper-writing`](/user-guide/skills/bundled/research/research-research-paper-writing) | 为 NeurIPS/ICML/ICLR 撰写 ML 论文：从设计到投稿。 | `research/research-paper-writing` |
 
 ## smart-home

@@ -92,6 +92,16 @@ const config: Config = {
             from: '/guides/build-a-kova-plugin',
             to: '/developer-guide/plugins',
           },
+          {
+            // Users guess these short paths from abbreviated links and hit
+            // raw 404s (consumer-onboarding audit finding #1, Aug 2026).
+            from: '/quickstart',
+            to: '/getting-started/quickstart',
+          },
+          {
+            from: '/installation',
+            to: '/getting-started/installation',
+          },
         ],
       },
     ],
@@ -145,7 +155,7 @@ const config: Config = {
           position: 'left',
         },
         {
-          href: 'https://hermes-agent.nousresearch.com/',
+          href: 'https://kova-agent.nousresearch.com/',
           label: 'Download',
           position: 'left',
         },
@@ -154,7 +164,7 @@ const config: Config = {
           position: 'right',
         },
         {
-          href: 'https://hermes-agent.nousresearch.com',
+          href: 'https://kova-agent.nousresearch.com',
           label: 'Home',
           position: 'right',
         },
@@ -193,7 +203,7 @@ const config: Config = {
         {
           title: 'More',
           items: [
-            { label: 'Desktop Download', href: 'https://hermes-agent.nousresearch.com/' },
+            { label: 'Desktop Download', href: 'https://kova-agent.nousresearch.com/' },
             { label: 'GitHub', href: 'https://github.com/OpenKova/Kova-Agent' },
             { label: 'Nous Research', href: 'https://nousresearch.com' },
           ],

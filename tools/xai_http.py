@@ -26,7 +26,7 @@ def has_xai_credentials() -> bool:
     Resolution order, fast-to-slow:
 
     1. ``XAI_API_KEY`` env var (cheapest; covers explicit-key users).
-    2. ``~/.hermes/auth.json`` has a non-empty ``providers.xai-oauth.tokens.access_token``
+    2. ``~/.kova/auth.json`` has a non-empty ``providers.xai-oauth.tokens.access_token``
        (single file read, no expiry check, no refresh).
     3. ``credential_pool.xai-oauth`` has any entry with a non-empty
        ``access_token`` (covers multi-account ``kova auth add xai-oauth``
@@ -36,15 +36,21 @@ def has_xai_credentials() -> bool:
     other availability scans. Truthful refresh + expiry handling happens
     in ``search()`` (or whichever caller actually makes the request).
     """
-    if os.environ.get("XAI_API_KEY", "").strip():
-        return True
+    try:
+        from agent.secret_scope import get_secret
+    except ImportError:  # pragma: no cover — secret_scope is in-repo
+        if os.environ.get("XAI_API_KEY", "").strip():
+            return True
+    else:
+        if (get_secret("XAI_API_KEY", "") or "").strip():
+            return True
     try:
         from kova_constants import get_kova_home
 
         auth_path = get_kova_home() / "auth.json"
         if not auth_path.exists():
             return False
-        store = json.loads(auth_path.read_text())
+        store = json.loads(auth_path.read_text(encoding="utf-8"))
         providers = store.get("providers") if isinstance(store, dict) else None
         xai_state = providers.get("xai-oauth") if isinstance(providers, dict) else None
         tokens = xai_state.get("tokens") if isinstance(xai_state, dict) else None
@@ -71,7 +77,7 @@ def has_xai_credentials() -> bool:
 
 
 def get_env_value(name: str, default=None):
-    """Read ``name`` from ``~/.hermes/.env`` first, then ``os.environ``.
+    """Read ``name`` from ``~/.kova/.env`` first, then ``os.environ``.
 
     Wraps :func:`kova_cli.config.get_env_value` so tests can patch
     ``tools.xai_http.get_env_value`` to inject dotenv-only secrets into the
@@ -79,13 +85,11 @@ def get_env_value(name: str, default=None):
     """
     try:
         from kova_cli.config import get_env_value as _kova_get_env_value
+    except ImportError:
+        return os.environ.get(name, default)
 
-        value = _kova_get_env_value(name)
-        if value is not None:
-            return value
-    except Exception:
-        pass
-    return os.environ.get(name, default)
+    value = _kova_get_env_value(name)
+    return value if value is not None else default
 
 
 def kova_xai_user_agent() -> str:
@@ -95,6 +99,16 @@ def kova_xai_user_agent() -> str:
     except Exception:
         __version__ = "unknown"
     return f"Kova-Agent/{__version__}"
+
+
+def kova_xai_default_headers() -> Dict[str, str]:
+    """Default headers for OpenAI-SDK and raw HTTP clients talking to xAI.
+
+    Replaces the OpenAI Python SDK's identifying ``User-Agent: OpenAI/Python …``
+    so chat/completions and Responses traffic is attributed as Kova Agent,
+    matching the direct HTTP integrations (search, TTS, STT, image, video).
+    """
+    return {"User-Agent": kova_xai_user_agent()}
 
 
 def _load_config_section(section_name: str) -> Dict[str, Any]:
@@ -234,7 +248,7 @@ def maybe_mark_xai_storage_notice_seen(section_name: str) -> Optional[str]:
         marker = marker_dir / f"{section_name}_xai_storage_notice_seen"
         if marker.exists():
             return None
-        marker.write_text(datetime.datetime.now(datetime.UTC).isoformat() + "\n")
+        marker.write_text(datetime.datetime.now(datetime.UTC).isoformat() + "\n", encoding="utf-8")
         return notice
     except Exception:
         return notice
@@ -249,7 +263,7 @@ def resolve_xai_http_credentials(
 
     Prefers Kova-managed xAI OAuth credentials when available, then falls back
     to ``XAI_API_KEY`` resolved via ``kova_cli.config.get_env_value`` so keys
-    stored in ``~/.hermes/.env`` (the standard Kova location) are honored —
+    stored in ``~/.kova/.env`` (the standard Kova location) are honored —
     not just ones already exported into ``os.environ``. This keeps direct xAI
     endpoints (images, TTS, STT, etc.) aligned with the main runtime auth model
     and preserves the regression contract from PR #17140 / #17163.
@@ -301,7 +315,12 @@ def resolve_xai_http_credentials(
     except Exception:
         pass
 
-    api_key = str(get_env_value("XAI_API_KEY") or "").strip()
+    try:
+        from tools.tool_backend_helpers import resolve_provider_secret
+
+        api_key = resolve_provider_secret("XAI_API_KEY", "xai", env_getter=get_env_value)
+    except ImportError:  # pragma: no cover — helpers are in-repo
+        api_key = str(get_env_value("XAI_API_KEY") or "").strip()
     base_url = str(get_env_value("XAI_BASE_URL") or "https://api.x.ai/v1").strip().rstrip("/")
     return {
         "provider": "xai",

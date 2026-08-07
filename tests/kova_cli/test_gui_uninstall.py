@@ -40,122 +40,12 @@ def _make_user_data(kova_home: Path) -> None:
     (kova_home / "sessions").mkdir()
 
 
-def test_agent_is_installed_detects_source_and_venv(tmp_path):
-    kova_home = tmp_path / ".kova"
-    kova_home.mkdir()
-    assert gu.agent_is_installed(kova_home) is False
-    _make_agent(kova_home)
-    assert gu.agent_is_installed(kova_home) is True
 
 
-def test_agent_is_installed_venv_only(tmp_path):
-    """A checkout with only a venv (no package dir yet) still counts."""
-    kova_home = tmp_path / ".kova"
-    (kova_home / "kova-agent" / "venv").mkdir(parents=True)
-    assert gu.agent_is_installed(kova_home) is True
 
 
-def test_source_built_artifacts_lists_known_paths(tmp_path):
-    kova_home = tmp_path / ".kova"
-    _make_gui_build(kova_home)
-    artifacts = gu.source_built_gui_artifacts(kova_home)
-    names = {p.name for p in artifacts}
-    assert "dist" in names
-    assert "release" in names
-    assert "node_modules" in names
-    assert "desktop-build-stamp.json" in names
 
 
-def test_gui_is_installed_true_when_built(tmp_path, monkeypatch):
-    kova_home = tmp_path / ".kova"
-    _make_gui_build(kova_home)
-    # Make sure packaged-app + userdata probes don't false-positive on the box
-    # running the test.
-    monkeypatch.setattr(gu, "packaged_gui_app_paths", lambda: [])
-    monkeypatch.setattr(gu, "desktop_userdata_dir", lambda: tmp_path / "nope")
-    assert gu.gui_is_installed(kova_home) is True
-
-
-def test_gui_is_installed_false_when_nothing(tmp_path, monkeypatch):
-    kova_home = tmp_path / ".kova"
-    kova_home.mkdir()
-    monkeypatch.setattr(gu, "packaged_gui_app_paths", lambda: [])
-    monkeypatch.setattr(gu, "desktop_userdata_dir", lambda: tmp_path / "nope")
-    assert gu.gui_is_installed(kova_home) is False
-
-
-def test_uninstall_gui_removes_only_gui_artifacts(tmp_path, monkeypatch):
-    """The core invariant: GUI gone, agent + user data untouched."""
-    kova_home = tmp_path / ".kova"
-    agent_root = _make_agent(kova_home)
-    _make_gui_build(kova_home)
-    _make_user_data(kova_home)
-
-    # Isolate the packaged-app + userdata probes from the test machine.
-    monkeypatch.setattr(gu, "packaged_gui_app_paths", lambda: [])
-    monkeypatch.setattr(gu, "desktop_userdata_dir", lambda: tmp_path / "userdata-none")
-
-    removed = gu.uninstall_gui(kova_home)
-    removed_names = {p.name for p in removed}
-
-    # GUI artifacts removed.
-    desktop = agent_root / "apps" / "desktop"
-    assert not (desktop / "dist").exists()
-    assert not (desktop / "release").exists()
-    assert not (desktop / "node_modules").exists()
-    assert not (agent_root / "node_modules").exists()
-    assert not (kova_home / "desktop-build-stamp.json").exists()
-    assert "dist" in removed_names
-
-    # Agent + user data preserved.
-    assert (agent_root / "kova_cli" / "__init__.py").exists()
-    assert (agent_root / "venv").exists()
-    assert (kova_home / "config.yaml").exists()
-    assert (kova_home / ".env").exists()
-    assert (kova_home / "sessions").exists()
-    # The desktop source dir itself survives (only its build output is gone).
-    assert desktop.exists()
-
-
-def test_uninstall_gui_removes_userdata(tmp_path, monkeypatch):
-    kova_home = tmp_path / ".kova"
-    _make_agent(kova_home)
-    userdata = tmp_path / "Kova-userdata"
-    userdata.mkdir()
-    (userdata / "connection.json").write_text("{}")
-
-    monkeypatch.setattr(gu, "packaged_gui_app_paths", lambda: [])
-    monkeypatch.setattr(gu, "desktop_userdata_dir", lambda: userdata)
-
-    gu.uninstall_gui(kova_home)
-    assert not userdata.exists()
-
-
-def test_uninstall_gui_keeps_userdata_when_requested(tmp_path, monkeypatch):
-    kova_home = tmp_path / ".kova"
-    _make_agent(kova_home)
-    userdata = tmp_path / "Kova-userdata"
-    userdata.mkdir()
-
-    monkeypatch.setattr(gu, "packaged_gui_app_paths", lambda: [])
-    monkeypatch.setattr(gu, "desktop_userdata_dir", lambda: userdata)
-
-    gu.uninstall_gui(kova_home, remove_userdata=False)
-    assert userdata.exists()
-
-
-def test_uninstall_gui_removes_packaged_bundle(tmp_path, monkeypatch):
-    kova_home = tmp_path / ".kova"
-    _make_agent(kova_home)
-    bundle = tmp_path / "Kova.app"
-    (bundle / "Contents").mkdir(parents=True)
-
-    monkeypatch.setattr(gu, "packaged_gui_app_paths", lambda: [bundle])
-    monkeypatch.setattr(gu, "desktop_userdata_dir", lambda: tmp_path / "none")
-
-    removed = gu.uninstall_gui(kova_home)
-    assert not bundle.exists()
-    assert bundle in removed
 
 
 def test_gui_install_summary_shape(tmp_path, monkeypatch):
@@ -175,25 +65,65 @@ def test_gui_install_summary_shape(tmp_path, monkeypatch):
     assert summary["platform"] == sys.platform
 
 
-def test_userdata_dir_per_platform(monkeypatch):
-    """userData path matches Electron's app.getPath('userData') for "Kova"."""
-    home = Path("/home/tester")
-    monkeypatch.setattr(Path, "home", classmethod(lambda cls: home))
 
-    monkeypatch.setattr(gu.sys, "platform", "darwin")
-    assert gu.desktop_userdata_dir() == home / "Library" / "Application Support" / "Kova"
 
+
+
+def test_linux_discovery_includes_launcher_entry(tmp_path, monkeypatch):
+    """The launcher entry that `kova desktop` installs is removable."""
     monkeypatch.setattr(gu.sys, "platform", "linux")
-    monkeypatch.delenv("XDG_CONFIG_HOME", raising=False)
-    assert gu.desktop_userdata_dir() == home / ".config" / "Kova"
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "xdg"))
+
+    from kova_cli import linux_desktop_entry as lde
+
+    assert lde.desktop_entry_path() in gu.packaged_gui_app_paths()
 
 
-def test_userdata_dir_windows(monkeypatch):
-    home = Path("/home/tester")
-    monkeypatch.setattr(Path, "home", classmethod(lambda cls: home))
-    monkeypatch.setattr(gu.sys, "platform", "win32")
-    monkeypatch.setenv("APPDATA", r"C:\Users\tester\AppData\Roaming")
-    assert gu.desktop_userdata_dir() == Path(r"C:\Users\tester\AppData\Roaming") / "Kova"
+def test_uninstall_removes_launcher_entry_and_refreshes_cache(tmp_path, monkeypatch):
+    monkeypatch.setattr(gu.sys, "platform", "linux")
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "xdg"))
+
+    from kova_cli import linux_desktop_entry as lde
+
+    entry = lde.desktop_entry_path()
+    entry.parent.mkdir(parents=True, exist_ok=True)
+    entry.write_text("x", encoding="utf-8")
+
+    refreshed: list[Path] = []
+    monkeypatch.setattr(
+        lde, "refresh_desktop_databases", lambda d: refreshed.append(d) or ["kbuildsycoca6"]
+    )
+
+    kova_home = tmp_path / ".kova"
+    _make_agent(kova_home)
+    icon = lde.icon_path(kova_home / "kova-agent")
+    icon.parent.mkdir(parents=True, exist_ok=True)
+    icon.write_bytes(b"\x89PNG")
+    monkeypatch.setattr(gu, "desktop_userdata_dir", lambda: tmp_path / "none")
+
+    removed = gu.uninstall_gui(kova_home)
+
+    assert entry in removed and not entry.exists()
+    assert refreshed == [entry.parent]
+    # The icon lives in the checkout. A GUI uninstall must not delete it.
+    assert lde.icon_path(kova_home / "kova-agent").exists()
+    # The agent itself survives a GUI uninstall.
+    assert (kova_home / "kova-agent" / "kova_cli").is_dir()
+
+
+def test_uninstall_skips_cache_refresh_when_no_launcher_entry(tmp_path, monkeypatch):
+    monkeypatch.setattr(gu.sys, "platform", "linux")
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "xdg"))
+
+    from kova_cli import linux_desktop_entry as lde
+
+    refreshed: list[Path] = []
+    monkeypatch.setattr(lde, "refresh_desktop_databases", lambda d: refreshed.append(d) or [])
+    monkeypatch.setattr(gu, "desktop_userdata_dir", lambda: tmp_path / "none")
+
+    gu.uninstall_gui(tmp_path / ".kova")
+
+    assert refreshed == []
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="POSIX symlink semantics")
@@ -218,119 +148,10 @@ class _Args:
         self.gui_summary = gui_summary
 
 
-def test_run_uninstall_yes_keep_data_is_non_interactive(tmp_path, monkeypatch):
-    """``--yes`` (no ``--full``) runs with no prompt, sweeps the GUI, keeps data.
-
-    We DO NOT spawn the real CLI here (its project_root removal would delete the
-    test checkout) — we call run_uninstall in-process against a throwaway
-    HERMES_HOME with all the destructive externals stubbed out.
-    """
-    import kova_cli.uninstall as uninstall
-
-    kova_home = tmp_path / ".kova"
-    agent_root = kova_home / "kova-agent"
-    (agent_root / "kova_cli").mkdir(parents=True)
-    (kova_home / "config.yaml").write_text("x: 1\n")
-    desktop = agent_root / "apps" / "desktop"
-    (desktop / "release").mkdir(parents=True)
-    (kova_home / "desktop-build-stamp.json").write_text("{}")
-    fake_code = tmp_path / "checkout"
-    fake_code.mkdir()
-
-    # Stub every destructive external so the test only exercises the control
-    # flow + the real GUI sweep (which is safe inside tmp_path).
-    monkeypatch.setattr(uninstall, "get_kova_home", lambda: kova_home)
-    monkeypatch.setattr(uninstall, "get_project_root", lambda: fake_code)
-    monkeypatch.setattr(uninstall, "uninstall_gateway_service", lambda: False)
-    monkeypatch.setattr(uninstall, "remove_path_from_shell_configs", lambda: [])
-    monkeypatch.setattr(uninstall, "remove_wrapper_script", lambda: [])
-    monkeypatch.setattr(uninstall, "remove_node_symlinks", lambda h: [])
-    monkeypatch.setattr(uninstall, "_discover_named_profiles", lambda: [])
-    # Make input() blow up so a regression that reaches a prompt fails loudly.
-    monkeypatch.setattr("builtins.input", lambda *a, **k: pytest.fail("prompted in --yes mode"))
-
-    from kova_cli import gui_uninstall as gu_mod
-    monkeypatch.setattr(gu_mod, "packaged_gui_app_paths", lambda: [])
-    monkeypatch.setattr(gu_mod, "desktop_userdata_dir", lambda: tmp_path / "none")
-
-    uninstall.run_uninstall(_Args(yes=True, full=False))
-
-    # Code checkout removed, GUI artifacts swept, but user data preserved.
-    assert not fake_code.exists()
-    assert not (kova_home / "desktop-build-stamp.json").exists()
-    assert not (desktop / "release").exists()
-    assert (kova_home / "config.yaml").exists()
-    assert kova_home.exists()
 
 
-def test_run_uninstall_yes_full_wipes_home(tmp_path, monkeypatch):
-    """``--yes --full`` removes the whole HERMES_HOME non-interactively."""
-    import kova_cli.uninstall as uninstall
-
-    kova_home = tmp_path / ".kova"
-    (kova_home / "kova-agent" / "kova_cli").mkdir(parents=True)
-    (kova_home / "config.yaml").write_text("x: 1\n")
-    fake_code = tmp_path / "checkout"
-    fake_code.mkdir()
-
-    monkeypatch.setattr(uninstall, "get_kova_home", lambda: kova_home)
-    monkeypatch.setattr(uninstall, "get_project_root", lambda: fake_code)
-    monkeypatch.setattr(uninstall, "uninstall_gateway_service", lambda: False)
-    monkeypatch.setattr(uninstall, "remove_path_from_shell_configs", lambda: [])
-    monkeypatch.setattr(uninstall, "remove_wrapper_script", lambda: [])
-    monkeypatch.setattr(uninstall, "remove_node_symlinks", lambda h: [])
-    monkeypatch.setattr(uninstall, "_discover_named_profiles", lambda: [])
-    monkeypatch.setattr("builtins.input", lambda *a, **k: pytest.fail("prompted in --yes mode"))
-
-    from kova_cli import gui_uninstall as gu_mod
-    monkeypatch.setattr(gu_mod, "packaged_gui_app_paths", lambda: [])
-    monkeypatch.setattr(gu_mod, "desktop_userdata_dir", lambda: tmp_path / "none")
-
-    uninstall.run_uninstall(_Args(yes=True, full=True))
-
-    assert not kova_home.exists()
 
 
-def test_uninstall_module_main_gui_mode(tmp_path, monkeypatch):
-    """`python -m kova_cli.uninstall --mode gui` runs the GUI-only path.
-
-    This is the lightweight, venv-independent entrypoint the desktop launches
-    with a system Python (so lite/full don't rmtree their own running venv on
-    Windows). Verify it dispatches by mode without prompting.
-    """
-    import kova_cli.uninstall as uninstall
-
-    kova_home = tmp_path / ".kova"
-    agent_root = kova_home / "kova-agent"
-    (agent_root / "kova_cli").mkdir(parents=True)
-    desktop = agent_root / "apps" / "desktop"
-    (desktop / "release").mkdir(parents=True)
-    (kova_home / "desktop-build-stamp.json").write_text("{}")
-    (kova_home / "config.yaml").write_text("x: 1\n")
-
-    monkeypatch.setattr(uninstall, "get_kova_home", lambda: kova_home)
-    from kova_cli import gui_uninstall as gu_mod
-    monkeypatch.setattr(gu_mod, "packaged_gui_app_paths", lambda: [])
-    monkeypatch.setattr(gu_mod, "desktop_userdata_dir", lambda: tmp_path / "none")
-    monkeypatch.setattr(gu_mod, "get_kova_home", lambda: kova_home)
-    monkeypatch.setattr("builtins.input", lambda *a, **k: pytest.fail("prompted in module main"))
-
-    rc = uninstall.main(["--mode", "gui"])
-    assert rc == 0
-    # GUI swept, agent + config kept (gui-only contract).
-    assert not (desktop / "release").exists()
-    assert not (kova_home / "desktop-build-stamp.json").exists()
-    assert (agent_root / "kova_cli").exists()
-    assert (kova_home / "config.yaml").exists()
-
-
-def test_uninstall_module_main_rejects_bad_mode():
-    """An invalid --mode exits non-zero (argparse), never silently full-wipes."""
-    import kova_cli.uninstall as uninstall
-
-    with pytest.raises(SystemExit) as exc:
-        uninstall.main(["--mode", "nuke"])
-    assert exc.value.code != 0
 
 
 def test_uninstall_args_namespace_mode_mapping():

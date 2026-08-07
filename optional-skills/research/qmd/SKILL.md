@@ -8,7 +8,7 @@ platforms: [macos, linux]
 metadata:
   kova:
     tags: [Search, Knowledge-Base, RAG, Notes, MCP, Local-AI]
-    related_skills: [obsidian, native-mcp, arxiv]
+    related_skills: [obsidian, kova-agent, arxiv]
 ---
 
 # QMD — Query Markup Documents
@@ -226,7 +226,7 @@ without needing to load this skill.
 
 ### Option A: Stdio Mode (Simple)
 
-Add to `~/.hermes/config.yaml`:
+Add to `~/.kova/config.yaml`:
 
 ```yaml
 mcp_servers:

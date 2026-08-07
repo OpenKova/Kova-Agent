@@ -70,7 +70,7 @@ const renderBillingError = (
       // Account-wide switch is OFF (dual-emitted error/code). A billing admin can
       // turn it on from the portal's Kova Agent page; this is NOT a per-terminal stop.
       sys(
-        "Remote spending is off for this account — a billing admin can turn it on from the portal's Kova AI page."
+        "Remote spending is off for this account — a billing admin can turn it on from the portal's Kova Agent page."
       )
 
       break
@@ -401,7 +401,7 @@ export const topupCommands: SlashCommand[] = [
         .then(
           ctx.guarded<BillingStateResponse>(s => {
             if (!s.logged_in) {
-              sys('💳 Not logged into Kova Portal — run /portal to log in, then /topup.')
+              sys('💳 Not logged into Nous Portal — run /portal to log in, then /topup.')
 
               return
             }

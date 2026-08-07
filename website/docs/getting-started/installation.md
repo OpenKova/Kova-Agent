@@ -15,21 +15,21 @@ platform-gated features are supported), see **[Platform Support](./platform-supp
 
 ## Quick Install
 ### With the Kova Desktop installer on macOS or Windows (recommended)
-To easily install the command-line and desktop applications, [download the Kova Desktop installer](https://hermes-agent.nousresearch.com/) from our website and run it.
+To easily install the command-line and desktop applications, [download the Kova Desktop installer](https://kova-agent.nousresearch.com/) from our website and run it.
 
 ### Without Kova Desktop:
 For a command-line only install without Kova Desktop, run:
 
 #### Linux / macOS / WSL2 / Android (Termux)
 ```bash
-curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+curl -fsSL https://kova-agent.nousresearch.com/install.sh | bash
 ```
 
 #### Windows (native)
 
 Run in powershell:
 ```powershell
-iex (irm https://hermes-agent.nousresearch.com/install.ps1) 
+iex (irm https://kova-agent.nousresearch.com/install.ps1) 
 ```
 
 If you want to install & run Kova Desktop after a command-line only install, simply run
@@ -47,10 +47,10 @@ Where the installer puts things depends on whether you're installing as a normal
 
 | Installer                              | Code lives at                  | `kova` binary                         | Data directory                       |
 | -------------------------------------- | ------------------------------ | --------------------------------------- | ------------------------------------ |
-| Per-user (git installer)               | `~/.hermes/kova-agent/`      | `~/.local/bin/kova` (symlink)         | `~/.hermes/`                         |
-| Root-mode (`sudo curl … \| sudo bash`) | `/usr/local/lib/kova-agent/` | `/usr/local/bin/kova`                 | `/root/.hermes/` (or `$HERMES_HOME`) |
+| Per-user (git installer)               | `~/.kova/kova-agent/`      | `~/.local/bin/kova` (symlink)         | `~/.kova/`                         |
+| Root-mode (`sudo curl … \| sudo bash`) | `/usr/local/lib/kova-agent/` | `/usr/local/bin/kova`                 | `/root/.kova/` (or `$HERMES_HOME`) |
 
-The root-mode **FHS layout** (`/usr/local/lib/…`, `/usr/local/bin/kova`) matches where other system-wide developer tools land on Linux. It's useful for shared-machine deployments where one system install should serve every user. Per-user config (auth, skills, sessions) still lives under each user's `~/.hermes/` or explicit `HERMES_HOME`.
+The root-mode **FHS layout** (`/usr/local/lib/…`, `/usr/local/bin/kova`) matches where other system-wide developer tools land on Linux. It's useful for shared-machine deployments where one system install should serve every user. Per-user config (auth, skills, sessions) still lives under each user's `~/.kova/` or explicit `HERMES_HOME`.
 
 ### After Installation
 
@@ -124,12 +124,12 @@ Running Kova as a dedicated unprivileged user (e.g. a `kova` systemd service acc
 
 2. **As the unprivileged service user**, run the regular installer. It will detect the missing sudo, skip `--with-deps`, and install Chromium into the user's local Playwright cache:
    ```bash
-   curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+   curl -fsSL https://kova-agent.nousresearch.com/install.sh | bash
    ```
 
    If you want to skip the Playwright step entirely — for example because you're running headless and don't need browser automation — pass `--skip-browser`:
    ```bash
-   curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash -s -- --skip-browser
+   curl -fsSL https://kova-agent.nousresearch.com/install.sh | bash -s -- --skip-browser
    ```
 
 3. **Make `kova` available to the service user's shells.** The installer writes the launcher to `~/.local/bin/kova`. System service accounts often have a minimal PATH that doesn't include `~/.local/bin`. Either add it to the user's environment, or symlink the launcher into a system location:
@@ -138,10 +138,18 @@ Running Kova as a dedicated unprivileged user (e.g. a `kova` systemd service acc
    echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 
    # Option B — symlink system-wide (run as an admin)
-   sudo ln -s /home/kova/.hermes/hermes-agent/venv/bin/kova /usr/local/bin/kova
+   sudo ln -s /home/kova/.kova/kova-agent/venv/bin/kova /usr/local/bin/kova
    ```
 
-4. **Verify:** `kova doctor` should now run cleanly. If you get `ModuleNotFoundError: No module named 'dotenv'`, you're invoking the repo source `kova` file (`~/.hermes/kova-agent/kova`) with system Python instead of the venv launcher (`~/.hermes/hermes-agent/venv/bin/kova`) — fix step 3.
+4. **Verify:** `kova doctor` should now run cleanly. If you get `ModuleNotFoundError: No module named 'dotenv'`, you're invoking the repo source `kova` file (`~/.kova/kova-agent/kova`) with system Python instead of the venv launcher (`~/.kova/kova-agent/venv/bin/kova`) — fix step 3.
+
+5. **Running the messaging gateway from this account?** A user-level service stops at logout and does not start at boot until you enable lingering for the service user:
+
+   ```bash
+   sudo loginctl enable-linger <service-user>
+   ```
+
+   See [Messaging Gateway](/user-guide/messaging/) for the service setup itself.
 
 The same pattern works on Arch (the installer uses pacman with the same sudo-detection logic), Fedora/RHEL, and openSUSE — those distros don't support `--with-deps` at all, so an administrator always installs the system libraries separately. The relevant `dnf`/`zypper` commands are printed by the installer.
 
@@ -159,4 +167,4 @@ For more diagnostics, run `kova doctor` — it will tell you exactly what's miss
 
 ## Install method auto-detection
 
-Kova auto-detects whether it was installed via the git installer, Docker, or NixOS, and `kova update` prints the matching update command for that path. There's no env var to set — the detection is based on the install layout (`~/.hermes/kova-agent/` checkout, Docker image stamp, or Nix store path). `kova doctor` also surfaces the detected method under its environment summary.
+Kova auto-detects whether it was installed via the git installer, Docker, or NixOS, and `kova update` prints the matching update command for that path. There's no env var to set — the detection is based on the install layout (`~/.kova/kova-agent/` checkout, Docker image stamp, or Nix store path). `kova doctor` also surfaces the detected method under its environment summary.

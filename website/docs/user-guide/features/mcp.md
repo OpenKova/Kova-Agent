@@ -10,6 +10,10 @@ MCP lets Kova Agent connect to external tool servers so the agent can use tools 
 
 If you have ever wanted Kova to use a tool that already exists somewhere else, MCP is usually the cleanest way to do it.
 
+:::tip Coming from Claude Code?
+The `mcpServers` block in your `~/.claude.json` maps to `mcp_servers` in Kova' `config.yaml` — and `kova import-agent claude-code` migrates it (along with skills and instructions) automatically. See [Import from Other Agents](../import-from-other-agents.md).
+:::
+
 ## What MCP gives you
 
 - Access to external tool ecosystems without writing a native Kova tool first
@@ -22,7 +26,7 @@ If you have ever wanted Kova to use a tool that already exists somewhere else, M
 
 1. MCP support ships with the standard install — no extra step needed.
 
-2. Add an MCP server to `~/.hermes/config.yaml`:
+2. Add an MCP server to `~/.kova/config.yaml`:
 
 ```yaml
 mcp_servers:
@@ -76,7 +80,7 @@ merging a PR.
 Catalog entries can require:
 
 - **API key** — Kova prompts at install time and writes the value to
-  `~/.hermes/.env`. Non-secret values (base URLs) go to the same file.
+  `~/.kova/.env`. Non-secret values (base URLs) go to the same file.
 - **OAuth** (remote MCP) — written as `auth: oauth` in your config; the MCP
   client opens a browser on first connection.
 - **OAuth** (third-party provider like Google/GitHub) — Kova points you at
@@ -146,7 +150,7 @@ to install the latest Kova when you see that.
 
 Inside an entry's `transport.command`, `transport.args`, `transport.url`,
 and `headers`, `${VAR}` placeholders are resolved at server-connect time
-from environment variables (which include everything in `~/.hermes/.env`).
+from environment variables (which include everything in `~/.kova/.env`).
 This is useful when a catalog entry wants to reference a value the user
 configured elsewhere — e.g. `${HOME}/foo` or `${MY_PROVIDER_TOKEN}`.
 
@@ -213,6 +217,19 @@ Use HTTP servers when:
 
 Most hosted MCP servers (Linear, Sentry, Atlassian, Asana, Figma, Stripe, …) require OAuth 2.1 instead of a static bearer token. Set `auth: oauth` and Kova handles discovery, dynamic client registration, PKCE, token exchange, refresh, and step-up auth via the MCP Python SDK.
 
+:::tip Figma remote MCP
+Figma's hosted endpoint (`https://mcp.figma.com/mcp`) allowlists Dynamic Client Registration by **exact `client_name`** — bare `"Kova Agent"` 403s, while `"Claude Code"` and `"Codex"` succeed. Kova auto-sets `oauth.client_name: "Claude Code"` for `mcp.figma.com` so install/login works without a special trick:
+
+```yaml
+mcp_servers:
+  figma:
+    url: "https://mcp.figma.com/mcp"
+    auth: oauth
+```
+
+Or: `kova mcp install figma`, then `kova mcp login figma`.
+:::
+
 ```yaml
 mcp_servers:
   linear:
@@ -220,7 +237,7 @@ mcp_servers:
     auth: oauth
 ```
 
-On first connect, Kova prints an authorize URL, opens your browser when possible, and waits for the OAuth callback on a local loopback port. Tokens are cached at `~/.hermes/mcp-tokens/<server>.json` with 0o600 perms; subsequent runs reuse them silently until refresh fails.
+On first connect, Kova prints an authorize URL, opens your browser when possible, and waits for the OAuth callback on a local loopback port. Tokens are cached at `~/.kova/mcp-tokens/<server>.json` with 0o600 perms; subsequent runs reuse them silently until refresh fails.
 
 **Remote / headless hosts.** When Kova runs on a different machine than your browser, the loopback callback can't reach your laptop. Two ways to complete the flow:
 
@@ -258,7 +275,7 @@ mcp_servers:
 
 Then run `kova mcp login googledrive` — with the pre-registered client, Kova skips registration and runs the normal browser authorization flow.
 
-**Pitfall — config auto-reload race.** When you edit `~/.hermes/config.yaml` from inside a running Kova session, the CLI auto-reloads MCP connections with a 30s timeout. That's not enough for an interactive OAuth flow. Add the entry, then run `kova mcp login <server>` from a fresh terminal — it waits the full 5 minutes for you to complete auth.
+**Pitfall — config auto-reload race.** When you edit `~/.kova/config.yaml` from inside a running Kova session, the CLI auto-reloads MCP connections with a 30s timeout. That's not enough for an interactive OAuth flow. Add the entry, then run `kova mcp login <server>` from a fresh terminal — it waits the full 5 minutes for you to complete auth.
 
 ## mTLS / client certificates
 
@@ -297,7 +314,7 @@ You can also keep the cert and key fully separate via `client_cert` (combined PE
 
 ## Basic configuration reference
 
-Kova reads MCP config from `~/.hermes/config.yaml` under `mcp_servers`.
+Kova reads MCP config from `~/.kova/config.yaml` under `mcp_servers`.
 
 ### Common keys
 
@@ -459,6 +476,24 @@ mcp_servers:
 ```
 
 All server tools are registered except the excluded ones.
+
+### Glob patterns
+
+Both lists accept fnmatch-style globs alongside exact names — essential for
+huge flat surfaces like Cloudflare's API MCP (`?codemode=false`, ~3,300
+tools) where excluding product areas one endpoint at a time is impractical:
+
+```yaml
+mcp_servers:
+  cloudflare:
+    url: "https://mcp.cloudflare.com/mcp?codemode=false"
+    auth: oauth
+    tools:
+      exclude: ["*_radar_*", "*_accounts_dlp_*", "*_zones_web3_*"]
+```
+
+Entries without glob metacharacters (`*`, `?`, `[`) match exactly — `docs`
+excludes only the tool named `docs`, never `docs_search`.
 
 ### Precedence rule
 
@@ -634,7 +669,7 @@ Check:
 
 ```bash
 # Verify MCP deps are installed (already included in standard install)
-cd ~/.hermes/kova-agent && uv pip install -e ".[mcp]"
+cd ~/.kova/kova-agent && uv pip install -e ".[mcp]"
 
 node --version
 npx --version
@@ -711,6 +746,23 @@ mcp_servers:
       enabled: false
 ```
 
+## MCP Elicitation Support
+
+MCP servers can ask the user for structured input mid-tool-call via the `elicitation/create` protocol (mcp Python SDK ≥ 1.11.0). Kova routes **form-mode** elicitations through its existing approval surface — an interactive prompt in the CLI/TUI, or approval buttons on gateway platforms like Telegram and Slack — so the request reaches you wherever the session lives. **URL-mode** elicitations (where a server points you at an external URL) are declined as unsupported.
+
+Elicitation is **enabled by default** per server. Configure it under the `elicitation` key:
+
+```yaml
+mcp_servers:
+  my_server:
+    command: "my-mcp-server"
+    elicitation:
+      enabled: true    # default: true
+      timeout: 300     # seconds to wait for your answer (default: 300)
+```
+
+The 5-minute default timeout mirrors the gateway approval default so users on async surfaces have time to respond before the server gives up. Per-server metrics (requests, accepted, declined, errors) are tracked on the handler.
+
 ## Running Kova as an MCP server
 
 In addition to connecting **to** MCP servers, Kova can also **be** an MCP server. This lets other MCP-capable agents (Claude Code, Cursor, Codex, or any MCP client) use Kova's messaging capabilities — list conversations, read message history, and send messages across all your connected platforms.
@@ -750,7 +802,7 @@ Or if you installed Kova in a specific location:
 {
   "mcpServers": {
     "kova": {
-      "command": "/home/user/.hermes/hermes-agent/venv/bin/kova",
+      "command": "/home/user/.kova/kova-agent/venv/bin/kova",
       "args": ["mcp", "serve"]
     }
   }
@@ -799,7 +851,7 @@ kova mcp serve --verbose    # Debug logging on stderr
 
 ### How it works
 
-The MCP server reads conversation data directly from Kova's session store (`~/.hermes/sessions/sessions.json` and the SQLite database). A background thread polls the database for new messages and maintains an in-memory event queue. For sending messages, it uses the same internal send engine (`tools/send_message_tool.py`) that powers cron delivery and the `kova send` CLI.
+The MCP server reads conversation data directly from Kova's session store — `~/.kova/state.db` is the primary source, with `sessions.json` kept only as a legacy fallback. A background thread polls the database for new messages and maintains an in-memory event queue. For sending messages, it uses the same internal send engine (`tools/send_message_tool.py`) that powers cron delivery and the `kova send` CLI.
 
 The gateway does NOT need to be running for read operations (listing conversations, reading history, polling events). It DOES need to be running for send operations, since the platform adapters need active connections.
 

@@ -14,7 +14,7 @@ import * as jsxRuntime from 'react/jsx-runtime'
 import * as sdk from './index'
 
 const GLOBALS = {
-  __KOVA_PLUGIN_SDK__: sdk,
+  __HERMES_PLUGIN_SDK__: sdk,
   __KOVA_REACT__: React,
   __KOVA_REACT_JSX__: jsxRuntime,
   __KOVA_REACT_JSX_DEV__: jsxDevRuntime
@@ -44,7 +44,7 @@ let cached: Record<string, string> | null = null
 /** Specifier -> shim URL map for the runtime loader (longest keys first). */
 export function sdkImportMap(): Record<string, string> {
   cached ??= {
-    '@kova/plugin-sdk': shimUrl('__KOVA_PLUGIN_SDK__'),
+    '@kova/plugin-sdk': shimUrl('__HERMES_PLUGIN_SDK__'),
     'react/jsx-dev-runtime': shimUrl('__KOVA_REACT_JSX_DEV__'),
     'react/jsx-runtime': shimUrl('__KOVA_REACT_JSX__'),
     react: shimUrl('__KOVA_REACT__')

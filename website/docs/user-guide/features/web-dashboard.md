@@ -27,7 +27,7 @@ This starts a local web server and opens `http://127.0.0.1:9119` in your browser
 | `--port` | `9119` | Port to run the web server on |
 | `--host` | `127.0.0.1` | Bind address |
 | `--no-open` | — | Don't auto-open the browser |
-| `--insecure` | off | Allow binding to non-localhost hosts (**DANGEROUS** — exposes API keys on the network; pair with a firewall and strong auth) |
+| `--insecure` | off | **Deprecated / no-op.** Formerly bypassed auth on a non-loopback bind; it no longer disables authentication — a public bind always requires an auth provider (password or OAuth) |
 | `--isolated` | off | When launched from a named profile (`worker dashboard`), run a dedicated per-profile server instead of routing to the machine dashboard |
 
 ```bash
@@ -83,10 +83,10 @@ across profiles with its own filter).
 The default `kova-agent` install does not ship the HTTP stack or PTY helper — those are optional extras. The **web dashboard** needs FastAPI and Uvicorn (`web` extra). The **Chat** tab also needs `ptyprocess` to spawn the embedded TUI behind a pseudo-terminal (`pty` extra on POSIX). Install both with:
 
 ```bash
-cd ~/.hermes/kova-agent && uv pip install -e ".[web,pty]"
+cd ~/.kova/kova-agent && uv pip install -e ".[web,pty]"
 ```
 
-The `web` extra pulls in FastAPI/Uvicorn; `pty` pulls in `ptyprocess` (POSIX) or `pywinpty` (native Windows — note that the embedded TUI itself still requires WSL). `cd ~/.hermes/kova-agent && uv pip install -e ".[all]"` includes both extras and is the easiest path if you also want messaging/voice/etc.
+The `web` extra pulls in FastAPI/Uvicorn; `pty` pulls in `ptyprocess` (POSIX) or `pywinpty` (native Windows — note that the embedded TUI itself still requires WSL). `cd ~/.kova/kova-agent && uv pip install -e ".[all]"` includes both extras and is the easiest path if you also want messaging/voice/etc.
 
 When you run `kova dashboard` without the dependencies, it will tell you what to install. If the frontend hasn't been built yet and `npm` is available, it builds automatically on first launch.
 
@@ -124,7 +124,7 @@ The **Chat** tab embeds the full Kova TUI (the same interface you get from `kova
 **Prerequisites:**
 
 - Node.js (same requirement as `kova --tui`; the TUI bundle is built on first launch)
-- `ptyprocess` — installed by the `pty` extra (`cd ~/.hermes/kova-agent && uv pip install -e ".[web,pty]"`, or `[all]` covers both)
+- `ptyprocess` — installed by the `pty` extra (`cd ~/.kova/kova-agent && uv pip install -e ".[web,pty]"`, or `[all]` covers both)
 - POSIX kernel (Linux, macOS, or WSL2).  The `/chat` terminal pane specifically needs a POSIX PTY — native Windows Python has no equivalent, so on a native Windows install the rest of the dashboard (sessions, jobs, metrics, config editor) works but the `/chat` tab will show a banner telling you to use WSL2 for that feature.
 
 Close the browser tab and the PTY is reaped cleanly on the server. Re-opening spawns a fresh session.
@@ -150,12 +150,12 @@ Set a username and password, then run the dashboard bound to a reachable address
 
 ```ini
 [Service]
-EnvironmentFile=%h/.hermes/.env
+EnvironmentFile=%h/.kova/.env
 ExecStart=/path/to/venv/bin/python -m kova_cli.main dashboard \
     --host 0.0.0.0 --port 9119 --no-open
 ```
 
-with `~/.hermes/.env` containing:
+with `~/.kova/.env` containing:
 
 ```bash
 KOVA_DASHBOARD_BASIC_AUTH_USERNAME=admin
@@ -232,6 +232,7 @@ Advanced/rarely-used keys are hidden by default behind a toggle.
 
 Browse and inspect all agent sessions. Each row shows the session title, source platform icon (CLI, Telegram, Discord, Slack, cron), model name, message count, tool call count, and how long ago it was active. Live sessions are marked with a pulsing badge.
 
+- **Filter** — **Chats / Automation / All** tabs scope the list: *Chats* (the default) shows human conversations and hides automation noise (cron, tool, API, ACP sessions); *Automation* shows only those; *All* shows everything. An exact-source dropdown narrows further to a single channel (e.g. only Telegram). Search respects the active filter.
 - **Search** — full-text search across all message content using FTS5. Results show highlighted snippets and auto-scroll to the first matching message when expanded.
 - **Stats** — a summary bar shows total sessions, how many are active in the store, archived count, total messages, and a per-source breakdown.
 - **Expand** — click a session to load its full message history. Messages are color-coded by role (user, assistant, system, tool) and rendered as Markdown with syntax highlighting.
@@ -287,7 +288,7 @@ Create and manage [profiles](../profiles.md) — isolated Kova instances with th
 
 ### Skills
 
-Browse, search, and toggle installed skills and toolsets, and install new ones from the hub. Skills are loaded from `~/.hermes/skills/` and grouped by category.
+Browse, search, and toggle installed skills and toolsets, and install new ones from the hub. Skills are loaded from `~/.kova/skills/` and grouped by category.
 
 - **Search** — filter installed skills and toolsets by name, description, or category
 - **Category filter** — click category pills to narrow the list (e.g. MLOps, MCP, Red Teaming, AI)
@@ -299,7 +300,7 @@ Browse, search, and toggle installed skills and toolsets, and install new ones f
 
 ### MCP
 
-Manage [MCP](/integrations/mcp) servers without the CLI. The same `mcp_servers`
+Manage [MCP](./mcp) servers without the CLI. The same `mcp_servers`
 block in `config.yaml` that `kova mcp` reads from.
 
 **Your MCP servers:**
@@ -353,7 +354,7 @@ the API server and webhook endpoints) with its live connection status.
 - **Configure** — open a per-platform form with exactly the fields that channel needs (bot token, app token, server URL, allowlist, etc.). Secrets render as password inputs and are stored redacted; leaving a field blank keeps the existing value. Required fields are marked and validated. A "Setup guide" link points to the platform's credential docs.
 - **Enable / disable** — toggle a channel on or off. The credential stays on disk; only the active state changes.
 - **Test** — check whether the channel is configured, enabled, and reporting a live connection from the gateway.
-- **Restart gateway** — credentials are written to `~/.hermes/.env` and the enabled flag to `config.yaml`; the gateway connects each enabled channel on its next restart, which you can trigger right from the page.
+- **Restart gateway** — credentials are written to `~/.kova/.env` and the enabled flag to `config.yaml`; the gateway connects each enabled channel on its next restart, which you can trigger right from the page.
 
 ![Channels admin page — every messaging platform with status, enable toggles, and per-platform setup forms](/img/dashboard/admin-channels.png)
 
@@ -382,7 +383,7 @@ Creating a shell hook (note the consent checkbox and the run-arbitrary-commands 
 ![New shell hook modal](/img/dashboard/admin-hook-create.png)
 
 :::warning Security
-The web dashboard reads and writes your `.env` file, which contains API keys and secrets. It binds to `127.0.0.1` by default — only accessible from your local machine. If you bind to `0.0.0.0`, anyone on your network can view and modify your credentials. The dashboard has no authentication of its own.
+The web dashboard reads and writes your `.env` file, which contains API keys and secrets. It binds to `127.0.0.1` by default — only accessible from your local machine, with no login required. Binding to any non-loopback address (including `0.0.0.0`) engages the [auth gate](#authentication-gated-mode): the server refuses to start until an auth provider (username/password or OAuth) is configured.
 :::
 
 ## `/reload` Slash Command
@@ -394,7 +395,7 @@ You → /reload
   Reloaded .env (3 var(s) updated)
 ```
 
-This re-reads `~/.hermes/.env` into the running process's environment. Useful when you've added a new provider key via the dashboard and want to use it immediately.
+This re-reads `~/.kova/.env` into the running process's environment. Useful when you've added a new provider key via the dashboard and want to use it immediately.
 
 ## REST API
 
@@ -572,13 +573,10 @@ Operator-owned dashboards bound to loopback are unaffected — no auth, no login
 | `kova dashboard` (default — binds to `127.0.0.1`) | OFF | Local development |
 | `kova dashboard --host 0.0.0.0` | **ON** | Remote / production — protect with the username/password provider or OAuth |
 
-The gate is on if and only if:
+The gate is on if and only if the bind host is not `127.0.0.1`, `::1`, or `localhost`. Binding to `0.0.0.0` (or any RFC1918 / LAN address) engages the gate. The legacy `--insecure` flag **no longer disables it** — it's accepted for backward compatibility but ignored, with a warning.
 
-1. The bind host is not `127.0.0.1`, `::1`, `localhost`, or `0.0.0.0` AND
-2. The `--insecure` flag is **not** set.
-
-:::danger `--insecure` disables auth entirely
-`--insecure` skips the gate and serves an unauthenticated dashboard that reads/writes your `.env` (API keys, secrets) and can run agent commands. **Do not use it for a remote connection.** To expose the dashboard to another machine, configure the [username/password provider](#usernamepassword-provider-no-oauth-idp) (or OAuth) and leave `--insecure` off. The flag exists only as a last-resort escape hatch on a fully trusted, firewalled single-host network.
+:::danger `--insecure` is a no-op — it does not disable auth
+Since the June 2026 hardening, `--insecure` no longer bypasses dashboard authentication: a non-loopback bind always requires an auth provider (the username/password provider or OAuth). If you want an auth-free dashboard, bind to `127.0.0.1` and reach it over an SSH tunnel or Tailscale.
 :::
 
 ### Fail-closed semantics
@@ -597,12 +595,12 @@ Because every login is verified against Nous Portal and protected by your Nous a
 
 To use the Nous provider you need an OAuth client ID (shape `agent:{id}`). There are two ways to get one:
 
-- **CLI — `kova dashboard register`.** Run it on the host where the dashboard lives. It resolves your existing Nous login (run `kova setup` first if you're not logged in), registers a self-hosted OAuth client with the Portal, and writes `KOVA_DASHBOARD_OAUTH_CLIENT_ID` into `~/.hermes/.env` for you. Optional flags: `--name` (a human-readable label, otherwise auto-generated) and `--redirect-uri` (a public HTTPS callback URL for an internet-facing host).
+- **CLI — `kova dashboard register`.** Run it on the host where the dashboard lives. It resolves your existing Nous login (run `kova setup` first if you're not logged in), registers a self-hosted OAuth client with the Portal, and writes `KOVA_DASHBOARD_OAUTH_CLIENT_ID` into `~/.kova/.env` for you. Optional flags: `--name` (a human-readable label, otherwise auto-generated) and `--redirect-uri` (a public HTTPS callback URL for an internet-facing host).
 
   ```bash
   kova dashboard register
   # ✓ Registered dashboard "swift_falcon"
-  # …writes KOVA_DASHBOARD_OAUTH_CLIENT_ID to ~/.hermes/.env
+  # …writes KOVA_DASHBOARD_OAUTH_CLIENT_ID to ~/.kova/.env
   ```
 
 - **GUI — the Local Dashboards page.** Open [`/local-dashboards`](https://portal.nousresearch.com/local-dashboards) in the Nous Portal to register, name, manage, and revoke self-hosted dashboards from the browser. Copy the resulting `agent:{id}` client ID into `KOVA_DASHBOARD_OAUTH_CLIENT_ID` (env) or `dashboard.oauth.client_id` (config.yaml). This is also where you revoke a dashboard registered via the CLI.
@@ -625,42 +623,42 @@ dashboard:
 |---------|-----------|--------|----------------|
 | `KOVA_DASHBOARD_OAUTH_CLIENT_ID` | `dashboard.oauth.client_id` | `agent:{instance_id}` | `kova dashboard register` |
 
-Per the Kova Agent convention (`~/.hermes/.env` is for API keys / secrets only), **`config.yaml` is the recommended place to set these values** for local dev, on-prem, and any deployment you control directly. The environment-variable path exists so a hosting platform's secret injection can push per-deploy `client_id`s without anyone having to edit `config.yaml` inside the image — that's its primary purpose.
+Per the Kova Agent convention (`~/.kova/.env` is for API keys / secrets only), **`config.yaml` is the recommended place to set these values** for local dev, on-prem, and any deployment you control directly. The environment-variable path exists so a hosting platform's secret injection can push per-deploy `client_id`s without anyone having to edit `config.yaml` inside the image — that's its primary purpose.
 
 Empty environment values are treated as unset, so a provisioned-but-not-populated platform secret can't accidentally shadow a valid `config.yaml` entry.
 
 If neither source provides a client_id, the plugin reports the specific reason and the dashboard's fail-closed bind error tells you exactly what to fix:
 
 ```
-Refusing to bind dashboard to 0.0.0.0 — the OAuth auth gate engages on
+Refusing to bind dashboard to 0.0.0.0 — the auth gate engages on
 non-loopback binds, but no auth providers are registered.
 
 Bundled providers reported these issues:
   • nous: KOVA_DASHBOARD_OAUTH_CLIENT_ID is not set (and
-    dashboard.oauth.client_id in config.yaml is empty). The Nous Portal
-    provisions this env var (shape 'agent:{instance_id}') when it
-    deploys a Kova Agent instance — set it to your provisioned
-    client id (either as an env var or under dashboard.oauth.client_id
-    in config.yaml), or pass --insecure to skip the OAuth gate entirely.
+    dashboard.oauth.client_id in config.yaml is empty). …
 
-Or pass --insecure to skip the auth gate (NOT recommended on untrusted
-networks).
+Configure an auth provider before exposing the dashboard:
+  • Password: set dashboard.basic_auth.username + password_hash in config.yaml
+  • OAuth: run `kova dashboard register` (Nous Portal) or install a
+    DashboardAuthProvider plugin.
+There is no unauthenticated public-bind option — to keep it local, bind
+127.0.0.1 and tunnel in (SSH / Tailscale).
 ```
 
 #### Worked example: Nous Research
 
 From a logged-in Kova install to a Nous-gated dashboard in three steps.
 
-**1. Log in and register the dashboard.** `kova dashboard register` uses your existing Nous login to provision an OAuth client and writes `KOVA_DASHBOARD_OAUTH_CLIENT_ID` into `~/.hermes/.env` for you:
+**1. Log in and register the dashboard.** `kova dashboard register` uses your existing Nous login to provision an OAuth client and writes `KOVA_DASHBOARD_OAUTH_CLIENT_ID` into `~/.kova/.env` for you:
 
 ```bash
 kova setup            # if you're not already logged into Nous Portal
 kova dashboard register
 # ✓ Registered dashboard "swift_falcon"
-# …writes KOVA_DASHBOARD_OAUTH_CLIENT_ID to ~/.hermes/.env
+# …writes KOVA_DASHBOARD_OAUTH_CLIENT_ID to ~/.kova/.env
 ```
 
-**2. Run the dashboard on a reachable address.** A non-loopback bind without `--insecure` engages the OAuth gate, and the `client_id` just written activates the `nous` provider:
+**2. Run the dashboard on a reachable address.** A non-loopback bind engages the OAuth gate, and the `client_id` just written activates the `nous` provider:
 
 ```bash
 kova dashboard --host 0.0.0.0 --port 9119 --no-open
@@ -680,7 +678,7 @@ curl -s http://<host>:9119/api/status | jq '.auth_required, .auth_providers'
 
 If you don't want to wire up an OAuth identity provider — a self-hosted "just put a password on my dashboard" deployment — the bundled `plugins/dashboard_auth/basic` plugin registers a `DashboardAuthProvider` named `basic` that authenticates with a **username and password** instead of an OAuth redirect.
 
-It plugs into the same gate as the OAuth provider: the gate engages on a non-loopback bind without `--insecure`, the login page renders a credential form for this provider (instead of a "Log in with X" button), and everything downstream of login — session cookies, transparent refresh, WS tickets, logout, the audit log — is identical to the OAuth path. Sessions are stateless HMAC-signed tokens the provider mints itself, so there's **no database and no external IDP**. Password hashing uses stdlib `scrypt` (no third-party dependency).
+It plugs into the same gate as the OAuth provider: the gate engages on a non-loopback bind, the login page renders a credential form for this provider (instead of a "Log in with X" button), and everything downstream of login — session cookies, transparent refresh, WS tickets, logout, the audit log — is identical to the OAuth path. Sessions are stateless HMAC-signed tokens the provider mints itself, so there's **no database and no external IDP**. Password hashing uses stdlib `scrypt` (no third-party dependency).
 
 :::warning Use this on trusted networks only — not the public internet
 The username/password provider is intended for self-hosted / on-prem / homelab dashboards on a **trusted network**, or reachable only over a **VPN**. It protects a single shared credential with no external identity provider, MFA, or per-user accounts behind it, so it is **not suitable for exposing a dashboard directly to the public internet**. For an internet-facing dashboard, use the [Nous Research provider](#default-provider-nous-research) (or your own [self-hosted OIDC](#self-hosted-oidc-provider) / [custom OAuth](#custom-providers) provider) instead.
@@ -688,7 +686,7 @@ The username/password provider is intended for self-hosted / on-prem / homelab d
 
 #### Configuration
 
-Like the Nous provider, it reads from `config.yaml` (canonical) with environment variables winning when set non-empty. It activates only when `username` plus either `password_hash` (preferred) or `password` are configured — otherwise it's a no-op, so OAuth users and loopback/`--insecure` operators are unaffected.
+Like the Nous provider, it reads from `config.yaml` (canonical) with environment variables winning when set non-empty. It activates only when `username` plus either `password_hash` (preferred) or `password` are configured — otherwise it's a no-op, so OAuth users and loopback operators are unaffected.
 
 **`config.yaml`:**
 
@@ -725,21 +723,21 @@ The `/auth/password-login` endpoint is rate-limited per client IP (default 10 at
 
 From nothing to a password-gated dashboard on a trusted network in three steps.
 
-**1. Set credentials in `~/.hermes/.env`.** Hash the password so no plaintext sits at rest, and set a stable signing secret so sessions survive restarts:
+**1. Set credentials in `~/.kova/.env`.** Hash the password so no plaintext sits at rest, and set a stable signing secret so sessions survive restarts:
 
 ```bash
 # Compute a scrypt hash of your chosen password:
 HASH=$(python -c "from plugins.dashboard_auth.basic import hash_password; print(hash_password('choose-a-strong-password'))")
 
-cat >> ~/.hermes/.env <<EOF
+cat >> ~/.kova/.env <<EOF
 KOVA_DASHBOARD_BASIC_AUTH_USERNAME=admin
 KOVA_DASHBOARD_BASIC_AUTH_PASSWORD_HASH=$HASH
 KOVA_DASHBOARD_BASIC_AUTH_SECRET=$(openssl rand -base64 32)
 EOF
-chmod 600 ~/.hermes/.env
+chmod 600 ~/.kova/.env
 ```
 
-**2. Run the dashboard on a reachable address.** A non-loopback bind without `--insecure` engages the gate, and the username + hash activate the `basic` provider:
+**2. Run the dashboard on a reachable address.** A non-loopback bind engages the gate, and the username + hash activate the `basic` provider:
 
 ```bash
 kova dashboard --host 0.0.0.0 --port 9119 --no-open
@@ -765,7 +763,7 @@ If you run your own identity provider, the bundled `plugins/dashboard_auth/self_
 
 > **Authentik · Keycloak · Zitadel · Authelia · Auth0 · Okta · Google · …**
 
-Like the Nous provider, it auto-loads and only registers itself once it's configured, so it's a no-op for loopback / `--insecure` dashboards.
+Like the Nous provider, it auto-loads and only registers itself once it's configured, so it's a no-op for loopback dashboards.
 
 #### Configuration
 
@@ -874,7 +872,7 @@ kova dashboard --host 0.0.0.0 --port 9119 --no-open
 
 `KOVA_DASHBOARD_PUBLIC_URL` tells the dashboard its OAuth callback is
 `http://localhost:9119/auth/callback` — the redirect URI the realm registered
-above. Binding to `0.0.0.0` (a non-loopback bind) without `--insecure` is what
+above. Binding to `0.0.0.0` (a non-loopback bind) is what
 engages the OAuth gate.
 
 **3. Log in.** Open `http://localhost:9119/`, you'll be bounced to `/login`. Click **Sign in with Self-Hosted OIDC** → authenticate at Keycloak as `testuser` / `testpassword` → land back on the authenticated dashboard. The sidebar shows `Logged in as Test User via self-hosted`, and `GET /api/auth/me` returns the verified session (`provider: self-hosted`, `email: testuser@example.com`).
@@ -946,7 +944,7 @@ Every login start, success, failure, and session-verify failure is written as a 
 To plug a non-Nous OAuth provider (e.g. Google, GitHub, custom OIDC), create a plugin that registers a `DashboardAuthProvider`:
 
 ```python
-# ~/.hermes/plugins/dashboard-auth-myidp/__init__.py
+# ~/.kova/plugins/dashboard-auth-myidp/__init__.py
 from kova_cli.dashboard_auth import DashboardAuthProvider, Session, LoginStart
 
 class MyIdPProvider(DashboardAuthProvider):
@@ -1008,14 +1006,14 @@ The recipe below uses the username/password path because it's the quickest to st
 ### On the backend (the remote machine)
 
 ```bash
-# 1. Set the dashboard login credentials in ~/.hermes/.env (secrets file, 0600).
-cat >> ~/.hermes/.env <<'EOF'
+# 1. Set the dashboard login credentials in ~/.kova/.env (secrets file, 0600).
+cat >> ~/.kova/.env <<'EOF'
 KOVA_DASHBOARD_BASIC_AUTH_USERNAME=admin
 KOVA_DASHBOARD_BASIC_AUTH_PASSWORD=choose-a-strong-password
 # Recommended: a stable signing secret so sessions survive restarts.
 KOVA_DASHBOARD_BASIC_AUTH_SECRET=$(openssl rand -base64 32)
 EOF
-chmod 600 ~/.hermes/.env
+chmod 600 ~/.kova/.env
 
 # 2. Run the dashboard bound to a reachable address. The non-loopback bind
 #    engages the auth gate; the username/password provider handles login.
@@ -1024,7 +1022,7 @@ kova dashboard --no-open --host 0.0.0.0 --port 9119
 
 Prefer no plaintext at rest? Use `KOVA_DASHBOARD_BASIC_AUTH_PASSWORD_HASH` with a scrypt hash instead — see [Username/password provider](#usernamepassword-provider-no-oauth-idp) for the full surface.
 
-If you run the dashboard as a systemd service, `~/.hermes/.env` is picked up automatically when the unit has `EnvironmentFile=%h/.hermes/.env`, so the credentials are in the environment at boot.
+If you run the dashboard as a systemd service, `~/.kova/.env` is picked up automatically when the unit has `EnvironmentFile=%h/.kova/.env`, so the credentials are in the environment at boot.
 
 :::warning
 The dashboard reads and writes your `.env` (API keys, secrets) and can run agent commands. The **username/password** setup shown here is for a trusted network — never expose a password-protected dashboard directly to the open internet. Put it behind a VPN. [Tailscale](https://tailscale.com/) is the clean option: bind to the machine's tailscale IP (`--host <tailscale-ip>`) and use `http://<tailscale-ip>:9119` as the Remote URL. Only devices on your tailnet can reach it. To reach a backend over the public internet, use the **OAuth (Nous Portal)** provider instead.

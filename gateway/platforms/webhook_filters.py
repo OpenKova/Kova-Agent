@@ -27,7 +27,7 @@ def _stringify_filter_value(value: Any) -> str:
 
 
 def _resolve_profile_path(path_value: Any) -> Optional[Path]:
-    """Resolve a user path, mapping ~/.hermes to the active profile home."""
+    """Resolve a user path, mapping ~/.kova to the active profile home."""
     if not isinstance(path_value, str):
         return None
     raw = os.path.expandvars(path_value.strip())
@@ -36,10 +36,10 @@ def _resolve_profile_path(path_value: Any) -> Optional[Path]:
     from kova_constants import get_kova_home
 
     kova_home = get_kova_home()
-    if raw == "~/.hermes":
+    if raw == "~/.kova":
         return kova_home
-    if raw.startswith("~/.hermes/"):
-        return kova_home / raw.removeprefix("~/.hermes/")
+    if raw.startswith("~/.kova/"):
+        return kova_home / raw.removeprefix("~/.kova/")
     path = Path(raw).expanduser()
     if path.is_absolute():
         return path
@@ -54,7 +54,7 @@ def _resolve_script_path(script_value: Any) -> tuple[Optional[Path], Optional[st
 
     scripts_root = (get_kova_home() / "scripts").resolve()
     raw_text = os.path.expandvars(script_value.strip())
-    if raw_text == "~/.hermes" or raw_text.startswith("~/.hermes/"):
+    if raw_text == "~/.kova" or raw_text.startswith("~/.kova/"):
         mapped = _resolve_profile_path(raw_text)
         candidate = mapped.resolve() if mapped is not None else scripts_root
     else:
@@ -245,17 +245,17 @@ class WebhookRouteProcessor:
             argv = [sys.executable, str(path)]
 
         try:
-            from tools.environments.local import _sanitize_subprocess_env
+            from tools.environments.local import build_subprocess_env
 
             popen_kwargs = {"creationflags": 0x08000000} if sys.platform == "win32" else {}
             result = subprocess.run(
                 argv,
                 input=json.dumps(payload),
                 capture_output=True,
-                text=True,
+                text=True, encoding="utf-8", errors="replace",
                 timeout=self.script_timeout_seconds,
                 cwd=str(path.parent),
-                env=_sanitize_subprocess_env(os.environ.copy()),
+                env=build_subprocess_env(),
                 **popen_kwargs,
             )
         except subprocess.TimeoutExpired:

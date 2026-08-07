@@ -6,15 +6,16 @@ description: "Run custom code at key lifecycle points — log activity, send ale
 
 # Event Hooks
 
-Kova has three hook systems that run custom code at key lifecycle points:
+Kova has four hook systems that run custom code at key lifecycle points:
 
 | System | Registered via | Runs in | Use case |
 |--------|---------------|---------|----------|
-| **[Gateway hooks](#gateway-event-hooks)** | `HOOK.yaml` + `handler.py` in `~/.hermes/hooks/` | Gateway only | Logging, alerts, webhooks |
+| **[Gateway hooks](#gateway-event-hooks)** | `HOOK.yaml` + `handler.py` in `~/.kova/hooks/` | Gateway only | Logging, alerts, webhooks |
 | **[Plugin hooks](#plugin-hooks)** | `ctx.register_hook()` in a [plugin](/user-guide/features/plugins) | CLI + Gateway | Tool interception, metrics, guardrails |
-| **[Shell hooks](#shell-hooks)** | `hooks:` block in `~/.hermes/config.yaml` pointing at shell scripts | CLI + Gateway | Drop-in scripts for blocking, auto-formatting, context injection |
+| **[Shell hooks](#shell-hooks)** | `hooks:` block in `~/.kova/config.yaml` pointing at shell scripts | CLI + Gateway | Drop-in scripts for blocking, auto-formatting, context injection |
+| **[Outbound webhooks](#outbound-webhooks)** | `hooks.outbound:` list in `~/.kova/config.yaml` | CLI + Gateway | Push signed lifecycle events to external HTTP endpoints — CI, dashboards, other agents |
 
-All three systems are non-blocking — errors in any hook are caught and logged, never crashing the agent.
+All four systems are non-blocking — errors in any hook are caught and logged, never crashing the agent.
 
 ## Gateway Event Hooks
 
@@ -22,10 +23,10 @@ Gateway hooks fire automatically during gateway operation (Telegram, Discord, Sl
 
 ### Creating a Hook
 
-Each hook is a directory under `~/.hermes/hooks/` containing two files:
+Each hook is a directory under `~/.kova/hooks/` containing two files:
 
 ```text
-~/.hermes/hooks/
+~/.kova/hooks/
 └── my-hook/
     ├── HOOK.yaml      # Declares which events to listen for
     └── handler.py     # Python handler function
@@ -78,9 +79,10 @@ async def handle(event_type: str, context: dict):
 | `session:start` | New messaging session created | `platform`, `user_id`, `session_id`, `session_key` |
 | `session:end` | Session ended (before reset) | `platform`, `user_id`, `session_key` |
 | `session:reset` | User ran `/new` or `/reset` | `platform`, `user_id`, `session_key` |
-| `agent:start` | Agent begins processing a message | `platform`, `user_id`, `session_id`, `message` |
+| `session:compress` | Context compression completed for a session | `platform`, `session_id`, `old_session_id` (empty when compacted in place), `in_place` (bool — `true` = transcript compacted on the same id, `false` = rotated from `old_session_id`), `compression_count` |
+| `agent:start` | Agent begins processing a message | `platform`, `user_id`, `chat_id`, `thread_id` (forum-topic / thread root id; empty when not in a thread), `chat_type` (`"dm"` \| `"group"` \| `"forum"`; empty if unknown), `session_id`, `message` (truncated to 500 chars) |
 | `agent:step` | Each iteration of the tool-calling loop | `platform`, `user_id`, `session_id`, `iteration`, `tool_names` |
-| `agent:end` | Agent finishes processing | `platform`, `user_id`, `session_id`, `message`, `response` |
+| `agent:end` | Agent finishes processing | same keys as `agent:start`, plus `response` (truncated to 500 chars) |
 | `reaction:added` | An emoji reaction was added to a message the bot can see (Slack adapter currently). Requires the `reactions:read` scope + the `reaction_added` bot event subscription; the bot must be a member of the channel. | `platform`, `reaction`, `user_id`, `item_user_id`, `item_type`, `channel_id`, `message_ts`, `team_id`, `event_ts`, `raw_event` |
 | `reaction:removed` | An emoji reaction was removed from a message the bot can see. Requires the `reaction_removed` bot event subscription. | same shape as `reaction:added` |
 | `command:*` | Any slash command executed | `platform`, `user_id`, `command`, `args` |
@@ -89,6 +91,10 @@ async def handle(event_type: str, context: dict):
 
 Handlers registered for `command:*` fire for any `command:` event (`command:model`, `command:reset`, etc.). Monitor all slash commands with a single subscription.
 
+:::tip Threaded replies
+A handler posting a follow-up message into the same Telegram forum topic should include `message_thread_id=int(thread_id)` when `chat_type == "forum"` and `thread_id` is non-empty.
+:::
+
 ### Examples
 
 #### Telegram Alert on Long Tasks
@@ -96,7 +102,7 @@ Handlers registered for `command:*` fire for any `command:` event (`command:mode
 Send yourself a message when the agent takes more than 10 steps:
 
 ```yaml
-# ~/.hermes/hooks/long-task-alert/HOOK.yaml
+# ~/.kova/hooks/long-task-alert/HOOK.yaml
 name: long-task-alert
 description: Alert when agent is taking many steps
 events:
@@ -104,7 +110,7 @@ events:
 ```
 
 ```python
-# ~/.hermes/hooks/long-task-alert/handler.py
+# ~/.kova/hooks/long-task-alert/handler.py
 import os
 import httpx
 
@@ -129,7 +135,7 @@ async def handle(event_type: str, context: dict):
 Track which slash commands are used:
 
 ```yaml
-# ~/.hermes/hooks/command-logger/HOOK.yaml
+# ~/.kova/hooks/command-logger/HOOK.yaml
 name: command-logger
 description: Log slash command usage
 events:
@@ -137,7 +143,7 @@ events:
 ```
 
 ```python
-# ~/.hermes/hooks/command-logger/handler.py
+# ~/.kova/hooks/command-logger/handler.py
 import json
 from datetime import datetime
 from pathlib import Path
@@ -162,7 +168,7 @@ def handle(event_type: str, context: dict):
 POST to an external service on new sessions:
 
 ```yaml
-# ~/.hermes/hooks/session-webhook/HOOK.yaml
+# ~/.kova/hooks/session-webhook/HOOK.yaml
 name: session-webhook
 description: Notify external service on new sessions
 events:
@@ -171,7 +177,7 @@ events:
 ```
 
 ```python
-# ~/.hermes/hooks/session-webhook/handler.py
+# ~/.kova/hooks/session-webhook/handler.py
 import httpx
 
 WEBHOOK_URL = "https://your-service.example.com/kova-events"
@@ -186,19 +192,19 @@ async def handle(event_type: str, context: dict):
 
 ### Tutorial: BOOT.md — Run a Startup Checklist on Every Gateway Boot
 
-A popular pattern from the community: drop a Markdown checklist at `~/.hermes/BOOT.md`, and have the agent run it once every time the gateway starts. Useful for "on every boot, check overnight cron failures and ping me on Discord if anything failed," or "summarize the last 24h of deploy.log and post it to Slack #ops."
+A popular pattern from the community: drop a Markdown checklist at `~/.kova/BOOT.md`, and have the agent run it once every time the gateway starts. Useful for "on every boot, check overnight cron failures and ping me on Discord if anything failed," or "summarize the last 24h of deploy.log and post it to Slack #ops."
 
 This tutorial shows how to build it yourself as a user-defined hook. Kova does not ship a built-in BOOT.md hook — you wire up exactly the behavior you want.
 
 #### What we're building
 
-1. A file at `~/.hermes/BOOT.md` with natural-language startup instructions.
+1. A file at `~/.kova/BOOT.md` with natural-language startup instructions.
 2. A gateway hook that fires on `gateway:startup`, spawns a one-shot agent with your gateway's resolved model/credentials, and runs the BOOT.md instructions.
 3. A `[SILENT]` convention so the agent can opt out of sending a message when there's nothing to report.
 
 #### Step 1: Write your checklist
 
-Create `~/.hermes/BOOT.md`. Write it as if you were giving instructions to a human assistant:
+Create `~/.kova/BOOT.md`. Write it as if you were giving instructions to a human assistant:
 
 ```markdown
 # Startup Checklist
@@ -214,24 +220,24 @@ The agent sees this as part of its prompt, so anything you can describe in plain
 #### Step 2: Create the hook
 
 ```text
-~/.hermes/hooks/boot-md/
+~/.kova/hooks/boot-md/
 ├── HOOK.yaml
 └── handler.py
 ```
 
-**`~/.hermes/hooks/boot-md/HOOK.yaml`**
+**`~/.kova/hooks/boot-md/HOOK.yaml`**
 
 ```yaml
 name: boot-md
-description: Run ~/.hermes/BOOT.md on gateway startup
+description: Run ~/.kova/BOOT.md on gateway startup
 events:
   - gateway:startup
 ```
 
-**`~/.hermes/hooks/boot-md/handler.py`**
+**`~/.kova/hooks/boot-md/handler.py`**
 
 ```python
-"""Run ~/.hermes/BOOT.md on every gateway startup."""
+"""Run ~/.kova/BOOT.md on every gateway startup."""
 
 import logging
 import threading
@@ -328,7 +334,7 @@ kova logs --follow --level INFO | grep boot-md
 
 You should see `Running BOOT.md (N chars)` followed by either `boot-md completed: ...` (summary of what the agent did) or `boot-md completed (nothing to report)` when the agent replied with an exact silence token such as `[SILENT]`.
 
-Delete `~/.hermes/BOOT.md` to disable the checklist — the hook stays loaded but silently skips when the file isn't there.
+Delete `~/.kova/BOOT.md` to disable the checklist — the hook stays loaded but silently skips when the file isn't there.
 
 #### Extending the pattern
 
@@ -342,7 +348,7 @@ An earlier version of Kova shipped this as a built-in hook and silently spawned 
 
 ### How It Works
 
-1. On gateway startup, `HookRegistry.discover_and_load()` scans `~/.hermes/hooks/`
+1. On gateway startup, `HookRegistry.discover_and_load()` scans `~/.kova/hooks/`
 2. Each subdirectory with `HOOK.yaml` + `handler.py` is loaded dynamically
 3. Handlers are registered for their declared events
 4. At each lifecycle point, `hooks.emit()` fires all matching handlers
@@ -367,6 +373,10 @@ def register(ctx):
     ctx.register_hook("post_llm_call", my_sync_callback)
     ctx.register_hook("on_session_start", my_init_callback)
     ctx.register_hook("on_session_end", my_cleanup_callback)
+    # Kanban board lifecycle (fire after the board DB change commits):
+    ctx.register_hook("kanban_task_claimed", my_claim_callback)     # dispatcher process
+    ctx.register_hook("kanban_task_completed", my_done_callback)    # worker process
+    ctx.register_hook("kanban_task_blocked", my_blocked_callback)   # worker process
 ```
 
 **General rules for all hooks:**
@@ -959,7 +969,7 @@ Fires **once per child agent** after `delegate_task` finishes. Whether you deleg
 ```python
 def my_callback(parent_session_id: str, child_role: str | None,
                 child_summary: str | None, child_status: str,
-                duration_ms: int, **kwargs):
+                tool_call_history: list[dict], duration_ms: int, **kwargs):
 ```
 
 | Parameter | Type | Description |
@@ -968,6 +978,7 @@ def my_callback(parent_session_id: str, child_role: str | None,
 | `child_role` | `str \| None` | Orchestrator role tag set on the child (`None` if the feature isn't enabled) |
 | `child_summary` | `str \| None` | The final response the child returned to the parent |
 | `child_status` | `str` | `"completed"`, `"failed"`, `"interrupted"`, or `"error"` |
+| `tool_call_history` | `list[dict]` | Ordered metadata-only tool calls: `tool_name`, bounded `tool_input`, `input_bytes`, `output_bytes`, and `status`; raw inputs and outputs are excluded |
 | `duration_ms` | `int` | Wall-clock time spent running the child, in milliseconds |
 
 **Fires:** In `tools/delegate_tool.py`, after `ThreadPoolExecutor.as_completed()` drains all child futures. Firing is marshalled to the parent thread so hook authors don't have to reason about concurrent callback execution.
@@ -1285,7 +1296,7 @@ The hook is guarded on a non-empty, non-interrupted response — it will not fir
 
 ## Shell Hooks
 
-Declare shell-script hooks in your `cli-config.yaml` and Kova will run them as subprocesses whenever the corresponding plugin-hook event fires — in both CLI and gateway sessions. No Python plugin authoring required.
+Declare shell-script hooks in your `~/.kova/config.yaml` and Kova will run them as subprocesses whenever the corresponding plugin-hook event fires — in both CLI and gateway sessions. No Python plugin authoring required.
 
 Use shell hooks when you want a drop-in, single-file script (Bash, Python, anything with a shebang) to:
 
@@ -1300,8 +1311,8 @@ Shell hooks are registered by calling `agent.shell_hooks.register_from_config(cf
 
 | Dimension | Shell hooks | [Plugin hooks](#plugin-hooks) | [Gateway hooks](#gateway-event-hooks) |
 |-----------|-------------|-------------------------------|---------------------------------------|
-| Declared in | `hooks:` block in `~/.hermes/config.yaml` | `register()` in a `plugin.yaml` plugin | `HOOK.yaml` + `handler.py` directory |
-| Lives under | `~/.hermes/agent-hooks/` (by convention) | `~/.hermes/plugins/<name>/` | `~/.hermes/hooks/<name>/` |
+| Declared in | `hooks:` block in `~/.kova/config.yaml` | `register()` in a `plugin.yaml` plugin | `HOOK.yaml` + `handler.py` directory |
+| Lives under | `~/.kova/agent-hooks/` (by convention) | `~/.kova/plugins/<name>/` | `~/.kova/hooks/<name>/` |
 | Language | Any (Bash, Python, Go binary, …) | Python only | Python only |
 | Runs in | CLI + Gateway | CLI + Gateway | Gateway only |
 | Events | `VALID_HOOKS` (incl. `subagent_stop`) | `VALID_HOOKS` | Gateway lifecycle (`gateway:startup`, `agent:*`, `command:*`) |
@@ -1367,16 +1378,16 @@ Malformed JSON, non-zero exit codes, and timeouts log a warning but never abort 
 #### 1. Auto-format Python files after every write
 
 ```yaml
-# ~/.hermes/config.yaml
+# ~/.kova/config.yaml
 hooks:
   post_tool_call:
     - matcher: "write_file|patch"
-      command: "~/.hermes/agent-hooks/auto-format.sh"
+      command: "~/.kova/agent-hooks/auto-format.sh"
 ```
 
 ```bash
 #!/usr/bin/env bash
-# ~/.hermes/agent-hooks/auto-format.sh
+# ~/.kova/agent-hooks/auto-format.sh
 payload="$(cat -)"
 path=$(echo "$payload" | jq -r '.tool_input.path // empty')
 [[ "$path" == *.py ]] && command -v black >/dev/null && black "$path" 2>/dev/null
@@ -1391,13 +1402,13 @@ The agent's in-context view of the file is **not** re-read automatically — the
 hooks:
   pre_tool_call:
     - matcher: "terminal"
-      command: "~/.hermes/agent-hooks/block-rm-rf.sh"
+      command: "~/.kova/agent-hooks/block-rm-rf.sh"
       timeout: 5
 ```
 
 ```bash
 #!/usr/bin/env bash
-# ~/.hermes/agent-hooks/block-rm-rf.sh
+# ~/.kova/agent-hooks/block-rm-rf.sh
 payload="$(cat -)"
 cmd=$(echo "$payload" | jq -r '.tool_input.command // empty')
 if echo "$cmd" | grep -qE 'rm[[:space:]]+-rf?[[:space:]]+/'; then
@@ -1412,12 +1423,12 @@ fi
 ```yaml
 hooks:
   pre_llm_call:
-    - command: "~/.hermes/agent-hooks/inject-cwd-context.sh"
+    - command: "~/.kova/agent-hooks/inject-cwd-context.sh"
 ```
 
 ```bash
 #!/usr/bin/env bash
-# ~/.hermes/agent-hooks/inject-cwd-context.sh
+# ~/.kova/agent-hooks/inject-cwd-context.sh
 cat - >/dev/null   # discard stdin payload
 if status=$(git status --porcelain 2>/dev/null) && [[ -n "$status" ]]; then
   jq --null-input --arg s "$status" \
@@ -1434,26 +1445,26 @@ Claude Code's `UserPromptSubmit` event is intentionally not a separate Kova even
 ```yaml
 hooks:
   subagent_stop:
-    - command: "~/.hermes/agent-hooks/log-orchestration.sh"
+    - command: "~/.kova/agent-hooks/log-orchestration.sh"
 ```
 
 ```bash
 #!/usr/bin/env bash
-# ~/.hermes/agent-hooks/log-orchestration.sh
-log=~/.hermes/logs/orchestration.log
+# ~/.kova/agent-hooks/log-orchestration.sh
+log=~/.kova/logs/orchestration.log
 jq -c '{ts: now, parent: .session_id, extra: .extra}' < /dev/stdin >> "$log"
 printf '{}\n'
 ```
 
 ### Consent model
 
-Each unique `(event, command)` pair prompts the user for approval the first time Kova sees it, then persists the decision to `~/.hermes/shell-hooks-allowlist.json`. Subsequent runs (CLI or gateway) skip the prompt.
+Each unique `(event, command)` pair prompts the user for approval the first time Kova sees it, then persists the decision to `~/.kova/shell-hooks-allowlist.json`. Subsequent runs (CLI or gateway) skip the prompt.
 
 Three escape hatches bypass the interactive prompt — any one is sufficient:
 
 1. `--accept-hooks` flag on the CLI (e.g. `kova --accept-hooks chat`)
 2. `KOVA_ACCEPT_HOOKS=1` environment variable
-3. `hooks_auto_accept: true` in `cli-config.yaml`
+3. `hooks_auto_accept: true` in `~/.kova/config.yaml`
 
 Non-TTY runs (gateway, cron, CI) need one of these three — otherwise any newly-added hook silently stays un-registered and logs a warning.
 
@@ -1461,14 +1472,14 @@ Non-TTY runs (gateway, cron, CI) need one of these three — otherwise any newly
 
 #### Manual allowlisting
 
-Manual allowlisting is useful for non-TTY or service-account deployments where an operator cannot answer the first-use prompt interactively. The allowlist file is `~/.hermes/shell-hooks-allowlist.json`, and the expected format is an `approvals` array. Each approval records the hook `event` and the exact `command` string:
+Manual allowlisting is useful for non-TTY or service-account deployments where an operator cannot answer the first-use prompt interactively. The allowlist file is `~/.kova/shell-hooks-allowlist.json`, and the expected format is an `approvals` array. Each approval records the hook `event` and the exact `command` string:
 
 ```json
 {
   "approvals": [
     {
       "event": "post_llm_call",
-      "command": "/home/kova/.hermes/hooks/my-hook.py"
+      "command": "/home/kova/.kova/hooks/my-hook.py"
     }
   ]
 }
@@ -1490,10 +1501,96 @@ The command string must match the configured hook command exactly. A path-keyed 
 Shell hooks run with **your full user credentials** — same trust boundary as a cron entry or a shell alias. Treat the `hooks:` block in `config.yaml` as privileged configuration:
 
 - Only reference scripts you wrote or fully reviewed.
-- Keep scripts inside `~/.hermes/agent-hooks/` so the path is easy to audit.
+- Keep scripts inside `~/.kova/agent-hooks/` so the path is easy to audit.
 - Re-run `kova hooks doctor` after you pull a shared config to spot newly-added hooks before they register.
 - If your config.yaml is version-controlled across a team, review PRs that change the `hooks:` section the same way you'd review CI config.
 
 ### Ordering and precedence
 
 Both Python plugin hooks and shell hooks flow through the same `invoke_hook()` dispatcher. Python plugins are registered first (`discover_and_load()`), shell hooks second (`register_from_config()`), so Python `pre_tool_call` block decisions take precedence in tie cases. The first valid block wins — the aggregator returns as soon as any callback produces `{"action": "block", "message": str}` with a non-empty message.
+
+## Outbound Webhooks
+
+Outbound webhooks are the push-side mirror of the [inbound webhook platform](/user-guide/messaging/webhooks): inbound webhooks wake Kova when the world changes; outbound webhooks tell the world when Kova does something. Configure a list of HTTP endpoints and the lifecycle events they care about, and Kova POSTs a signed JSON payload to each endpoint whenever a matching event fires — no polling on the receiving end.
+
+Typical uses:
+
+- Notify a CI system or dashboard when an agent turn finishes (`on_session_end`)
+- Track subagent completions across a fleet (`subagent_stop`)
+- Feed tool activity into external monitoring (`post_tool_call` with a `matcher`)
+- Wake *another* Kova instance: point the URL at that instance's inbound webhook
+
+### Configuration
+
+Add a `hooks.outbound:` list to `~/.kova/config.yaml`:
+
+```yaml
+hooks:
+  outbound:
+    - name: ci-notify                       # optional label for logs
+      url: https://ci.example.com/kova-events
+      events: [on_session_end, subagent_stop]
+      secret_env: KOVA_OUTBOUND_WEBHOOK_SECRET   # env var holding the HMAC secret
+      timeout: 10                           # per-attempt seconds (1–60)
+
+    - name: tool-monitor
+      url: https://metrics.example.com/hooks/kova
+      events: [post_tool_call]
+      matcher: "terminal|delegate_task"     # regex, tool-scoped events only
+```
+
+Any event from the plugin-hook set is valid (`pre_tool_call`, `post_tool_call`, `pre_llm_call`, `post_llm_call`, `on_session_start`, `on_session_end`, `subagent_start`, `subagent_stop`, ...). Malformed entries warn and are skipped — a broken webhook never crashes the agent. Changes take effect on the next CLI session / gateway restart.
+
+Secrets: prefer `secret_env` (the name of an environment variable, typically set in `~/.kova/.env`) over an inline `secret:` literal, so the config file stays free of credentials. Entries without a secret are delivered unsigned (flagged as `UNSIGNED` by `kova hooks list`).
+
+### Wire format
+
+Each firing POSTs a JSON body with the same top-level shape as shell hooks' stdin, plus delivery metadata:
+
+```json
+{
+  "hook_event_name": "on_session_end",
+  "tool_name": null,
+  "tool_input": null,
+  "session_id": "sess_abc123",
+  "cwd": "/home/user/project",
+  "extra": {"completed": true, "interrupted": false, "model": "...", "platform": "cli"},
+  "delivery_id": "3f2c9a...",
+  "timestamp": "2026-07-22T14:00:00Z"
+}
+```
+
+Headers:
+
+| Header | Value |
+|--------|-------|
+| `Content-Type` | `application/json` |
+| `X-Kova-Event` | The hook event name |
+| `X-Kova-Delivery` | Unique id per delivery — same value as `delivery_id` in the body |
+| `X-Kova-Signature-256` | `sha256=<hex>` — HMAC-SHA256 of the raw body, GitHub-style; only present when a secret is configured |
+
+Verify the signature exactly as you would a GitHub webhook:
+
+```python
+import hashlib, hmac
+
+def verify(body: bytes, header: str, secret: str) -> bool:
+    expected = "sha256=" + hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, header)
+```
+
+Because `delivery_id` and `timestamp` live **inside the signed body**, a verified receiver also gets replay protection for free:
+
+- **Dedupe** on `delivery_id` (or the matching `X-Kova-Delivery` header) — remember recently seen ids and skip duplicates. Kova retries failed deliveries once, so the same id can legitimately arrive twice.
+- **Reject stale events** by checking `timestamp` against your clock with a tolerance window (5 minutes is the common default). An attacker replaying a captured request can't forge a fresh timestamp without the secret.
+
+### Delivery semantics
+
+- **Fire-and-forget, off the hot path.** Events are serialized and queued instantly; a single background thread performs the HTTP POSTs. A slow or dead endpoint can never stall a tool call or an agent turn.
+- **Notify-only.** Unlike shell hooks, outbound webhooks cannot block tool calls or inject context — the response body is ignored. They observe, never steer.
+- **Bounded retries.** Connection errors and 5xx responses are retried once with backoff; 4xx responses are not retried (the receiver said the request itself is wrong). Failures are logged and dropped — delivery is best-effort, not guaranteed.
+- **Redirects are never followed.** A 3xx response is treated as a misconfiguration and logged — following a redirected POST would silently drop the signed payload. Point the `url` at the final endpoint.
+- **Bounded queue.** If the queue backs up (dead endpoint, event storm), new events are dropped with a warning rather than consuming unbounded memory.
+- **No consent prompt.** Outbound targets execute no code on your machine — they receive data at a URL you configured. `KOVA_SAFE_MODE=1` still skips registration, same as plugins and shell hooks. Note that payloads include tool inputs and event metadata, so only point targets at endpoints you trust, and prefer `https://`.
+
+`kova hooks list` shows configured outbound targets alongside shell hooks, including whether each target is signed.

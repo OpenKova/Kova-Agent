@@ -96,7 +96,7 @@ test('resolveRemovableAppPath returns null for an unrecognized Windows dir', () 
 
 test('resolveRemovableAppPath uses APPIMAGE on Linux when set', () => {
   assert.equal(
-    resolveRemovableAppPath('/tmp/.mount_KovaXXXX/kova', 'linux', { APPIMAGE: '/home/x/Apps/Kova.AppImage' }),
+    resolveRemovableAppPath('/tmp/.mount_HermesXXXX/kova', 'linux', { APPIMAGE: '/home/x/Apps/Kova.AppImage' }),
     '/home/x/Apps/Kova.AppImage'
   )
 })
@@ -126,12 +126,12 @@ test('shouldRemoveAppBundle requires packaged AND a resolved path', () => {
 test('buildPosixCleanupScript waits for the PID, runs the uninstall module, removes bundle', () => {
   const script = buildPosixCleanupScript({
     desktopPid: 4321,
-    pythonExe: '/home/x/.hermes/hermes-agent/venv/bin/python',
+    pythonExe: '/home/x/.kova/kova-agent/venv/bin/python',
     pythonPath: null,
-    agentRoot: '/home/x/.hermes/kova-agent',
+    agentRoot: '/home/x/.kova/kova-agent',
     uninstallArgs: ['-m', 'kova_cli.uninstall', '--mode', 'gui'],
     appPath: '/opt/kova/linux-unpacked',
-    kovaHome: '/home/x/.hermes'
+    hermesHome: '/home/x/.kova'
   })
 
   assert.match(script, /^#!\/bin\/bash/)
@@ -148,11 +148,11 @@ test('buildPosixCleanupScript exports PYTHONPATH when pythonPath is set (lite/fu
   const script = buildPosixCleanupScript({
     desktopPid: 1,
     pythonExe: '/usr/bin/python3',
-    pythonPath: '/home/x/.hermes/kova-agent',
-    agentRoot: '/home/x/.hermes/kova-agent',
+    pythonPath: '/home/x/.kova/kova-agent',
+    agentRoot: '/home/x/.kova/kova-agent',
     uninstallArgs: ['-m', 'kova_cli.uninstall', '--mode', 'full'],
     appPath: null,
-    kovaHome: '/home/x/.hermes'
+    hermesHome: '/home/x/.kova'
   })
 
   // System python + source on PYTHONPATH so import kova_cli works while the
@@ -169,7 +169,7 @@ test('buildPosixCleanupScript omits PYTHONPATH when pythonPath is null (gui)', (
     agentRoot: '/a',
     uninstallArgs: ['-m', 'kova_cli.uninstall', '--mode', 'gui'],
     appPath: null,
-    kovaHome: '/h'
+    hermesHome: '/h'
   })
 
   assert.doesNotMatch(script, /export PYTHONPATH/)
@@ -183,7 +183,7 @@ test('buildPosixCleanupScript omits the bundle rm when appPath is null', () => {
     agentRoot: '/a',
     uninstallArgs: ['-m', 'kova_cli.uninstall', '--mode', 'lite'],
     appPath: null,
-    kovaHome: '/h'
+    hermesHome: '/h'
   })
 
   assert.doesNotMatch(script, /rm -rf '\//)
@@ -199,7 +199,7 @@ test('buildPosixCleanupScript single-quote-escapes paths with apostrophes', () =
     agentRoot: '/a',
     uninstallArgs: ['-m', 'kova_cli.uninstall', '--mode', 'gui'],
     appPath: null,
-    kovaHome: '/h'
+    hermesHome: '/h'
   })
 
   // The apostrophe is closed-escaped-reopened so the shell sees the literal.
@@ -216,7 +216,7 @@ test('buildWindowsCleanupScript waits (bounded) for PID, runs uninstall, rmdir b
     agentRoot: 'C:\\kova',
     uninstallArgs: ['-m', 'kova_cli.uninstall', '--mode', 'full'],
     appPath: 'C:\\Users\\x\\AppData\\Local\\Programs\\Kova',
-    kovaHome: 'C:\\Users\\x\\AppData\\Local\\kova'
+    hermesHome: 'C:\\Users\\x\\AppData\\Local\\kova'
   })
 
   assert.match(script, /@echo off/)
@@ -243,7 +243,7 @@ test('buildWindowsCleanupScript omits PYTHONPATH + rmdir when not needed (gui, n
     agentRoot: 'C:\\h',
     uninstallArgs: ['-m', 'kova_cli.uninstall', '--mode', 'gui'],
     appPath: null,
-    kovaHome: 'C:\\h'
+    hermesHome: 'C:\\h'
   })
 
   assert.doesNotMatch(script, /rmdir/)

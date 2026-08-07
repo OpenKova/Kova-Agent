@@ -1,7 +1,9 @@
 import { type ConnectionState, type GatewayEvent, resolveGatewayWsUrl } from '@kova/shared'
 import { atom } from 'nanostores'
 
-import { KovaGateway } from '@/kova'
+import { HermesGateway } from '@/kova'
+import { reconnectBackoffDelayMs } from '@/lib/reconnect-backoff'
+import { markNativeNotifyBaseline } from '@/store/notify-baseline'
 import { setGatewayState } from '@/store/session'
 
 // ── Multi-profile gateway routing ──────────────────────────────────────────
@@ -18,7 +20,7 @@ const normKey = (profile: string | null | undefined): string => (profile ?? '').
 
 // Read connection state through a call so TS control-flow analysis doesn't
 // narrow the getter to a constant across guards (it genuinely changes).
-const isOpen = (gateway: KovaGateway | null): boolean => gateway?.connectionState === 'open'
+const isOpen = (gateway: HermesGateway | null): boolean => gateway?.connectionState === 'open'
 
 interface RegistryConfig {
   onEvent: (event: GatewayEvent) => void
@@ -27,7 +29,7 @@ interface RegistryConfig {
 // ── Secondary (pool) backends ──────────────────────────────────────────────
 interface Secondary {
   profile: string
-  gateway: KovaGateway
+  gateway: HermesGateway
   offEvent: () => void
   offState: () => void
   reconnectTimer: ReturnType<typeof setTimeout> | null
@@ -51,11 +53,11 @@ interface Secondary {
 // runtime behavior is identical to plain module state.
 interface GatewayRegistryState {
   config: RegistryConfig | null
-  primaryGateway: KovaGateway | null
+  primaryGateway: HermesGateway | null
   primaryProfile: string
   activeKey: string
   secondaries: Map<string, Secondary>
-  $gateway: ReturnType<typeof atom<KovaGateway | null>>
+  $gateway: ReturnType<typeof atom<HermesGateway | null>>
 }
 
 const STATE_KEY = Symbol.for('kova.desktop.gatewayRegistryState')
@@ -70,7 +72,7 @@ function createRegistryState(): GatewayRegistryState {
     // The active gateway instance, exposed for inline message-stream
     // components (inline ClarifyTool, model overlays) that call gateway
     // methods without the instance threaded down through props.
-    $gateway: atom<KovaGateway | null>(null)
+    $gateway: atom<HermesGateway | null>(null)
   }
 }
 
@@ -114,7 +116,7 @@ export function emitLocalGatewayEvent(event: GatewayEvent): void {
   g.config?.onEvent(event)
 }
 
-export function setPrimaryGateway(gateway: KovaGateway | null, profile = 'default'): void {
+export function setPrimaryGateway(gateway: HermesGateway | null, profile = 'default'): void {
   g.primaryGateway = gateway
   g.primaryProfile = normKey(profile)
 }
@@ -123,7 +125,7 @@ export function isActivePrimary(): boolean {
   return g.activeKey === g.primaryProfile
 }
 
-export function activeGateway(): KovaGateway | null {
+export function activeGateway(): HermesGateway | null {
   if (g.activeKey === g.primaryProfile) {
     return g.primaryGateway
   }
@@ -136,6 +138,12 @@ export function activeGateway(): KovaGateway | null {
 // composer reflect the active profile's socket without a background reconnect
 // flipping the foreground enabled/disabled state.
 function reportGatewayState(profile: string, state: ConnectionState): void {
+  // Any socket opening replays parked prompts; hold OS notifications so a
+  // launch/reconnect doesn't alert about state that already existed.
+  if (state === 'open') {
+    markNativeNotifyBaseline()
+  }
+
   if (normKey(profile) === g.activeKey) {
     setGatewayState(state)
   }
@@ -160,7 +168,7 @@ function clearTimer(entry: Secondary): void {
 }
 
 async function openSecondary(entry: Secondary): Promise<void> {
-  const desktop = window.kovaDesktop
+  const desktop = window.hermesDesktop
 
   if (!desktop) {
     return
@@ -177,8 +185,9 @@ function scheduleReconnect(entry: Secondary): void {
     return
   }
 
-  // 1s, 2s, 4s … capped at 15s — same backoff shape as the primary.
-  const delay = Math.min(15_000, 1_000 * 2 ** Math.min(entry.reconnectAttempt, 4))
+  // Full-jitter exponential backoff — same shape (and same reason: avoid a
+  // reconnect storm against a restarting gateway) as the primary's.
+  const delay = reconnectBackoffDelayMs(entry.reconnectAttempt)
   entry.reconnectAttempt += 1
   entry.reconnectTimer = setTimeout(() => {
     entry.reconnectTimer = null
@@ -208,7 +217,7 @@ async function reconnectSecondary(entry: Secondary): Promise<void> {
 }
 
 function createSecondary(profile: string): Secondary {
-  const gateway = new KovaGateway()
+  const gateway = new HermesGateway()
 
   const entry: Secondary = {
     profile,
@@ -294,7 +303,7 @@ export async function ensureGatewayForProfile(profile: string): Promise<void> {
 
 // Reconnect the active gateway after a transient request failure. Primary
 // reconnects are owned by use-gateway-boot, so we only drive secondaries here.
-export async function ensureActiveGatewayOpen(): Promise<KovaGateway | null> {
+export async function ensureActiveGatewayOpen(): Promise<HermesGateway | null> {
   if (g.activeKey === g.primaryProfile) {
     return g.primaryGateway
   }
@@ -328,7 +337,7 @@ export function reconnectSecondaryGateways(): void {
 // Keep the idle reaper from killing a backend we still need: ping every live
 // secondary. The active one is pinged separately (touchActiveGatewayBackend).
 export function touchSecondaryGateways(): void {
-  const desktop = window.kovaDesktop
+  const desktop = window.hermesDesktop
 
   for (const entry of g.secondaries.values()) {
     if (entry.wantOpen) {

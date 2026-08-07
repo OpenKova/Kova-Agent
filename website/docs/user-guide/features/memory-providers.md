@@ -18,7 +18,7 @@ kova memory off        # disable external provider
 
 You can also select the active memory provider via `kova plugins` → Provider Plugins → Memory Provider.
 
-Or set manually in `~/.hermes/config.yaml`:
+Or set manually in `~/.kova/config.yaml`:
 
 ```yaml
 memory:
@@ -70,7 +70,9 @@ kova memory setup        # select "honcho" — runs the Honcho-specific post-set
 
 The legacy `kova honcho setup` command still works (it now redirects to `kova memory setup`), but is only registered after Honcho is selected as the active memory provider.
 
-**Config:** `$HERMES_HOME/honcho.json` (profile-local) or `~/.honcho/config.json` (global). Resolution order: `$HERMES_HOME/honcho.json` > `~/.hermes/honcho.json` > `~/.honcho/config.json`. See the [config reference](https://github.com/OpenKova/Kova-Agent/blob/main/plugins/memory/honcho/README.md) and the [Honcho integration guide](https://docs.honcho.dev/v3/guides/integrations/kova).
+**Headless / remote machines:** for cloud auth on a box without a browser (SSH, remote VM), pick **device** at the wizard's auth-method prompt. The CLI prints a short code and a verification link; open the link in a browser on any other machine, approve, and setup completes — no API key copy-paste. The wizard defaults to this option automatically when it detects no usable local browser.
+
+**Config:** `$HERMES_HOME/honcho.json` (profile-local) or `~/.honcho/config.json` (global). Resolution order: `$HERMES_HOME/honcho.json` > `~/.kova/honcho.json` > `~/.honcho/config.json`. See the [config reference](https://github.com/OpenKova/Kova-Agent/blob/main/plugins/memory/honcho/README.md) and the [Honcho integration guide](https://docs.honcho.dev/v3/guides/integrations/kova).
 
 <details>
 <summary>Full config reference</summary>
@@ -288,7 +290,7 @@ Context database by Volcengine (ByteDance) with filesystem-style knowledge hiera
 | **Data storage** | Self-hosted (local or cloud) |
 | **Cost** | Free (open-source, AGPL-3.0) |
 
-**Tools:** `viking_search` (semantic search), `viking_read` (tiered: abstract/overview/full), `viking_browse` (filesystem navigation), `viking_remember` (store facts), `viking_add_resource` (ingest URLs/docs)
+**Tools (6):** `viking_search` (semantic search), `viking_read` (tiered: abstract/overview/full), `viking_browse` (filesystem navigation), `viking_remember` (store facts), `viking_forget` (delete a memory file by exact `viking://` URI), `viking_add_resource` (ingest URLs/docs)
 
 **Setup:**
 ```bash
@@ -305,8 +307,8 @@ kova config set memory.provider openviking
 
 `kova memory setup` can reuse or copy connection values from
 `~/.openviking/ovcli.conf`. Manual setup uses the active profile's `.env` file;
-for the default profile that is `~/.hermes/.env`, and for named profiles use
-`~/.hermes/profiles/<profile>/.env`.
+for the default profile that is `~/.kova/.env`, and for named profiles use
+`~/.kova/profiles/<profile>/.env`.
 
 ```text
 OPENVIKING_ENDPOINT=http://127.0.0.1:1933
@@ -349,7 +351,7 @@ Server-side LLM fact extraction with semantic search, reranking, and automatic d
 kova memory setup    # select "mem0" → "Platform"
 # Or manually:
 kova config set memory.provider mem0
-echo "MEM0_API_KEY=your-key" >> ~/.hermes/.env
+echo "MEM0_API_KEY=your-key" >> ~/.kova/.env
 ```
 
 **Setup (OSS):**
@@ -375,8 +377,8 @@ kova memory setup mem0 --mode selfhosted --host http://localhost:8888 --api-key 
 Or configure manually — either as env vars:
 
 ```bash
-echo "MEM0_HOST=http://localhost:8888" >> ~/.hermes/.env
-echo "MEM0_API_KEY=your-admin-api-key" >> ~/.hermes/.env
+echo "MEM0_HOST=http://localhost:8888" >> ~/.kova/.env
+echo "MEM0_API_KEY=your-admin-api-key" >> ~/.kova/.env
 ```
 
 or in `mem0.json`:
@@ -387,7 +389,7 @@ or in `mem0.json`:
 
 The plugin authenticates with `X-API-Key` and uses the server's `/search` / `/memories` routes. `api_key` is optional (omit only for `AUTH_DISABLED` servers). Don't set `mode: oss` — it takes precedence over `host`.
 
-**Config:** `$HERMES_HOME/mem0.json` (behavioral settings). Only the secret `MEM0_API_KEY` belongs in `~/.hermes/.env`.
+**Config:** `$HERMES_HOME/mem0.json` (behavioral settings). Only the secret `MEM0_API_KEY` belongs in `~/.kova/.env`.
 
 | Key | Default | Description |
 |-----|---------|-------------|
@@ -427,7 +429,7 @@ Long-term memory with knowledge graph, entity resolution, and multi-strategy ret
 kova memory setup    # select "hindsight"
 # Or manually:
 kova config set memory.provider hindsight
-echo "HINDSIGHT_API_KEY=your-key" >> ~/.hermes/.env
+echo "HINDSIGHT_API_KEY=your-key" >> ~/.kova/.env
 ```
 
 The setup wizard installs dependencies automatically and only installs what's needed for the selected mode (`hindsight-client` for cloud, `hindsight-all` for local). Requires `hindsight-client >= 0.4.22` (auto-upgraded on session start if outdated).
@@ -503,14 +505,14 @@ Cloud memory API with hybrid search (Vector + BM25 + Reranking), 7 memory types,
 | **Data storage** | RetainDB Cloud |
 | **Cost** | $20/month |
 
-**Tools:** `retaindb_profile` (user profile), `retaindb_search` (semantic search), `retaindb_context` (task-relevant context), `retaindb_remember` (store with type + importance), `retaindb_forget` (delete memories)
+**Tools (10):** `retaindb_profile` (user profile), `retaindb_search` (semantic search), `retaindb_context` (task-relevant context), `retaindb_remember` (store with type + importance), `retaindb_forget` (delete memories), plus file tools: `retaindb_upload_file`, `retaindb_list_files`, `retaindb_read_file`, `retaindb_ingest_file`, `retaindb_delete_file`
 
 **Setup:**
 ```bash
 kova memory setup    # select "retaindb"
 # Or manually:
 kova config set memory.provider retaindb
-echo "RETAINDB_API_KEY=your-key" >> ~/.hermes/.env
+echo "RETAINDB_API_KEY=your-key" >> ~/.kova/.env
 ```
 
 ---
@@ -564,7 +566,7 @@ Semantic long-term memory with profile recall, semantic search, explicit memory 
 kova memory setup    # select "supermemory"
 # Or manually:
 kova config set memory.provider supermemory
-echo 'SUPERMEMORY_API_KEY=***' >> ~/.hermes/.env
+echo 'SUPERMEMORY_API_KEY=***' >> ~/.kova/.env
 ```
 
 Self-hosted setup:
@@ -657,11 +659,11 @@ kova memory setup
 | Provider | Storage | Cost | Tools | Dependencies | Unique Feature |
 |----------|---------|------|-------|-------------|----------------|
 | **Honcho** | Cloud | Paid | 5 | `honcho-ai` | Dialectic user modeling + session-scoped context |
-| **OpenViking** | Self-hosted | Free | 5 | `openviking` + server | Filesystem hierarchy + tiered loading |
+| **OpenViking** | Self-hosted | Free | 6 | `openviking` + server | Filesystem hierarchy + tiered loading |
 | **Mem0** | Cloud/Self-hosted | Free/Paid | 4 | `mem0ai` | Server-side LLM extraction + self-hosted/OSS modes |
 | **Hindsight** | Cloud/Local | Free/Paid | 3 | `hindsight-client` | Knowledge graph + reflect synthesis |
 | **Holographic** | Local | Free | 2 | None | HRR algebra + trust scoring |
-| **RetainDB** | Cloud | $20/mo | 5 | `requests` | Delta compression |
+| **RetainDB** | Cloud | $20/mo | 10 | `requests` | Delta compression |
 | **ByteRover** | Local/Cloud | Free/Paid | 3 | `brv` CLI | Pre-compression extraction |
 | **Supermemory** | Cloud/Self-hosted | Free/Paid | 4 | `supermemory` | Context fencing + session graph ingest + multi-container |
 | **Memori** | Cloud | Free/Paid | 5 | `kova-memori` | Tool-aware memory + structured recall |

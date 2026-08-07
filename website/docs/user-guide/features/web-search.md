@@ -39,39 +39,19 @@ If you have a paid [Nous Portal](https://portal.nousresearch.com) subscription, 
 
 ## How `web_extract` handles long pages
 
-Backends return raw page markdown, which can be huge (forum threads, docs sites, news articles with embedded comments). To keep your context window usable and your costs down, `web_extract` runs returned content through the **`web_extract` auxiliary model** before handing it to the agent. Behavior is purely size-driven:
+Backends return raw page markdown, which can be huge (forum threads, docs sites, news articles with embedded comments). To keep your context window usable, `web_extract` applies a **deterministic character budget** — no LLM summarization is involved:
 
 | Page size (characters) | What happens |
 |------------------------|--------------|
-| Under 5 000 | Returned as-is — no LLM call, full markdown reaches the agent |
-| 5 000 – 500 000 | Single-pass summary via the `web_extract` auxiliary model, capped at ~5 000 chars of output |
-| 500 000 – 2 000 000 | Chunked: split into 100 k-char chunks, summarize each in parallel, then synthesize a final summary (~5 000 chars) |
-| Over 2 000 000 | Refused with a hint to use a more focused source URL |
+| At or under the budget (default 15 000) | Returned whole — full markdown reaches the agent |
+| Over the budget | Head+tail window (~75% head / ~25% tail, cut on markdown line boundaries) plus an explicit `[TRUNCATED]` footer. The full clean text is stored to disk and the footer tells the agent the file path and the exact `read_file` call to page through the omitted middle |
+| Over 2 000 000 | Stored text is capped at 2 MB |
 
-The summary keeps quotes, code blocks, and key facts in their original formatting — it's a content compressor, not a paraphraser. If summarization fails or times out, Kova falls back to the first ~5 000 chars of raw content rather than a useless error.
+The per-page budget is configurable via `web.extract_char_limit` in `config.yaml` (default `15000`, clamped to 2 000–500 000), and the agent can raise it per-call with the tool's `char_limit` argument.
 
-### Which model does the summarizing?
+### When truncation gets in the way
 
-The `web_extract` auxiliary task. By default (`auxiliary.web_extract.provider: "auto"`), this is your **main chat model** — same provider, same model as `kova model`. That's fine for most setups, but on expensive reasoning models (Opus, MiniMax M2.7, etc.) every long-page extract adds meaningful cost.
-
-To route extraction summaries to a cheap, fast model regardless of your main:
-
-```yaml
-# ~/.hermes/config.yaml
-auxiliary:
-  web_extract:
-    provider: openrouter
-    model: google/gemini-3-flash-preview
-    timeout: 360       # seconds; raise if you hit summarization timeouts
-```
-
-Or pick interactively: `kova model` → **Configure auxiliary models** → `web_extract`.
-
-See [Auxiliary Models](/user-guide/configuration#auxiliary-models) for the full reference and per-task override patterns.
-
-### When summarization gets in the way
-
-If you specifically need raw, unsummarized page content — for example, you're scraping a structured page where the LLM summary would drop important fields — use `browser_navigate` + `browser_snapshot` instead. The browser tool returns the live accessibility tree without auxiliary-model rewriting (subject to its own 8 000-char snapshot cap on huge pages).
+If you specifically need the live DOM rather than extracted markdown — for example, a JS-heavy page where extraction returns little content — use `browser_navigate` + `browser_snapshot` instead. The browser tool returns the live accessibility tree (subject to its own snapshot cap on huge pages).
 
 ---
 
@@ -92,7 +72,7 @@ kova tools
 Full-featured search and extract. Recommended for most users.
 
 ```bash
-# ~/.hermes/.env
+# ~/.kova/.env
 FIRECRAWL_API_KEY=fc-your-key-here
 ```
 
@@ -101,7 +81,7 @@ Get a key at [firecrawl.dev](https://firecrawl.dev). The free tier includes 500 
 **Self-hosted Firecrawl:** Point at your own instance instead of the cloud API:
 
 ```bash
-# ~/.hermes/.env
+# ~/.kova/.env
 FIRECRAWL_API_URL=http://localhost:3002
 ```
 
@@ -206,11 +186,11 @@ You should see something like `10 results`. If you get a `403 Forbidden`, JSON f
 **7. Configure Kova:**
 
 ```bash
-# ~/.hermes/.env
+# ~/.kova/.env
 SEARXNG_URL=http://localhost:8888
 ```
 
-Then select SearXNG as the search backend in `~/.hermes/config.yaml`:
+Then select SearXNG as the search backend in `~/.kova/config.yaml`:
 
 ```yaml
 web:
@@ -226,7 +206,7 @@ Or set via `kova tools` → Web Search & Extract → SearXNG.
 Public SearXNG instances are listed at [searx.space](https://searx.space/). Filter by instances that have **JSON format enabled** (shown in the table).
 
 ```bash
-# ~/.hermes/.env
+# ~/.kova/.env
 SEARXNG_URL=https://searx.example.com
 ```
 
@@ -241,7 +221,7 @@ Public instances have rate limits, variable uptime, and may disable JSON format 
 SearXNG handles search; you need a separate provider for `web_extract`. Use the per-capability keys:
 
 ```yaml
-# ~/.hermes/config.yaml
+# ~/.kova/config.yaml
 web:
   search_backend: "searxng"
   extract_backend: "firecrawl"   # or tavily, exa, parallel
@@ -256,7 +236,7 @@ With this config, Kova uses SearXNG for all search queries and Firecrawl for URL
 AI-optimised search and extract with a generous free tier.
 
 ```bash
-# ~/.hermes/.env
+# ~/.kova/.env
 TAVILY_API_KEY=tvly-your-key-here
 ```
 
@@ -269,7 +249,7 @@ Get a key at [app.tavily.com](https://app.tavily.com/home). The free tier includ
 Neural search with semantic understanding. Good for research and finding conceptually related content.
 
 ```bash
-# ~/.hermes/.env
+# ~/.kova/.env
 EXA_API_KEY=your-exa-key-here
 ```
 
@@ -282,7 +262,7 @@ Get a key at [exa.ai](https://exa.ai). The free tier includes 1 000 searches/mon
 AI-native search and extraction with deep research capabilities.
 
 ```bash
-# ~/.hermes/.env
+# ~/.kova/.env
 PARALLEL_API_KEY=your-parallel-key-here
 ```
 
@@ -297,7 +277,7 @@ Routes `web_search` through Grok's server-side [web_search tool](https://docs.x.
 Works with either credential path — no new env vars, no new setup wizard:
 
 ```bash
-# ~/.hermes/.env (env-var path)
+# ~/.kova/.env (env-var path)
 XAI_API_KEY=sk-xai-your-key-here
 ```
 
@@ -310,7 +290,7 @@ kova auth add xai-oauth
 Then select xAI as the search backend:
 
 ```yaml
-# ~/.hermes/config.yaml
+# ~/.kova/config.yaml
 web:
   backend: "xai"
 ```
@@ -344,7 +324,7 @@ Unlike index-backed providers (Brave, Tavily, Exa) which return verbatim search-
 Set one provider for all web capabilities:
 
 ```yaml
-# ~/.hermes/config.yaml
+# ~/.kova/config.yaml
 web:
   backend: "searxng"   # firecrawl | searxng | brave-free | ddgs | tavily | exa | parallel | xai
 ```
@@ -354,7 +334,7 @@ web:
 Use different providers for search vs extract. This lets you combine free search (SearXNG) with a paid extract provider, or vice versa:
 
 ```yaml
-# ~/.hermes/config.yaml
+# ~/.kova/config.yaml
 web:
   search_backend: "searxng"     # used by web_search
   extract_backend: "firecrawl"  # used by web_extract
@@ -373,11 +353,13 @@ If no backend is explicitly configured, Kova picks the first available one based
 
 | Credential present | Auto-selected backend |
 |--------------------|-----------------------|
-| `FIRECRAWL_API_KEY` or `FIRECRAWL_API_URL` | firecrawl |
-| `PARALLEL_API_KEY` | parallel |
 | `TAVILY_API_KEY` | tavily |
 | `EXA_API_KEY` | exa |
+| `PARALLEL_API_KEY` | parallel |
+| `FIRECRAWL_API_KEY` or `FIRECRAWL_API_URL` (or the Nous Tool Gateway is ready) | firecrawl |
 | `SEARXNG_URL` | searxng |
+| `BRAVE_SEARCH_API_KEY` | brave-free |
+| `ddgs` package importable | ddgs |
 
 xAI Web Search is **not** in the auto-detection chain — having `XAI_API_KEY` set (or being signed in via xAI Grok OAuth) does not automatically route web traffic through xAI, since those credentials are also used for inference / TTS / image gen and the user may want a different backend for web. Opt in explicitly with `web.backend: "xai"`.
 
@@ -395,7 +377,7 @@ Or check via the CLI:
 
 ```bash
 # Activate the venv and run the web tools module directly
-source ~/.hermes/kova-agent/.venv/bin/activate
+source ~/.kova/kova-agent/.venv/bin/activate
 python -m tools.web_tools
 ```
 
@@ -437,13 +419,9 @@ Some public instances disable certain search engines or categories. Try:
 
 Switch to a self-hosted instance (see [Option A](#option-a--self-host-with-docker-recommended) above). With Docker, your own instance has no rate limits.
 
-### `web_extract` returns truncated content with a "summarization timed out" note
+### `web_extract` returns truncated content with a `[TRUNCATED]` footer
 
-The auxiliary model didn't finish summarizing within the configured timeout. Either:
-
-- Raise `auxiliary.web_extract.timeout` in `config.yaml` (default 360s on fresh installs, 30s if the key is missing)
-- Switch the `web_extract` auxiliary task to a faster model (e.g. `google/gemini-3-flash-preview`) — see [How `web_extract` handles long pages](#how-web_extract-handles-long-pages)
-- For pages where summarization is the wrong tool, use `browser_navigate` instead
+That's expected for pages over the character budget. The footer names the on-disk file holding the full clean text and the exact `read_file` call to page through the omitted middle. To see more inline, raise `web.extract_char_limit` in `config.yaml` or pass a larger `char_limit` on the call.
 
 ---
 

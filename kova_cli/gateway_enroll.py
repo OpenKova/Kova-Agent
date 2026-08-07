@@ -6,7 +6,7 @@ zero-touch enrollment in the connector repo's
 ``docs/connector-gateway-auth-design.md``:
 
   1. Resolve a fresh Nous Portal access token from the existing login
-     (``~/.hermes/auth.json``) — the same path ``kova dashboard register``
+     (``~/.kova/auth.json``) — the same path ``kova dashboard register``
      uses (``resolve_nous_access_token``). This proves *which Nous org (tenant)*
      the caller owns; the connector derives the authoritative tenant from it via
      ``GET /api/oauth/account`` (never from anything the gateway asserts).
@@ -17,7 +17,7 @@ zero-touch enrollment in the connector repo's
      delivery key, and returns both ONCE.
   4. Persist ``GATEWAY_RELAY_ID`` / ``GATEWAY_RELAY_SECRET`` /
      ``GATEWAY_RELAY_DELIVERY_KEY`` (+ ``GATEWAY_RELAY_URL`` if supplied) into
-     ``~/.hermes/.env``. The per-gateway secret authenticates the WS upgrade;
+     ``~/.kova/.env``. The per-gateway secret authenticates the WS upgrade;
      the per-tenant delivery key verifies signed inbound deliveries.
 
 Managed/hosted installs do NOT self-enroll: the orchestrator (NAS) mints the
@@ -160,7 +160,7 @@ def _post_enroll(
 
 def cmd_gateway_enroll(args) -> None:
     """Enroll this gateway with a relay connector; persist the auth creds to .env."""
-    from kova_cli.auth import AuthError, resolve_nous_access_token
+    from kova_cli.auth import AuthError
     from kova_cli.config import is_managed, save_env_value
 
     # Managed installs get GATEWAY_RELAY_* stamped in by the orchestrator (NAS
@@ -228,7 +228,7 @@ def cmd_gateway_enroll(args) -> None:
     resolved_gateway_id = str(result.get("gatewayId") or gateway_id)
 
     # 4. Persist the creds idempotently. The secret + delivery key are sensitive;
-    #    save_env_value writes them to ~/.hermes/.env (0600 dir) and never logs.
+    #    save_env_value writes them to ~/.kova/.env (0600 dir) and never logs.
     to_write = {
         "GATEWAY_RELAY_ID": resolved_gateway_id,
         "GATEWAY_RELAY_SECRET": secret,

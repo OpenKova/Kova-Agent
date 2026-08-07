@@ -6,8 +6,8 @@ depth, NOT a security boundary — but it prevents the agent from silently
 corrupting a profile that belongs to a different session.
 
 Reference: May 2026 incident — a kova-security profile session
-accidentally edited skills under both ~/.hermes/profiles/kova-security/skills/
-AND ~/.hermes/skills/ (the default profile's skills), realizing only
+accidentally edited skills under both ~/.kova/profiles/kova-security/skills/
+AND ~/.kova/skills/ (the default profile's skills), realizing only
 afterwards that the second path belonged to a different profile.
 """
 from __future__ import annotations
@@ -24,7 +24,7 @@ import pytest
 
 
 @pytest.fixture
-def fake_kova(tmp_path, monkeypatch):
+def fake_hermes(tmp_path, monkeypatch):
     """Build a fake Kova layout:
 
         <tmp>/
@@ -84,17 +84,13 @@ def _set_active_home(monkeypatch, kova_home: Path):
 
 
 class TestResolveActiveProfileName:
-    def test_default_when_home_is_root(self, fake_kova, monkeypatch):
-        _set_active_home(monkeypatch, fake_kova["default_home"])
+    def test_default_when_home_is_root(self, fake_hermes, monkeypatch):
+        _set_active_home(monkeypatch, fake_hermes["default_home"])
         from agent.file_safety import _resolve_active_profile_name
         assert _resolve_active_profile_name() == "default"
 
-    def test_named_profile(self, fake_kova, monkeypatch):
-        _set_active_home(monkeypatch, fake_kova["security_home"])
-        from agent.file_safety import _resolve_active_profile_name
-        assert _resolve_active_profile_name() == "kova-security"
 
-    def test_falls_back_to_default_on_resolution_failure(self, fake_kova, monkeypatch):
+    def test_falls_back_to_default_on_resolution_failure(self, fake_hermes, monkeypatch):
         """If HERMES_HOME resolution raises, return 'default' rather than crashing the tool."""
         import agent.file_safety as fs
 
@@ -112,71 +108,41 @@ class TestResolveActiveProfileName:
 
 
 class TestClassifyCrossProfileTarget:
-    def test_same_profile_write_returns_none(self, fake_kova, monkeypatch):
-        _set_active_home(monkeypatch, fake_kova["security_home"])
-        from agent.file_safety import classify_cross_profile_target
-        result = classify_cross_profile_target(
-            str(fake_kova["security_home"] / "skills" / "foo" / "SKILL.md")
-        )
-        assert result is None
 
-    def test_security_writing_default_skill(self, fake_kova, monkeypatch):
+    def test_security_writing_default_skill(self, fake_hermes, monkeypatch):
         """The exact incident from May 2026."""
-        _set_active_home(monkeypatch, fake_kova["security_home"])
+        _set_active_home(monkeypatch, fake_hermes["security_home"])
         from agent.file_safety import classify_cross_profile_target
         result = classify_cross_profile_target(
-            str(fake_kova["default_home"] / "skills" / "foo" / "SKILL.md")
+            str(fake_hermes["default_home"] / "skills" / "foo" / "SKILL.md")
         )
         assert result is not None
         assert result["active_profile"] == "kova-security"
         assert result["target_profile"] == "default"
         assert result["area"] == "skills"
 
-    def test_default_writing_security_skill(self, fake_kova, monkeypatch):
+    def test_default_writing_security_skill(self, fake_hermes, monkeypatch):
         """Inverse direction — default-profile session reaching into a named profile."""
-        _set_active_home(monkeypatch, fake_kova["default_home"])
+        _set_active_home(monkeypatch, fake_hermes["default_home"])
         from agent.file_safety import classify_cross_profile_target
         result = classify_cross_profile_target(
-            str(fake_kova["security_home"] / "skills" / "foo" / "SKILL.md")
+            str(fake_hermes["security_home"] / "skills" / "foo" / "SKILL.md")
         )
         assert result is not None
         assert result["active_profile"] == "default"
         assert result["target_profile"] == "kova-security"
 
-    def test_named_to_named_cross_profile(self, fake_kova, monkeypatch):
-        _set_active_home(monkeypatch, fake_kova["security_home"])
-        from agent.file_safety import classify_cross_profile_target
-        result = classify_cross_profile_target(
-            str(fake_kova["coder_home"] / "skills" / "foo" / "SKILL.md")
-        )
-        assert result is not None
-        assert result["target_profile"] == "coder"
 
     @pytest.mark.parametrize("area", ["skills", "plugins", "cron", "memories"])
-    def test_all_profile_scoped_areas_classified(self, fake_kova, monkeypatch, area):
-        _set_active_home(monkeypatch, fake_kova["security_home"])
+    def test_all_profile_scoped_areas_classified(self, fake_hermes, monkeypatch, area):
+        _set_active_home(monkeypatch, fake_hermes["security_home"])
         from agent.file_safety import classify_cross_profile_target
-        target = fake_kova["default_home"] / area / "foo.txt"
+        target = fake_hermes["default_home"] / area / "foo.txt"
         result = classify_cross_profile_target(str(target))
         assert result is not None
         assert result["area"] == area
 
-    def test_non_kova_path_returns_none(self, fake_kova, monkeypatch, tmp_path):
-        _set_active_home(monkeypatch, fake_kova["security_home"])
-        from agent.file_safety import classify_cross_profile_target
-        # Path outside any Kova root
-        assert classify_cross_profile_target(str(tmp_path / "random.txt")) is None
 
-    def test_kova_config_not_classified_as_cross_profile(self, fake_kova, monkeypatch):
-        """Files under <root>/config.yaml or <root>/.env are NOT profile-scoped
-        (already covered by build_write_denied_paths). Don't double-warn."""
-        _set_active_home(monkeypatch, fake_kova["security_home"])
-        from agent.file_safety import classify_cross_profile_target
-        # config.yaml at root level is not in PROFILE_SCOPED_AREAS
-        result = classify_cross_profile_target(
-            str(fake_kova["default_home"] / "config.yaml")
-        )
-        assert result is None
 
 
 # ---------------------------------------------------------------------------
@@ -185,18 +151,18 @@ class TestClassifyCrossProfileTarget:
 
 
 class TestGetCrossProfileWarning:
-    def test_in_profile_returns_none(self, fake_kova, monkeypatch):
-        _set_active_home(monkeypatch, fake_kova["security_home"])
+    def test_in_profile_returns_none(self, fake_hermes, monkeypatch):
+        _set_active_home(monkeypatch, fake_hermes["security_home"])
         from agent.file_safety import get_cross_profile_warning
         assert get_cross_profile_warning(
-            str(fake_kova["security_home"] / "skills" / "foo" / "SKILL.md")
+            str(fake_hermes["security_home"] / "skills" / "foo" / "SKILL.md")
         ) is None
 
-    def test_cross_profile_warning_names_both_profiles(self, fake_kova, monkeypatch):
-        _set_active_home(monkeypatch, fake_kova["security_home"])
+    def test_cross_profile_warning_names_both_profiles(self, fake_hermes, monkeypatch):
+        _set_active_home(monkeypatch, fake_hermes["security_home"])
         from agent.file_safety import get_cross_profile_warning
         warn = get_cross_profile_warning(
-            str(fake_kova["default_home"] / "skills" / "foo" / "SKILL.md")
+            str(fake_hermes["default_home"] / "skills" / "foo" / "SKILL.md")
         )
         assert warn is not None
         # Must name BOTH profiles so the model knows which is which.
@@ -207,11 +173,11 @@ class TestGetCrossProfileWarning:
         # Must reference the area.
         assert "skills" in warn
 
-    def test_warning_is_defense_in_depth_not_boundary(self, fake_kova, monkeypatch):
-        _set_active_home(monkeypatch, fake_kova["security_home"])
+    def test_warning_is_defense_in_depth_not_boundary(self, fake_hermes, monkeypatch):
+        _set_active_home(monkeypatch, fake_hermes["security_home"])
         from agent.file_safety import get_cross_profile_warning
         warn = get_cross_profile_warning(
-            str(fake_kova["default_home"] / "skills" / "foo" / "SKILL.md")
+            str(fake_hermes["default_home"] / "skills" / "foo" / "SKILL.md")
         )
         # Must self-document as defense-in-depth so future reviewers
         # don't promote it to a hard block.

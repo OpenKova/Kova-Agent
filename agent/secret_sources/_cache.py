@@ -78,11 +78,13 @@ def resolve_cache_home(home_path: Optional[Path] = None) -> Path:
     """Resolve the Kova home used for cache paths.
 
     ``home_path`` is whatever ``load_kova_dotenv()`` already resolved;
-    falling back to ``$HERMES_HOME`` / ``~/.hermes`` keeps direct callers
+    falling back to ``$HERMES_HOME`` / ``~/.kova`` keeps direct callers
     (and tests that don't thread a home through) working.
     """
     if home_path is None:
-        home_path = Path(os.getenv("HERMES_HOME", Path.home() / ".kova"))
+        from kova_constants import get_kova_home
+
+        home_path = get_kova_home()
     return home_path
 
 

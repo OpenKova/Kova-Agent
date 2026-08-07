@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 
 from kova_constants import get_kova_home
-from plugins.memory.honcho.client import _host_block, identity_for_host, profile_host_key, resolve_active_host, resolve_config_path, HOST, IDENTITY_HOST, LEGACY_HOST
+from plugins.memory.honcho.client import _host_block, profile_host_key, resolve_active_host, resolve_config_path, HOST
 from kova_cli.config import cfg_get
 
 
@@ -29,7 +29,7 @@ def clone_honcho_for_profile(profile_name: str) -> bool:
         return False
 
     hosts = cfg.get("hosts", {})
-    default_block = _host_block(cfg, HOST)
+    default_block = hosts.get(HOST, {})
 
     # No default host block and no root-level API key = Honcho not configured
     has_key = bool(cfg.get("apiKey") or os.environ.get("HONCHO_API_KEY"))
@@ -66,7 +66,7 @@ def clone_honcho_for_profile(profile_name: str) -> bool:
     # Use the bare profile name as the peer identity (not the host key)
     # because Honcho's peer ID pattern is ^[a-zA-Z0-9_-]+$ (no dots).
     new_block["aiPeer"] = profile_name
-    new_block["workspace"] = default_block.get("workspace") or cfg.get("workspace") or IDENTITY_HOST
+    new_block["workspace"] = default_block.get("workspace") or cfg.get("workspace") or HOST
     new_block["enabled"] = default_block.get("enabled", True)
 
     cfg.setdefault("hosts", {})[new_host] = new_block
@@ -102,7 +102,7 @@ def cmd_enable(args) -> None:
     """Enable Honcho for the active profile."""
     cfg = _read_config()
     host = _host_key()
-    label = f"[{host}] " if host not in (HOST, LEGACY_HOST) else ""
+    label = f"[{host}] " if host != "kova" else ""
     block = cfg.setdefault("hosts", {}).setdefault(host, {})
 
     if block.get("enabled") is True:
@@ -113,7 +113,7 @@ def cmd_enable(args) -> None:
 
     # If this is a new profile host block with no settings, clone from default
     if not block.get("aiPeer"):
-        default_block = _host_block(cfg, HOST)
+        default_block = cfg_get(cfg, "hosts", HOST, default={})
         for key in ("recallMode", "writeFrequency", "sessionStrategy",
                     "contextTokens", "dialecticReasoningLevel", "dialecticDynamic",
                     "dialecticMaxChars", "messageMaxChars", "dialecticMaxInputChars",
@@ -125,9 +125,9 @@ def cmd_enable(args) -> None:
         if peer_name and "peerName" not in block:
             block["peerName"] = peer_name
         # Use bare profile name as AI peer, not the host key
-        ai_peer = host.split(".", 1)[1] if "." in host else identity_for_host(host)
+        ai_peer = host.split(".", 1)[1] if "." in host else host
         block.setdefault("aiPeer", ai_peer)
-        block.setdefault("workspace", default_block.get("workspace") or cfg.get("workspace") or IDENTITY_HOST)
+        block.setdefault("workspace", default_block.get("workspace") or cfg.get("workspace") or HOST)
 
     _write_config(cfg)
     print(f"  {label}Honcho enabled.")
@@ -145,7 +145,7 @@ def cmd_disable(args) -> None:
     """Disable Honcho for the active profile."""
     cfg = _read_config()
     host = _host_key()
-    label = f"[{host}] " if host not in (HOST, LEGACY_HOST) else ""
+    label = f"[{host}] " if host != "kova" else ""
     block = cfg_get(cfg, "hosts", host, default={})
 
     if not block or block.get("enabled") is False:
@@ -177,7 +177,7 @@ def cmd_sync(args) -> None:
         return
 
     hosts = cfg.get("hosts", {})
-    default_block = _host_block(cfg, HOST)
+    default_block = hosts.get(HOST, {})
     has_key = bool(cfg.get("apiKey") or os.environ.get("HONCHO_API_KEY"))
 
     if not default_block and not has_key:
@@ -219,7 +219,7 @@ def sync_honcho_profiles_quiet() -> int:
     if not cfg:
         return 0
 
-    default_block = _host_block(cfg, HOST)
+    default_block = cfg_get(cfg, "hosts", HOST, default={})
     has_key = bool(cfg.get("apiKey") or os.environ.get("HONCHO_API_KEY"))
     if not default_block and not has_key:
         return 0
@@ -516,12 +516,17 @@ def _ensure_sdk_installed() -> bool:
         return False
 
     print("  Installing honcho-ai...", flush=True)
-    from kova_cli.tools_config import _pip_install
+    # Environment-aware install: sealed hosted venvs redirect to the durable
+    # data-volume target instead of writing to /opt/kova (NS-605).
+    from tools.lazy_deps import install_specs
 
-    result = _pip_install(["honcho-ai==2.2.0"])
-    if result.returncode == 0:
+    result = install_specs(["honcho-ai==2.2.0"])
+    if result.ok:
         print("  Installed.\n")
         return True
+    elif result.blocked:
+        print(f"  Cannot install: {result.reason}\n")
+        return False
     else:
         print(f"  Install failed:\n{(result.stderr or '').strip()}")
         print("  Run manually: uv pip install 'honcho-ai==2.2.0'\n")
@@ -620,7 +625,7 @@ def cmd_setup(args) -> None:
                 print("\n  No local JWT set. Local no-auth ready.")
     use_oauth = False
     if not is_local:
-        # --- Cloud: OAuth (browser) or API key ---
+        # --- Cloud: OAuth (browser), device code, or API key ---
         cfg.pop("baseUrl", None)  # cloud uses SDK default
 
         # Detect an existing OAuth grant so re-running setup reflects it instead
@@ -628,15 +633,88 @@ def cmd_setup(args) -> None:
         from plugins.memory.honcho.oauth import OAuthCredential
         existing_oauth = OAuthCredential.from_host_block(kova_host)
 
+        device_available = _device_login_available()
+        is_remote, can_browse = _headless()
+
         print("\n  Auth method:")
         if existing_oauth is not None:
             print(f"    (currently connected via OAuth — client {existing_oauth.client_id})")
-        print("    oauth  -- sign in via browser (recommended)")
+        print("    oauth  -- sign in via browser on this machine (recommended)")
+        if device_available:
+            print("    device -- device code: approve from a browser on another machine (SSH / headless)")
         print("    apikey -- paste an API key from https://app.honcho.dev")
-        method = _prompt("OAuth or API key?", default="oauth").strip().lower()
-        use_oauth = method in {"oauth", "o"}
 
-        if use_oauth:
+        default_method = "oauth"
+        if is_remote or not can_browse:
+            if device_available:
+                print("  (no usable local browser detected — device code recommended)")
+                default_method = "device"
+            else:
+                print("  (no usable local browser detected — browser sign-in may need an SSH tunnel to 127.0.0.1:8765)")
+        prompt_label = "oauth, device, or apikey?" if device_available else "OAuth or API key?"
+        method = _prompt(prompt_label, default=default_method).strip().lower()
+        use_oauth = method in {"oauth", "o"}
+        use_device = device_available and method in {"device", "d"}
+
+        if use_device:
+            from plugins.memory.honcho.oauth_flow import (
+                AccessDenied,
+                AuthorizationTimeout,
+                DeviceCode,
+                DeviceCodeExpired,
+                DeviceFlowError,
+                authorize_via_device_code,
+            )
+
+            def _show(device: DeviceCode) -> None:
+                print("\n  To connect, on any device with a browser:")
+                print(f"\n    1. Open   {device.verification_uri}")
+                print(f"    2. Enter  {device.user_code}")
+                print(f"\n  Or open directly:\n\n    {device.verification_uri_complete}\n")
+                mins = max(1, device.expires_in // 60)
+                print(f"  Waiting for approval (expires in {mins} min, Ctrl-C to cancel) ", end="", flush=True)
+
+            def _open_local(url: str) -> None:
+                import webbrowser
+
+                webbrowser.open(url)
+
+            print("\n  Requesting device code…")
+            try:
+                cred = authorize_via_device_code(
+                    config_path=write_path,
+                    source="kova-cli",
+                    apply_config=False,
+                    display=_show,
+                    open_url=_open_local if can_browse and not is_remote else None,
+                    on_poll=lambda: print(".", end="", flush=True),
+                )
+            except KeyboardInterrupt:
+                print("\n  Cancelled. Re-run 'kova honcho setup' to try again.\n")
+                return
+            except (AuthorizationTimeout, DeviceCodeExpired):
+                print("\n  Device code expired before approval.")
+                print("  Re-run 'kova honcho setup' to get a new code.\n")
+                return
+            except AccessDenied:
+                print("\n  Sign-in was denied on the approval page.")
+                print("  Re-run 'kova honcho setup' to retry, or choose an API key instead.\n")
+                return
+            except DeviceFlowError as e:
+                if e.error == "http_429":
+                    print("\n  Too many device-code requests — wait a minute and re-run setup.\n")
+                else:
+                    print(f"\n  Device sign-in failed: {e}")
+                    print("  Re-run 'kova honcho setup' to retry, or choose an API key instead.\n")
+                return
+            except Exception as e:
+                print(f"\n  Device sign-in failed: {e}")
+                print("  Re-run 'kova honcho setup' to retry, or choose an API key instead.\n")
+                return
+            print(" approved")
+            _apply_grant_to_host(kova_host, cred)
+            print("  Authorized — token saved. Let's finish configuring.\n")
+        elif use_oauth:
             # Sign in now, up front — the browser link is the whole point, so
             # don't bury it behind the identity prompts. The grant's tokens are
             # merged into the in-memory cfg so the wizard's final save preserves
@@ -661,11 +739,7 @@ def cmd_setup(args) -> None:
                 print(f"  OAuth sign-in failed: {e}")
                 print("  Re-run 'kova honcho setup' to retry, or choose an API key instead.\n")
                 return
-            kova_host["apiKey"] = cred.access_token
-            kova_host["oauth"] = cred.oauth_block()
-            # Default the peer prompt to the name entered at consent.
-            if cred.consent_peer_name:
-                kova_host["peerName"] = cred.consent_peer_name
+            _apply_grant_to_host(kova_host, cred)
             print("  Authorized — token saved. Let's finish configuring.\n")
         else:
             current_key = cfg.get("apiKey", "")
@@ -974,6 +1048,35 @@ def cmd_setup(args) -> None:
     print("    kova honcho map <name> -- map this directory to a session name\n")
 
 
+def _device_login_available() -> bool:
+    """Whether the resolved host offers the RFC 8628 device grant. Fails closed."""
+    try:
+        from plugins.memory.honcho.oauth_flow import resolve_endpoints, supports_device_login
+
+        return supports_device_login(resolve_endpoints())
+    except Exception:
+        return False
+
+
+def _headless() -> tuple[bool, bool]:
+    """(is_remote, can_open_browser) — degrades safely if kova_cli internals move."""
+    try:
+        from kova_cli.auth import _can_open_graphical_browser, _is_remote_session
+
+        return _is_remote_session(), _can_open_graphical_browser()
+    except Exception:
+        return False, True
+
+
+def _apply_grant_to_host(kova_host: dict, cred) -> None:
+    """Store an OAuth grant on the host block; the wizard's final save persists it."""
+    kova_host["apiKey"] = cred.access_token
+    kova_host["oauth"] = cred.oauth_block()
+    # Default the peer prompt to the name entered at consent.
+    if cred.consent_peer_name:
+        kova_host["peerName"] = cred.consent_peer_name
+
+
 def _active_profile_name() -> str:
     """Return the active Kova profile name (respects --target-profile override)."""
     if _profile_override:
@@ -1001,7 +1104,7 @@ def _all_profile_host_configs() -> list[tuple[str, str, dict]]:
     results = []
 
     # Default profile
-    default_block = _host_block(cfg, HOST)
+    default_block = hosts.get(HOST, {})
     results.append(("default", HOST, default_block))
 
     for p in profiles:
@@ -1262,7 +1365,7 @@ def cmd_peer(args) -> None:
         hosts = cfg.get("hosts", {})
         kova = hosts.get(_host_key(), {})
         user = kova.get('peerName') or cfg.get('peerName') or '(not set)'
-        ai = kova.get('aiPeer') or cfg.get('aiPeer') or identity_for_host(_host_key())
+        ai = kova.get('aiPeer') or cfg.get('aiPeer') or _host_key()
         lvl = kova.get("dialecticReasoningLevel") or cfg.get("dialecticReasoningLevel") or "low"
         max_chars = kova.get("dialecticMaxChars") or cfg.get("dialecticMaxChars") or 600
         print("\nHoncho peers\n" + "─" * 40)
@@ -1277,7 +1380,7 @@ def cmd_peer(args) -> None:
         return
 
     host = _host_key()
-    label = f"[{host}] " if host not in (HOST, LEGACY_HOST) else ""
+    label = f"[{host}] " if host != "kova" else ""
 
     if user_name is not None:
         cfg.setdefault("hosts", {}).setdefault(host, {})["peerName"] = user_name.strip()
@@ -1330,7 +1433,7 @@ def cmd_mode(args) -> None:
         return
 
     host = _host_key()
-    label = f"[{host}] " if host not in (HOST, LEGACY_HOST) else ""
+    label = f"[{host}] " if host != "kova" else ""
     cfg.setdefault("hosts", {}).setdefault(host, {})["recallMode"] = mode_arg
     _write_config(cfg)
     print(f"  {label}Recall mode -> {mode_arg}  ({MODES[mode_arg]})\n")
@@ -1365,7 +1468,7 @@ def cmd_strategy(args) -> None:
         return
 
     host = _host_key()
-    label = f"[{host}] " if host not in (HOST, LEGACY_HOST) else ""
+    label = f"[{host}] " if host != "kova" else ""
     cfg.setdefault("hosts", {}).setdefault(host, {})["sessionStrategy"] = strat_arg
     _write_config(cfg)
     print(f"  {label}Session strategy -> {strat_arg}  ({STRATEGIES[strat_arg]})\n")
@@ -1399,7 +1502,7 @@ def cmd_tokens(args) -> None:
         return
 
     host = _host_key()
-    label = f"[{host}] " if host not in (HOST, LEGACY_HOST) else ""
+    label = f"[{host}] " if host != "kova" else ""
     changed = False
     if context is not None:
         cfg.setdefault("hosts", {}).setdefault(host, {})["contextTokens"] = context

@@ -33,14 +33,21 @@ _KOVA_CORE_TOOLS = [
     "web_search", "web_extract",
     # Terminal + process management
     "terminal", "process",
-    # Desktop GUI affordances: read the embedded terminal pane, close an agent's
-    # read-only terminal tab, open a URL/file in the preview pane, and focus a
-    # pane (all gated on KOVA_DESKTOP via check_fn — hidden outside the GUI).
-    "read_terminal", "close_terminal", "open_preview", "focus_pane",
+    # NOTE: the desktop GUI affordances (read_terminal, open_preview, …) are
+    # deliberately NOT here, for the same reason as the `project` tools below:
+    # they only work where a GUI renderer can answer them. They live in the
+    # `desktop_ui` toolset and are enabled solely by the GUI gateway for a
+    # session whose SOURCE is the desktop app (tui_gateway/server.py::
+    # _load_enabled_toolsets) — never keyed on a process env var, which is
+    # blind to a desktop client talking to a remote/cloud backend.
     # File manipulation
     "read_file", "write_file", "patch", "search_files",
     # Vision + image generation
     "vision_analyze", "image_generate",
+    # BFL FLUX 3 video generation
+    "bfl_flux3_text_to_video", "bfl_flux3_image_to_video",
+    "bfl_flux3_keyframes_to_video", "bfl_flux3_video_continuation",
+    "bfl_flux3_get_result", "bfl_flux3_prompting_guide",
     # Skills
     "skills_list", "skill_view", "skill_manage",
     # Browser automation
@@ -150,6 +157,25 @@ TOOLSETS = {
         "includes": []
     },
 
+    "bfl": {
+        "description": (
+            "Black Forest Labs FLUX 3 video generation through the Nous tool "
+            "gateway: per-mode submit tools (text, image, keyframes, "
+            "continuation), a poll tool, and a prompting guide. Generations "
+            "take minutes, so submit returns a job id and the model polls for "
+            "the result."
+        ),
+        "tools": [
+            "bfl_flux3_text_to_video",
+            "bfl_flux3_image_to_video",
+            "bfl_flux3_keyframes_to_video",
+            "bfl_flux3_video_continuation",
+            "bfl_flux3_get_result",
+            "bfl_flux3_prompting_guide",
+        ],
+        "includes": []
+    },
+
     "computer_use": {
         "description": (
             "Background desktop control via cua-driver (macOS/Windows/Linux) — "
@@ -230,6 +256,25 @@ TOOLSETS = {
     "project": {
         "description": "Desktop Projects — create/switch named workspaces (GUI sessions only)",
         "tools": ["project_list", "project_create", "project_switch"],
+        "includes": []
+    },
+
+    # Affordances that only exist because a GUI renderer is on the other end of
+    # the connection: read/close the embedded terminal pane, open and read the
+    # in-app browser, focus a pane, tapback a message.
+    #
+    # Enabled by the GUI gateway for a session whose SOURCE is the desktop app
+    # (tui_gateway/server.py::_load_enabled_toolsets), NOT by a process env var.
+    # The renderer is a CLIENT — it can be driving a local, SSH, URL, or cloud
+    # backend — so "was this process spawned by Electron?" is the wrong
+    # question and silently strips these tools from every remote gateway.
+    "desktop_ui": {
+        "description": "Desktop GUI affordances — in-app terminal/browser panes, pane focus, reactions (GUI sessions only)",
+        "tools": [
+            "read_terminal", "close_terminal",
+            "open_preview", "read_preview",
+            "focus_pane", "react_to_message",
+        ],
         "includes": []
     },
     
@@ -347,11 +392,16 @@ TOOLSETS = {
     # code workspace; see agent/coding_context.py. Keeps everything you reach
     # for while pairing on code and drops the rest (messaging, tts, image_gen,
     # spotify, home-assistant, cron, computer-use).
+    #
+    # The GUI pane/browser affordances are NOT listed here: they belong to the
+    # client surface, not the posture, so the GUI gateway folds `desktop_ui`
+    # in alongside this selection for a desktop-sourced session (see
+    # tui_gateway/server.py::_load_enabled_toolsets).
     "coding": {
         "description": "Coding-focused toolset: files, terminal, search, web docs, skills, todo, delegate, vision, browser",
         "tools": [
             "web_search", "web_extract",
-            "terminal", "process", "read_terminal", "close_terminal",
+            "terminal", "process",
             "read_file", "write_file", "patch", "search_files",
             "vision_analyze",
             "skills_list", "skill_view", "skill_manage",
@@ -409,6 +459,10 @@ TOOLSETS = {
             "read_file", "write_file", "patch", "search_files",
             # Vision + image generation
             "vision_analyze", "image_generate",
+            # BFL FLUX 3 video generation
+            "bfl_flux3_text_to_video", "bfl_flux3_image_to_video",
+            "bfl_flux3_keyframes_to_video", "bfl_flux3_video_continuation",
+            "bfl_flux3_get_result", "bfl_flux3_prompting_guide",
             # Skills
             "skills_list", "skill_view", "skill_manage",
             # Browser automation
@@ -583,54 +637,6 @@ TOOLSETS = {
         "tools": [],
         "includes": ["kova-telegram", "kova-discord", "kova-whatsapp", "kova-slack", "kova-signal", "kova-bluebubbles", "kova-homeassistant", "kova-email", "kova-sms", "kova-mattermost", "kova-matrix", "kova-dingtalk", "kova-feishu", "kova-wecom", "kova-wecom-callback", "kova-weixin", "kova-qqbot", "kova-webhook", "kova-yuanbao"]
     }
-}
-
-# Kova toolset aliases — every `kova-*` toolset is also registered under its
-# `kova-*` name so new configs can use the renamed toolset while configs
-# written before the rename keep resolving via the `kova-*` keys above.
-# Both names resolve to identical tool sets (the includes list below reuses the
-# kova-* entries, which still exist, so resolution stays cycle-free).
-_KOVA_TOOLSET_ALIASES = {}
-for _kova_name, _kova_name in [
-    ("hermes-acp", "kova-acp"),
-    ("hermes-api-server", "kova-api-server"),
-    ("hermes-cli", "kova-cli"),
-    ("hermes-cron", "kova-cron"),
-    ("hermes-telegram", "kova-telegram"),
-    ("hermes-discord", "kova-discord"),
-    ("hermes-whatsapp", "kova-whatsapp"),
-    ("hermes-slack", "kova-slack"),
-    ("hermes-signal", "kova-signal"),
-    ("hermes-bluebubbles", "kova-bluebubbles"),
-    ("hermes-homeassistant", "kova-homeassistant"),
-    ("hermes-email", "kova-email"),
-    ("hermes-mattermost", "kova-mattermost"),
-    ("hermes-matrix", "kova-matrix"),
-    ("hermes-dingtalk", "kova-dingtalk"),
-    ("hermes-feishu", "kova-feishu"),
-    ("hermes-weixin", "kova-weixin"),
-    ("hermes-qqbot", "kova-qqbot"),
-    ("hermes-wecom", "kova-wecom"),
-    ("hermes-wecom-callback", "kova-wecom-callback"),
-    ("hermes-yuanbao", "kova-yuanbao"),
-    ("hermes-sms", "kova-sms"),
-    ("hermes-webhook", "kova-webhook"),
-    ("hermes-gateway", "kova-gateway"),
-]:
-    if _kova_name in TOOLSETS:
-        _KOVA_TOOLSET_ALIASES[_kova_name] = _kova_name
-        _twin = dict(TOOLSETS[_kova_name])
-        _twin["description"] = _twin["description"].replace(
-            "kova-", "kova-"
-        ).replace("kova", "Kova")
-        TOOLSETS[_kova_name] = _twin
-
-# Reverse lookup: legacy `kova-*` name -> canonical `kova-*` name. Used by
-# the web layer to display the renamed toolset names to users whose config
-# still stores the pre-rename keys.
-KOVA_TOOLSET_NAMES_BY_LEGACY = {
-    _kova_name: _kova_name
-    for _kova_name, _kova_name in _KOVA_TOOLSET_ALIASES.items()
 }
 
 

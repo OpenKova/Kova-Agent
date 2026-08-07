@@ -33,13 +33,14 @@ DOCS_URL = "https://kova-agent.nousresearch.com/docs/user-guide/features/tool-ga
 
 def _cmd_status(args) -> int:
     """Show Portal auth + Tool Gateway routing summary."""
-    from kova_cli.auth import get_nous_auth_status
+    from kova_cli.auth import get_nous_auth_status_local
     from kova_cli.nous_subscription import get_nous_subscription_features
 
     config = load_config() or {}
 
     try:
-        auth = get_nous_auth_status() or {}
+        # Read-only status display: refresh-free snapshot (no OAuth refresh).
+        auth = get_nous_auth_status_local() or {}
     except Exception:
         auth = {}
 

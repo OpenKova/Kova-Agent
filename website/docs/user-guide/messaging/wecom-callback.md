@@ -56,7 +56,7 @@ WECOM_CALLBACK_TOKEN=your-callback-token
 WECOM_CALLBACK_ENCODING_AES_KEY=your-43-char-aes-key
 
 # Optional
-WECOM_CALLBACK_HOST=0.0.0.0
+# WECOM_CALLBACK_HOST=  # optional pin; unset = dual-stack (all interfaces, IPv4+IPv6)
 WECOM_CALLBACK_PORT=8645
 WECOM_CALLBACK_ALLOWED_USERS=user1,user2
 ```
@@ -82,7 +82,7 @@ Set these in `config.yaml` under `platforms.wecom_callback.extra`, or use enviro
 | `agent_id` | — | Agent ID of the self-built app (required) |
 | `token` | — | Callback verification token (required) |
 | `encoding_aes_key` | — | 43-character AES key for callback encryption (required) |
-| `host` | `0.0.0.0` | Bind address for the HTTP callback server |
+| `host` | unset (dual-stack: all interfaces, IPv4+IPv6) | Bind address for the HTTP callback server |
 | `port` | `8645` | Port for the HTTP callback server |
 | `path` | `/wecom/callback` | URL path for the callback endpoint |
 
@@ -159,7 +159,7 @@ WeCom signs every request with the **Token** you registered in the admin
 console. A mismatch between the token configured in Kova and the token the
 admin console expects is the most common cause. Re-copy both the **Token** and
 **EncodingAESKey** from the admin console — they're easy to truncate. Whitespace
-in `~/.hermes/.env` values around `=` will also break signature checks. After
+in `~/.kova/.env` values around `=` will also break signature checks. After
 fixing, restart `kova gateway run`.
 
 **Callback URL not reachable / verification step fails.**
@@ -173,6 +173,7 @@ WeCom hits the public URL you registered. Confirm:
 **Port not reachable / listener not bound.**
 Check `kova gateway run` logs for the bound host/port. If the adapter bound to
 `127.0.0.1` you must front it with a reverse proxy or tunnel — WeCom's servers
-can't reach loopback. Set `extra.host: 0.0.0.0` in `config.yaml` (plus
+can't reach loopback. Leave `extra.host` unset so the default dual-stack
+bind (all interfaces, IPv4+IPv6) applies, or pin an interface in `config.yaml` (plus
 `allowed_source_cidrs` if exposing directly) or keep loopback and use a tunnel
 such as Cloudflare Tunnel / nginx.

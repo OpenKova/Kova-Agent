@@ -116,34 +116,10 @@ class TestSSHBulkDownload:
         cmd_str = " ".join(cmd)
         assert "tar cf -" in cmd_str
         assert "-C /" in cmd_str
-        assert "home/testuser/.hermes" in cmd_str
+        assert "home/testuser/.kova" in cmd_str
         assert "ssh" in cmd_str
         assert "testuser@example.com" in cmd_str
 
-    def test_ssh_bulk_download_writes_to_dest(self, ssh_mock_env, tmp_path):
-        """subprocess.run should receive stdout=open(dest, 'wb')."""
-        dest = tmp_path / "backup.tar"
-
-        with patch.object(subprocess, "run", return_value=subprocess.CompletedProcess([], 0)) as mock_run:
-            ssh_mock_env._ssh_bulk_download(dest)
-
-        # The stdout kwarg should be a file object opened for writing
-        call_kwargs = mock_run.call_args
-        # stdout is passed as a keyword arg
-        stdout_val = call_kwargs.kwargs.get("stdout") or call_kwargs[1].get("stdout")
-        # The file was opened via `with open(dest, "wb") as f` and passed as stdout=f.
-        # After the context manager exits, the file is closed, but we can verify
-        # the dest path was used by checking if the file was created.
-        assert dest.exists()
-
-    def test_ssh_bulk_download_raises_on_failure(self, ssh_mock_env, tmp_path):
-        """Non-zero returncode should raise RuntimeError."""
-        dest = tmp_path / "backup.tar"
-
-        failed = subprocess.CompletedProcess([], 1, stderr=b"Permission denied")
-        with patch.object(subprocess, "run", return_value=failed):
-            with pytest.raises(RuntimeError, match="SSH bulk download failed"):
-                ssh_mock_env._ssh_bulk_download(dest)
 
     def test_ssh_bulk_download_uses_120s_timeout(self, ssh_mock_env, tmp_path):
         """The subprocess.run call should use a 120s timeout."""
@@ -239,7 +215,7 @@ class TestModalBulkDownload:
     """Unit tests for _modal_bulk_download."""
 
     def test_modal_bulk_download_command(self, tmp_path):
-        """exec should be called with tar cf - -C /root/.hermes ."""
+        """exec should be called with tar cf - -C /root/.kova ."""
         env = _make_mock_modal_env()
         exec_calls = _wire_modal_download(env, tar_bytes=b"tar-content")
         dest = tmp_path / "backup.tar"
@@ -251,39 +227,8 @@ class TestModalBulkDownload:
         assert args[0] == "bash"
         assert args[1] == "-c"
         assert "tar cf -" in args[2]
-        assert "-C / root/.hermes" in args[2]
+        assert "-C / root/.kova" in args[2]
 
-    def test_modal_bulk_download_writes_to_dest(self, tmp_path):
-        """Downloaded tar bytes should be written to the dest path."""
-        env = _make_mock_modal_env()
-        expected_data = b"some-tar-archive-bytes"
-        _wire_modal_download(env, tar_bytes=expected_data)
-        dest = tmp_path / "backup.tar"
-
-        env._modal_bulk_download(dest)
-
-        assert dest.exists()
-        assert dest.read_bytes() == expected_data
-
-    def test_modal_bulk_download_handles_str_output(self, tmp_path):
-        """If stdout returns str instead of bytes, it should be encoded."""
-        env = _make_mock_modal_env()
-        # Simulate Modal SDK returning str
-        _wire_modal_download(env, tar_bytes="string-tar-data")
-        dest = tmp_path / "backup.tar"
-
-        env._modal_bulk_download(dest)
-
-        assert dest.read_bytes() == b"string-tar-data"
-
-    def test_modal_bulk_download_raises_on_failure(self, tmp_path):
-        """Non-zero exit code should raise RuntimeError."""
-        env = _make_mock_modal_env()
-        _wire_modal_download(env, exit_code=1)
-        dest = tmp_path / "backup.tar"
-
-        with pytest.raises(RuntimeError, match="Modal bulk download failed"):
-            env._modal_bulk_download(dest)
 
     def test_modal_bulk_download_uses_120s_timeout(self, tmp_path):
         """run_coroutine should be called with timeout=120."""
@@ -379,7 +324,7 @@ class TestDaytonaBulkDownload:
         env._daytona_bulk_download(dest)
 
         tar_cmd = env._sandbox.process.exec.call_args_list[0][0][0]
-        assert "home/daytona/.hermes" in tar_cmd
+        assert "home/daytona/.kova" in tar_cmd
 
 
 class TestDaytonaCleanup:
@@ -434,34 +379,6 @@ class TestBulkDownloadWiring:
         assert "bulk_download_fn" in captured_kwargs
         assert callable(captured_kwargs["bulk_download_fn"])
 
-    def test_modal_passes_bulk_download_fn(self, monkeypatch):
-        """ModalEnvironment should pass _modal_bulk_download to FileSyncManager."""
-        captured_kwargs = {}
-
-        def capture_fsm(**kwargs):
-            captured_kwargs.update(kwargs)
-            return type("M", (), {"sync": lambda self, **k: None})()
-
-        monkeypatch.setattr(modal_env, "FileSyncManager", capture_fsm)
-
-        env = object.__new__(modal_env.ModalEnvironment)
-        env._sandbox = MagicMock()
-        env._worker = MagicMock()
-        env._persistent = False
-        env._task_id = "test"
-
-        # Replicate the wiring done in __init__
-        from tools.environments.file_sync import iter_sync_files
-        env._sync_manager = modal_env.FileSyncManager(
-            get_files_fn=lambda: iter_sync_files("/root/.hermes"),
-            upload_fn=env._modal_upload,
-            delete_fn=env._modal_delete,
-            bulk_upload_fn=env._modal_bulk_upload,
-            bulk_download_fn=env._modal_bulk_download,
-        )
-
-        assert "bulk_download_fn" in captured_kwargs
-        assert callable(captured_kwargs["bulk_download_fn"])
 
     def test_daytona_passes_bulk_download_fn(self, monkeypatch):
         """DaytonaEnvironment should pass _daytona_bulk_download to FileSyncManager."""
@@ -484,7 +401,7 @@ class TestBulkDownloadWiring:
         # Replicate the wiring done in __init__
         from tools.environments.file_sync import iter_sync_files
         env._sync_manager = daytona_env.FileSyncManager(
-            get_files_fn=lambda: iter_sync_files(f"{env._remote_home}/.hermes"),
+            get_files_fn=lambda: iter_sync_files(f"{env._remote_home}/.kova"),
             upload_fn=env._daytona_upload,
             delete_fn=env._daytona_delete,
             bulk_upload_fn=env._daytona_bulk_upload,

@@ -40,10 +40,7 @@
 
 set -e
 
-# Resolve the venv binary by brand: the image installs the console script as
-# `kova` (canonical) with a legacy `kova` symlink; pick whichever exists so
-# this shim works even on a build where the symlink step was skipped.
-REAL=$([ -x /opt/kova/.venv/bin/kova ] && echo /opt/kova/.venv/bin/kova || echo /opt/kova/.venv/bin/kova)
+REAL=/opt/kova/.venv/bin/kova
 
 # Defensive: if the venv binary is missing (corrupted image, partial
 # install), fail loudly rather than silently masking it.

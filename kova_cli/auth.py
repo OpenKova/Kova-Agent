@@ -3,7 +3,7 @@ Multi-provider authentication system for Kova Agent.
 
 Supports OAuth device code flows (Nous Portal, future: OpenAI Codex) and
 traditional API key providers (OpenRouter, custom endpoints). Auth state
-is persisted in ~/.hermes/auth.json with cross-process file locking.
+is persisted in ~/.kova/auth.json with cross-process file locking.
 
 Architecture:
 - ProviderConfig registry defines known OAuth providers
@@ -36,7 +36,7 @@ import webbrowser
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from http.server import BaseHTTPRequestHandler, HTTPServer, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from typing import Any, Callable, Dict, FrozenSet, Iterable, List, Optional, Tuple
 from urllib.parse import parse_qs, urlencode, urlparse
@@ -97,6 +97,8 @@ DEFAULT_QWEN_BASE_URL = "https://portal.qwen.ai/v1"
 DEFAULT_GITHUB_MODELS_BASE_URL = "https://api.githubcopilot.com"
 DEFAULT_COPILOT_ACP_BASE_URL = "acp://copilot"
 DEFAULT_OLLAMA_CLOUD_BASE_URL = "https://ollama.com/v1"
+DEFAULT_ACTUAL_BASE_URL = "https://api.actual.inc/v1"
+DEFAULT_ACTUAL_LOCAL_BASE_URL = "http://127.0.0.1:8080/v1"
 STEPFUN_STEP_PLAN_INTL_BASE_URL = "https://api.stepfun.ai/step_plan/v1"
 STEPFUN_STEP_PLAN_CN_BASE_URL = "https://api.stepfun.com/step_plan/v1"
 CODEX_OAUTH_CLIENT_ID = "app_EMoamEEZ73f0CkXaXp7hrann"
@@ -150,6 +152,39 @@ SERVICE_PROVIDER_NAMES: Dict[str, str] = {
 # provider as configured. This sentinel is sent only to LM Studio, never to
 # any remote service.
 LMSTUDIO_NOAUTH_PLACEHOLDER = "dummy-lm-api-key"
+ACTUAL_LOCAL_NOAUTH_PLACEHOLDER = "dummy-actual-local-api-key"
+
+
+def is_actual_local_base_url(base_url: str) -> bool:
+    """Return True for Actual's loopback local API endpoint."""
+    try:
+        host = (urlparse(base_url or "").hostname or "").lower().rstrip(".")
+    except Exception:
+        return False
+    return host in {"localhost", "127.0.0.1", "::1", "0.0.0.0"}
+
+
+def normalize_actual_base_url(base_url: str) -> str:
+    """Return Actual's OpenAI-compatible base URL.
+
+    Actual hosted inference is exposed at api.actual.inc, while the Actual
+    client's offline local server binds a loopback host. Both use a /v1 API
+    surface for Kova' Responses transport.
+    """
+    url = str(base_url or "").strip().rstrip("/")
+    if not url:
+        return DEFAULT_ACTUAL_BASE_URL
+    try:
+        parsed = urlparse(url)
+        host = (parsed.hostname or "").lower().rstrip(".")
+        path = parsed.path.rstrip("/")
+    except Exception:
+        return url
+    if host == "api.actual.inc" and path in {"", "/"}:
+        return url + "/v1"
+    if is_actual_local_base_url(url) and path in {"", "/"}:
+        return url + "/v1"
+    return url
 
 
 # =============================================================================
@@ -290,6 +325,14 @@ PROVIDER_REGISTRY: Dict[str, ProviderConfig] = {
         api_key_env_vars=("GMI_API_KEY",),
         base_url_env_var="GMI_BASE_URL",
     ),
+    "actual": ProviderConfig(
+        id="actual",
+        name="Actual Computer",
+        auth_type="api_key",
+        inference_base_url=DEFAULT_ACTUAL_BASE_URL,
+        api_key_env_vars=("ACTUAL_API_KEY",),
+        base_url_env_var="ACTUAL_BASE_URL",
+    ),
     "minimax": ProviderConfig(
         id="minimax",
         name="MiniMax",
@@ -364,6 +407,14 @@ PROVIDER_REGISTRY: Dict[str, ProviderConfig] = {
         inference_base_url="https://integrate.api.nvidia.com/v1",
         api_key_env_vars=("NVIDIA_API_KEY",),
         base_url_env_var="NVIDIA_BASE_URL",
+    ),
+    "ai-gateway": ProviderConfig(
+        id="ai-gateway",
+        name="Vercel AI Gateway",
+        auth_type="api_key",
+        inference_base_url="https://ai-gateway.vercel.sh/v1",
+        api_key_env_vars=("AI_GATEWAY_API_KEY",),
+        base_url_env_var="AI_GATEWAY_BASE_URL",
     ),
     "opencode-zen": ProviderConfig(
         id="opencode-zen",
@@ -498,7 +549,7 @@ def get_anthropic_key() -> str:
     """Return the first usable Anthropic credential, or ``""``.
 
     Checks both the ``.env`` file and the process environment, preferring
-    ``~/.hermes/.env`` so a deliberate key rotation isn't shadowed by a stale
+    ``~/.kova/.env`` so a deliberate key rotation isn't shadowed by a stale
     shell export (matches the api-key resolution path — see #20591).  The
     order mirrors the ``PROVIDER_REGISTRY["anthropic"].api_key_env_vars``
     tuple:
@@ -596,7 +647,7 @@ def _resolve_api_key_provider_secret(
 
     from kova_cli.config import get_env_value_prefer_dotenv
     for env_var in pconfig.api_key_env_vars:
-        # Prefer ~/.hermes/.env over os.environ so a deliberate key rotation
+        # Prefer ~/.kova/.env over os.environ so a deliberate key rotation
         # in the user's .env file isn't shadowed by a stale shell export
         # inherited from a parent process (Codex CLI, test runners, etc.).
         val = (get_env_value_prefer_dotenv(env_var) or "").strip()
@@ -640,42 +691,94 @@ ZAI_ENDPOINTS = [
 ]
 
 
+def _probe_single_zai_endpoint(
+    api_key: str, endpoint: tuple, timeout: float,
+) -> Optional[Dict[str, str]]:
+    """Probe a single Z.AI endpoint. Returns endpoint info dict or None.
+
+    Preserves the per-endpoint candidate-model loop: endpoints carry a
+    ``probe_models`` LIST and each model is tried in order until one
+    succeeds (some plans only accept newer/older GLM slugs).
+    """
+    ep_id, base_url, probe_models, label = endpoint
+    for model in probe_models:
+        try:
+            resp = httpx.post(
+                f"{base_url}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": model,
+                    "stream": False,
+                    "max_tokens": 1,
+                    "messages": [{"role": "user", "content": "ping"}],
+                },
+                timeout=timeout,
+            )
+            if resp.status_code == 200:
+                logger.debug("Z.AI endpoint probe: %s (%s) model=%s OK", ep_id, base_url, model)
+                return {
+                    "id": ep_id,
+                    "base_url": base_url,
+                    "model": model,
+                    "label": label,
+                }
+            logger.debug("Z.AI endpoint probe: %s model=%s returned %s", ep_id, model, resp.status_code)
+        except Exception as exc:
+            logger.debug("Z.AI endpoint probe: %s model=%s failed: %s", ep_id, model, exc)
+    return None
+
+
 def detect_zai_endpoint(api_key: str, timeout: float = 8.0) -> Optional[Dict[str, str]]:
-    """Probe z.ai endpoints to find one that accepts this API key.
+    """Probe z.ai endpoints in parallel to find one that accepts this API key.
 
     Returns {"id": ..., "base_url": ..., "model": ..., "label": ...} for the
-    first working endpoint, or None if all fail.  For endpoints with multiple
-    candidate models, tries each in order and returns the first that succeeds.
+    first working endpoint (in ZAI_ENDPOINTS priority order), or None if all
+    fail.  For endpoints with multiple candidate models, each worker tries
+    its endpoint's models in order and returns the first that succeeds.
     """
-    for ep_id, base_url, probe_models, label in ZAI_ENDPOINTS:
-        for model in probe_models:
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    # No `with` block: a context manager would join ALL probe threads on
+    # exit, defeating the early return below. shutdown(wait=False) lets the
+    # surviving daemon-style probes drain in the background instead of
+    # blocking the caller on slow/unreachable endpoints.
+    pool = ThreadPoolExecutor(max_workers=len(ZAI_ENDPOINTS))
+    try:
+        futures = {
+            pool.submit(_probe_single_zai_endpoint, api_key, ep, timeout): ep[0]
+            for ep in ZAI_ENDPOINTS
+        }
+        by_id = {ep_id: f for f, ep_id in futures.items()}
+        results: Dict[str, Dict[str, str]] = {}
+        for future in as_completed(futures):
+            ep_id = futures[future]
             try:
-                resp = httpx.post(
-                    f"{base_url}/chat/completions",
-                    headers={
-                        "Authorization": f"Bearer {api_key}",
-                        "Content-Type": "application/json",
-                    },
-                    json={
-                        "model": model,
-                        "stream": False,
-                        "max_tokens": 1,
-                        "messages": [{"role": "user", "content": "ping"}],
-                    },
-                    timeout=timeout,
-                )
-                if resp.status_code == 200:
-                    logger.debug("Z.AI endpoint probe: %s (%s) model=%s OK", ep_id, base_url, model)
-                    return {
-                        "id": ep_id,
-                        "base_url": base_url,
-                        "model": model,
-                        "label": label,
-                    }
-                logger.debug("Z.AI endpoint probe: %s model=%s returned %s", ep_id, model, resp.status_code)
-            except Exception as exc:
-                logger.debug("Z.AI endpoint probe: %s model=%s failed: %s", ep_id, model, exc)
-    return None
+                result = future.result()
+                if result is not None:
+                    results[ep_id] = result
+            except Exception:
+                pass
+            # Early exit in PRIORITY order: walk endpoints highest-priority
+            # first; if one has succeeded and every higher-priority probe
+            # has already finished (without success), no later completion
+            # can win — return now instead of waiting out slow endpoints
+            # (main's sequential loop also stopped at first success).
+            for ep in ZAI_ENDPOINTS:
+                if not by_id[ep[0]].done():
+                    break  # a higher-priority probe is still in flight
+                if ep[0] in results:
+                    return results[ep[0]]
+
+        # All probes finished: first match in priority order, if any.
+        for ep in ZAI_ENDPOINTS:
+            if ep[0] in results:
+                return results[ep[0]]
+        return None
+    finally:
+        pool.shutdown(wait=False)
 
 
 def _resolve_zai_base_url(api_key: str, default_url: str, env_override: str) -> str:
@@ -803,22 +906,14 @@ def is_rate_limited_auth_error(error: Exception) -> bool:
 def _parse_retry_after_seconds(headers: Any) -> Optional[int]:
     """Best-effort parse of a ``Retry-After`` header into whole seconds.
 
-    Supports the delta-seconds form (e.g. ``"120"``). HTTP-date forms and
-    missing/unparseable values return ``None`` rather than guessing.
+    Thin wrapper around :func:`agent.retry_utils.parse_retry_after_seconds`
+    (delta-seconds and HTTP-date forms; negatives clamp to 0; missing or
+    unparseable values return ``None``).
     """
-    if headers is None:
-        return None
-    try:
-        raw = headers.get("retry-after")
-    except Exception:
-        return None
-    if raw is None:
-        return None
-    try:
-        seconds = int(str(raw).strip())
-    except (TypeError, ValueError):
-        return None
-    return seconds if seconds >= 0 else None
+    from agent.retry_utils import parse_retry_after_seconds
+
+    seconds = parse_retry_after_seconds(headers)
+    return None if seconds is None else int(seconds)
 
 
 def format_auth_error(error: Exception) -> str:
@@ -899,7 +994,7 @@ def _oauth_trace(event: str, *, sequence_id: Optional[str] = None, **fields: Any
 
 
 # =============================================================================
-# Auth Store — persistence layer for ~/.hermes/auth.json
+# Auth Store — persistence layer for ~/.kova/auth.json
 # =============================================================================
 
 def _auth_file_path() -> Path:
@@ -962,7 +1057,7 @@ def _load_global_auth_store() -> Dict[str, Any]:
     or the global auth.json is absent). Never raises on missing file.
 
     Seat belt: under pytest, refuses to read the real user's
-    ``~/.hermes/auth.json`` even when HERMES_HOME is set to a profile
+    ``~/.kova/auth.json`` even when HERMES_HOME is set to a profile
     path. The hermetic conftest does not redirect ``HOME``, so
     ``get_default_kova_root()`` for a profile-shaped HERMES_HOME can
     still resolve to the real user's home on a dev machine. That would
@@ -1123,19 +1218,46 @@ def _load_auth_store(auth_file: Optional[Path] = None) -> Dict[str, Any]:
         return {"version": AUTH_STORE_VERSION, "providers": {}}
 
     try:
-        raw = json.loads(auth_file.read_text())
+        raw = json.loads(auth_file.read_text(encoding="utf-8"))
+    except OSError:
+        # The file exists (checked above) but could not be READ: EMFILE under
+        # fd exhaustion, EACCES, EIO, a stalled network mount. None of those
+        # mean the contents are bad, and this module does read-modify-write in
+        # ~15 places, so degrading to an empty store here is one
+        # _save_auth_store() away from erasing every stored credential.
+        # Fail loudly instead and leave the file on disk untouched.
+        logger.warning(
+            "auth: could not read %s, leaving the store on disk untouched "
+            "rather than degrading to an empty one",
+            auth_file, exc_info=True,
+        )
+        raise
     except Exception as exc:
+        # Genuine corruption: unparseable JSON, or bytes that are not UTF-8.
         corrupt_path = auth_file.with_suffix(".json.corrupt")
+        preserved = False
         try:
             import shutil
             shutil.copy2(auth_file, corrupt_path)
+            preserved = True
         except Exception:
-            pass
-        logger.warning(
-            "auth: failed to parse %s (%s) — starting with empty store. "
-            "Corrupt file preserved at %s",
-            auth_file, exc, corrupt_path,
-        )
+            logger.debug(
+                "auth: could not preserve a copy of the corrupt store at %s",
+                corrupt_path, exc_info=True,
+            )
+        if preserved:
+            logger.warning(
+                "auth: failed to parse %s (%s), starting with empty store. "
+                "Corrupt file preserved at %s",
+                auth_file, exc, corrupt_path,
+            )
+        else:
+            # Do not advertise a backup that was never written.
+            logger.warning(
+                "auth: failed to parse %s (%s), starting with empty store. "
+                "A copy could NOT be preserved at %s",
+                auth_file, exc, corrupt_path,
+            )
         return {"version": AUTH_STORE_VERSION, "providers": {}}
 
     if isinstance(raw, dict) and (
@@ -1889,6 +2011,7 @@ def resolve_provider(
         "step": "stepfun", "stepfun-coding-plan": "stepfun",
         "arcee-ai": "arcee", "arceeai": "arcee",
         "gmi-cloud": "gmi", "gmicloud": "gmi",
+        "actual-computer": "actual", "actualcomputer": "actual", "aci": "actual",
         "minimax-china": "minimax-cn", "minimax_cn": "minimax-cn",
         "minimax-portal": "minimax-oauth", "minimax-global": "minimax-oauth", "minimax_oauth": "minimax-oauth",
         "alibaba_coding": "alibaba-coding-plan", "alibaba-coding": "alibaba-coding-plan",
@@ -1897,6 +2020,7 @@ def resolve_provider(
         "github": "copilot", "github-copilot": "copilot",
         "github-models": "copilot", "github-model": "copilot",
         "github-copilot-acp": "copilot-acp", "copilot-acp-agent": "copilot-acp",
+        "aigateway": "ai-gateway", "vercel": "ai-gateway", "vercel-ai-gateway": "ai-gateway",
         "opencode": "opencode-zen", "zen": "opencode-zen",
         "qwen-portal": "qwen-oauth", "qwen-cli": "qwen-oauth", "qwen-oauth": "qwen-oauth",
         "hf": "huggingface", "hugging-face": "huggingface", "huggingface-hub": "huggingface",
@@ -2012,7 +2136,7 @@ def resolve_provider(
             if has_usable_secret(os.getenv(env_var, "")):
                 # An exported API key now wins over a logged-in OAuth provider
                 # (the #29285 fix). Surface that so a user who deliberately uses
-                # OAuth but has a stale key in ~/.hermes/.env isn't silently
+                # OAuth but has a stale key in ~/.kova/.env isn't silently
                 # switched without knowing why.
                 if _oauth_active and _oauth_active != pid:
                     logger.warning(
@@ -2053,7 +2177,7 @@ def resolve_provider(
     raise AuthError(
         "No inference provider configured. Run 'kova model' to choose a "
         "provider and model, or set an API key (OPENROUTER_API_KEY, "
-        "OPENAI_API_KEY, etc.) in ~/.hermes/.env.",
+        "OPENAI_API_KEY, etc.) in ~/.kova/.env.",
         code="no_provider_configured",
     )
 
@@ -2328,7 +2452,7 @@ def _log_nous_invoke_jwt_selected(
     access_token: Any,
     sequence_id: Optional[str] = None,
 ) -> None:
-    logger.info("Nous inference auth: using NAS invoke JWT")
+    logger.debug("Nous inference auth: using NAS invoke JWT")
     _oauth_trace(
         "nous_invoke_jwt_selected",
         sequence_id=sequence_id,
@@ -2639,7 +2763,7 @@ def get_qwen_auth_status() -> Dict[str, Any]:
 
 
 # =============================================================================
-# Spotify auth — PKCE tokens stored in ~/.hermes/auth.json
+# Spotify auth — PKCE tokens stored in ~/.kova/auth.json
 # =============================================================================
 
 
@@ -3112,7 +3236,7 @@ def get_spotify_auth_status() -> Dict[str, Any]:
 
 def _spotify_interactive_setup(redirect_uri_hint: str) -> str:
     """Walk the user through creating a Spotify developer app, persist the
-    resulting client_id to ~/.hermes/.env, and return it.
+    resulting client_id to ~/.kova/.env, and return it.
 
     Raises SystemExit if the user aborts or submits an empty value.
     """
@@ -3166,7 +3290,7 @@ def _spotify_interactive_setup(redirect_uri_hint: str) -> str:
         save_env_value("KOVA_SPOTIFY_REDIRECT_URI", redirect_uri_hint)
 
     print()
-    print("Saved KOVA_SPOTIFY_CLIENT_ID to ~/.hermes/.env")
+    print("Saved KOVA_SPOTIFY_CLIENT_ID to ~/.kova/.env")
     print()
     return raw
 
@@ -3434,7 +3558,7 @@ def _print_loopback_ssh_hint(redirect_uri: str, *, docs_url: str | None = None) 
 
 
 # =============================================================================
-# OpenAI Codex auth — tokens stored in ~/.hermes/auth.json (not ~/.codex/)
+# OpenAI Codex auth — tokens stored in ~/.kova/auth.json (not ~/.codex/)
 #
 # Kova maintains its own Codex OAuth session separate from the Codex CLI
 # and VS Code extension. This prevents refresh token rotation conflicts
@@ -3442,7 +3566,7 @@ def _print_loopback_ssh_hint(redirect_uri: str, *, docs_url: str | None = None) 
 # =============================================================================
 
 def _read_codex_tokens(*, _lock: bool = True) -> Dict[str, Any]:
-    """Read Codex OAuth tokens from Kova auth store (~/.hermes/auth.json).
+    """Read Codex OAuth tokens from Kova auth store (~/.kova/auth.json).
     
     Returns dict with 'tokens' (access_token, refresh_token) and 'last_refresh'.
     Raises AuthError if no Codex tokens are stored.
@@ -3592,7 +3716,7 @@ def _sync_codex_pool_entries(
 
 
 def _save_codex_tokens(tokens: Dict[str, str], last_refresh: str = None, label: str = None) -> None:
-    """Save Codex OAuth tokens to Kova auth store (~/.hermes/auth.json)."""
+    """Save Codex OAuth tokens to Kova auth store (~/.kova/auth.json)."""
     if last_refresh is None:
         last_refresh = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     with _auth_store_lock():
@@ -3826,7 +3950,7 @@ def _import_codex_cli_tokens() -> Optional[Dict[str, str]]:
     if not auth_path.is_file():
         return None
     try:
-        payload = json.loads(auth_path.read_text())
+        payload = json.loads(auth_path.read_text(encoding="utf-8"))
         tokens = payload.get("tokens")
         if not isinstance(tokens, dict):
             return None
@@ -4291,7 +4415,7 @@ def _pool_codex_access_token() -> str:
 
 
 # =============================================================================
-# xAI Grok OAuth — tokens stored in ~/.hermes/auth.json
+# xAI Grok OAuth — tokens stored in ~/.kova/auth.json
 # =============================================================================
 
 def _xai_oauth_state_from_store(auth_store: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -4422,7 +4546,7 @@ def _write_through_xai_oauth_to_global_root(state: Dict[str, Any]) -> None:
         # Classic mode (profile == root); the profile save already hit root.
         return
     # Seat belt: under pytest, refuse to write the real user's
-    # ~/.hermes/auth.json even when HERMES_HOME points at a profile path
+    # ~/.kova/auth.json even when HERMES_HOME points at a profile path
     # (mirrors the read-side guard in _load_global_auth_store). Uses the
     # unmodified HOME env, not Path.home() which fixtures may monkeypatch.
     if os.environ.get("PYTEST_CURRENT_TEST"):
@@ -4452,7 +4576,16 @@ def _save_xai_oauth_tokens(
     redirect_uri: str = "",
     last_refresh: Optional[str] = None,
     auth_mode: str = "oauth_device_code",
+    set_active: bool = True,
 ) -> None:
+    """Persist xAI OAuth tokens into the auth store.
+
+    When *set_active* is True (default), also promote ``xai-oauth`` to
+    ``active_provider`` — appropriate for intentional model/auth login.
+    Pass ``set_active=False`` for side-tool credential bootstrap (TTS/setup,
+    tools config, dashboard token save, token refresh) so inference routing
+    is unchanged.
+    """
     if last_refresh is None:
         last_refresh = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     with _auth_store_lock():
@@ -4461,8 +4594,17 @@ def _save_xai_oauth_tokens(
         # grant through _load_provider_state's fallback. When such a profile
         # refreshes the (rotating) grant, we must write the rotated chain back
         # to root too, or root is left holding a revoked refresh token (#43589).
-        write_through_to_root = not _profile_has_own_xai_oauth_state(auth_store)
-        state = _load_provider_state(auth_store, "xai-oauth") or {}
+        # #74339: the old key-presence check (_profile_has_own_xai_oauth_state)
+        # decided write-through based on whether the profile had a
+        # providers.xai-oauth key BEFORE the save — but _store_provider_state
+        # unconditionally creates that key below. Use
+        # _load_provider_state_with_source to learn where the grant was
+        # resolved from and write back only to that source.
+        state, source_path = _load_provider_state_with_source(
+            auth_store, "xai-oauth"
+        )
+        if state is None:
+            state = {}
         state["tokens"] = tokens
         state["last_refresh"] = last_refresh
         state["auth_mode"] = auth_mode
@@ -4470,10 +4612,24 @@ def _save_xai_oauth_tokens(
             state["discovery"] = discovery
         if redirect_uri:
             state["redirect_uri"] = redirect_uri
-        _save_provider_state(auth_store, "xai-oauth", state)
-        _save_auth_store(auth_store)
-        if write_through_to_root:
+        global_root = _global_auth_file_path()
+        is_from_root = bool(
+            source_path is not None
+            and global_root is not None
+            and _same_path(source_path, global_root)
+        )
+        if is_from_root:
+            # Grant was resolved from root — write back to root only.
+            # Do NOT call _store_provider_state on the profile auth_store
+            # (it would create a shadowing providers.xai-oauth key that
+            # disables write-through on the next refresh — #74339).
             _write_through_xai_oauth_to_global_root(state)
+        else:
+            # Profile genuinely owns this — write to profile store.
+            _store_provider_state(
+                auth_store, "xai-oauth", state, set_active=set_active
+            )
+            _save_auth_store(auth_store)
 
 
 def _xai_access_token_is_expiring(access_token: str, skew_seconds: int = 0) -> bool:
@@ -4532,7 +4688,7 @@ def _xai_validate_oauth_endpoint(url: str, *, field: str) -> str:
     """Refuse any OIDC discovery endpoint that isn't HTTPS on the xAI origin.
 
     The OIDC discovery response is a long-lived, low-frequency request whose
-    output is cached in ``~/.hermes/auth.json``. A single MITM during initial
+    output is cached in ``~/.kova/auth.json``. A single MITM during initial
     login could substitute a malicious ``token_endpoint``; that URL would
     then receive the refresh_token on every subsequent refresh — a permanent
     credential leak from a one-time MITM. Validating scheme + host pins the
@@ -4808,6 +4964,9 @@ def _refresh_xai_oauth_tokens(
         redirect_uri=redirect_uri,
         last_refresh=refreshed["last_refresh"],
         auth_mode=auth_mode,
+        # Refresh must not flip active_provider — TTS/side tools can refresh
+        # xAI tokens while chat still routes through another provider.
+        set_active=False,
     )
     return updated_tokens
 
@@ -4995,6 +5154,25 @@ def _request_device_code(
     return data
 
 
+def _nous_device_auth_timeout_message(portal_base_url: str) -> str:
+    """Actionable timeout text for Nous device-code login failures.
+
+    A bare "Timed out waiting for device authorization" gives the user
+    nothing to act on. The most common cause is Portal sign-in failing in
+    the opened browser tab (including the server-side CAPTCHA loop from
+    #20605), so point at the Portal login page and the retry command.
+    """
+    portal = (portal_base_url or DEFAULT_NOUS_PORTAL_URL).rstrip("/")
+    return (
+        "Timed out waiting for device authorization.\n"
+        "  Portal sign-in is required before the device code can be approved.\n"
+        "  If the browser showed a CAPTCHA / 'You did not pass CAPTCHA' error,\n"
+        "  finish signing in at the Portal in a normal browser tab, then retry:\n"
+        "    kova portal\n"
+        f"  Portal login: {portal}/login"
+    )
+
+
 def _poll_for_token(
     client: httpx.Client,
     portal_base_url: str,
@@ -5041,7 +5219,10 @@ def _poll_for_token(
         description = error_payload.get("error_description") or "Unknown authentication error"
         raise RuntimeError(f"{error_code}: {description}")
 
-    raise TimeoutError("Timed out waiting for device authorization")
+    # Enriched at the SOURCE so every caller inherits the guidance:
+    # the CLI login (_nous_device_code_login) and the dashboard/desktop
+    # poller (web_server._nous_poller, which surfaces str(e) to the UI).
+    raise TimeoutError(_nous_device_auth_timeout_message(portal_base_url))
 
 
 # =============================================================================
@@ -5055,7 +5236,7 @@ def _poll_for_token(
 #
 # File lives at ${KOVA_SHARED_AUTH_DIR}/nous_auth.json, defaulting to
 # ``<kova-root>/shared/nous_auth.json`` where ``<kova-root>`` is what
-# ``get_default_kova_root()`` returns — ``~/.hermes`` on Linux/macOS,
+# ``get_default_kova_root()`` returns — ``~/.kova`` on Linux/macOS,
 # ``%LOCALAPPDATA%\kova`` on native Windows, or the Docker/custom root.
 # It is OUTSIDE any named profile's HERMES_HOME so named profiles (which
 # typically live under ``<kova-root>/profiles/<name>/``) all see the
@@ -5078,7 +5259,7 @@ def _nous_shared_auth_dir() -> Path:
     path without touching the real user's home. Defaults to
     ``<kova-root>/shared/``, where ``<kova-root>`` is what
     :func:`kova_constants.get_default_kova_root` returns — so
-    Linux/macOS classic installs land at ``~/.hermes/shared/``, native
+    Linux/macOS classic installs land at ``~/.kova/shared/``, native
     Windows installs at ``%LOCALAPPDATA%\\kova\\shared\\``, and
     Docker / custom ``HERMES_HOME`` deployments at
     ``<HERMES_HOME>/shared/``. Sits outside any named profile so all
@@ -5261,7 +5442,7 @@ def _read_shared_nous_state() -> Optional[Dict[str, Any]]:
     if not path.is_file():
         return None
     try:
-        payload = json.loads(path.read_text())
+        payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as exc:
         logger.debug("Shared Nous auth store at %s is unreadable: %s", path, exc)
         return None
@@ -5575,7 +5756,7 @@ def _refresh_access_token(
             "Nous Portal detected refresh-token reuse and revoked this session.\n"
             "This usually means an external process (monitoring script, "
             "custom self-heal hook, or another Kova install sharing "
-            "~/.hermes/auth.json) called POST /api/oauth/token with Kova's "
+            "~/.kova/auth.json) called POST /api/oauth/token with Kova's "
             "refresh token without persisting the rotated token back.\n"
             "Nous refresh tokens are single-use — only Kova may call the "
             "refresh endpoint. For health checks, use `kova auth status` "
@@ -5656,6 +5837,18 @@ def _agent_key_is_usable(state: Dict[str, Any], min_ttl_seconds: int) -> bool:
     )
 
 
+# Per-process memo for resolve_nous_access_token. Startup runs
+# check_tool_availability once per managed-tool check_fn (browser, image_gen,
+# etc.), and each one independently triggers a ~15s blocking token-refresh
+# network call when the stored token is expired. On a slow/constrained host that
+# serial burst stretches startup to many minutes. A short-TTL memo collapses the
+# burst into a single network round-trip; callers that need freshness use
+# separate flows (force_fresh / refresh_nous_oauth_pure) and are unaffected.
+_RESOLVE_TOKEN_CACHE_LOCK = threading.Lock()
+_RESOLVE_TOKEN_CACHE: "tuple[float, str] | None" = None
+_RESOLVE_TOKEN_CACHE_TTL_S = 5.0
+
+
 def resolve_nous_access_token(
     *,
     timeout_seconds: float = 15.0,
@@ -5664,6 +5857,16 @@ def resolve_nous_access_token(
     refresh_skew_seconds: int = ACCESS_TOKEN_REFRESH_SKEW_SECONDS,
 ) -> str:
     """Resolve a refresh-aware Nous Portal access token for managed tool gateways."""
+    global _RESOLVE_TOKEN_CACHE
+    # Memo: collapse the startup burst of managed-tool check_fns into one
+    # network refresh. Only cache a successful, non-forced resolution for a
+    # short window; force_fresh / error paths bypass and don't populate it.
+    if not insecure and ca_bundle is None:
+        with _RESOLVE_TOKEN_CACHE_LOCK:
+            if _RESOLVE_TOKEN_CACHE is not None:
+                cached_at, cached_token = _RESOLVE_TOKEN_CACHE
+                if (time.monotonic() - cached_at) < _RESOLVE_TOKEN_CACHE_TTL_S:
+                    return cached_token
     with _provider_state_transaction("nous") as (
         auth_store,
         state,
@@ -5718,6 +5921,15 @@ def resolve_nous_access_token(
             if not _is_expiring(state.get("expires_at"), refresh_skew_seconds):
                 if merged_shared:
                     _save_provider_state_to_source(auth_store, "nous", state, state_source_path)
+                # Populate the memo on the valid-token fast path too: the
+                # startup burst usually finds a *valid* token, but each
+                # check_fn call still pays two cross-process file locks and
+                # state reads to reach this return. The token has at least
+                # refresh_skew_seconds (>= 120s) of life here, so a 5s memo
+                # can never serve an expired token.
+                if not insecure and ca_bundle is None:
+                    with _RESOLVE_TOKEN_CACHE_LOCK:
+                        _RESOLVE_TOKEN_CACHE = (time.monotonic(), access_token)
                 return access_token
 
             if not isinstance(refresh_token, str) or not refresh_token:
@@ -5775,7 +5987,11 @@ def resolve_nous_access_token(
             }
             _save_provider_state_to_source(auth_store, "nous", state, state_source_path)
             _write_shared_nous_state(state)
-            return state["access_token"]
+            resolved = state["access_token"]
+            if not insecure and ca_bundle is None:
+                with _RESOLVE_TOKEN_CACHE_LOCK:
+                    _RESOLVE_TOKEN_CACHE = (time.monotonic(), resolved)
+            return resolved
 
 
 def refresh_nous_oauth_pure(
@@ -6505,6 +6721,69 @@ def _compute_nous_auth_status() -> Dict[str, Any]:
     return _snapshot_nous_pool_status()
 
 
+def get_nous_auth_status_local() -> Dict[str, Any]:
+    """Refresh-free Nous auth snapshot for read-only display surfaces.
+
+    Unlike :func:`get_nous_auth_status`, this NEVER calls
+    ``resolve_nous_runtime_credentials()`` and therefore never performs an
+    OAuth refresh POST or consumes a single-use refresh token. It reports the
+    persisted auth-store state, classifying the access token with a local
+    invoke-JWT decode only.
+
+    Use this from status panels, doctor checks, and polled dashboard
+    endpoints. Explicit auth actions (login flows, portal operations that
+    need a live credential) should keep using ``get_nous_auth_status()``.
+
+    ``logged_in`` here means "a persisted login exists that the runtime can
+    use or refresh": a currently-usable invoke JWT, or a refresh token that
+    has not been terminally quarantined. It does not prove the refresh token
+    is still accepted server-side — only a live resolve can do that.
+    """
+    try:
+        state = get_provider_auth_state("nous")
+    except Exception:
+        state = None
+
+    if not state:
+        return _snapshot_nous_pool_status()
+
+    access_token = state.get("access_token")
+    jwt_reason = _nous_invoke_jwt_status(
+        access_token,
+        scope=state.get("scope"),
+        expires_at=state.get("expires_at"),
+    )
+    last_err = state.get("last_auth_error")
+    terminal = bool(
+        isinstance(last_err, dict)
+        and last_err.get("relogin_required")
+        and not (access_token or state.get("refresh_token"))
+    )
+    logged_in = (jwt_reason is None) or (
+        bool(state.get("refresh_token")) and not terminal
+    )
+
+    status: Dict[str, Any] = {
+        "logged_in": logged_in,
+        "portal_base_url": state.get("portal_base_url"),
+        "inference_base_url": state.get("inference_base_url"),
+        "access_token": access_token,
+        "access_expires_at": state.get("expires_at"),
+        "agent_key_expires_at": state.get("agent_key_expires_at"),
+        "has_refresh_token": bool(state.get("refresh_token")),
+        "inference_credential_present": bool(
+            access_token or state.get("agent_key")
+        ),
+        "credential_source": "auth_store",
+        "source": "auth_store_local",
+    }
+    if terminal and isinstance(last_err, dict):
+        status["relogin_required"] = True
+        status["error_code"] = last_err.get("code")
+        status["error"] = last_err.get("message") or "re-login required"
+    return status
+
+
 # Enum values reported on the dashboard /api/status as ``nous_session_valid``.
 # NAS's health sweep re-mints the bootstrap session ONLY on "terminal"; "valid"
 # and "unknown" are no-ops. Keep this set small and stable — NAS parses it with
@@ -6526,7 +6805,9 @@ def get_nous_session_validity() -> str:
         non-terminal error). Never triggers a re-mint.
 
     Determinable with NO working token — it reads local auth-store state only,
-    which is exactly the condition a dead hosted box is in.
+    which is exactly the condition a dead hosted box is in. This function is
+    called by the frequently-polled public ``/api/status`` endpoint, so it must
+    never resolve credentials or perform an OAuth refresh.
 
     ANTI-FLAP CONTRACT: only a *terminal* failure maps to "terminal". A normal
     mid-rotation blip, a transient network error, or a merely-expiring token
@@ -6543,34 +6824,29 @@ def get_nous_session_validity() -> str:
     try:
         state = get_provider_auth_state("nous")
     except Exception:
-        state = None
-
-    if state:
-        last_err = state.get("last_auth_error")
-        if isinstance(last_err, dict) and last_err.get("relogin_required"):
-            # Only terminal while there is no usable credential left. If a later
-            # successful login repopulated tokens, the stale marker must not
-            # keep reporting terminal.
-            if not (state.get("access_token") or state.get("refresh_token")):
-                return NOUS_SESSION_TERMINAL
-
-    try:
-        status = get_nous_auth_status()
-    except Exception:
-        # Status computation itself failed — indeterminate, not terminal.
         return NOUS_SESSION_UNKNOWN
 
-    if status.get("logged_in"):
+    if not state:
+        return NOUS_SESSION_UNKNOWN
+
+    last_err = state.get("last_auth_error")
+    if isinstance(last_err, dict) and last_err.get("relogin_required"):
+        # Only terminal while there is no usable credential left. If a later
+        # successful login repopulated tokens, the stale marker must not
+        # keep reporting terminal.
+        if not (state.get("access_token") or state.get("refresh_token")):
+            return NOUS_SESSION_TERMINAL
+
+    if _nous_invoke_jwt_status(
+        state.get("access_token"),
+        scope=state.get("scope"),
+        expires_at=state.get("expires_at"),
+    ) is None:
         return NOUS_SESSION_VALID
 
-    # Not logged in. Distinguish a terminal (relogin-required) failure from a
-    # transient / indeterminate one. Only the former is actionable by NAS.
-    if status.get("relogin_required"):
-        return NOUS_SESSION_TERMINAL
-
-    # No Nous provider state at all, or a non-terminal not-logged-in condition
-    # (e.g. a transient refresh error that did not set relogin_required). Treat
-    # as unknown so a healthy box mid-blip never triggers a re-mint.
+    # Missing, malformed, expired, or merely expiring credentials are not proof
+    # of a terminal session. Runtime inference/keepalive paths own refreshes;
+    # the health endpoint remains side-effect free and reports indeterminate.
     return NOUS_SESSION_UNKNOWN
 
 
@@ -6705,13 +6981,22 @@ def get_api_key_provider_status(provider_id: str) -> Dict[str, Any]:
     else:
         base_url = pconfig.inference_base_url
 
+    if provider_id == "actual":
+        base_url = normalize_actual_base_url(base_url)
+
+    actual_local_noauth = (
+        provider_id == "actual"
+        and not api_key
+        and is_actual_local_base_url(base_url)
+    )
+
     return {
-        "configured": bool(api_key),
+        "configured": bool(api_key) or actual_local_noauth,
         "provider": provider_id,
         "name": pconfig.name,
-        "key_source": key_source,
+        "key_source": key_source or ("local-offline" if actual_local_noauth else ""),
         "base_url": base_url,
-        "logged_in": bool(api_key),  # compat with OAuth status shape
+        "logged_in": bool(api_key) or actual_local_noauth,  # compat with OAuth status shape
     }
 
 
@@ -6917,11 +7202,18 @@ def resolve_api_key_provider_credentials(provider_id: str) -> Dict[str, Any]:
     if provider_id == "lmstudio":
         base_url = _normalize_lmstudio_runtime_base_url(base_url)
 
+    if provider_id == "actual":
+        base_url = normalize_actual_base_url(base_url)
+
     # Last-resort guard: an API-key provider must never hand back an empty
     # base URL (a set-but-empty COPILOT_API_BASE_URL or similar env override
     # otherwise wedges chat inference — #50252).
     if not (isinstance(base_url, str) and base_url.strip()):
         base_url = pconfig.inference_base_url
+
+    if not api_key and provider_id == "actual" and is_actual_local_base_url(base_url):
+        api_key = ACTUAL_LOCAL_NOAUTH_PLACEHOLDER
+        key_source = key_source or "local-offline"
 
     return {
         "provider": provider_id,
@@ -7341,6 +7633,22 @@ def _prompt_model_selection(
             desc_lines.append(f"  ── {unavailable_footer} ──")
         description = "\n".join(desc_lines) if desc_lines else None
 
+        # Search haystacks keep pricing labels visible while adding aliases
+        # for brand-less wire ids (e.g. Kimi Coding `k3` ↔ query "kimi").
+        from kova_cli.model_search import model_search_text
+
+        model_search_labels = []
+        for mid in ordered:
+            label = _label(mid)
+            haystack = model_search_text(mid)
+            # model_search_text always starts with the wire id; only append when
+            # aliases add tokens beyond the bare id already in the label.
+            model_search_labels.append(
+                label if haystack == mid else f"{label} {haystack}"
+            )
+        model_search_labels.append("Enter custom model name")
+        model_search_labels.append("Skip (keep current)")
+
         idx = curses_radiolist(
             "Select default model:",
             choices,
@@ -7348,6 +7656,7 @@ def _prompt_model_selection(
             cancel_returns=-1,
             description=description,
             searchable=True,
+            search_labels=model_search_labels,
         )
         if idx < 0:
             return None
@@ -7442,7 +7751,7 @@ def _login_openai_codex(
     *,
     force_new_login: bool = False,
 ) -> None:
-    """OpenAI Codex login via device code flow. Tokens stored in ~/.hermes/auth.json."""
+    """OpenAI Codex login via device code flow. Tokens stored in ~/.kova/auth.json."""
 
     del args, pconfig  # kept for parity with other provider login helpers
 
@@ -7964,6 +8273,68 @@ def _codex_device_code_login() -> Dict[str, Any]:
 
 # ==================== MiniMax Portal OAuth ====================
 
+_MINIMAX_OAUTH_ERROR_BODY_LIMIT = 16 * 1024
+
+
+def _minimax_response_error_text(
+    response: httpx.Response,
+    *,
+    limit: int = _MINIMAX_OAUTH_ERROR_BODY_LIMIT,
+) -> str:
+    """Return a bounded error body from a streamed MiniMax OAuth response."""
+    limit = max(0, int(limit))
+    chunks: list[bytes] = []
+    total = 0
+    truncated = False
+    try:
+        if getattr(response, "is_stream_consumed", False):
+            text = response.text
+            return text[:limit] + ("...[truncated]" if len(text) > limit else "")
+
+        for chunk in response.iter_bytes():
+            if not chunk:
+                continue
+            remaining = limit + 1 - total
+            if remaining <= 0:
+                truncated = True
+                break
+            if len(chunk) > remaining:
+                chunks.append(chunk[:remaining])
+                total += remaining
+                truncated = True
+                break
+            chunks.append(chunk)
+            total += len(chunk)
+        raw = b"".join(chunks)
+        if len(raw) > limit:
+            raw = raw[:limit]
+            truncated = True
+        encoding = response.encoding or "utf-8"
+        text = raw.decode(encoding, errors="replace")
+        return text + ("...[truncated]" if truncated else "")
+    finally:
+        response.close()
+
+
+def _minimax_post_form(
+    client: httpx.Client,
+    url: str,
+    *,
+    data: Dict[str, Any],
+    headers: Dict[str, str],
+) -> httpx.Response:
+    """POST a MiniMax OAuth form without eagerly reading error bodies."""
+    request = client.build_request(
+        "POST",
+        url,
+        data=data,
+        headers=headers,
+    )
+    response = client.send(request, stream=True)
+    if response.status_code == 200:
+        response.read()
+    return response
+
 def _minimax_pkce_pair() -> tuple:
     """Generate (code_verifier, code_challenge_S256, state) for MiniMax OAuth."""
     import secrets
@@ -7979,7 +8350,8 @@ def _minimax_request_user_code(
     client: httpx.Client, *, portal_base_url: str, client_id: str,
     code_challenge: str, state: str,
 ) -> Dict[str, Any]:
-    response = client.post(
+    response = _minimax_post_form(
+        client,
         f"{portal_base_url}/oauth/code",
         data={
             "response_type": "code",
@@ -7996,8 +8368,9 @@ def _minimax_request_user_code(
         },
     )
     if response.status_code != 200:
+        body = _minimax_response_error_text(response)
         raise AuthError(
-            f"MiniMax OAuth authorization failed: {response.text or response.reason_phrase}",
+            f"MiniMax OAuth authorization failed: {body or response.reason_phrase}",
             provider="minimax-oauth", code="authorization_failed",
         )
     payload = response.json()
@@ -8045,7 +8418,8 @@ def _minimax_poll_token(
     interval = max(2.0, (interval_ms or 2000) / 1000.0)
 
     while _time.time() < deadline:
-        response = client.post(
+        response = _minimax_post_form(
+            client,
             f"{portal_base_url}/oauth/token",
             data={
                 "grant_type": MINIMAX_OAUTH_GRANT_TYPE,
@@ -8058,17 +8432,22 @@ def _minimax_poll_token(
                 "Accept": "application/json",
             },
         )
-        try:
-            payload = response.json() if response.text else {}
-        except Exception:
-            payload = {}
-
+        error_text = ""
         if response.status_code != 200:
-            msg = (payload.get("base_resp", {}) or {}).get("status_msg") or response.text
+            error_text = _minimax_response_error_text(response)
+            try:
+                payload = json.loads(error_text) if error_text else {}
+            except Exception:
+                payload = {}
+            msg = (payload.get("base_resp", {}) or {}).get("status_msg") or error_text
             raise AuthError(
                 f"MiniMax OAuth error: {msg or 'unknown'}",
                 provider="minimax-oauth", code="token_exchange_failed",
             )
+        try:
+            payload = response.json() if response.text else {}
+        except Exception:
+            payload = {}
 
         status = payload.get("status")
         if status == "error":
@@ -8093,7 +8472,7 @@ def _minimax_poll_token(
 
 
 def _minimax_save_auth_state(auth_state: Dict[str, Any]) -> None:
-    """Persist MiniMax OAuth state to Kova auth store (~/.hermes/auth.json)."""
+    """Persist MiniMax OAuth state to Kova auth store (~/.kova/auth.json)."""
     with _auth_store_lock():
         auth_store = _load_auth_store()
         _save_provider_state(auth_store, "minimax-oauth", auth_state)
@@ -8204,7 +8583,8 @@ def _refresh_minimax_oauth_state(
     portal_base_url = state["portal_base_url"]
     with httpx.Client(timeout=httpx.Timeout(timeout_seconds),
                       follow_redirects=True) as client:
-        response = client.post(
+        response = _minimax_post_form(
+            client,
             f"{portal_base_url}/oauth/token",
             data={
                 "grant_type": "refresh_token",
@@ -8216,15 +8596,20 @@ def _refresh_minimax_oauth_state(
                 "Accept": "application/json",
             },
         )
-    if response.status_code != 200:
-        body = response.text.lower()
-        relogin = any(m in body for m in
-                      ("invalid_grant", "refresh_token_reused", "invalid_refresh_token"))
-        raise AuthError(
-            f"MiniMax OAuth refresh failed: {response.text or response.reason_phrase}",
-            provider="minimax-oauth", code="refresh_failed",
-            relogin_required=relogin,
-        )
+        # The non-200 branch reads a STREAMED body, so it must run while
+        # the client is still open — iter_bytes() after the client context
+        # closes raises (StreamClosed).  The 200 path was already read by
+        # _minimax_post_form, so response.json() below is safe outside.
+        if response.status_code != 200:
+            body = _minimax_response_error_text(response)
+            body_lower = body.lower()
+            relogin = any(m in body_lower for m in
+                          ("invalid_grant", "refresh_token_reused", "invalid_refresh_token"))
+            raise AuthError(
+                f"MiniMax OAuth refresh failed: {body or response.reason_phrase}",
+                provider="minimax-oauth", code="refresh_failed",
+                relogin_required=relogin,
+            )
     payload = response.json()
     if payload.get("status") != "success":
         raise AuthError(

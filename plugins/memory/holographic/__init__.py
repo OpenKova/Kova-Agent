@@ -96,14 +96,11 @@ FACT_FEEDBACK_SCHEMA = {
 # ---------------------------------------------------------------------------
 
 def _load_plugin_config() -> dict:
-    from kova_constants import get_kova_home
-    config_path = get_kova_home() / "config.yaml"
-    if not config_path.exists():
-        return {}
     try:
-        import yaml
-        with open(config_path, encoding="utf-8-sig") as f:
-            all_config = yaml.safe_load(f) or {}
+        # Canonical loader: behavioral read now honors the managed-scope
+        # overlay + ${VAR} expansion (e.g. an api key template) too.
+        from kova_cli.config import load_config_readonly
+        all_config = load_config_readonly()
         return cfg_get(all_config, "plugins", "kova-memory-store", default={}) or {}
     except Exception:
         return {}
@@ -135,10 +132,10 @@ class HolographicMemoryProvider(MemoryProvider):
         config_path = Path(kova_home) / "config.yaml"
         try:
             import yaml
-            existing = {}
-            if config_path.exists():
-                with open(config_path, encoding="utf-8-sig") as f:
-                    existing = yaml.safe_load(f) or {}
+            # Write-back round-trip: raw read is correct (merged defaults
+            # must not be persisted back into the user's file).
+            from kova_cli.config import read_user_config_raw
+            existing = read_user_config_raw(config_path)
             existing.setdefault("plugins", {})
             existing["plugins"]["kova-memory-store"] = values
             with open(config_path, "w", encoding="utf-8") as f:
@@ -162,7 +159,7 @@ class HolographicMemoryProvider(MemoryProvider):
         _default_db = _kova_home + "/memory_store.db"
         db_path = self._config.get("db_path", _default_db)
         # Expand $HERMES_HOME in user-supplied paths so config values like
-        # "$HERMES_HOME/memory_store.db" or "~/.hermes/memory_store.db" both
+        # "$HERMES_HOME/memory_store.db" or "~/.kova/memory_store.db" both
         # resolve to the active profile's directory.
         if isinstance(db_path, str):
             db_path = db_path.replace("$HERMES_HOME", _kova_home)

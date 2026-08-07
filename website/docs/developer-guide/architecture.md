@@ -53,7 +53,7 @@ This page is the top-level map of Kova Agent internals. Use it to orient yoursel
 ```text
 kova-agent/
 ├── run_agent.py              # AIAgent — core conversation loop (large file)
-├── cli.py                    # KovaCLI — interactive terminal UI (large file)
+├── cli.py                    # HermesCLI — interactive terminal UI (large file)
 ├── model_tools.py            # Tool discovery, schema collection, dispatch
 ├── toolsets.py               # Tool groupings and platform presets
 ├── kova_state.py           # SQLite session/state database with FTS5
@@ -117,11 +117,13 @@ kova-agent/
 │   ├── mirror.py             # Cross-session message mirroring
 │   ├── status.py             # Token locks, profile-scoped process tracking
 │   ├── builtin_hooks/        # Extension point for always-registered hooks (none shipped)
-│   └── platforms/            # 20 adapters: telegram, discord, slack, whatsapp,
-│                             #   signal, matrix, mattermost, email, sms,
-│                             #   dingtalk, feishu, wecom, wecom_callback, weixin,
-│                             #   bluebubbles, qqbot, homeassistant, webhook, api_server,
-│                             #   yuanbao
+│   └── platforms/            # Built-in adapters: signal, weixin, bluebubbles,
+│                             #   qqbot, whatsapp_cloud, yuanbao, webhook, api_server
+│
+├── plugins/platforms/        # Bundled platform plugins: telegram, discord, slack,
+│                             #   whatsapp, matrix, mattermost, email, sms, dingtalk,
+│                             #   feishu, wecom, homeassistant, irc, line, teams,
+│                             #   google_chat, buzz, ntfy, photon, raft, simplex
 │
 ├── acp_adapter/              # ACP server (VS Code / Zed / JetBrains)
 ├── cron/                     # Scheduler (jobs.py, scheduler.py)
@@ -138,7 +140,7 @@ kova-agent/
 ### CLI Session
 
 ```text
-User input → KovaCLI.process_input()
+User input → HermesCLI.process_input()
   → AIAgent.run_conversation()
     → prompt_builder.build_system_prompt()
     → runtime_provider.resolve_runtime_provider()
@@ -211,7 +213,7 @@ A shared runtime resolver used by CLI, gateway, cron, ACP, and auxiliary calls. 
 
 ### Tool System
 
-Central tool registry (`tools/registry.py`) with 70+ registered tools across ~28 toolsets. Each tool file self-registers at import time. The registry handles schema collection, dispatch, availability checking, and error wrapping. Terminal tools support 6 backends (local, Docker, SSH, Daytona, Modal, Singularity).
+Central tool registry (`tools/registry.py`) with 70+ registered tools across ~28 toolsets. Each tool file self-registers at import time. The registry handles schema collection, dispatch, availability checking, and error wrapping. Terminal tools support 7 backends (local, Docker, SSH, Daytona, Modal, Singularity, Vercel Sandbox).
 
 → [Tools Runtime](./tools-runtime.md)
 
@@ -223,13 +225,13 @@ SQLite-based session storage with FTS5 full-text search. Sessions have lineage t
 
 ### Messaging Gateway
 
-Long-running process with 20 platform adapters, unified session routing, user authorization (allowlists + DM pairing), slash command dispatch, hook system, cron ticking, and background maintenance.
+Long-running process with 25+ platform adapters (built-in + bundled plugins), unified session routing, user authorization (allowlists + DM pairing), slash command dispatch, hook system, cron ticking, and background maintenance.
 
 → [Gateway Internals](./gateway-internals.md)
 
 ### Plugin System
 
-Three discovery sources: `~/.hermes/plugins/` (user), `.kova/plugins/` (project), and pip entry points. Plugins register tools, hooks, and CLI commands through a context API. Two specialized plugin types exist: memory providers (`plugins/memory/`) and context engines (`plugins/context_engine/`). Both are single-select — only one of each can be active at a time, configured via `kova plugins` or `config.yaml`.
+Three discovery sources: `~/.kova/plugins/` (user), `.kova/plugins/` (project), and pip entry points. Plugins register tools, hooks, and CLI commands through a context API. Two specialized plugin types exist: memory providers (`plugins/memory/`) and context engines (`plugins/context_engine/`). Both are single-select — only one of each can be active at a time, configured via `kova plugins` or `config.yaml`.
 
 → [Plugin Guide](/developer-guide/plugins), [Memory Provider Plugin](./memory-provider-plugin.md)
 

@@ -1,4 +1,3 @@
-import { useStore } from '@nanostores/react'
 import { type MouseEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { LogTail } from '@/components/chat/log-tail'
@@ -8,7 +7,7 @@ import { SearchField } from '@/components/ui/search-field'
 import { SegmentedControl } from '@/components/ui/segmented-control'
 import { ResponsiveTabs } from '@/components/ui/tab-dropdown'
 import { Tip } from '@/components/ui/tooltip'
-import { getActionStatus, getLogs, getStatus, getUsageAnalytics, restartGateway, updateKova } from '@/kova'
+import { getActionStatus, getLogs, getStatus, getUsageAnalytics, restartGateway, updateHermes } from '@/kova'
 import type { ActionStatusResponse, AnalyticsResponse, StatusResponse } from '@/kova'
 import { useI18n } from '@/i18n'
 import { sessionTitle } from '@/lib/chat-runtime'
@@ -26,6 +25,7 @@ import {
 } from '@/lib/icons'
 import { exportSession } from '@/lib/session-export'
 import { fmtDateTime } from '@/lib/time'
+import { useStoreSelector } from '@/lib/use-session-slice'
 import { cn } from '@/lib/utils'
 import { upsertDesktopActionTask } from '@/store/activity'
 import { $pinnedSessionIds, pinSession, unpinSession } from '@/store/layout'
@@ -47,6 +47,12 @@ const LOG_LEVELS = ['ALL', 'INFO', 'WARNING', 'ERROR'] as const
 
 const USAGE_PERIODS = [7, 30, 90] as const
 type UsagePeriod = (typeof USAGE_PERIODS)[number]
+
+// Stable empty arrays so the selector returns the same reference when we're
+// not on the Sessions tab — useStoreSelector bails out on Object.is, so the
+// component never re-renders from $sessions ticks while on System/Usage/etc.
+const EMPTY_SESSIONS: readonly never[] = []
+const EMPTY_PINNED: readonly string[] = []
 
 interface CommandCenterViewProps {
   initialSection?: CommandCenterSection
@@ -129,10 +135,12 @@ function EmptyPanel({ action, description, title }: { action?: ReactNode; descri
 export function CommandCenterView({ initialSection, onClose, onDeleteSession, onOpenSession }: CommandCenterViewProps) {
   const { t } = useI18n()
   const cc = t.commandCenter
-  const sessions = useStore($sessions)
-  const pinnedSessionIds = useStore($pinnedSessionIds)
-
+  // $sessions ticks on every streaming token (title updates, new sessions),
+  // but we only need the data on the Sessions tab. Subscribe conditionally so
+  // the System/Usage/Maintenance tabs don't re-render on every stream delta.
   const [section, setSection] = useRouteEnumParam('section', SECTIONS, initialSection ?? 'sessions')
+  const sessions = useStoreSelector($sessions, s => (section === 'sessions' ? s : EMPTY_SESSIONS))
+  const pinnedSessionIds = useStoreSelector($pinnedSessionIds, s => (section === 'sessions' ? s : EMPTY_PINNED))
 
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState<StatusResponse | null>(null)
@@ -258,7 +266,7 @@ export function CommandCenterView({ initialSection, onClose, onDeleteSession, on
       setSystemError('')
 
       try {
-        const started = kind === 'restart' ? await restartGateway() : await updateKova()
+        const started = kind === 'restart' ? await restartGateway() : await updateHermes()
         let nextStatus: ActionStatusResponse | null = null
 
         for (let attempt = 0; attempt < 18; attempt += 1) {
@@ -294,25 +302,29 @@ export function CommandCenterView({ initialSection, onClose, onDeleteSession, on
     [cc, refreshSystem]
   )
 
+  const navGroups = useMemo(
+    () =>
+      SECTIONS.map(value => ({
+        active: section === value,
+        icon:
+          value === 'sessions'
+            ? MessageCircle
+            : value === 'system'
+              ? Activity
+              : value === 'maintenance'
+                ? Wrench
+                : BarChart3,
+        id: value,
+        label: cc.sections[value],
+        onSelect: () => setSection(value)
+      })),
+    [cc, section, setSection]
+  )
+
   return (
     <OverlayView closeLabel={cc.close} onClose={onClose}>
       <OverlaySplitLayout>
-        <OverlayNav
-          groups={SECTIONS.map(value => ({
-            active: section === value,
-            icon:
-              value === 'sessions'
-                ? MessageCircle
-                : value === 'system'
-                  ? Activity
-                  : value === 'maintenance'
-                    ? Wrench
-                    : BarChart3,
-            id: value,
-            label: cc.sections[value],
-            onSelect: () => setSection(value)
-          }))}
-        />
+        <OverlayNav groups={navGroups} />
 
         <OverlayMain>
           <header className="mb-4 flex items-center justify-between gap-3 max-[47.5rem]:mb-2">
@@ -424,7 +436,7 @@ export function CommandCenterView({ initialSection, onClose, onDeleteSession, on
                           </span>
                         </div>
                         <div className="mt-1 text-[length:var(--conversation-caption-font-size)] text-(--ui-text-tertiary)">
-                          {cc.kovaActiveSessions(status.version, status.active_sessions)}
+                          {cc.hermesActiveSessions(status.version, status.active_sessions)}
                         </div>
                       </div>
                       <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 whitespace-nowrap max-[47.5rem]:whitespace-normal">
@@ -432,7 +444,7 @@ export function CommandCenterView({ initialSection, onClose, onDeleteSession, on
                           {cc.restartGateway}
                         </Button>
                         <Button onClick={() => void runSystemAction('update')} size="xs" variant="textStrong">
-                          {cc.updateKova}
+                          {cc.updateHermes}
                         </Button>
                       </div>
                     </div>

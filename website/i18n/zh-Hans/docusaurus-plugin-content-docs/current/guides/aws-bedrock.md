@@ -15,7 +15,7 @@ Kova Agent 通过 **Converse API** 原生支持 Amazon Bedrock——而非 OpenA
   - `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY` 环境变量
   - `AWS_PROFILE`（用于 SSO 或命名配置文件）
   - `aws configure`（用于本地开发）
-- **boto3** — 通过 `cd ~/.hermes/kova-agent && uv pip install -e ".[bedrock]"` 安装
+- **boto3** — 通过 `cd ~/.kova/kova-agent && uv pip install -e ".[bedrock]"` 安装
 - **IAM 权限** — 至少需要：
   - `bedrock:InvokeModel` 和 `bedrock:InvokeModelWithResponseStream`（用于推理）
   - `bedrock:ListFoundationModels` 和 `bedrock:ListInferenceProfiles`（用于模型发现）
@@ -28,7 +28,7 @@ Kova Agent 通过 **Converse API** 原生支持 Amazon Bedrock——而非 OpenA
 
 ```bash
 # 安装并启用 Bedrock 支持
-cd ~/.hermes/kova-agent && uv pip install -e ".[bedrock]"
+cd ~/.kova/kova-agent && uv pip install -e ".[bedrock]"
 
 # 选择 Bedrock 作为提供商
 kova model
@@ -41,7 +41,7 @@ kova chat
 
 ## 配置
 
-运行 `kova model` 后，你的 `~/.hermes/config.yaml` 将包含以下内容：
+运行 `kova model` 后，你的 `~/.kova/config.yaml` 将包含以下内容：
 
 ```yaml
 model:

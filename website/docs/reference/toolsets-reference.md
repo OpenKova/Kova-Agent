@@ -68,9 +68,10 @@ Or in-session:
 | `computer_use` | `computer_use` | Background desktop control via cua-driver — does not steal cursor/focus. Works with any tool-capable model. macOS, Windows, and Linux; requires `cua-driver` on `$PATH`. |
 | `context_engine` | (varies) | Runtime tools exposed by the active context-engine plugin (empty until a plugin populates it). |
 | `image_gen` | `image_generate` | Text-to-image generation via FAL.ai (with opt-in OpenAI / xAI backends). |
-| `video_gen` | `video_generate` | Text-to-video and image-to-video via plugin-registered backends (xAI Grok-Imagine, FAL.ai Veo 3.1 / Pixverse v6 / Kling O3). Pass `image_url` to animate an image; omit it for text-to-video. |
-| `kanban` | `kanban_block`, `kanban_comment`, `kanban_complete`, `kanban_create`, `kanban_heartbeat`, `kanban_link`, `kanban_list`, `kanban_show`, `kanban_unblock` | Multi-agent coordination tools. Registered for dispatcher-spawned task workers (`KOVA_KANBAN_TASK`) and for profiles that explicitly list the `kanban` toolset by name (the `all`/`*` wildcard does **not** enable it). Workers mark tasks done, block, heartbeat, comment, and create/link follow-up tasks; orchestrator profiles additionally get board-routing tools like list/unblock. `delegate_task` children are not Kanban run owners: their schema strips/disables this toolset and runtime guards reject direct board mutations, even if parent `KOVA_KANBAN_*` env vars are present. |
+| `video_gen` | `video_generate`, `xai_video_edit`, `xai_video_extend` | Text-to-video and image-to-video via plugin-registered backends (xAI Grok-Imagine, FAL.ai Veo 3.1 / Pixverse v6 / Kling O3). Pass `image_url` to animate an image; omit it for text-to-video. `xai_video_edit` / `xai_video_extend` are provider-specific edit/extend tools, gated on xAI Imagine credentials. |
+| `kanban` | `kanban_attach`, `kanban_attach_url`, `kanban_attachments`, `kanban_block`, `kanban_comment`, `kanban_complete`, `kanban_create`, `kanban_heartbeat`, `kanban_link`, `kanban_list`, `kanban_show`, `kanban_unblock` | Multi-agent coordination tools. Registered for dispatcher-spawned task workers (`KOVA_KANBAN_TASK`) and for profiles that explicitly list the `kanban` toolset by name (the `all`/`*` wildcard does **not** enable it). Workers mark tasks done, block, heartbeat, comment, and create/link follow-up tasks; orchestrator profiles additionally get board-routing tools like list/unblock. `delegate_task` children are not Kanban run owners: their schema strips/disables this toolset and runtime guards reject direct board mutations, even if parent `KOVA_KANBAN_*` env vars are present. |
 | `memory` | `memory` | Persistent cross-session memory management. |
+| `desktop_ui` | `close_terminal`, `focus_pane`, `open_preview`, `react_to_message`, `read_preview`, `read_terminal` | Affordances that act on the Kova desktop app itself — read/close the embedded terminal pane, open and read the in-app browser, reveal a pane, react to a message. Enabled for sessions whose source is the desktop app, whichever backend it's connected to (local, SSH, URL, or Kova Cloud). Never present on CLI, TUI, messaging, or cron sessions. |
 | `project` | `project_create`, `project_list`, `project_switch` | Create and switch desktop [Projects](../user-guide/cli.md) (named, multi-folder workspaces). GUI / desktop sessions only. |
 | `safe` | `image_generate`, `vision_analyze`, `web_extract`, `web_search` (via `includes`) | Read-only research + media generation. No file writes, no terminal, no code execution. |
 | `search` | `web_search` | Web search only (without extract). |
@@ -92,9 +93,9 @@ Platform toolsets define the complete tool configuration for a deployment target
 
 | Toolset | Differences from `kova-cli` |
 |---------|-------------------------------|
-| `kova-cli` | Full toolset — the default for interactive CLI sessions. Includes file, terminal, web, browser, memory, skills, vision, image_gen, todo, tts, delegation, code_execution, cronjob, session_search, and clarify, plus the `safe` (read-only) bundle. |
-| `kova-acp` | Drops `clarify`, `cronjob`, `image_generate`, `text_to_speech`, and all four Home Assistant tools. Focused on coding tasks in IDE context. |
-| `kova-api-server` | Drops `clarify` and `text_to_speech`. Keeps everything else — suitable for programmatic access where user interaction isn't possible. |
+| `kova-cli` | Full toolset — the default for interactive CLI sessions. Includes file, terminal, web, browser, memory, skills, vision, image_gen, todo, tts, delegation, code_execution, cronjob, session_search, clarify, computer_use, Home Assistant, and the kanban tools (all check_fn-gated at runtime). |
+| `kova-acp` | Drops `clarify`, `cronjob`, `image_generate`, `text_to_speech`, `computer_use`, all four Home Assistant tools, and the kanban tools. Focused on coding tasks in IDE context. |
+| `kova-api-server` | Drops `clarify`, `text_to_speech`, `computer_use`, and the kanban tools. Keeps everything else — suitable for programmatic access where user interaction isn't possible. |
 | `kova-cron` | Same as `kova-cli`. |
 | `kova-telegram` | Same as `kova-cli`. |
 | `kova-discord` | Adds `discord` and `discord_admin` on top of `kova-cli`. |
@@ -114,7 +115,7 @@ Platform toolsets define the complete tool configuration for a deployment target
 | `kova-weixin` | Same as `kova-cli`. |
 | `kova-yuanbao` | Adds the five `yb_*` tools (DM/group/sticker) on top of `kova-cli`. |
 | `kova-homeassistant` | Same as `kova-cli` (the Home Assistant tools are already present by default and activate when `HASS_TOKEN` is set). |
-| `kova-webhook` | Same as `kova-cli`. |
+| `kova-webhook` | Restricted safe subset — only `web_search`, `web_extract`, `vision_analyze`, and `clarify`. Webhook-triggered runs get no terminal, file, or browser access. |
 | `kova-gateway` | Internal gateway orchestrator toolset — union of every `kova-<platform>` toolset; used when the gateway needs to accept any message source. |
 
 ## Dynamic Toolsets

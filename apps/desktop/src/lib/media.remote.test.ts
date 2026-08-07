@@ -11,7 +11,8 @@ import {
   isInlineMediaSrc,
   isRemoteGateway,
   mediaExternalUrl,
-  resolveMediaDisplaySrc
+  resolveMediaDisplaySrc,
+  resolveMediaPlaybackSrc
 } from './media'
 
 describe('isRemoteGateway', () => {
@@ -37,7 +38,7 @@ describe('isRemoteGateway', () => {
 
 describe('filePathFromMediaPath', () => {
   it('passes through a plain path', () => {
-    expect(filePathFromMediaPath('/home/u/.hermes/images/a.png')).toBe('/home/u/.hermes/images/a.png')
+    expect(filePathFromMediaPath('/home/u/.kova/images/a.png')).toBe('/home/u/.kova/images/a.png')
   })
 
   it('decodes a file:// URL with encoded characters', () => {
@@ -102,7 +103,7 @@ describe('resolveMediaDisplaySrc', () => {
   })
 
   it('leaves web, data, and relative markdown image sources unchanged', async () => {
-    vi.stubGlobal('window', { kovaDesktop: { api } })
+    vi.stubGlobal('window', { hermesDesktop: { api } })
     $connection.set({ mode: 'remote', profile: 'remote-work' } as never)
 
     await expect(resolveMediaDisplaySrc('https://example.com/a.png')).resolves.toBe('https://example.com/a.png')
@@ -116,7 +117,7 @@ describe('resolveMediaDisplaySrc', () => {
   })
 
   it('reads remote gateway-local file paths through the desktop fs bridge', async () => {
-    vi.stubGlobal('window', { kovaDesktop: { api } })
+    vi.stubGlobal('window', { hermesDesktop: { api } })
     $connection.set({ mode: 'remote', profile: 'remote-work' } as never)
 
     await expect(resolveMediaDisplaySrc('/Users/me/project/a b.png')).resolves.toBe('data:image/png;base64,ZHVtbXk=')
@@ -129,13 +130,47 @@ describe('resolveMediaDisplaySrc', () => {
   it('reads local desktop file paths from the local desktop shell', async () => {
     const readFileDataUrl = vi.fn(async () => 'data:image/png;base64,bG9jYWw=')
 
-    vi.stubGlobal('window', { kovaDesktop: { readFileDataUrl } })
+    vi.stubGlobal('window', { hermesDesktop: { readFileDataUrl } })
     $connection.set({ mode: 'local' } as never)
 
     await expect(resolveMediaDisplaySrc('file:///Users/me/project/a%20b.png')).resolves.toBe(
       'data:image/png;base64,bG9jYWw='
     )
     expect(readFileDataUrl).toHaveBeenCalledWith('/Users/me/project/a b.png')
+  })
+})
+
+describe('resolveMediaPlaybackSrc', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    $connection.set(null)
+  })
+
+  it('keeps a remote HTTPS video URL unchanged', async () => {
+    vi.stubGlobal('window', { hermesDesktop: { api: vi.fn() } })
+    $connection.set({ mode: 'remote', baseUrl: 'https://gateway.test', token: 'secret' } as never)
+
+    await expect(resolveMediaPlaybackSrc('https://cdn.example.com/render.mp4')).resolves.toBe(
+      'https://cdn.example.com/render.mp4'
+    )
+  })
+
+  it('routes gateway-local video through the authenticated download endpoint', async () => {
+    vi.stubGlobal('window', { hermesDesktop: { api: vi.fn() } })
+    $connection.set({ mode: 'remote', baseUrl: 'https://gateway.test', token: 's e/cret' } as never)
+
+    await expect(resolveMediaPlaybackSrc('/root/outputs/render.mp4')).resolves.toBe(
+      'https://gateway.test/api/files/download?path=%2Froot%2Foutputs%2Frender.mp4&token=s%20e%2Fcret'
+    )
+  })
+
+  it('uses the Electron streaming protocol for local desktop video', async () => {
+    vi.stubGlobal('window', { hermesDesktop: { api: vi.fn() } })
+    $connection.set({ mode: 'local' } as never)
+
+    await expect(resolveMediaPlaybackSrc('C:\\renders\\demo.mp4')).resolves.toBe(
+      'kova-media://stream/C%3A%5Crenders%5Cdemo.mp4'
+    )
   })
 })
 
@@ -150,7 +185,7 @@ describe('gatewayMediaDataUrl', () => {
 
   beforeEach(() => {
     api.mockClear()
-    vi.stubGlobal('window', { kovaDesktop: { api } })
+    vi.stubGlobal('window', { hermesDesktop: { api } })
     $connection.set({ mode: 'remote' } as never)
   })
 
@@ -160,7 +195,7 @@ describe('gatewayMediaDataUrl', () => {
   })
 
   it('reads gateway media through the desktop fs bridge instead of /api/media roots', async () => {
-    const url = await gatewayMediaDataUrl('/home/u/.hermes/skills/demo/images/a b.png')
+    const url = await gatewayMediaDataUrl('/home/u/.kova/skills/demo/images/a b.png')
 
     expect(url).toBe('data:image/png;base64,ZHVtbXk=')
     expect(api).toHaveBeenCalledWith({
@@ -182,7 +217,7 @@ describe('downloadGatewayMediaFile', () => {
 
   beforeEach(() => {
     api.mockClear()
-    vi.stubGlobal('window', { kovaDesktop: { api }, setTimeout: vi.fn() })
+    vi.stubGlobal('window', { hermesDesktop: { api }, setTimeout: vi.fn() })
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => ({ blob: async () => new Blob(['# report'], { type: 'text/markdown' }) }))

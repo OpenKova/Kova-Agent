@@ -21,7 +21,7 @@ import pytest
 
 def _fresh_run_agent(kova_home):
     for mod in list(sys.modules):
-        if mod == "run_agent" or mod.startswith("agent.") or mod.startswith("tools.") or mod.startswith("hermes_"):
+        if mod == "run_agent" or mod.startswith("agent.") or mod.startswith("tools.") or mod.startswith("kova_"):
             del sys.modules[mod]
     import run_agent  # noqa: F401
     return sys.modules["run_agent"]
@@ -84,8 +84,9 @@ def test_db_flush_drops_only_nudge_keeps_candidate(tmp_path, monkeypatch):
     agent._flush_messages_to_session_db(messages, conversation_history=[])
 
     persisted = [
-        kwargs.get("content")
-        for _args, kwargs in agent._session_db.append_message.call_args_list
+        msg.get("content")
+        for _args, kwargs in agent._session_db.append_messages_batch.call_args_list
+        for msg in kwargs["messages"]
     ]
     assert "hi" in persisted
     assert "verified and clean" in persisted

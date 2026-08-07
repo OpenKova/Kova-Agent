@@ -24,9 +24,9 @@ Key implementation files:
 kova acp / kova-acp / python -m acp_adapter
   -> acp_adapter.entry.main()
   -> parse --version / --check / --setup before server startup
-  -> load ~/.hermes/.env
+  -> load ~/.kova/.env
   -> configure stderr logging
-  -> construct KovaACPAgent
+  -> construct HermesACPAgent
   -> acp.run_agent(agent, use_unstable_protocol=True)
 ```
 
@@ -34,7 +34,7 @@ Stdout is reserved for ACP JSON-RPC transport. Human-readable logs go to stderr.
 
 ## Major components
 
-### `KovaACPAgent`
+### `HermesACPAgent`
 
 `acp_adapter/server.py` implements the ACP agent protocol.
 
@@ -169,7 +169,7 @@ ACP temporarily installs an approval callback on the terminal tool during prompt
 
 ## Current limitations
 
-- ACP sessions are persisted to the shared `~/.hermes/state.db` (SessionDB) and transparently restored across process restarts; they appear in `session_search`
+- ACP sessions are persisted to the shared `~/.kova/state.db` (SessionDB) and transparently restored across process restarts; they appear in `session_search`
 - non-text prompt blocks are currently ignored for request text extraction
 - editor-specific UX varies by ACP client implementation
 

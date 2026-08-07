@@ -193,7 +193,14 @@ def _write_env(env_path: Path, env_writes: dict[str, str]) -> None:
     env_path.parent.mkdir(parents=True, exist_ok=True)
     existing_lines: list[str] = []
     if env_path.exists():
-        existing_lines = env_path.read_text().splitlines()
+        # Read as UTF-8 (BOM-tolerant), matching the canonical .env readers in
+        # kova_cli/config.py. read_text() with no encoding falls back to the
+        # system locale (cp1252/GBK on Windows): it mangles or crashes on
+        # non-ASCII values while copying existing lines through, and a BOM'd
+        # first line would fail the key match and get duplicated.
+        existing_lines = env_path.read_text(
+            encoding="utf-8-sig"
+        ).splitlines()
 
     updated_keys: set[str] = set()
     new_lines: list[str] = []
@@ -208,7 +215,7 @@ def _write_env(env_path: Path, env_writes: dict[str, str]) -> None:
         if k not in updated_keys:
             new_lines.append(f"{k}={v}")
 
-    env_path.write_text("\n".join(new_lines) + "\n")
+    env_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
 
 
 def _save_mem0_json(kova_home: str, data: dict) -> None:
@@ -221,7 +228,7 @@ def _save_mem0_json(kova_home: str, data: dict) -> None:
         except Exception:
             pass
     existing.update(data)
-    config_path.write_text(json.dumps(existing, indent=2) + "\n")
+    config_path.write_text(json.dumps(existing, indent=2) + "\n", encoding="utf-8")
 
 
 def _setup_platform(kova_home: str, config: dict, flags: dict[str, str]) -> None:
@@ -241,7 +248,7 @@ def _setup_platform(kova_home: str, config: dict, flags: dict[str, str]) -> None
     config_path = Path(kova_home) / "mem0.json"
     if config_path.exists():
         try:
-            existing_config = json.loads(config_path.read_text())
+            existing_config = json.loads(config_path.read_text(encoding="utf-8"))
         except Exception:
             pass
 
@@ -306,13 +313,13 @@ def _setup_platform(kova_home: str, config: dict, flags: dict[str, str]) -> None
     provider_config["host"] = ""
     # The json-file clear above can't help when the host comes from the
     # environment: _load_config() seeds ``host`` from MEM0_HOST, and the
-    # docs tell self-hosted users to put MEM0_HOST in ~/.hermes/.env. Warn
+    # docs tell self-hosted users to put MEM0_HOST in ~/.kova/.env. Warn
     # so the user knows platform mode won't take effect until it's removed.
     if os.environ.get("MEM0_HOST", "").strip():
         print(
             "\n  ⚠ MEM0_HOST is set in your environment "
             f"({os.environ['MEM0_HOST']}). It overrides platform mode — "
-            "remove it from ~/.hermes/.env (or unset it) or Kova will keep "
+            "remove it from ~/.kova/.env (or unset it) or Kova will keep "
             "routing to the self-hosted server."
         )
 
@@ -362,7 +369,7 @@ def _setup_selfhosted(kova_home: str, config: dict, flags: dict[str, str]) -> No
     config_path = Path(kova_home) / "mem0.json"
     if config_path.exists():
         try:
-            existing_config = json.loads(config_path.read_text())
+            existing_config = json.loads(config_path.read_text(encoding="utf-8"))
         except Exception:
             pass
 
@@ -493,7 +500,12 @@ def _prompt_api_key(label: str, env_var: str, kova_home: str) -> str:
     if not existing:
         env_path = Path(kova_home) / ".env"
         if env_path.exists():
-            for line in env_path.read_text().splitlines():
+            # BOM-tolerant read matching the canonical .env readers in
+            # kova_cli/config.py; a Notepad BOM on the first line would
+            # otherwise defeat the startswith() key match below.
+            for line in env_path.read_text(
+                encoding="utf-8-sig", errors="replace"
+            ).splitlines():
                 if line.startswith(f"{env_var}="):
                     existing = line.split("=", 1)[1].strip()
                     break
@@ -525,7 +537,7 @@ def _ensure_pgvector(host: str = "localhost", port: int = 5432) -> dict | None:
         try:
             result = subprocess.run(
                 ["docker", "inspect", _PGVECTOR_CONTAINER, "--format", "{{.State.Status}}"],
-                capture_output=True, text=True, timeout=10, stdin=subprocess.DEVNULL,
+                capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=10, stdin=subprocess.DEVNULL,
             )
             if result.returncode == 0 and "exited" in result.stdout:
                 print(f"  Found stopped container '{_PGVECTOR_CONTAINER}', restarting...")
@@ -851,11 +863,17 @@ def _install_provider_deps(llm_id: str, embedder_id: str, vector_id: str) -> Non
     for dep in sorted(deps):
         try:
             print(f"  Installing {dep}...")
-            subprocess.run(
-                ["uv", "pip", "install", "--python", sys.executable, dep],
-                capture_output=True, timeout=60,
-            )
-            print(f"  ✓ Installed {dep}")
+            # Environment-aware install: sealed hosted venvs redirect to the
+            # durable data-volume target instead of /opt/kova (NS-605).
+            from tools.lazy_deps import install_specs
+
+            outcome = install_specs([dep], timeout=60)
+            if outcome.ok:
+                print(f"  ✓ Installed {dep}")
+            elif outcome.blocked:
+                print(f"  Warning: cannot install {dep}: {outcome.reason}")
+            else:
+                print(f"  Warning: Could not install {dep}. Install manually: uv pip install {dep}")
         except Exception:
             print(f"  Warning: Could not install {dep}. Install manually: uv pip install {dep}")
     if deps:

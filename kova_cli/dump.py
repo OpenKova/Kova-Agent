@@ -20,7 +20,7 @@ from agent.skill_utils import is_excluded_skill_path
 
 
 def _dotenv_key_names() -> set[str]:
-    """Return the set of env-var names assigned a non-empty value in ~/.hermes/.env.
+    """Return the set of env-var names assigned a non-empty value in ~/.kova/.env.
 
     The managed backends (launchd / systemd / the desktop-spawned ``serve``
     process) load credentials from this file — NOT from an interactive shell's
@@ -64,7 +64,7 @@ def _get_git_commit(project_root: Path) -> str:
     try:
         result = subprocess.run(
             ["git", "rev-parse", "--short=8", "HEAD"],
-            capture_output=True, text=True, timeout=5,
+            capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=5,
             cwd=str(project_root),
         )
         if result.returncode == 0:
@@ -99,7 +99,7 @@ def _get_git_commit_date(project_root: Path) -> str:
     try:
         result = subprocess.run(
             ["git", "log", "-1", "--format=%cd", "--date=short", "HEAD"],
-            capture_output=True, text=True, timeout=5,
+            capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=5,
             cwd=str(project_root),
         )
         if result.returncode == 0:
@@ -236,6 +236,7 @@ def _config_overrides(config: dict) -> dict[str, str]:
     interesting_paths = [
         ("agent", "max_turns"),
         ("agent", "gateway_timeout"),
+        ("agent", "session_stall_timeout"),
         ("agent", "tool_use_enforcement"),
         ("terminal", "backend"),
         ("terminal", "docker_image"),
@@ -243,6 +244,7 @@ def _config_overrides(config: dict) -> dict[str, str]:
         ("browser", "allow_private_urls"),
         ("compression", "enabled"),
         ("compression", "threshold"),
+        ("compression", "in_place"),
         ("display", "streaming"),
         ("display", "skin"),
         ("display", "show_reasoning"),
@@ -378,6 +380,7 @@ def run_dump(args):
         ("DASHSCOPE_API_KEY", "dashscope"),
         ("HF_TOKEN", "huggingface"),
         ("NVIDIA_API_KEY", "nvidia"),
+        ("AI_GATEWAY_API_KEY", "ai_gateway"),
         ("OPENCODE_ZEN_API_KEY", "opencode_zen"),
         ("OPENCODE_GO_API_KEY", "opencode_go"),
         ("KILOCODE_API_KEY", "kilocode"),
@@ -397,7 +400,7 @@ def run_dump(args):
             display = _redact(val)
         else:
             display = "set" if val else "not set"
-        # Set in this (shell) process but absent from ~/.hermes/.env: a managed
+        # Set in this (shell) process but absent from ~/.kova/.env: a managed
         # backend (launchd/systemd/desktop `serve`) loads .env, not the login
         # shell, so it likely can't see this key — even though the dump reads
         # "set". Flag it so support doesn't chase a phantom "key is configured"

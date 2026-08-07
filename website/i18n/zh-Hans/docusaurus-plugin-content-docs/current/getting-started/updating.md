@@ -45,7 +45,7 @@ kova update --backup
 或将其设为每次运行的默认行为：
 
 ```yaml
-# ~/.hermes/config.yaml
+# ~/.kova/config.yaml
 updates:
   pre_update_backup: full
 ```
@@ -107,10 +107,10 @@ Already up to date.  (or: Updating abc1234..def5678)
 `kova update` 针对意外终端断开进行了保护：
 
 - 更新会忽略 `SIGHUP`，因此关闭 SSH 会话或终端窗口不再会在安装中途终止它。`pip` 和 `git` 子进程继承此保护，因此 Python 环境不会因连接断开而处于半安装状态。
-- 更新运行期间，所有输出会同步镜像到 `~/.hermes/logs/update.log`。如果终端消失，重新连接后检查日志，确认更新是否完成以及 gateway 重启是否成功：
+- 更新运行期间，所有输出会同步镜像到 `~/.kova/logs/update.log`。如果终端消失，重新连接后检查日志，确认更新是否完成以及 gateway 重启是否成功：
 
 ```bash
-tail -f ~/.hermes/logs/update.log
+tail -f ~/.kova/logs/update.log
 ```
 
 - `Ctrl-C`（SIGINT）和系统关机（SIGTERM）仍会被响应 — 这些是主动取消操作，而非意外中断。
@@ -211,14 +211,14 @@ nix profile rollback
 kova uninstall
 ```
 
-卸载程序会提供选项，让你保留配置文件（`~/.hermes/`）以便将来重新安装。
+卸载程序会提供选项，让你保留配置文件（`~/.kova/`）以便将来重新安装。
 
 ### 手动卸载
 
 ```bash
 rm -f ~/.local/bin/kova
 rm -rf /path/to/kova-agent
-rm -rf ~/.hermes            # 可选 — 如计划重新安装则保留
+rm -rf ~/.kova            # 可选 — 如计划重新安装则保留
 ```
 
 :::info

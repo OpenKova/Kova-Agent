@@ -17,7 +17,7 @@ Kova Agent includes a rich set of capabilities that extend far beyond basic chat
 - **[Tools & Toolsets](tools.md)** — Tools are functions that extend the agent's capabilities. They're organized into logical toolsets that can be enabled or disabled per platform, covering web search, terminal execution, file editing, memory, delegation, and more.
 - **[Skills System](skills.md)** — On-demand knowledge documents the agent can load when needed. Skills follow a progressive disclosure pattern to minimize token usage and are compatible with the [agentskills.io](https://agentskills.io/specification) open standard.
 - **[Persistent Memory](memory.md)** — Bounded, curated memory that persists across sessions. Kova remembers your preferences, projects, environment, and things it has learned via `MEMORY.md` and `USER.md`.
-- **[Context Files](context-files.md)** — Kova automatically discovers and loads project context files (`.hermes.md`, `AGENTS.md`, `CLAUDE.md`, `SOUL.md`, `.cursorrules`) that shape how it behaves in your project.
+- **[Context Files](context-files.md)** — Kova automatically discovers and loads project context files (`.kova.md`, `AGENTS.md`, `CLAUDE.md`, `SOUL.md`, `.cursorrules`) that shape how it behaves in your project.
 - **[Context References](context-references.md)** — Type `@` followed by a reference to inject files, folders, git diffs, and URLs directly into your messages. Kova expands the reference inline and appends the content automatically.
 - **[Checkpoints](../checkpoints-and-rollback.md)** — Kova automatically snapshots your working directory before making file changes, giving you a safety net to roll back with `/rollback` if something goes wrong.
 
@@ -27,11 +27,12 @@ Kova Agent includes a rich set of capabilities that extend far beyond basic chat
 - **[Subagent Delegation](delegation.md)** — The `delegate_task` tool spawns child agent instances with isolated context, restricted toolsets, and their own terminal sessions. Run 3 concurrent subagents by default (configurable) for parallel workstreams.
 - **[Code Execution](code-execution.md)** — The `execute_code` tool lets the agent write Python scripts that call Kova tools programmatically, collapsing multi-step workflows into a single LLM turn via sandboxed RPC execution.
 - **[Event Hooks](hooks.md)** — Run custom code at key lifecycle points. Gateway hooks handle logging, alerts, and webhooks; plugin hooks handle tool interception, metrics, and guardrails.
-- **[Batch Processing](batch-processing.md)** — Run the Kova Agent across hundreds or thousands of prompts in parallel, generating structured ShareGPT-format trajectory data for training data generation or evaluation.
+- **[Batch Processing](batch-processing.md)** — Run the Kova agent across hundreds or thousands of prompts in parallel, generating structured ShareGPT-format trajectory data for training data generation or evaluation.
 
 ## Media & Web
 
 - **[Voice Mode](voice-mode.md)** — Full voice interaction across CLI and messaging platforms. Talk to the agent using your microphone, hear spoken replies, and have live voice conversations in Discord voice channels.
+- **[Wake Word](wake-word.md)** — Hands-free "Hey Kova" trigger for the CLI, TUI, and desktop app. An on-device hotword listener starts a voice session when you speak the wake phrase.
 - **[Browser Automation](browser.md)** — Full browser automation with multiple backends: Browserbase cloud, Browser Use cloud, local Chrome/Brave/Chromium/Edge via CDP, or local Chromium. Navigate websites, fill forms, and extract information.
 - **[Vision & Image Paste](vision.md)** — Multimodal vision support. Paste images from your clipboard into the CLI and ask the agent to analyze, describe, or work with them using any vision-capable model.
 - **[Image Generation](image-generation.md)** — Generate images from text prompts using FAL.ai. Eleven models supported (FLUX 2 Klein/Pro, GPT-Image 1.5/2, Nano Banana Pro, Ideogram V3, Recraft V4 Pro, Qwen, Z-Image Turbo, Krea V2 Medium/Large); pick one via `kova tools`.

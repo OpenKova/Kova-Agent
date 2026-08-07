@@ -1,19 +1,10 @@
 # nix/tui.nix — Kova TUI (Ink/React) compiled with tsc and bundled
-{ pkgs, kovaNpmLib, ... }:
-let
-  npm = kovaNpmLib.mkNpmPassthru {
-    dirs = [
-      "ui-tui"
-      "apps/shared"
-    ];
-  };
-
-  packageJson = builtins.fromJSON (builtins.readFile (npm.src + "/ui-tui/package.json"));
-  version = packageJson.version;
-in
-pkgs.buildNpmPackage (npm // {
-  pname = "kova-tui";
-  inherit version;
+{ hermesNpmLib, ... }:
+hermesNpmLib.buildNpmPackage {
+  dirs = [
+    "ui-tui"
+    "apps/shared"
+  ];
 
   doCheck = false;
 
@@ -35,4 +26,4 @@ pkgs.buildNpmPackage (npm // {
 
     runHook postInstall
   '';
-})
+}

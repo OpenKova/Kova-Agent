@@ -136,10 +136,10 @@ def is_paused() -> bool:
 # ---------------------------------------------------------------------------
 
 def _load_config() -> Dict[str, Any]:
-    """Read curator.* config from ~/.hermes/config.yaml. Tolerates missing file."""
+    """Read curator.* config from ~/.kova/config.yaml. Tolerates missing file."""
     try:
-        from kova_cli.config import load_config
-        cfg = load_config()
+        from kova_cli.config import load_config_readonly
+        cfg = load_config_readonly()
     except Exception as e:
         logger.debug("Failed to load config for curator: %s", e)
         return {}
@@ -325,7 +325,7 @@ def apply_automatic_transitions(now: Optional[datetime] = None) -> Dict[str, int
 
     counts = {"marked_stale": 0, "archived": 0, "reactivated": 0, "checked": 0, "seeded": 0}
 
-    for row in _u.agent_created_report():
+    for row in _u.curated_report():
         counts["checked"] += 1
         name = row["name"]
         if row.get("pinned"):
@@ -398,7 +398,7 @@ CURATOR_DRY_RUN_BANNER = (
     "write_file, or remove_file.\n"
     "  • DO NOT call terminal to mv skill directories into .archive/.\n"
     "  • DO NOT call terminal to mv, cp, rm, or rewrite any file under "
-    "~/.hermes/skills/.\n"
+    "~/.kova/skills/.\n"
     "  • skills_list and skill_view are FINE — read as much as you need.\n"
     "\n"
     "Your output IS the deliverable. Produce the exact same "
@@ -436,7 +436,7 @@ CURATOR_REVIEW_PROMPT = (
     "to local curator-managed skills only; external skills are externally "
     "owned and read-only to this background curator.\n"
     "2. DO NOT delete any skill. Archiving (moving the skill's directory "
-    "into ~/.hermes/skills/.archive/) is the maximum destructive action. "
+    "into ~/.kova/skills/.archive/) is the maximum destructive action. "
     "Archives are recoverable; deletion is not.\n"
     "3. DO NOT touch skills shown as pinned=yes. Skip them entirely.\n"
     "3b. DO NOT archive, delete, consolidate, move, or otherwise modify any "
@@ -494,7 +494,7 @@ CURATOR_REVIEW_PROMPT = (
     "      • `scripts/<name>.<ext>` for statically re-runnable actions "
     "(verification scripts, fixture generators, probes)\n"
     "      Then archive the old sibling. Use `terminal` with `mkdir -p "
-    "~/.hermes/skills/<umbrella>/references/ && mv ... <umbrella>/"
+    "~/.kova/skills/<umbrella>/references/ && mv ... <umbrella>/"
     "references/<topic>.md` (or templates/ / scripts/).\n\n"
     "Package integrity — not optional:\n"
     "Before demoting or archiving a skill, inspect it as a COMPLETE "
@@ -577,10 +577,10 @@ CURATOR_REVIEW_PROMPT = (
 def _reports_root() -> Path:
     """Directory where curator run reports are written.
 
-    Lives under the profile-aware logs dir (``~/.hermes/logs/curator/``)
+    Lives under the profile-aware logs dir (``~/.kova/logs/curator/``)
     alongside ``agent.log`` and ``gateway.log`` so it's found by anyone
     looking for operational telemetry, not mixed in with the user's
-    authored skill data in ``~/.hermes/skills/``.
+    authored skill data in ``~/.kova/skills/``.
 
     ``ensure_kova_home()`` pre-creates this dir on every CLI launch and
     the v22→v23 migration backfills it for existing profiles, but we
@@ -902,7 +902,6 @@ def _reconcile_classification(
     Every removed skill is placed in exactly one bucket.
     """
     heur_cons = {e["name"]: e for e in heuristic.get("consolidated", [])}
-    heur_pruned = {e["name"] for e in heuristic.get("pruned", [])}
 
     model_cons = {e["from"]: e for e in model_block.get("consolidations", [])}
     model_pruned = {e["name"]: e for e in model_block.get("prunings", [])}
@@ -1328,7 +1327,7 @@ def _render_report_markdown(p: Dict[str, Any]) -> str:
     lines.append("")
 
     # Consolidated list — content absorbed into an umbrella. The directory
-    # on disk still lives under ~/.hermes/skills/.archive/ (every removal is
+    # on disk still lives under ~/.kova/skills/.archive/ (every removal is
     # recoverable by design), but the "live" content for these skills
     # continues to exist inside the destination umbrella.
     consolidated = p.get("consolidated") or []
@@ -1337,7 +1336,7 @@ def _render_report_markdown(p: Dict[str, Any]) -> str:
         lines.append(
             "_These skills were **absorbed into another skill** during this run — "
             "their content still lives, just under a different name. "
-            "The original directory was moved to `~/.hermes/skills/.archive/` for "
+            "The original directory was moved to `~/.kova/skills/.archive/` for "
             "safety and can be restored via `kova curator restore <name>` if the "
             "consolidation was wrong._\n"
         )
@@ -1373,7 +1372,7 @@ def _render_report_markdown(p: Dict[str, Any]) -> str:
         lines.append(
             "_These skills were archived without being merged into an umbrella "
             "(e.g. stale, unused, or judged irrelevant). "
-            "Directories live under `~/.hermes/skills/.archive/`. "
+            "Directories live under `~/.kova/skills/.archive/`. "
             "Restore any via `kova curator restore <name>`._\n"
         )
         SHOW = 50
@@ -1460,7 +1459,7 @@ def _render_report_markdown(p: Dict[str, Any]) -> str:
     # Recovery footer
     lines.append("## Recovery\n")
     lines.append("- Restore an archived skill: `kova curator restore <name>`")
-    lines.append("- All archives live under `~/.hermes/skills/.archive/` and are recoverable by `mv`")
+    lines.append("- All archives live under `~/.kova/skills/.archive/` and are recoverable by `mv`")
     lines.append("- See `run.json` in this directory for the full machine-readable record.")
     lines.append("")
 
@@ -1472,15 +1471,16 @@ def _render_report_markdown(p: Dict[str, Any]) -> str:
 # ---------------------------------------------------------------------------
 
 def _render_candidate_list() -> str:
-    """Human/agent-readable list of agent-created skills with usage stats."""
-    rows = skill_usage.agent_created_report()
+    """Human/agent-readable list of curator-managed skills with usage stats."""
+    rows = skill_usage.curated_report()
     if not rows:
-        return "No agent-created skills to review."
+        return "No curator-managed skills to review."
     cron_referenced = _cron_referenced_skills()
-    lines = [f"Agent-created skills ({len(rows)}):\n"]
+    lines = [f"Curator-managed skills ({len(rows)}):\n"]
     for r in rows:
         lines.append(
             f"- {r['name']}  "
+            f"provenance={r.get('provenance', 'agent')}  "
             f"state={r['state']}  "
             f"pinned={'yes' if r.get('pinned') else 'no'}  "
             f"cron={'yes' if r['name'] in cron_referenced else 'no'}  "
@@ -1533,7 +1533,7 @@ def run_curator_review(
     if dry_run:
         # Count candidates without mutating state.
         try:
-            report = skill_usage.agent_created_report()
+            report = skill_usage.curated_report()
             counts = {
                 "checked": len(report),
                 "marked_stale": 0,
@@ -1586,7 +1586,7 @@ def run_curator_review(
         nonlocal auto_summary
         # Snapshot skill state BEFORE the LLM pass so the report can diff.
         try:
-            before_report = skill_usage.agent_created_report()
+            before_report = skill_usage.curated_report()
         except Exception:
             before_report = []
         before_names = {r.get("name") for r in before_report if isinstance(r, dict)}
@@ -1612,7 +1612,7 @@ def run_curator_review(
             state2["last_run_duration_seconds"] = elapsed
             state2["last_run_summary"] = final_summary
             try:
-                after_report = skill_usage.agent_created_report()
+                after_report = skill_usage.curated_report()
             except Exception:
                 after_report = []
             try:
@@ -1699,7 +1699,7 @@ def run_curator_review(
         try:
             rename_lines = _build_rename_summary(
                 before_names=before_names,
-                after_report=skill_usage.agent_created_report(),
+                after_report=skill_usage.curated_report(),
                 tool_calls=llm_meta.get("tool_calls", []) or [],
                 model_final=llm_meta.get("final", "") or "",
             )
@@ -1717,7 +1717,7 @@ def run_curator_review(
         # reporting bug never breaks the curator itself. Report path is
         # recorded in state so `kova curator status` can point at it.
         try:
-            after_report = skill_usage.agent_created_report()
+            after_report = skill_usage.curated_report()
         except Exception:
             after_report = []
         try:
@@ -1875,9 +1875,9 @@ def _run_llm_review(prompt: str) -> Dict[str, Any]:
     _acp_args = None
     _model_name = ""
     try:
-        from kova_cli.config import load_config
+        from kova_cli.config import load_config_readonly
         from kova_cli.runtime_provider import resolve_runtime_provider
-        _cfg = load_config()
+        _cfg = load_config_readonly()
         _binding = _resolve_review_runtime(_cfg)
         _provider, _model_name = _binding.provider, _binding.model
         _rp = resolve_runtime_provider(
@@ -1923,6 +1923,7 @@ def _run_llm_review(prompt: str) -> Dict[str, Any]:
             credential_pool=_credential_pool,
             request_overrides=_request_overrides,
             **_agent_kwargs,
+            enabled_toolsets=["skills", "terminal"],
             # Umbrella-building over a large skill collection is worth a
             # high iteration ceiling — the pass typically takes 50-100
             # API calls against hundreds of candidate skills. The

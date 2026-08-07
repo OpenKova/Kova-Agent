@@ -9,7 +9,7 @@ Defines the pluggable-backend interface for cloud browser providers
 ``browser_*`` tool call.
 
 Providers live in ``<repo>/plugins/browser/<name>/`` (built-in, auto-loaded as
-``kind: backend``) or ``~/.hermes/plugins/browser/<name>/`` (user, opt-in via
+``kind: backend``) or ``~/.kova/plugins/browser/<name>/`` (user, opt-in via
 ``plugins.enabled``).
 
 This ABC mirrors :class:`agent.web_search_provider.WebSearchProvider` (PR
@@ -26,6 +26,7 @@ Session metadata contract (preserved from the legacy ``CloudBrowserProvider``)::
         "session_name": str,        # unique name for agent-browser --session
         "bb_session_id": str,       # provider session ID (for close/cleanup)
         "cdp_url": str,             # CDP websocket URL
+        "expires_at": str,          # optional provider-authoritative ISO timestamp
         "features": dict,           # feature flags that were enabled
         "external_call_id": str,    # optional, managed-gateway billing key
     }
@@ -96,6 +97,7 @@ class BrowserProvider(abc.ABC):
                 "session_name": str,    # unique name for agent-browser --session
                 "bb_session_id": str,   # provider session ID (for close/cleanup)
                 "cdp_url": str,         # CDP websocket URL
+                "expires_at": str,      # optional provider-authoritative ISO timestamp
                 "features": dict,       # feature flags that were enabled
             }
 

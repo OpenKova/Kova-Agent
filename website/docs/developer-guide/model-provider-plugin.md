@@ -136,11 +136,11 @@ class AcmeProfile(ProviderProfile):
         reasoning dict). Default: ({}, {})."""
         return {}, {}
 
-    def fetch_models(self, *, api_key=None, timeout=8.0) -> list[str] | None:
+    def fetch_models(self, *, api_key=None, base_url=None, timeout=8.0) -> list[str] | None:
         """Live catalog fetch. Default hits {models_url or base_url}/models with
         Bearer auth. Override for: custom auth (Anthropic), no REST endpoint
         (Bedrock → None), or public/unauthenticated catalogs (OpenRouter)."""
-        return super().fetch_models(api_key=api_key, timeout=timeout)
+        return super().fetch_models(api_key=api_key, base_url=base_url, timeout=timeout)
 ```
 
 ## Hook reference examples
@@ -159,7 +159,7 @@ Look at these bundled plugins for idioms:
 
 ## User overrides — replace a built-in without editing the repo
 
-Say you want to point `gmi` at your private staging endpoint for testing. Create `~/.hermes/plugins/model-providers/gmi/__init__.py`:
+Say you want to point `gmi` at your private staging endpoint for testing. Create `~/.kova/plugins/model-providers/gmi/__init__.py`:
 
 ```python
 from providers import register_provider

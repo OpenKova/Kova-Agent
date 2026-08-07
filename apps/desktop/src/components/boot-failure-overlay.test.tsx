@@ -26,13 +26,13 @@ function failBoot() {
 }
 
 function stubDesktop(config: Record<string, unknown>) {
-  const original = window.kovaDesktop
-  Object.defineProperty(window, 'kovaDesktop', {
+  const original = window.hermesDesktop
+  Object.defineProperty(window, 'hermesDesktop', {
     configurable: true,
     value: { getRecentLogs: async () => ({ lines: [] }), getConnectionConfig: async () => config }
   })
 
-  return () => Object.defineProperty(window, 'kovaDesktop', { configurable: true, value: original })
+  return () => Object.defineProperty(window, 'hermesDesktop', { configurable: true, value: original })
 }
 
 const remoteToken = {

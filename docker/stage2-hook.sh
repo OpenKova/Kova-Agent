@@ -21,7 +21,7 @@ HERMES_HOME="${HERMES_HOME:-/opt/data}"
 INSTALL_DIR="/opt/kova"
 
 # Drop to kova via s6-setuidgid, but skip it when already non-root.
-as_kova() { [ "$(id -u)" = 0 ] || { "$@"; return; }; s6-setuidgid kova "$@"; }
+as_hermes() { [ "$(id -u)" = 0 ] || { "$@"; return; }; s6-setuidgid kova "$@"; }
 
 # --- Reject the unsupported `docker run --user <uid>:<gid>` start ---
 # Detect the case where the container was launched with `--user` pinned to an
@@ -220,6 +220,11 @@ chown_kova_tree() {
         echo "[stage2] Warning: chown $target failed (rootless container?) — continuing"
 }
 
+tree_has_non_kova_owner() {
+    target="$1"
+    find "$target" \( ! -user kova -o ! -group kova \) -print -quit 2>/dev/null | grep -q .
+}
+
 needs_chown=false
 if [ "$(stat -c %u "$HERMES_HOME" 2>/dev/null)" != "$actual_kova_uid" ]; then
     needs_chown=true
@@ -243,7 +248,7 @@ if [ "$needs_chown" = true ]; then
     # created and managed exclusively by kova (see the s6-setuidgid mkdir
     # -p block below for the canonical list).
     for sub in cron sessions logs hooks memories skills skins plans workspace home profiles pairing platforms/pairing lazy-packages; do
-        if [ -e "$HERMES_HOME/$sub" ]; then
+        if [ -e "$HERMES_HOME/$sub" ] && tree_has_non_kova_owner "$HERMES_HOME/$sub"; then
             chown_kova_tree "$HERMES_HOME/$sub"
         fi
     done
@@ -273,18 +278,36 @@ fi
 # are invoked via `docker exec <container> kova …` (which defaults
 # to root unless `-u` is passed), and that breaks the cont-init
 # reconciler (02-reconcile-profiles) which runs as kova and walks
-# the profiles dir. Idempotent; skipped on rootless containers where
-# chown would fail.
-if [ -d "$HERMES_HOME/profiles" ]; then
+# the profiles dir. Skip the recursive walk when the tree is already
+# owned correctly so warm boots do not rescan huge profile caches.
+# Idempotent; skipped on rootless containers where chown would fail.
+if [ -d "$HERMES_HOME/profiles" ] && tree_has_non_kova_owner "$HERMES_HOME/profiles"; then
     chown_kova_tree "$HERMES_HOME/profiles"
 fi
 
 # Always reset ownership of $HERMES_HOME/cron on every boot for the same
 # docker-exec/root-write reason as profiles/. The cron scheduler state
 # (jobs.json) must stay readable by the unprivileged kova runtime even
-# after root-context maintenance commands or scheduler writes.
-if [ -d "$HERMES_HOME/cron" ]; then
+# after root-context maintenance commands or scheduler writes. Skip the
+# recursive walk when the tree is already owned correctly (same warm-boot
+# gate as profiles/).
+if [ -d "$HERMES_HOME/cron" ] && tree_has_non_kova_owner "$HERMES_HOME/cron"; then
     chown_kova_tree "$HERMES_HOME/cron"
+fi
+
+# Always ensure logs/gateways is kova-owned (#45258). Formerly healed by
+# restartable gateway log/run chown — removed due to symlink TOCTOU
+# (CWE-59/367). The targeted data-volume chown above only runs when the
+# top-level $HERMES_HOME is mis-owned, so a warm volume with kova-owned
+# HERMES_HOME but root-owned logs/gateways would otherwise leave
+# s6-setuidgid kova mkdir failing with Permission denied. Non-recursive:
+# profile leaf dirs are each created/owned by their own log/run as kova.
+if [ -d "$HERMES_HOME/logs/gateways" ]; then
+    if refuse_symlinked_path "chown" "$HERMES_HOME/logs/gateways"; then
+        :
+    else
+        chown kova:kova "$HERMES_HOME/logs/gateways" 2>/dev/null || true
+    fi
 fi
 
 # Always reset ownership of pairing data on every boot, same docker-exec/
@@ -294,13 +317,14 @@ fi
 # silently leaving the approved user unauthorized (#10270). The targeted
 # data-volume chown above only runs when the top-level $HERMES_HOME is
 # mis-owned, so warm boots skip it — this block makes a container restart
-# self-heal. Tiny directory (a handful of small JSON files), so the cost
-# is negligible.
-if [ -d "$HERMES_HOME/platforms/pairing" ]; then
+# self-heal. Tiny directory (a handful of small JSON files), so even the
+# ownership pre-scan is negligible; gated for consistency with profiles/
+# and cron/.
+if [ -d "$HERMES_HOME/platforms/pairing" ] && tree_has_non_kova_owner "$HERMES_HOME/platforms/pairing"; then
     chown_kova_tree "$HERMES_HOME/platforms/pairing"
 fi
 # Legacy location (pre-consolidated layout).
-if [ -d "$HERMES_HOME/pairing" ]; then
+if [ -d "$HERMES_HOME/pairing" ] && tree_has_non_kova_owner "$HERMES_HOME/pairing"; then
     chown_kova_tree "$HERMES_HOME/pairing"
 fi
 
@@ -354,7 +378,7 @@ fi
 # Use direct `mkdir -p` invocation (no `sh -c "..."` wrapper) so the
 # shell isn't a second interpreter — defends against $HERMES_HOME values
 # containing shell metacharacters. PR #30136 review item O2.
-as_kova mkdir -p \
+as_hermes mkdir -p \
     "$HERMES_HOME/backups" \
     "$HERMES_HOME/cron" \
     "$HERMES_HOME/sessions" \
@@ -377,7 +401,7 @@ as_kova mkdir -p \
 # $HERMES_HOME. detect_install_method() reads the code-scoped stamp first.
 #
 # Why we no longer stamp $HERMES_HOME: it is a shared DATA volume, commonly
-# bind-mounted from the host (~/.hermes:/opt/data) and sometimes shared with a
+# bind-mounted from the host (~/.kova:/opt/data) and sometimes shared with a
 # host-side Desktop/CLI install. Stamping 'docker' here clobbered that host
 # install's marker, so its in-app updater read 'docker' and refused to run
 # 'kova update'. To heal homes already poisoned by older images, remove a
@@ -399,7 +423,7 @@ seed_one() {
         if refuse_symlinked_path "seed" "$HERMES_HOME/$dest"; then
             :
         else
-            as_kova cp "$INSTALL_DIR/$src" "$HERMES_HOME/$dest"
+            as_hermes cp "$INSTALL_DIR/$src" "$HERMES_HOME/$dest"
         fi
     fi
 }
@@ -512,7 +536,7 @@ fi
 # the python binary's own bin-stub already sets up (sys.path is rooted
 # at the venv's site-packages by virtue of running .venv/bin/python).
 if [ -d "$INSTALL_DIR/skills" ]; then
-    as_kova "$INSTALL_DIR/.venv/bin/python" "$INSTALL_DIR/tools/skills_sync.py" \
+    as_hermes "$INSTALL_DIR/.venv/bin/python" "$INSTALL_DIR/tools/skills_sync.py" \
         || echo "[stage2] Warning: skills_sync.py failed; continuing"
 fi
 

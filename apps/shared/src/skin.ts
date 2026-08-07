@@ -92,7 +92,7 @@ export type SkinColors = Partial<Record<SkinColorToken, string>> & { [key: strin
 export type SkinBranding = Partial<Record<SkinBrandingToken, string>> & { [key: string]: string | undefined }
 
 /** The resolved skin payload (matches Python's `resolve_skin()`). */
-export interface KovaSkin {
+export interface HermesSkin {
   name?: string
   description?: string
   colors?: SkinColors

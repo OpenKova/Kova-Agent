@@ -50,7 +50,7 @@ const api = vi.fn(async ({ path }: { path: string }) => {
 
 function stubBridge() {
   vi.stubGlobal('window', {
-    kovaDesktop: {
+    hermesDesktop: {
       api,
       gitRoot,
       readDir,

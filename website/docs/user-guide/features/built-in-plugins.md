@@ -7,7 +7,7 @@ description: "Plugins shipped with Kova Agent that run automatically via lifecyc
 
 # Built-in Plugins
 
-Kova ships a small set of plugins bundled with the repository. They live under `<repo>/plugins/<name>/` and load automatically alongside user-installed plugins in `~/.hermes/plugins/`. They use the same plugin surface as third-party plugins — hooks, tools, slash commands — just maintained in-tree.
+Kova ships a small set of plugins bundled with the repository. They live under `<repo>/plugins/<name>/` and load automatically alongside user-installed plugins in `~/.kova/plugins/`. They use the same plugin surface as third-party plugins — hooks, tools, slash commands — just maintained in-tree.
 
 See the [Plugins](/user-guide/features/plugins) page for the general plugin system, and [Build a Kova Plugin](/developer-guide/plugins) to write your own.
 
@@ -16,8 +16,8 @@ See the [Plugins](/user-guide/features/plugins) page for the general plugin syst
 The `PluginManager` scans four sources, in order:
 
 1. **Bundled** — `<repo>/plugins/<name>/` (what this page documents)
-2. **User** — `~/.hermes/plugins/<name>/`
-3. **Project** — `./.hermes/plugins/<name>/` (requires `KOVA_ENABLE_PROJECT_PLUGINS=1`)
+2. **User** — `~/.kova/plugins/<name>/`
+3. **Project** — `./.kova/plugins/<name>/` (requires `KOVA_ENABLE_PROJECT_PLUGINS=1`)
 4. **Pip entry points** — `kova_agent.plugins`
 
 On name collision, later sources win — a user plugin named `disk-cleanup` would replace the bundled one.
@@ -32,7 +32,7 @@ Bundled plugins ship disabled. Discovery finds them (they appear in `kova plugin
 kova plugins enable disk-cleanup
 ```
 
-Or via `~/.hermes/config.yaml`:
+Or via `~/.kova/config.yaml`:
 
 ```yaml
 plugins:
@@ -161,7 +161,7 @@ pip install langfuse
 kova plugins enable observability/langfuse
 ```
 
-Then put the credentials in `~/.hermes/.env`:
+Then put the credentials in `~/.kova/.env`:
 
 ```bash
 KOVA_LANGFUSE_PUBLIC_KEY=pk-lf-...
@@ -211,16 +211,17 @@ Lets the agent **join, transcribe, and participate in Google Meet calls** — ta
 
 - A headless virtual participant that joins a Meet URL using browser automation
 - Live transcription of the meeting audio via the configured STT provider
-- A `meet_summarize` / `meet_speak` / `meet_followup` toolset the agent invokes to act on what it heard
-- Post-meeting artifacts (transcript, speaker-attributed notes, action items) saved under `~/.hermes/cache/google_meet/<meeting_id>/`
+- A `meet_join` / `meet_status` / `meet_transcript` / `meet_leave` / `meet_say` toolset the agent invokes to join calls, poll the live transcript, and act on what it heard
+- Post-meeting artifacts (transcript, status) saved under `~/.kova/workspace/meetings/<meeting_id>/`
 
 **Setup:**
 
 ```bash
 kova plugins enable google_meet
-# Prompts you to sign in via the plugin's OAuth flow on first use —
-# needs a Google account with Meet access. Host approval may be required
-# if the meeting enforces "only invited participants can join".
+kova meet setup   # preflight: playwright, chromium, auth file
+kova meet auth    # opens a browser to sign into Google and saves session state —
+                    # needs a Google account with Meet access. Host approval may be
+                    # required if the meeting enforces "only invited participants can join".
 ```
 
 Usage from chat:
@@ -231,7 +232,7 @@ The agent kicks off the meeting join, streams the transcription back into its co
 
 **When to use it:** recurring standups where you want a bot to transcribe + summarize for async attendees; deposition-style interviews where you want structured notes; any case where you'd otherwise need Fireflies / Otter / Grain. When you'd rather not have an AI listening in — don't enable it.
 
-**Disabling:** `kova plugins disable google_meet`. Any cached transcripts and recordings stay in `~/.hermes/cache/google_meet/` until you remove them.
+**Disabling:** `kova plugins disable google_meet`. Any saved transcripts stay in `~/.kova/workspace/meetings/` until you remove them.
 
 ### kova-achievements
 
@@ -239,7 +240,7 @@ Adds a **Steam-style achievements tab to the dashboard** — 60+ collectible, ti
 
 **How it works:**
 
-- Scans your entire `~/.hermes/state.db` session history on the dashboard backend
+- Scans your entire `~/.kova/state.db` session history on the dashboard backend
 - Per-session stats are cached by `(started_at, last_active)` fingerprint, so only new or changed sessions re-analyze on subsequent scans
 - First-ever scan runs in a background thread — the dashboard never blocks waiting for it, even on databases with thousands of sessions
 - Unlock state is persisted to `$HERMES_HOME/plugins/kova-achievements/state.json`
@@ -282,13 +283,13 @@ Adds a **Steam-style achievements tab to the dashboard** — 60+ collectible, ti
 
 **Enabling:** Nothing to enable — `kova-achievements` is a dashboard-only plugin (no lifecycle hooks, no model-visible tools). It auto-registers as a tab in `kova dashboard` on first launch. The `plugins.enabled` config only gates lifecycle/tool plugins; dashboard plugins are discovered purely via their `dashboard/manifest.json`.
 
-**Opting out:** Delete or rename `plugins/kova-achievements/dashboard/manifest.json`, or override it with a user plugin of the same name in `~/.hermes/plugins/kova-achievements/` that ships no dashboard. The plugin's state files under `$HERMES_HOME/plugins/kova-achievements/` survive — reinstalling preserves your unlock history.
+**Opting out:** Delete or rename `plugins/kova-achievements/dashboard/manifest.json`, or override it with a user plugin of the same name in `~/.kova/plugins/kova-achievements/` that ships no dashboard. The plugin's state files under `$HERMES_HOME/plugins/kova-achievements/` survive — reinstalling preserves your unlock history.
 
 ## Adding a bundled plugin
 
 Bundled plugins are written exactly like any other Kova plugin — see [Build a Kova Plugin](/developer-guide/plugins). The only differences are:
 
-- Directory lives at `<repo>/plugins/<name>/` instead of `~/.hermes/plugins/<name>/`
+- Directory lives at `<repo>/plugins/<name>/` instead of `~/.kova/plugins/<name>/`
 - Manifest source is reported as `bundled` in `kova plugins list`
 - User plugins with the same name override the bundled version
 

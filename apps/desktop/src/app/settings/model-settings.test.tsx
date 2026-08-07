@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter } from 'react-router'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Radix Select calls scrollIntoView on its items when the content opens; jsdom
@@ -20,8 +20,8 @@ const setModelAssignment = vi.fn()
 const getRecommendedDefaultModel = vi.fn()
 const saveMoaModels = vi.fn()
 const setEnvVar = vi.fn()
-const getKovaConfigRecord = vi.fn()
-const saveKovaConfig = vi.fn()
+const getHermesConfigRecord = vi.fn()
+const saveHermesConfig = vi.fn()
 const startManualLocalEndpoint = vi.fn()
 const startManualOnboarding = vi.fn()
 const startManualProviderOAuth = vi.fn()
@@ -36,8 +36,8 @@ vi.mock('@/kova', () => ({
   getRecommendedDefaultModel: (slug: string) => getRecommendedDefaultModel(slug),
   saveMoaModels: (body: unknown) => saveMoaModels(body),
   setEnvVar: (key: string, value: string) => setEnvVar(key, value),
-  getKovaConfigRecord: () => getKovaConfigRecord(),
-  saveKovaConfig: (config: unknown) => saveKovaConfig(config),
+  getHermesConfigRecord: () => getHermesConfigRecord(),
+  saveHermesConfig: (config: unknown) => saveHermesConfig(config),
   setApiRequestProfile: () => {}
 }))
 
@@ -54,28 +54,28 @@ vi.mock('../hooks/use-on-profile-switch', () => ({
 }))
 
 beforeEach(() => {
-  getGlobalModelInfo.mockResolvedValue({ provider: 'nous', model: 'hermes-4' })
+  getGlobalModelInfo.mockResolvedValue({ provider: 'nous', model: 'kova-4' })
   getGlobalModelOptions.mockResolvedValue({
     providers: [
       {
         name: 'Nous',
         slug: 'nous',
-        models: ['hermes-4', 'hermes-4-mini'],
+        models: ['kova-4', 'kova-4-mini'],
         authenticated: true,
-        capabilities: { 'hermes-4': { reasoning: true, fast: true } }
+        capabilities: { 'kova-4': { reasoning: true, fast: true } }
       }
     ]
   })
   getAuxiliaryModels.mockResolvedValue({
-    main: { provider: 'nous', model: 'hermes-4' },
+    main: { provider: 'nous', model: 'kova-4' },
     tasks: [{ task: 'vision', provider: 'auto', model: '', base_url: '' }]
   })
   getMoaModels.mockResolvedValue(null)
-  setModelAssignment.mockResolvedValue({ provider: 'nous', model: 'hermes-4', gateway_tools: [] })
-  getRecommendedDefaultModel.mockResolvedValue({ provider: 'nous', model: 'hermes-4', free_tier: null })
+  setModelAssignment.mockResolvedValue({ provider: 'nous', model: 'kova-4', gateway_tools: [] })
+  getRecommendedDefaultModel.mockResolvedValue({ provider: 'nous', model: 'kova-4', free_tier: null })
   setEnvVar.mockResolvedValue({ ok: true })
-  getKovaConfigRecord.mockResolvedValue({ agent: { reasoning_effort: 'medium', service_tier: 'normal' } })
-  saveKovaConfig.mockResolvedValue({ ok: true })
+  getHermesConfigRecord.mockResolvedValue({ agent: { reasoning_effort: 'medium', service_tier: 'normal' } })
+  saveHermesConfig.mockResolvedValue({ ok: true })
 })
 
 afterEach(() => {
@@ -176,7 +176,7 @@ describe('ModelSettings', () => {
   it('replaces the selected provider and model when the active profile changes', async () => {
     getGlobalModelInfo
       .mockResolvedValueOnce({ provider: 'custom', model: 'local-a' })
-      .mockResolvedValueOnce({ provider: 'nous', model: 'hermes-4' })
+      .mockResolvedValueOnce({ provider: 'nous', model: 'kova-4' })
     getGlobalModelOptions
       .mockResolvedValueOnce({
         providers: [
@@ -193,9 +193,9 @@ describe('ModelSettings', () => {
           {
             name: 'Nous',
             slug: 'nous',
-            models: ['hermes-4'],
+            models: ['kova-4'],
             authenticated: true,
-            capabilities: { 'hermes-4': { reasoning: true, fast: true } }
+            capabilities: { 'kova-4': { reasoning: true, fast: true } }
           }
         ]
       })
@@ -212,15 +212,62 @@ describe('ModelSettings', () => {
     expect(screen.queryByRole('button', { name: 'Set up provider' })).toBeNull()
   })
 
+  it('preserves a user-defined provider endpoint when applying the main model', async () => {
+    getGlobalModelOptions.mockResolvedValueOnce({
+      providers: [
+        {
+          name: 'Nous',
+          slug: 'nous',
+          models: ['kova-4'],
+          authenticated: true
+        },
+        {
+          name: 'Ollama',
+          slug: 'local-ollama',
+          models: ['qwen3:latest'],
+          authenticated: true,
+          is_user_defined: true,
+          api_url: 'http://localhost:11434/v1'
+        }
+      ]
+    })
+    setModelAssignment.mockResolvedValueOnce({
+      provider: 'local-ollama',
+      model: 'qwen3:latest',
+      gateway_tools: []
+    })
+
+    await renderModelSettings()
+
+    const providerSelect = (await screen.findAllByRole('combobox'))[0]
+    fireEvent.click(providerSelect)
+    fireEvent.click(await screen.findByRole('option', { name: 'Ollama' }))
+
+    const modelSelect = (await screen.findAllByRole('combobox'))[1]
+    fireEvent.click(modelSelect)
+    fireEvent.click(await screen.findByRole('option', { name: 'qwen3:latest' }))
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Apply' }))
+
+    await waitFor(() =>
+      expect(setModelAssignment).toHaveBeenCalledWith({
+        model: 'qwen3:latest',
+        provider: 'local-ollama',
+        scope: 'main',
+        base_url: 'http://localhost:11434/v1'
+      })
+    )
+  })
+
   it('writes the profile default speed (service_tier) when the fast switch is toggled', async () => {
     await renderModelSettings()
-    await waitFor(() => expect(getKovaConfigRecord).toHaveBeenCalled())
+    await waitFor(() => expect(getHermesConfigRecord).toHaveBeenCalled())
 
     const fastSwitch = await screen.findByRole('switch')
     fireEvent.click(fastSwitch)
 
     await waitFor(() =>
-      expect(saveKovaConfig).toHaveBeenCalledWith(
+      expect(saveHermesConfig).toHaveBeenCalledWith(
         expect.objectContaining({ agent: expect.objectContaining({ service_tier: 'fast' }) })
       )
     )
@@ -232,15 +279,15 @@ describe('ModelSettings', () => {
         {
           name: 'Nous',
           slug: 'nous',
-          models: ['hermes-4'],
+          models: ['kova-4'],
           authenticated: true,
-          capabilities: { 'hermes-4': { reasoning: false, fast: false } }
+          capabilities: { 'kova-4': { reasoning: false, fast: false } }
         }
       ]
     })
 
     await renderModelSettings()
-    await waitFor(() => expect(getKovaConfigRecord).toHaveBeenCalled())
+    await waitFor(() => expect(getHermesConfigRecord).toHaveBeenCalled())
 
     expect(screen.queryByRole('switch')).toBeNull()
   })
@@ -261,10 +308,45 @@ describe('ModelSettings', () => {
 
     await waitFor(() =>
       expect(setModelAssignment).toHaveBeenCalledWith({
-        model: 'hermes-4',
+        model: 'kova-4',
         provider: 'nous',
         scope: 'auxiliary',
         task: 'vision'
+      })
+    )
+  })
+
+  it('carries the user-defined endpoint when an aux slot is set to a local main model', async () => {
+    getGlobalModelOptions.mockResolvedValueOnce({
+      providers: [
+        {
+          name: 'Ollama',
+          slug: 'local-ollama',
+          models: ['qwen3:latest'],
+          authenticated: true,
+          is_user_defined: true,
+          api_url: 'http://localhost:11434/v1'
+        }
+      ]
+    })
+    getGlobalModelInfo.mockResolvedValueOnce({ provider: 'local-ollama', model: 'qwen3:latest' })
+    getAuxiliaryModels.mockResolvedValueOnce({
+      main: { provider: 'local-ollama', model: 'qwen3:latest' },
+      tasks: [{ task: 'vision', provider: 'auto', model: '', base_url: '' }]
+    })
+
+    await renderModelSettings()
+
+    const setToMainButtons = await screen.findAllByRole('button', { name: 'Set to main' })
+    fireEvent.click(setToMainButtons[0])
+
+    await waitFor(() =>
+      expect(setModelAssignment).toHaveBeenCalledWith({
+        model: 'qwen3:latest',
+        provider: 'local-ollama',
+        scope: 'auxiliary',
+        task: 'vision',
+        base_url: 'http://localhost:11434/v1'
       })
     )
   })
@@ -274,7 +356,7 @@ describe('ModelSettings', () => {
       provider: 'openrouter',
       model: 'anthropic/claude-opus-4.7',
       gateway_tools: [],
-      stale_aux: [{ task: 'compression', provider: 'nous', model: 'hermes-4' }]
+      stale_aux: [{ task: 'compression', provider: 'nous', model: 'kova-4' }]
     })
 
     await renderModelSettings()
@@ -290,7 +372,7 @@ describe('ModelSettings', () => {
 
   it('shows a persistent banner when a loaded aux slot mismatches the main provider', async () => {
     getAuxiliaryModels.mockResolvedValueOnce({
-      main: { provider: 'nous', model: 'hermes-4' },
+      main: { provider: 'nous', model: 'kova-4' },
       tasks: [{ task: 'curator', provider: 'openrouter', model: 'anthropic/claude-opus-4.7', base_url: '' }]
     })
 
@@ -308,7 +390,7 @@ describe('ModelSettings MoA preset editor', () => {
     presets: {
       default: {
         reference_models: [
-          { provider: 'nous', model: 'hermes-4' },
+          { provider: 'nous', model: 'kova-4' },
           { provider: 'openrouter', model: 'deepseek/deepseek-v4-pro' }
         ],
         aggregator: { provider: 'openrouter', model: 'anthropic/claude-opus-4.8' },
@@ -319,7 +401,7 @@ describe('ModelSettings MoA preset editor', () => {
       }
     },
     reference_models: [
-      { provider: 'nous', model: 'hermes-4' },
+      { provider: 'nous', model: 'kova-4' },
       { provider: 'openrouter', model: 'deepseek/deepseek-v4-pro' }
     ],
     aggregator: { provider: 'openrouter', model: 'anthropic/claude-opus-4.8' },
@@ -335,9 +417,9 @@ describe('ModelSettings MoA preset editor', () => {
         {
           name: 'Nous',
           slug: 'nous',
-          models: ['hermes-4', 'hermes-4-mini'],
+          models: ['kova-4', 'kova-4-mini'],
           authenticated: true,
-          capabilities: { 'hermes-4': { reasoning: true, fast: true } }
+          capabilities: { 'kova-4': { reasoning: true, fast: true } }
         },
         {
           name: 'OpenRouter',
@@ -430,7 +512,7 @@ describe('ModelSettings MoA preset editor', () => {
       // Radix treats re-picking the current value as a no-op (no
       // onValueChange), so nothing changes: no save, model still shown.
       expect(saveMoaModels).not.toHaveBeenCalled()
-      expect(screen.getByText('nous · hermes-4')).toBeTruthy()
+      expect(screen.getByText('nous · kova-4')).toBeTruthy()
     } finally {
       vi.useRealTimers()
     }
@@ -471,7 +553,7 @@ describe('ModelSettings MoA preset editor', () => {
           presets: expect.objectContaining({
             default: expect.objectContaining({
               reference_models: [
-                expect.objectContaining({ provider: 'nous', model: 'hermes-4', enabled: false }),
+                expect.objectContaining({ provider: 'nous', model: 'kova-4', enabled: false }),
                 expect.objectContaining({ provider: 'openrouter', model: 'deepseek/deepseek-v4-pro' })
               ]
             })

@@ -1,7 +1,7 @@
 """Interactive prompt callbacks for terminal_tool integration.
 
 These bridge terminal_tool's interactive prompts (clarify, sudo, approval)
-into prompt_toolkit's event loop. Each function takes the KovaCLI instance
+into prompt_toolkit's event loop. Each function takes the HermesCLI instance
 as its first argument and uses its state (queues, app reference) to coordinate
 with the TUI.
 """
@@ -15,11 +15,14 @@ from kova_cli.secret_prompt import masked_secret_prompt
 from kova_constants import display_kova_home
 
 
-def clarify_callback(cli, question, choices):
+def clarify_callback(cli, question, choices, multi_select=False):
     """Prompt for clarifying question through the TUI.
 
     Sets up the interactive selection UI, then blocks until the user
     responds. Returns the user's choice or a timeout message.
+
+    When ``multi_select`` is True, shows checkboxes and the user can
+    select multiple options with Space, confirming with Enter.
     """
     from cli import CLI_CONFIG
     from tools.clarify_gateway import resolve_clarify_timeout
@@ -29,11 +32,14 @@ def clarify_callback(cli, question, choices):
     timeout = resolve_clarify_timeout(CLI_CONFIG)
     response_queue = queue.Queue()
     is_open_ended = not choices
+    effective_multi = multi_select and not is_open_ended
 
     cli._clarify_state = {
         "question": question,
         "choices": choices if not is_open_ended else [],
         "selected": 0,
+        "multi_select": effective_multi,
+        "selected_indices": set() if effective_multi else None,
         "response_queue": response_queue,
     }
     cli._clarify_deadline = None if timeout <= 0 else _time.monotonic() + timeout
@@ -72,7 +78,7 @@ def prompt_for_secret(cli, var_name: str, prompt: str, metadata=None) -> dict:
     """Prompt for a secret value through the TUI (e.g. API keys for skills).
 
     Returns a dict with keys: success, stored_as, validated, skipped, message.
-    The secret is stored in ~/.hermes/.env and never exposed to the model.
+    The secret is stored in ~/.kova/.env and never exposed to the model.
     """
     if not getattr(cli, "_app", None):
         if not hasattr(cli, "_secret_state"):
@@ -244,4 +250,4 @@ def approval_callback(cli, command: str, description: str) -> str:
         if hasattr(cli, "_app") and cli._app:
             cli._app.invalidate()
         cprint(f"\n{_DIM}  ⏱ Timeout — denying command{_RST}")
-        return "deny"
+        return "timeout"

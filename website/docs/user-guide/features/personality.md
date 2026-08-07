@@ -18,7 +18,7 @@ If you want to change who Kova is — or replace it with an entirely different a
 Kova now seeds a default `SOUL.md` automatically in:
 
 ```text
-~/.hermes/SOUL.md
+~/.kova/SOUL.md
 ```
 
 More precisely, it uses the current instance's `HERMES_HOME`, so if you run Kova with a custom home directory, it will use:
@@ -47,14 +47,14 @@ This keeps personality predictable.
 If Kova loaded `SOUL.md` from whatever directory you happened to launch it in, your personality could change unexpectedly between projects. By loading only from `HERMES_HOME`, the personality belongs to the Kova instance itself.
 
 That also makes it easier to teach users:
-- "Edit `~/.hermes/SOUL.md` to change Kova' default personality."
+- "Edit `~/.kova/SOUL.md` to change Kova' default personality."
 
 ## Where to edit it
 
 For most users:
 
 ```bash
-~/.hermes/SOUL.md
+~/.kova/SOUL.md
 ```
 
 If you use a custom home:
@@ -211,7 +211,7 @@ These are convenient overlays, but your global `SOUL.md` still gives Kova its pe
 
 ## Custom personalities in config
 
-You can also define named custom personalities in `~/.hermes/config.yaml` under `agent.personalities`.
+You can also define named custom personalities in `~/.kova/config.yaml` under `agent.personalities`.
 
 ```yaml
 agent:
@@ -227,11 +227,23 @@ Then switch to it with:
 /personality codereviewer
 ```
 
+## Resetting to the default
+
+To cancel the active personality overlay and return to base behavior (your `SOUL.md` persona), use any of:
+
+```text
+/personality none
+/personality default
+/personality neutral
+```
+
+All three clear the overlay: the saved `agent.system_prompt` is emptied and the change takes effect on your next message. Running `/personality` with no arguments also lists `none` alongside the available presets.
+
 ## Recommended workflow
 
 A strong default setup is:
 
-1. Keep a thoughtful global `SOUL.md` in `~/.hermes/SOUL.md`
+1. Keep a thoughtful global `SOUL.md` in `~/.kova/SOUL.md`
 2. Put project instructions in `AGENTS.md`
 3. Use `/personality` only when you want a temporary mode shift
 

@@ -11,17 +11,14 @@
     { pkgs, self', ... }:
     let
       packages = builtins.attrValues self'.packages;
-      kovaNpmLib = self'.packages.default.passthru.kovaNpmLib;
+      hermesNpmLib = self'.packages.default.passthru.hermesNpmLib;
 
       # Collect all packageJsonPath values from npm workspace packages.
       npmPackageJsonPaths = builtins.filter (p: p != null) (
         map (p: p.passthru.packageJsonPath or null) packages
       );
 
-      # Non-npm packages may have their own devShellHook (e.g. kova-agent
-      # stamps pyproject.toml + uv.lock for Python venv setup).
-      nonNpmHooks = map (p: p.passthru.devShellHook or "") packages;
-      combinedNonNpm = pkgs.lib.concatStringsSep "\n" (builtins.filter (h: h != "") nonNpmHooks);
+      hermesAgentDevShellHook = self'.packages.default.passthru.devShellHook;
     in
     {
       devShells.default = pkgs.mkShell {
@@ -30,10 +27,7 @@
             mkdir -p $out/bin
             install -Dm755 ${../kova} $out/bin/kova
           '')
-          (pkgs.runCommand "dev-sandbox" { } ''
-            mkdir -p $out/bin
-            install -Dm755 ${../scripts/dev-sandbox.sh} $out/bin/sandbox
-          '')
+          self'.packages.sandbox
           uv
           # Headless Wayland compositor for E2E tests (test:e2e:visual).
           # cage renders a single client with no window management, so
@@ -49,8 +43,8 @@
         ]
         ++ self'.packages.default.passthru.devDeps;
         shellHook = ''
-          ${combinedNonNpm}
-          ${kovaNpmLib.mkNpmDevShellHook npmPackageJsonPaths}
+          ${hermesAgentDevShellHook}
+          ${hermesNpmLib.mkNpmDevShellHook npmPackageJsonPaths}
 
           # Force Node to use Nix's playwright-test binary instead of node_modules/.bin
           export PATH="${pkgs.playwright-test}/bin:$PATH"

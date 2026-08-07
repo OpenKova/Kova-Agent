@@ -21,6 +21,7 @@ import {
   RefreshCw,
   Terminal
 } from '@/lib/icons'
+import { coerceRemoteUrlScheme } from '@/lib/remote-url'
 import { selectableCardClass } from '@/lib/selectable-card'
 import { cn } from '@/lib/utils'
 import { notify, notifyError } from '@/store/notifications'
@@ -49,7 +50,8 @@ interface GatewaySettingsState {
   sshUser: string
   sshPort: number | null
   sshKeyPath: string
-  sshRemoteKovaPath: string
+  sshRemoteHermesPath: string
+  sshRemoteProfile: string
 }
 
 const SSH_HOST_CUSTOM = '__custom__'
@@ -67,7 +69,8 @@ const EMPTY_STATE: GatewaySettingsState = {
   sshUser: '',
   sshPort: null,
   sshKeyPath: '',
-  sshRemoteKovaPath: ''
+  sshRemoteHermesPath: '',
+  sshRemoteProfile: ''
 }
 
 export function savedCloudConnectionUrl(config: Pick<GatewaySettingsState, 'mode' | 'remoteUrl'>): string {
@@ -214,7 +217,7 @@ export function GatewaySettings({ embedded = false }: { embedded?: boolean } = {
 
   useEffect(() => {
     let cancelled = false
-    const desktop = window.kovaDesktop
+    const desktop = window.hermesDesktop
 
     if (!desktop?.getConnectionConfig) {
       setLoading(false)
@@ -252,7 +255,7 @@ export function GatewaySettings({ embedded = false }: { embedded?: boolean } = {
   // syntactically plausible URL. The probe result drives whether we render the
   // OAuth login button or the session-token entry box. The effective auth mode
   // prefers a fresh probe result over the saved value.
-  const trimmedUrl = state.remoteUrl.trim()
+  const trimmedUrl = coerceRemoteUrlScheme(state.remoteUrl)
 
   // The dashboardUrl of the currently-connected cloud instance (the saved
   // cloud connection's remoteUrl), normalized for comparison against each
@@ -276,7 +279,7 @@ export function GatewaySettings({ embedded = false }: { embedded?: boolean } = {
       return
     }
 
-    const desktop = window.kovaDesktop
+    const desktop = window.hermesDesktop
 
     if (!desktop?.probeConnectionConfig) {
       return
@@ -383,12 +386,12 @@ export function GatewaySettings({ embedded = false }: { embedded?: boolean } = {
   }, [state.sshHost, sshHostSuggestions])
 
   useEffect(() => {
-    if (state.mode !== 'ssh' || !window.kovaDesktop?.sshConfigHosts) {
+    if (state.mode !== 'ssh' || !window.hermesDesktop?.sshConfigHosts) {
       return
     }
 
     let cancelled = false
-    void window.kovaDesktop
+    void window.hermesDesktop
       .sshConfigHosts()
       .then(result => {
         if (!cancelled) {
@@ -404,6 +407,7 @@ export function GatewaySettings({ embedded = false }: { embedded?: boolean } = {
     return () => void (cancelled = true)
   }, [state.mode])
 
+  // eslint-disable-next-line no-restricted-syntax -- monotonic request-sequence counters, not an atom mirror
   useEffect(() => {
     contextSeq.current += 1
     sshTestSeq.current += 1
@@ -411,7 +415,16 @@ export function GatewaySettings({ embedded = false }: { embedded?: boolean } = {
     signingSeq.current += 1
     cloudConnectSeq.current += 1
     setLastTest(null)
-  }, [scope, state.mode, state.sshHost, state.sshUser, state.sshPort, state.sshKeyPath, state.sshRemoteKovaPath])
+  }, [
+    scope,
+    state.mode,
+    state.sshHost,
+    state.sshUser,
+    state.sshPort,
+    state.sshKeyPath,
+    state.sshRemoteHermesPath,
+    state.sshRemoteProfile
+  ])
 
   const oauthConnected = state.remoteOauthConnected
 
@@ -437,7 +450,10 @@ export function GatewaySettings({ embedded = false }: { embedded?: boolean } = {
     sshUser: state.sshUser.trim() || undefined,
     sshPort: state.sshPort,
     sshKeyPath: state.sshKeyPath.trim() || undefined,
-    sshRemoteKovaPath: state.sshRemoteKovaPath.trim()
+    sshRemoteHermesPath: state.sshRemoteHermesPath.trim(),
+    // Preserve an intentional blank so an existing remote-profile mapping can
+    // be cleared instead of being mistaken for an omitted field.
+    sshRemoteProfile: state.sshRemoteProfile.trim()
   })
 
   const save = async (apply: boolean) => {
@@ -457,8 +473,8 @@ export function GatewaySettings({ embedded = false }: { embedded?: boolean } = {
 
     try {
       const next = apply
-        ? await window.kovaDesktop.applyConnectionConfig(payload())
-        : await window.kovaDesktop.saveConnectionConfig(payload())
+        ? await window.hermesDesktop.applyConnectionConfig(payload())
+        : await window.hermesDesktop.saveConnectionConfig(payload())
 
       if (seq !== saveSeq.current) {
         return
@@ -521,7 +537,7 @@ export function GatewaySettings({ embedded = false }: { embedded?: boolean } = {
     try {
       // Save (don't apply/restart) so the login window has a URL to use and the
       // oauth mode is persisted, without yet flipping the live connection.
-      const saved = await window.kovaDesktop.saveConnectionConfig({
+      const saved = await window.hermesDesktop.saveConnectionConfig({
         mode: state.mode,
         profile: scope ?? undefined,
         remoteAuthMode: 'oauth',
@@ -534,14 +550,14 @@ export function GatewaySettings({ embedded = false }: { embedded?: boolean } = {
 
       acceptSavedConfig(saved)
 
-      const result = await window.kovaDesktop.oauthLoginConnectionConfig(trimmedUrl)
+      const result = await window.hermesDesktop.oauthLoginConnectionConfig(trimmedUrl)
 
       if (seq !== signingSeq.current) {
         return
       }
 
       if (result.connected) {
-        const refreshed = await window.kovaDesktop.getConnectionConfig(scope)
+        const refreshed = await window.hermesDesktop.getConnectionConfig(scope)
         acceptSavedConfig(refreshed)
         notify({ kind: 'success', title: g.signedIn, message: g.connectedTo(providerLabel) })
       } else {
@@ -567,8 +583,8 @@ export function GatewaySettings({ embedded = false }: { embedded?: boolean } = {
     setSigningIn(true)
 
     try {
-      await window.kovaDesktop.oauthLogoutConnectionConfig(trimmedUrl || undefined)
-      const refreshed = await window.kovaDesktop.getConnectionConfig(scope)
+      await window.hermesDesktop.oauthLogoutConnectionConfig(trimmedUrl || undefined)
+      const refreshed = await window.hermesDesktop.getConnectionConfig(scope)
 
       if (seq !== signingSeq.current) {
         return
@@ -594,7 +610,7 @@ export function GatewaySettings({ embedded = false }: { embedded?: boolean } = {
   // `org` scopes discovery for multi-org users; when discovery comes back with
   // needsOrgSelection we surface the org list and show a picker instead.
   const discoverCloud = async (org?: string) => {
-    const desktop = window.kovaDesktop
+    const desktop = window.hermesDesktop
     const seq = contextSeq.current
 
     if (!desktop?.cloud) {
@@ -678,7 +694,7 @@ export function GatewaySettings({ embedded = false }: { embedded?: boolean } = {
       return
     }
 
-    const desktop = window.kovaDesktop
+    const desktop = window.hermesDesktop
 
     if (!desktop?.cloud) {
       return
@@ -724,7 +740,7 @@ export function GatewaySettings({ embedded = false }: { embedded?: boolean } = {
   }, [state.mode, scope])
 
   const cloudSignIn = async () => {
-    const desktop = window.kovaDesktop
+    const desktop = window.hermesDesktop
     const seq = ++signingSeq.current
 
     if (!desktop?.cloud) {
@@ -757,7 +773,7 @@ export function GatewaySettings({ embedded = false }: { embedded?: boolean } = {
   }
 
   const cloudSignOut = async () => {
-    const desktop = window.kovaDesktop
+    const desktop = window.hermesDesktop
     const seq = ++signingSeq.current
 
     if (!desktop?.cloud) {
@@ -800,7 +816,7 @@ export function GatewaySettings({ embedded = false }: { embedded?: boolean } = {
       return
     }
 
-    const desktop = window.kovaDesktop
+    const desktop = window.hermesDesktop
 
     if (!desktop?.cloud) {
       return
@@ -861,14 +877,14 @@ export function GatewaySettings({ embedded = false }: { embedded?: boolean } = {
   }
 
   const resolveSshHost = async (host: string) => {
-    if (!host || !window.kovaDesktop?.sshResolveHost) {
+    if (!host || !window.hermesDesktop?.sshResolveHost) {
       return
     }
 
     const seq = ++sshResolveSeq.current
 
     try {
-      const resolved = await window.kovaDesktop.sshResolveHost(host)
+      const resolved = await window.hermesDesktop.sshResolveHost(host)
 
       if (seq !== sshResolveSeq.current) {
         return
@@ -906,7 +922,7 @@ export function GatewaySettings({ embedded = false }: { embedded?: boolean } = {
     setLastTest(null)
 
     try {
-      const result = await window.kovaDesktop.testConnectionConfig(payload())
+      const result = await window.hermesDesktop.testConnectionConfig(payload())
 
       if (seq !== sshTestSeq.current) {
         return
@@ -958,7 +974,7 @@ export function GatewaySettings({ embedded = false }: { embedded?: boolean } = {
     setLastTest(null)
 
     try {
-      const result = await window.kovaDesktop.testConnectionConfig({
+      const result = await window.hermesDesktop.testConnectionConfig({
         mode: 'remote',
         profile: scope ?? undefined,
         remoteAuthMode: authMode,
@@ -995,7 +1011,7 @@ export function GatewaySettings({ embedded = false }: { embedded?: boolean } = {
     )
   }
 
-  if (!window.kovaDesktop?.getConnectionConfig) {
+  if (!window.hermesDesktop?.getConnectionConfig) {
     return <EmptyState description={g.unavailableDesc} title={g.unavailableTitle} />
   }
 
@@ -1053,11 +1069,11 @@ export function GatewaySettings({ embedded = false }: { embedded?: boolean } = {
         <div className="grid auto-rows-fr grid-cols-1 gap-2 sm:grid-cols-2 min-[72rem]:grid-cols-4">
           <ModeCard
             active={state.mode === 'local'}
-            description={g.localDesc}
+            description={scope === null ? g.localDesc : g.inheritDesc}
             disabled={state.envOverride}
             icon={Monitor}
             onSelect={() => setState(current => ({ ...current, mode: 'local' }))}
-            title={g.localTitle}
+            title={scope === null ? g.localTitle : g.inheritTitle}
           />
           <ModeCard
             active={state.mode === 'cloud'}
@@ -1414,14 +1430,28 @@ export function GatewaySettings({ embedded = false }: { embedded?: boolean } = {
             action={
               <Input
                 className={cn('h-8 font-mono', CONTROL_TEXT)}
-                onChange={event => setState(current => ({ ...current, sshRemoteKovaPath: event.target.value }))}
-                placeholder={g.sshKovaPathPlaceholder}
-                value={state.sshRemoteKovaPath}
+                onChange={event => setState(current => ({ ...current, sshRemoteHermesPath: event.target.value }))}
+                placeholder={g.sshHermesPathPlaceholder}
+                value={state.sshRemoteHermesPath}
               />
             }
-            description={g.sshKovaPathDesc}
-            title={g.sshKovaPathTitle}
+            description={g.sshHermesPathDesc}
+            title={g.sshHermesPathTitle}
           />
+          {scope !== null ? (
+            <ListRow
+              action={
+                <Input
+                  className={cn('h-8 font-mono', CONTROL_TEXT)}
+                  onChange={event => setState(current => ({ ...current, sshRemoteProfile: event.target.value }))}
+                  placeholder={scope}
+                  value={state.sshRemoteProfile}
+                />
+              }
+              description={g.sshRemoteProfileDesc}
+              title={g.sshRemoteProfileTitle}
+            />
+          ) : null}
         </div>
       ) : null}
 
@@ -1476,7 +1506,7 @@ export function GatewaySettings({ embedded = false }: { embedded?: boolean } = {
         <div className="mt-6 grid gap-1">
           <ListRow
             action={
-              <Button onClick={() => void window.kovaDesktop?.revealLogs()} size="sm" variant="textStrong">
+              <Button onClick={() => void window.hermesDesktop?.revealLogs()} size="sm" variant="textStrong">
                 <FileText />
                 {g.openLogs}
               </Button>

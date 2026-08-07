@@ -14,11 +14,11 @@ Right now the primary consumer is the Teams meeting summary pipeline: Graph noti
 
 - Microsoft Graph application credentials — [Register a Microsoft Graph Application](/guides/microsoft-graph-app-registration)
 - A **public HTTPS URL** that Microsoft Graph can reach (Graph does not call private endpoints). A dev tunnel works for testing; production needs a real domain with a valid certificate.
-- A strong shared secret to use as the `clientState` value. Generate with `openssl rand -hex 32` and put it in `~/.hermes/.env` as `MSGRAPH_WEBHOOK_CLIENT_STATE`.
+- A strong shared secret to use as the `clientState` value. Generate with `openssl rand -hex 32` and put it in `~/.kova/.env` as `MSGRAPH_WEBHOOK_CLIENT_STATE`.
 
 ## Quick Start
 
-Minimum `~/.hermes/config.yaml`:
+Minimum `~/.kova/config.yaml`:
 
 ```yaml
 platforms:
@@ -32,7 +32,7 @@ platforms:
         - "communications/onlineMeetings"
 ```
 
-Or via env vars in `~/.hermes/.env` (auto-merged on startup):
+Or via env vars in `~/.kova/.env` (auto-merged on startup):
 
 ```bash
 MSGRAPH_WEBHOOK_ENABLED=true
@@ -61,7 +61,7 @@ All settings go under `platforms.msgraph_webhook.extra`:
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `host` | `0.0.0.0` | Bind address for the HTTP listener. Non-loopback binds require `allowed_source_cidrs`; loopback (`127.0.0.1` / `::1`) is the easiest dev-tunnel / reverse-proxy setup. |
+| `host` | unset (dual-stack: all interfaces, IPv4+IPv6) | Bind address for the HTTP listener. Non-loopback binds require `allowed_source_cidrs`; loopback (`127.0.0.1` / `::1`) is the easiest dev-tunnel / reverse-proxy setup. |
 | `port` | `8646` | Bind port. |
 | `webhook_path` | `/msgraph/webhook` | URL path Graph POSTs to. |
 | `health_path` | `/health` | Readiness endpoint. |

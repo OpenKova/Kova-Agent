@@ -18,7 +18,7 @@
 //! sees discrete steps (with the live log underneath) instead of one bar.
 //!
 //! Cross-platform note: `kova update` already handles macOS/Linux (git/pip).
-//! The only OS-specific bits here are the venv shim path (resolve_kova) and
+//! The only OS-specific bits here are the venv shim path (resolve_hermes) and
 //! the no-window creation flag — both already cfg-gated. Keep new logic
 //! OS-agnostic so the mac/linux port stays "fill in the paths".
 
@@ -107,16 +107,110 @@ pub async fn start_update(app: AppHandle) -> Result<(), String> {
 /// future desktop launches. The marker payload is `{pid}\n{started_at_unix}`
 /// so the desktop's launch gate can detect a stale marker (dead PID / past a
 /// hard ceiling) and self-heal rather than wait forever.
+///
+/// The marker is also the cross-process update lock: `kova update` claims
+/// the same file (see `kova_cli/update_lock.py`) so a dashboard-spawned
+/// update and this updater can't mutate one checkout at the same time.
+/// `acquire` therefore REFUSES when a live foreign owner holds it rather than
+/// overwriting — the pre-fix clobber is what let a dashboard `kova update`
+/// keep running while install-mode bootstrap rewrote the tree underneath it.
 struct UpdateMarkerGuard {
     path: PathBuf,
+    /// False when a live foreign updater already owns the marker: we hold no
+    /// claim, so `Drop` must not delete their marker.
+    owned: bool,
+}
+
+/// Never treat a marker older than this as a live update. Mirrors
+/// UPDATE_MARKER_MAX_AGE_MS in apps/desktop/electron/update-marker.ts and
+/// UPDATE_MARKER_MAX_AGE_SECONDS in kova_cli/update_lock.py — all three read
+/// this one file, so a shorter ceiling in any of them would steal a lock the
+/// others still consider live.
+const UPDATE_MARKER_MAX_AGE_SECS: u64 = 20 * 60;
+
+/// The pid + age of a confirmed-live update holding the marker.
+struct MarkerOwner {
+    pid: u32,
+    age_secs: u64,
+}
+
+/// Read the marker and report a live *foreign* owner, if any. `None` for every
+/// "no live update" case — absent, unreadable, malformed, dead pid, past the
+/// ceiling, or a marker whose pid is **this** process — matching
+/// `readLiveUpdateMarker` in the Electron gate. Never panics.
+///
+/// Self-PID is treated as non-ownership on purpose (#74761): since #50238 the
+/// desktop pre-writes this marker with the spawned updater's pid before the
+/// updater reaches `acquire`. Without the exclusion, `acquire` sees a live
+/// owner that is itself and aborts ("Another Kova update is already
+/// running"), then the desktop relaunches and retries forever. A foreign live
+/// pid (e.g. a dashboard-spawned `kova update`) still blocks.
+fn live_marker_owner(path: &Path) -> Option<MarkerOwner> {
+    let raw = std::fs::read_to_string(path).ok()?;
+    let mut lines = raw.lines();
+    let pid: u32 = lines.next()?.trim().parse().ok()?;
+    let started_at: u64 = lines.next().unwrap_or("").trim().parse().unwrap_or(0);
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    let age_secs = now.saturating_sub(started_at);
+    if age_secs > UPDATE_MARKER_MAX_AGE_SECS || !pid_is_alive(pid) {
+        return None;
+    }
+    // Desktop `writeUpdateMarker(hermesHome, child.pid)` races ahead of us;
+    // adopt that pre-claim rather than refusing our own marker.
+    if pid == std::process::id() {
+        return None;
+    }
+    Some(MarkerOwner { pid, age_secs })
+}
+
+/// True when a process with `pid` currently exists.
+#[cfg(windows)]
+fn pid_is_alive(pid: u32) -> bool {
+    use windows_sys::Win32::Foundation::{CloseHandle, STILL_ACTIVE};
+    use windows_sys::Win32::System::Threading::{
+        GetExitCodeProcess, OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION,
+    };
+
+    unsafe {
+        let handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid);
+        if handle.is_null() {
+            // Either the pid is gone or we lack rights to open it. A pid we
+            // can't inspect is treated as dead so an unopenable straggler
+            // can't wedge every future update.
+            return false;
+        }
+        let mut code: u32 = 0;
+        let ok = GetExitCodeProcess(handle, &mut code);
+        CloseHandle(handle);
+        ok != 0 && code == STILL_ACTIVE as u32
+    }
+}
+
+#[cfg(not(windows))]
+fn pid_is_alive(pid: u32) -> bool {
+    // signal 0 delivers nothing; it only probes existence/permission.
+    // ESRCH => dead. EPERM => alive but owned by another user.
+    let rc = unsafe { libc::kill(pid as libc::pid_t, 0) };
+    if rc == 0 {
+        return true;
+    }
+    std::io::Error::last_os_error().raw_os_error() == Some(libc::EPERM)
 }
 
 impl UpdateMarkerGuard {
-    /// Write the marker. Best-effort: a write failure must NOT abort the
-    /// update (the gate degrades to "no marker => proceed", i.e. exactly the
-    /// pre-fix behavior), so we log and carry on with a guard that still
-    /// attempts cleanup of whatever may exist at the path.
-    fn acquire(path: PathBuf) -> Self {
+    /// Claim the marker, or report the live updater that already owns it.
+    ///
+    /// Writing is best-effort: a write failure must NOT abort the update (the
+    /// gate degrades to "no marker => proceed", i.e. exactly the pre-marker
+    /// behavior), so we log and carry on with a guard that still attempts
+    /// cleanup of whatever may exist at the path.
+    fn acquire(path: PathBuf) -> Result<Self, MarkerOwner> {
+        if let Some(owner) = live_marker_owner(&path) {
+            return Err(owner);
+        }
         let pid = std::process::id();
         let started_at = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -128,17 +222,32 @@ impl UpdateMarkerGuard {
         if let Err(err) = std::fs::write(&path, format!("{pid}\n{started_at}")) {
             tracing::warn!(?path, %err, "could not write update-in-progress marker");
         }
-        Self { path }
+        Ok(Self { path, owned: true })
+    }
+
+    /// Release the marker as soon as every mutating stage has completed.
+    ///
+    /// The updater still owns a Tauri/Cocoa event loop while it relaunches the
+    /// desktop, and that loop can outlive `app.exit(0)`. Relying on `Drop`
+    /// alone therefore leaves a *successful* update looking active — a live
+    /// pid holding a fresh marker — which blocks desktop startup and every
+    /// other updater for the full age ceiling. Idempotent: `Drop` still runs
+    /// and tolerates an already-removed marker.
+    fn complete(&self) {
+        if !self.owned {
+            return;
+        }
+        if let Err(err) = std::fs::remove_file(&self.path) {
+            if err.kind() != std::io::ErrorKind::NotFound {
+                tracing::warn!(path = ?self.path, %err, "could not remove completed update marker");
+            }
+        }
     }
 }
 
 impl Drop for UpdateMarkerGuard {
     fn drop(&mut self) {
-        if let Err(err) = std::fs::remove_file(&self.path) {
-            if err.kind() != std::io::ErrorKind::NotFound {
-                tracing::warn!(path = ?self.path, %err, "could not remove update-in-progress marker");
-            }
-        }
+        self.complete();
     }
 }
 
@@ -149,10 +258,42 @@ async fn run_update(app: AppHandle) -> Result<()> {
     // Mutual exclusion (#50238): publish an "update in progress" marker for the
     // entire duration of this update. A desktop instance the user relaunches
     // mid-update consults this before spawning its own local backend — without
-    // it, that backend re-locks the venv shim, our `force_kill_other_kova`
+    // it, that backend re-locks the venv shim, our `force_kill_other_hermes`
     // straggler-cleanup kills it, and the relaunch/kill cycle loops. The guard
     // removes the marker on every exit path (incl. early returns / panics).
-    let _update_marker = UpdateMarkerGuard::acquire(crate::paths::update_in_progress_marker());
+    //
+    // The same marker is the cross-process update lock (kova_cli/
+    // update_lock.py claims it too), so a live foreign owner means another
+    // updater — most often a dashboard-spawned `kova update` — is already
+    // mutating this checkout. Refuse instead of running a second one over it.
+    let _update_marker = match UpdateMarkerGuard::acquire(
+        crate::paths::update_in_progress_marker(),
+    ) {
+        Ok(guard) => guard,
+        Err(owner) => {
+            let mins = owner.age_secs / 60;
+            let secs = owner.age_secs % 60;
+            let elapsed = if mins > 0 {
+                format!("{mins}m {secs}s")
+            } else {
+                format!("{secs}s")
+            };
+            let msg = format!(
+                "Another Kova update is already running (PID {}, started {} ago). \
+                 Wait for it to finish, or close the window or dashboard tab that \
+                 started it, then try again.",
+                owner.pid, elapsed
+            );
+            emit(
+                &app,
+                BootstrapEvent::Failed {
+                    stage: None,
+                    error: msg.clone(),
+                },
+            );
+            return Err(anyhow!(msg));
+        }
+    };
 
     let update_branch = update_branch_from_args(std::env::args().skip(1))
         .or_else(|| option_env_string("BUILD_PIN_BRANCH"))
@@ -163,7 +304,7 @@ async fn run_update(app: AppHandle) -> Result<()> {
         None
     };
 
-    let kova = resolve_kova(&install_root).ok_or_else(|| {
+    let kova = resolve_hermes(&install_root).ok_or_else(|| {
         let msg = format!(
             "Could not find the kova CLI under {}. Is Kova installed? \
              Re-run the installer to repair the install.",
@@ -313,8 +454,8 @@ async fn run_update(app: AppHandle) -> Result<()> {
             return Err(anyhow!(msg));
         }
         other => {
-    let msg = format!(
-        "kova update failed (exit {:?}). See {} for details.",
+            let msg = format!(
+                "kova update failed (exit {:?}). See {} for details.",
                 other,
                 crate::paths::kova_home()
                     .join("logs")
@@ -453,6 +594,12 @@ async fn run_update(app: AppHandle) -> Result<()> {
             marker: None,
         },
     );
+    // Every install-tree mutation is finished. Release the lock BEFORE the
+    // relaunch: this process can stay wedged in its native event loop even
+    // after a successful app.exit(), and a live pid on a fresh marker would
+    // make a completed update look active — blocking desktop startup and
+    // every other updater until the age ceiling expires.
+    _update_marker.complete();
 
     if let Some(target_app) = launch_target {
         if let Err(err) = launch_macos_app_and_exit(&app, &target_app).await {
@@ -477,7 +624,24 @@ async fn run_update(app: AppHandle) -> Result<()> {
         );
     }
 
+    // The launch helpers normally request exit themselves, but their failure
+    // paths must still close a successful updater. A native event loop can
+    // ignore that graceful request, so arm a process-exit fallback now that
+    // all update state and the marker have been settled.
+    exit_after_success(&app);
     Ok(())
+}
+
+/// Ask the app to exit, with a hard `process::exit` fallback for a native
+/// event loop that ignores the graceful request. Without it a finished updater
+/// can linger as a live pid forever.
+fn exit_after_success(app: &AppHandle) {
+    std::thread::spawn(|| {
+        std::thread::sleep(std::time::Duration::from_secs(3));
+        tracing::warn!("graceful updater exit timed out; forcing process exit");
+        std::process::exit(0);
+    });
+    app.exit(0);
 }
 
 /// Poll until the venv shim AND packaged desktop app bundle are no longer locked
@@ -512,16 +676,16 @@ pub(crate) async fn wait_for_install_locks_free(install_root: &Path, app: &AppHa
                     format_locked_paths(&locked)
                 ),
             );
-            force_kill_other_kova();
+            force_kill_other_hermes();
             tokio::time::sleep(Duration::from_millis(800)).await;
             let locked_after_kill = locked_paths(&lock_targets);
             if locked_after_kill.is_empty() {
-    emit_log(
-        &app,
-        Some(stage),
-        LogStream::Stdout,
-        "[handoff] waiting for Kova to exit…",
-    );
+                emit_log(
+                    app,
+                    Some(stage),
+                    LogStream::Stdout,
+                    "[handoff] install files freed after force-kill",
+                );
             } else {
                 emit_log(
                     app,
@@ -540,7 +704,7 @@ pub(crate) async fn wait_for_install_locks_free(install_root: &Path, app: &AppHa
 }
 
 fn install_lock_probe_paths(install_root: &Path) -> Vec<PathBuf> {
-    let mut paths = vec![venv_kova(install_root)];
+    let mut paths = vec![venv_hermes(install_root)];
     paths.extend(desktop_app_payload_paths(install_root));
     paths
 }
@@ -579,12 +743,12 @@ fn format_locked_paths(paths: &[PathBuf]) -> String {
 /// Safe w.r.t. our own update child: this runs inside the install-lock wait,
 /// which completes BEFORE we spawn `venv\Scripts\kova.exe update`. And a
 /// desktop the user relaunches mid-update will NOT have spawned a backend —
-/// `startKova()` in the desktop gates local-backend startup on our
+/// `startHermes()` in the desktop gates local-backend startup on our
 /// update-in-progress marker and parks until we finish (#50238). So the only
 /// kova.exe images here are stragglers from the old desktop — exactly what
 /// we want gone. (`/FI PID ne <self>` also spares this Tauri process, though it
 /// isn't named kova.exe.)
-fn force_kill_other_kova() {
+fn force_kill_other_hermes() {
     if !cfg!(target_os = "windows") {
         return;
     }
@@ -701,18 +865,8 @@ struct CmdResult {
     exit_code: Option<i32>,
 }
 
-/// Path to the venv CLI shim under an install root, regardless of existence.
-fn venv_kova(install_root: &Path) -> PathBuf {
-    if cfg!(target_os = "windows") {
-        install_root.join("venv").join("Scripts").join("kova.exe")
-    } else {
-        install_root.join("venv").join("bin").join("kova")
-    }
-}
-
-/// Legacy venv shim name from before the CLI rename; kept so installs that
-/// still carry the old entry point can update without a manual repair.
-fn venv_kova_legacy(install_root: &Path) -> PathBuf {
+/// Path to the venv kova shim under an install root, regardless of existence.
+fn venv_hermes(install_root: &Path) -> PathBuf {
     if cfg!(target_os = "windows") {
         install_root.join("venv").join("Scripts").join("kova.exe")
     } else {
@@ -721,27 +875,20 @@ fn venv_kova_legacy(install_root: &Path) -> PathBuf {
 }
 
 /// Resolve the kova CLI to drive. Prefer the venv shim in the install we
-/// just updated; fall back to the legacy `kova` shim, then the CLI on PATH.
-fn resolve_kova(install_root: &Path) -> Option<PathBuf> {
-    for shim in [venv_kova(install_root), venv_kova_legacy(install_root)] {
-        if shim.exists() {
-            return Some(shim);
-        }
+/// just updated; fall back to `kova` on PATH.
+fn resolve_hermes(install_root: &Path) -> Option<PathBuf> {
+    let shim = venv_hermes(install_root);
+    if shim.exists() {
+        return Some(shim);
     }
     // PATH fallback. which-style probe via env, kept dependency-free.
-    let names: &[&str] = if cfg!(target_os = "windows") {
-        &["kova.exe", "kova.exe"]
-    } else {
-        &["kova", "kova"]
-    };
+    let exe = if cfg!(target_os = "windows") { "kova.exe" } else { "kova" };
     if let Ok(path) = std::env::var("PATH") {
         let sep = if cfg!(target_os = "windows") { ';' } else { ':' };
         for dir in path.split(sep) {
-            for name in names {
-                let cand = Path::new(dir).join(name);
-                if cand.exists() {
-                    return Some(cand);
-                }
+            let cand = Path::new(dir).join(exe);
+            if cand.exists() {
+                return Some(cand);
             }
         }
     }
@@ -761,6 +908,17 @@ fn update_child_env(install_root: &Path) -> Vec<(String, OsString)> {
     // a frozen stage, and users cancel a healthy update. Force line-by-line
     // output instead.
     envs.push(("PYTHONUNBUFFERED".to_string(), OsString::from("1")));
+    // We hold the update-in-progress marker for this whole run, and the
+    // `kova update` child claims that SAME lock (kova_cli/update_lock.py).
+    // Name our pid so the child recognizes the live holder as its own
+    // orchestrator and runs under our claim — without this every GUI update
+    // refuses its parent's marker with exit 2 ("Kova is still running")
+    // and no number of retries can ever succeed. Keep the variable name in
+    // sync with HANDOFF_PID_ENV in kova_cli/update_lock.py.
+    envs.push((
+        "KOVA_UPDATE_HANDOFF_PID".to_string(),
+        OsString::from(std::process::id().to_string()),
+    ));
     if let Some(path) = path_with_prepended_entries(&[
         kova_home.join("node").join("bin"),
         venv_bin_dir(install_root),
@@ -1064,7 +1222,7 @@ mod tests {
     #[test]
     fn venv_kova_is_under_install_root() {
         let root = Path::new("/x/kova-agent");
-        let shim = venv_kova(root);
+        let shim = venv_hermes(root);
         assert!(shim.starts_with(root));
         assert!(shim.to_string_lossy().contains("venv"));
     }
@@ -1085,12 +1243,23 @@ mod tests {
     }
 
     #[test]
+    fn update_child_env_names_our_pid_for_the_lock_handoff() {
+        let envs = update_child_env(Path::new("/x/kova-agent"));
+        assert!(
+            envs.iter().any(|(k, v)| k == "KOVA_UPDATE_HANDOFF_PID"
+                && v.to_str() == Some(std::process::id().to_string().as_str())),
+            "the kova update child claims the same marker we hold; without our pid \
+             it refuses its own parent's lock and every GUI update dead-ends on exit 2"
+        );
+    }
+
+    #[test]
     fn lock_probe_paths_include_desktop_app_payload() {
         let root = Path::new("/x/kova-agent");
         let probes = install_lock_probe_paths(root);
 
         assert!(
-            probes.iter().any(|p| p == &venv_kova(root)),
+            probes.iter().any(|p| p == &venv_hermes(root)),
             "venv shim remains part of the update lock probe"
         );
         assert!(
@@ -1119,7 +1288,8 @@ mod tests {
         let marker = dir.join(".kova-update-in-progress");
 
         {
-            let _g = UpdateMarkerGuard::acquire(marker.clone());
+            let _g = UpdateMarkerGuard::acquire(marker.clone())
+                .unwrap_or_else(|_| panic!("no live owner => acquire must succeed"));
             assert!(marker.exists(), "marker must exist while the guard is held");
             let body = std::fs::read_to_string(&marker).unwrap();
             let pid_line = body.lines().next().unwrap();
@@ -1144,13 +1314,174 @@ mod tests {
         std::fs::create_dir_all(&dir).unwrap();
         let marker = dir.join(".kova-update-in-progress");
 
-        let guard = UpdateMarkerGuard::acquire(marker.clone());
+        let guard = UpdateMarkerGuard::acquire(marker.clone())
+            .unwrap_or_else(|_| panic!("no live owner => acquire must succeed"));
         // Simulate an external cleanup (e.g. the desktop pruned a marker it
         // judged stale) before our guard drops — Drop must not panic.
         std::fs::remove_file(&marker).unwrap();
         drop(guard);
 
         assert!(!marker.exists());
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    /// Spawn a short-lived sibling process whose pid stands in for a foreign
+    /// updater. Same-process double-acquire no longer models contention: since
+    /// #74761 `live_marker_owner` treats our own pid as adoptable (desktop
+    /// pre-writes it), so a second acquire in *this* process would succeed.
+    fn spawn_foreign_holder() -> std::process::Child {
+        #[cfg(windows)]
+        {
+            std::process::Command::new("timeout")
+                .args(["/t", "30", "/nobreak"])
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::null())
+                .spawn()
+                .expect("spawn foreign marker holder")
+        }
+        #[cfg(not(windows))]
+        {
+            std::process::Command::new("sleep")
+                .arg("30")
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::null())
+                .spawn()
+                .expect("spawn foreign marker holder")
+        }
+    }
+
+    #[test]
+    fn acquire_refuses_while_a_live_updater_owns_the_marker() {
+        let dir = unique_tmp_dir("marker-contended");
+        std::fs::create_dir_all(&dir).unwrap();
+        let marker = dir.join(".kova-update-in-progress");
+
+        // A live *foreign* updater holds it. We must NOT clobber the marker and
+        // run concurrently over the same checkout — that race is what let a
+        // dashboard `kova update` and install-mode bootstrap mutate one tree
+        // at once. Own-pid markers are adoptable (#74761), so the foreign pid
+        // must be a real sibling process.
+        let mut foreign = spawn_foreign_holder();
+        let foreign_pid = foreign.id();
+        let started_at = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+        std::fs::write(&marker, format!("{foreign_pid}\n{started_at}")).unwrap();
+
+        let owner = UpdateMarkerGuard::acquire(marker.clone())
+            .err()
+            .expect("acquire must be refused while a foreign updater is live");
+        assert_eq!(owner.pid, foreign_pid);
+
+        // The refused guard must not delete the live owner's marker.
+        assert!(marker.exists(), "refused acquire must leave the marker intact");
+        let _ = foreign.kill();
+        let _ = foreign.wait();
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn acquire_adopts_a_marker_prewritten_with_our_own_pid() {
+        // #74761: desktop writeUpdateMarker(hermesHome, child.pid) races ahead
+        // of UpdateMarkerGuard::acquire. The marker names US; refusing it made
+        // every in-app desktop update loop forever. Adopt and rewrite.
+        let dir = unique_tmp_dir("marker-own-pid");
+        std::fs::create_dir_all(&dir).unwrap();
+        let marker = dir.join(".kova-update-in-progress");
+
+        let started_at = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0)
+            .saturating_sub(2);
+        std::fs::write(&marker, format!("{}\n{started_at}", std::process::id())).unwrap();
+
+        let guard = UpdateMarkerGuard::acquire(marker.clone()).unwrap_or_else(|owner| {
+            panic!(
+                "own-pid pre-write must be adoptable, got foreign owner pid={}",
+                owner.pid
+            )
+        });
+        assert!(marker.exists(), "adopted guard must own the marker");
+        let body = std::fs::read_to_string(&marker).unwrap();
+        assert_eq!(
+            body.lines().next().unwrap().trim().parse::<u32>().unwrap(),
+            std::process::id(),
+            "acquire rewrites the marker with our pid + fresh started_at"
+        );
+        drop(guard);
+        assert!(
+            !marker.exists(),
+            "Drop must still clear the marker we adopted"
+        );
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn acquire_reclaims_a_marker_owned_by_a_dead_pid() {
+        let dir = unique_tmp_dir("marker-dead-pid");
+        std::fs::create_dir_all(&dir).unwrap();
+        let marker = dir.join(".kova-update-in-progress");
+
+        // pid 1 exists everywhere, so fabricate a dead one: a very large pid
+        // that no live process owns. A crashed updater must never wedge every
+        // future update.
+        let started_at = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+        std::fs::write(&marker, format!("4294967294\n{started_at}")).unwrap();
+
+        let guard = UpdateMarkerGuard::acquire(marker.clone())
+            .unwrap_or_else(|_| panic!("a dead owner must not block acquisition"));
+        let body = std::fs::read_to_string(&marker).unwrap();
+        assert_eq!(
+            body.lines().next().unwrap().trim().parse::<u32>().unwrap(),
+            std::process::id(),
+            "reclaiming rewrites the marker with our pid"
+        );
+        drop(guard);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn acquire_reclaims_a_marker_past_the_age_ceiling() {
+        let dir = unique_tmp_dir("marker-stale-age");
+        std::fs::create_dir_all(&dir).unwrap();
+        let marker = dir.join(".kova-update-in-progress");
+
+        // Our own (live) pid, but started well past the ceiling: a wedged
+        // updater must not hold the lock forever.
+        let long_ago = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0)
+            .saturating_sub(UPDATE_MARKER_MAX_AGE_SECS + 60);
+        std::fs::write(&marker, format!("{}\n{long_ago}", std::process::id())).unwrap();
+
+        let guard = UpdateMarkerGuard::acquire(marker.clone())
+            .unwrap_or_else(|_| panic!("a marker past the ceiling must be reclaimable"));
+        drop(guard);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn completed_update_releases_marker_before_guard_drop() {
+        let dir = unique_tmp_dir("marker-complete");
+        std::fs::create_dir_all(&dir).unwrap();
+        let marker = dir.join(".kova-update-in-progress");
+
+        let guard = UpdateMarkerGuard::acquire(marker.clone())
+            .unwrap_or_else(|_| panic!("no live owner => acquire must succeed"));
+        guard.complete();
+
+        assert!(
+            !marker.exists(),
+            "a successful update must unblock desktop startup before relaunch/exit"
+        );
+        drop(guard);
+        assert!(!marker.exists(), "Drop stays idempotent after completion");
         let _ = std::fs::remove_dir_all(&dir);
     }
 

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Codicon } from '@/components/ui/codicon'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import type { KovaGitBaseBranch } from '@/global'
+import type { HermesGitBaseBranch } from '@/global'
 import { useI18n } from '@/i18n'
 import { $repoStatus } from '@/store/coding-status'
 import { listBaseBranches } from '@/store/projects'
@@ -29,7 +29,7 @@ export function BaseBranchPicker({
   const { t } = useI18n()
   const p = t.sidebar.projects
   const repoStatus = useStore($repoStatus)
-  const [branches, setBranches] = useState<KovaGitBaseBranch[]>([])
+  const [branches, setBranches] = useState<HermesGitBaseBranch[]>([])
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
 
@@ -119,7 +119,7 @@ export function BaseBranchPicker({
             <span className="shrink-0">{parts.after}</span>
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="z-[140] min-w-(--radix-popover-trigger-width) p-0">
+        <PopoverContent align="start" className="z-(--z-modal-popover) min-w-(--radix-popover-trigger-width) p-0">
           <Command filter={(searchValue, search) => (searchValue.toLowerCase().includes(search.toLowerCase()) ? 1 : 0)}>
             <CommandInput autoFocus placeholder={p.baseBranchPlaceholder} />
             <CommandList className="max-h-64">

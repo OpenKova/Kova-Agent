@@ -36,7 +36,7 @@ We value contributions in this order:
 | **Git**              | With the `git-lfs` extension installed                                                        |
 | **Python 3.11–3.13** | uv will install it if missing                                                                 |
 | **uv**               | Fast Python package manager ([install](https://docs.astral.sh/uv/))                           |
-| **Node.js 20+**      | Optional — needed for browser tools and WhatsApp bridge (matches root `package.json` engines) |
+| **Node.js 26+**      | Optional — needed for browser tools and WhatsApp bridge (matches root `package.json` engines) |
 
 ### Install with the standard installer
 
@@ -44,13 +44,13 @@ For most contributors, the best development bootstrap is the same path users
 take: run the standard installer, then work inside the repository it cloned.
 The installer creates the Kova venv, wires the `kova` command, stamps the
 install method for `kova update`, and clones the full git project into
-`$HERMES_HOME/kova-agent` (usually `~/.hermes/kova-agent`). That keeps your
+`$HERMES_HOME/kova-agent` (usually `~/.kova/kova-agent`). That keeps your
 development environment on the same layout the CLI, updater, lazy dependency
 installer, gateway, and docs assume.
 
 ```bash
-curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
-cd "${HERMES_HOME:-$HOME/.hermes}/kova-agent"
+curl -fsSL https://kova-agent.nousresearch.com/install.sh | bash
+cd "${HERMES_HOME:-$HOME/.kova}/kova-agent"
 
 # Add dev/test extras on top of the standard install.
 uv pip install -e ".[all,dev]"
@@ -93,8 +93,8 @@ git clone https://github.com/OpenKova/Kova-Agent.git
 cd kova-agent
 
 # Create venv with Python 3.11, OUTSIDE the source tree
-uv venv ~/.hermes/venvs/kova-dev --python 3.11
-export VIRTUAL_ENV="$HOME/.hermes/venvs/kova-dev"
+uv venv ~/.kova/venvs/kova-dev --python 3.11
+export VIRTUAL_ENV="$HOME/.kova/venvs/kova-dev"
 export PATH="$VIRTUAL_ENV/bin:$PATH"
 
 # Install with all extras (messaging, cron, CLI menus, dev tools)
@@ -107,12 +107,12 @@ npm install
 ### Configure for Development
 
 ```bash
-mkdir -p ~/.hermes/{cron,sessions,logs,memories,skills}
-cp cli-config.yaml.example ~/.hermes/config.yaml
-touch ~/.hermes/.env
+mkdir -p ~/.kova/{cron,sessions,logs,memories,skills}
+cp cli-config.yaml.example ~/.kova/config.yaml
+touch ~/.kova/.env
 
 # Add at minimum an LLM provider key:
-echo 'OPENROUTER_API_KEY=sk-or-v1-your-key' >> ~/.hermes/.env
+echo 'OPENROUTER_API_KEY=sk-or-v1-your-key' >> ~/.kova/.env
 ```
 
 ### Run
@@ -143,7 +143,7 @@ scripts/run_tests.sh
 - **Comments**: Only when explaining non-obvious intent, trade-offs, or API quirks
 - **Error handling**: Catch specific exceptions. Use `logger.warning()`/`logger.error()` with `exc_info=True` for unexpected errors
 - **Cross-platform**: Never assume Unix (see below)
-- **Profile-safe paths**: Never hardcode `~/.hermes` — use `get_kova_home()` from `kova_constants` for code paths and `display_kova_home()` for user-facing messages. See [AGENTS.md](https://github.com/OpenKova/Kova-Agent/blob/main/AGENTS.md#profiles-multi-instance-support) for full rules.
+- **Profile-safe paths**: Never hardcode `~/.kova` — use `get_kova_home()` from `kova_constants` for code paths and `display_kova_home()` for user-facing messages. See [AGENTS.md](https://github.com/OpenKova/Kova-Agent/blob/main/AGENTS.md#profiles-multi-instance-support) for full rules.
 
 ## Cross-Platform Compatibility
 

@@ -11,7 +11,7 @@ import {
   getGlobalModelOptions,
   getMoaModels,
   getRecommendedDefaultModel,
-  saveKovaConfig,
+  saveHermesConfig,
   saveMoaModels,
   setEnvVar,
   setModelAssignment
@@ -25,11 +25,12 @@ import type {
 } from '@/kova'
 import { useI18n } from '@/i18n'
 import { AlertTriangle, Cpu, Loader2 } from '@/lib/icons'
+import { DEFAULT_REASONING_EFFORT, REASONING_EFFORT_VALUES } from '@/lib/reasoning-effort'
 import { cn } from '@/lib/utils'
 import { notifyError } from '@/store/notifications'
 import { startManualLocalEndpoint, startManualOnboarding, startManualProviderOAuth } from '@/store/onboarding'
 
-import { invalidateKovaConfig, setKovaConfigCache, useKovaConfigRecord } from '../hooks/use-config-record'
+import { invalidateHermesConfig, setHermesConfigCache, useHermesConfigRecord } from '../hooks/use-config-record'
 import { useOnProfileSwitch } from '../hooks/use-on-profile-switch'
 
 import { CONTROL_TEXT } from './constants'
@@ -81,10 +82,6 @@ export function ModelSettingsSkeleton() {
   )
 }
 
-// Kova' reasoning levels (VALID_REASONING_EFFORTS); `none` = thinking off.
-// Empty config = Kova default (medium), shown as Medium.
-const EFFORT_VALUES = ['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max', 'ultra'] as const
-
 // agent.service_tier stores "fast"/"priority"/"on" for fast; anything else is
 // normal (mirrors tui_gateway _load_service_tier).
 const isFastTier = (tier: unknown): boolean =>
@@ -93,9 +90,6 @@ const isFastTier = (tier: unknown): boolean =>
       .trim()
       .toLowerCase()
   )
-
-// Reuse the composer's effort labels.
-const effortLabelKey = (v: string) => v as 'high' | 'low' | 'max' | 'medium' | 'minimal' | 'ultra' | 'xhigh'
 
 // A provider row is "ready" to pick a model from when it reports models. The
 // backend now surfaces the full `kova model` universe (every canonical
@@ -203,8 +197,8 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
   const [newMoaPresetName, setNewMoaPresetName] = useState('')
   // agent.* defaults round-trip through the shared config cache (read → write
   // back the whole record), so a save here shows in the MCP/config surfaces.
-  const { data: config } = useKovaConfigRecord()
-  const setConfig = setKovaConfigCache
+  const { data: config } = useHermesConfigRecord()
+  const setConfig = setHermesConfigCache
   const [applying, setApplying] = useState(false)
   const [editingAuxTask, setEditingAuxTask] = useState<null | string>(null)
   const [auxDraft, setAuxDraft] = useState<{ model: string; provider: string }>({ model: '', provider: '' })
@@ -266,7 +260,7 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
 
       // The config record loads via its own shared query; a model switch can
       // change it server-side (aux slots), so nudge that cache to refetch.
-      void invalidateKovaConfig()
+      void invalidateHermesConfig()
     } catch (err) {
       if (profileEpoch.current === epoch) {
         setError(err instanceof Error ? err.message : String(err))
@@ -353,6 +347,7 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
   // setState updater) and hand it straight to the debounced autosave.
   const moaRef = useRef<MoaConfigResponse | null>(null)
 
+  // eslint-disable-next-line no-restricted-syntax -- legitimate non-atom ref write (see eslint rule comment)
   useEffect(() => {
     moaRef.current = moa
   }, [moa])
@@ -514,7 +509,7 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
     .trim()
     .toLowerCase()
 
-  const effortValue = rawEffort === 'false' || rawEffort === 'disabled' ? 'none' : rawEffort || 'medium'
+  const effortValue = rawEffort === 'false' || rawEffort === 'disabled' ? 'none' : rawEffort || DEFAULT_REASONING_EFFORT
 
   const fastOn = isFastTier(getNested(config ?? {}, 'agent.service_tier'))
 
@@ -531,7 +526,7 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
       setConfig(next)
 
       try {
-        await saveKovaConfig(next)
+        await saveHermesConfig(next)
       } catch (err) {
         setConfig(prev)
         notifyError(err, m.defaultsFailed)
@@ -624,7 +619,12 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
     setError('')
 
     try {
-      const result = await setModelAssignment({ model: selectedModel, provider: selectedProvider, scope: 'main' })
+      const result = await setModelAssignment({
+        model: selectedModel,
+        provider: selectedProvider,
+        scope: 'main',
+        ...(selectedProviderRow?.api_url ? { base_url: selectedProviderRow.api_url } : {})
+      })
 
       if (profileEpoch.current !== epoch) {
         return
@@ -641,7 +641,21 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
     } finally {
       setApplying(false)
     }
-  }, [onMainModelChanged, refresh, selectedModel, selectedProvider])
+  }, [onMainModelChanged, refresh, selectedModel, selectedProvider, selectedProviderRow])
+
+  // Sibling of the applyMainModel endpoint passthrough (#65254): auxiliary
+  // assignments targeting a user-defined provider must carry that provider's
+  // endpoint too, or the backend pins the slot without a base_url and the
+  // aux resolver falls back to the (possibly different, possibly cleared)
+  // main endpoint.
+  const endpointForProvider = useCallback(
+    (provider: string) => {
+      const row = providers.find(entry => entry.slug === provider)
+
+      return row?.api_url ? { base_url: row.api_url } : {}
+    },
+    [providers]
+  )
 
   const setAuxiliaryToMain = useCallback(
     async (task: string) => {
@@ -653,7 +667,13 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
       setError('')
 
       try {
-        await setModelAssignment({ model: mainModel.model, provider: mainModel.provider, scope: 'auxiliary', task })
+        await setModelAssignment({
+          model: mainModel.model,
+          provider: mainModel.provider,
+          scope: 'auxiliary',
+          task,
+          ...endpointForProvider(mainModel.provider)
+        })
         await refresh()
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err))
@@ -661,7 +681,7 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
         setApplying(false)
       }
     },
-    [mainModel, refresh]
+    [endpointForProvider, mainModel, refresh]
   )
 
   const applyAuxiliaryDraft = useCallback(
@@ -674,7 +694,13 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
       setError('')
 
       try {
-        await setModelAssignment({ model: auxDraft.model, provider: auxDraft.provider, scope: 'auxiliary', task })
+        await setModelAssignment({
+          model: auxDraft.model,
+          provider: auxDraft.provider,
+          scope: 'auxiliary',
+          task,
+          ...endpointForProvider(auxDraft.provider)
+        })
         setEditingAuxTask(null)
         await refresh()
       } catch (err) {
@@ -683,7 +709,7 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
         setApplying(false)
       }
     },
-    [auxDraft, refresh]
+    [auxDraft, endpointForProvider, refresh]
   )
 
   const beginAuxiliaryEdit = useCallback(
@@ -821,9 +847,9 @@ export function ModelSettings({ onMainModelChanged }: ModelSettingsProps) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {EFFORT_VALUES.map(value => (
+                    {REASONING_EFFORT_VALUES.map(value => (
                       <SelectItem key={value} value={value}>
-                        {value === 'none' ? m.reasoningOff : t.shell.modelOptions[effortLabelKey(value)]}
+                        {value === 'none' ? m.reasoningOff : t.shell.modelOptions[value]}
                       </SelectItem>
                     ))}
                   </SelectContent>

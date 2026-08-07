@@ -1,6 +1,6 @@
 """``kova plugins`` CLI subcommand — install, update, remove, and list plugins.
 
-Plugins are installed from Git repositories into ``~/.hermes/plugins/``.
+Plugins are installed from Git repositories into ``~/.kova/plugins/``.
 Supports full URLs and ``owner/repo`` shorthand (resolves to GitHub).
 
 After install, if the plugin ships an ``after-install.md`` file it is
@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 from kova_constants import get_kova_home
+from kova_cli._subprocess_compat import noninteractive_git_env
 from kova_cli.config import cfg_get
 from kova_cli.secret_prompt import masked_secret_prompt
 
@@ -97,7 +98,7 @@ def _sanitize_plugin_name(
     trailing slashes are stripped, and the resolved target must still live
     inside *plugins_dir*. Install paths leave this at the default ``False``
     because a freshly-cloned plugin always lands top-level under
-    ``~/.hermes/plugins/<name>/``.
+    ``~/.kova/plugins/<name>/``.
     """
     if not name:
         raise ValueError("Plugin name must not be empty.")
@@ -297,7 +298,7 @@ def _copy_example_files(plugin_dir: Path, console) -> None:
 
 
 def _missing_requires_env_names(manifest: dict) -> list[str]:
-    """Return declared ``requires_env`` names that are unset in ``~/.hermes/.env``."""
+    """Return declared ``requires_env`` names that are unset in ``~/.kova/.env``."""
     requires_env = manifest.get("requires_env") or []
     if not requires_env:
         return []
@@ -447,7 +448,7 @@ def _require_installed_plugin(name: str, plugins_dir: Path, console) -> Path:
 
 
 def _install_plugin_core(identifier: str, *, force: bool) -> tuple[Path, dict, str]:
-    """Clone Git plugin into ``~/.hermes/plugins``.
+    """Clone Git plugin into ``~/.kova/plugins``.
 
     Returns ``(target_dir, installed_manifest, canonical_name)``.
     Raises ``PluginOperationError`` on failure.
@@ -472,8 +473,10 @@ def _install_plugin_core(identifier: str, *, force: bool) -> tuple[Path, dict, s
             result = subprocess.run(
                 [git_exe, "clone", "--depth", "1", git_url, str(tmp_clone)],
                 capture_output=True,
-                text=True,
+                text=True, encoding='utf-8', errors='replace',
                 timeout=60,
+                stdin=subprocess.DEVNULL,
+                env=noninteractive_git_env(),
             )
         except FileNotFoundError as e:
             raise PluginOperationError(
@@ -659,6 +662,11 @@ def cmd_update(name: str) -> None:
     if not ok:
         console.print(f"[red]Error:[/red] {output}")
         sys.exit(1)
+
+    # Same stale-bytecode class as the main checkout (#6207/#60242): the
+    # pull just changed .py files under this plugin dir, so drop any
+    # __pycache__ compiled from the previous revision.
+    _clear_plugin_bytecode(target)
 
     # Copy any new .example files
     _copy_example_files(target, console)
@@ -1070,7 +1078,7 @@ def _discover_entrypoint_plugins() -> list[tuple[str, str, str, str]]:
     """Return plugin entries advertised through ``kova_agent.plugins``.
 
     Entry-point plugins are installed as Python packages, so they do not have a
-    plugin directory under ``~/.hermes/plugins``. Include package metadata here
+    plugin directory under ``~/.kova/plugins``. Include package metadata here
     so ``kova plugins list`` can show and enable them.
     """
     from kova_cli.plugins import ENTRY_POINTS_GROUP
@@ -1926,7 +1934,7 @@ def dashboard_set_agent_plugin_enabled(name: str, *, enabled: bool) -> dict[str,
 
 
 def _user_installed_plugin_dir(name: str) -> Optional[Path]:
-    """Resolved path under ``~/.hermes/plugins/<name>`` if it exists."""
+    """Resolved path under ``~/.kova/plugins/<name>`` if it exists."""
     plugins_dir = _plugins_dir()
     try:
         target = _sanitize_plugin_name(name, plugins_dir, allow_subdir=True)
@@ -1936,7 +1944,7 @@ def _user_installed_plugin_dir(name: str) -> Optional[Path]:
 
 
 def dashboard_update_user_plugin(name: str) -> dict[str, Any]:
-    """``git pull`` inside ``~/.hermes/plugins/<name>``."""
+    """``git pull`` inside ``~/.kova/plugins/<name>``."""
     target = _user_installed_plugin_dir(name)
     if target is None:
         return {
@@ -1954,11 +1962,39 @@ def dashboard_update_user_plugin(name: str) -> dict[str, Any]:
     if not ok:
         return {"ok": False, "error": msg}
 
+    # Sibling of the CLI ``kova plugins update`` path: drop bytecode
+    # compiled from the pre-pull plugin revision.
+    _clear_plugin_bytecode(target)
+
     from rich.console import Console
 
     _copy_example_files(target, Console())
     unchanged = "Already up to date" in msg
     return {"ok": True, "name": name, "output": msg, "unchanged": unchanged}
+
+
+def _clear_plugin_bytecode(target: Path) -> int:
+    """Remove ``__pycache__`` dirs under a just-updated plugin checkout.
+
+    Plugin dirs live outside the main repo, so the launch-time checkout
+    fingerprint sweep in ``kova_cli.main`` never covers them. After a
+    ``git pull`` changes a plugin's ``.py`` files, stale bytecode here can
+    produce the same ImportError class as #6207/#60242 in whichever
+    process imports the plugin next. Never raises.
+    """
+    removed = 0
+    try:
+        for cache_dir in target.rglob("__pycache__"):
+            if not cache_dir.is_dir():
+                continue
+            try:
+                shutil.rmtree(cache_dir)
+                removed += 1
+            except OSError:
+                pass
+    except OSError:
+        pass
+    return removed
 
 
 def _git_pull_plugin_dir(target: Path) -> tuple[bool, str]:
@@ -1969,9 +2005,11 @@ def _git_pull_plugin_dir(target: Path) -> tuple[bool, str]:
         result = subprocess.run(
             [git_exe, "pull", "--ff-only"],
             capture_output=True,
-            text=True,
+            text=True, encoding='utf-8', errors='replace',
             timeout=60,
             cwd=str(target),
+            stdin=subprocess.DEVNULL,
+            env=noninteractive_git_env(),
         )
     except FileNotFoundError:
         return False, "git is not installed or not in PATH."
@@ -1985,7 +2023,7 @@ def _git_pull_plugin_dir(target: Path) -> tuple[bool, str]:
 
 
 def dashboard_remove_user_plugin(name: str) -> dict[str, Any]:
-    """Delete a plugin tree under ``~/.hermes/plugins/`` only."""
+    """Delete a plugin tree under ``~/.kova/plugins/`` only."""
     plugins_dir = _plugins_dir()
     for n, _ver, _d, src, _path, _key in _discover_all_plugins():
         if n == name and src == "bundled":

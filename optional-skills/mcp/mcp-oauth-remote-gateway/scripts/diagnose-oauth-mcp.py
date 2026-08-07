@@ -31,12 +31,12 @@ UA = "python-httpx/0.27"  # CF blocks default urllib UA on many providers
 
 
 def _kova_home():
-    # Prefer Kova' own resolver (profile-safe); fall back to env then ~/.hermes.
+    # Prefer Kova' own resolver (profile-safe); fall back to env then ~/.kova.
     try:
         from kova_constants import get_kova_home
         return str(get_kova_home())
     except Exception:
-        return os.environ.get("HERMES_HOME") or os.path.expanduser("~/.hermes")
+        return os.environ.get("HERMES_HOME") or os.path.expanduser("~/.kova")
 
 
 def _tokens_dir():

@@ -10,7 +10,6 @@
   makeWrapper,
   callPackage,
   python312,
-  nodejs_22,
   electron,
   ripgrep,
   git,
@@ -39,27 +38,26 @@
   extraDependencyGroups ? [ ],
 }:
 let
-  nodejs = nodejs_22;
-  mkKovaVenv =
+  mkHermesVenv =
     extraDependencyGroups:
     callPackage ./python.nix {
       inherit uv2nix pyproject-nix pyproject-build-systems;
-      pythonSrc = kovaNpmLib.pythonSrc;
+      pythonSrc = hermesNpmLib.pythonSrc;
       dependency-groups = [ "all" ] ++ extraDependencyGroups;
     };
 
-  kovaVenv = (mkKovaVenv extraDependencyGroups).venv;
+  hermesVenv = (mkHermesVenv extraDependencyGroups).venv;
 
-  kovaNpmLib = callPackage ./lib.nix {
-    inherit npm-lockfile-fix nodejs;
+  hermesNpmLib = callPackage ./lib.nix {
+    inherit npm-lockfile-fix;
   };
 
-  kovaTui = callPackage ./tui.nix {
-    inherit kovaNpmLib;
+  hermesTui = callPackage ./tui.nix {
+    inherit hermesNpmLib;
   };
 
-  kovaWeb = callPackage ./web.nix {
-    inherit kovaNpmLib;
+  hermesWeb = callPackage ./web.nix {
+    inherit hermesNpmLib;
   };
 
   bundledSkills = lib.cleanSourceWith {
@@ -97,7 +95,7 @@ let
   };
 
   runtimeDeps = [
-    nodejs
+    hermesNpmLib.nodejs
     ripgrep
     git
     openssh
@@ -128,7 +126,7 @@ let
 
     # Collect core venv package names
     core = set()
-    venv_sp = pathlib.Path('${kovaVenv}/${sitePackagesPath}')
+    venv_sp = pathlib.Path('${hermesVenv}/${sitePackagesPath}')
     for di in venv_sp.glob('*.dist-info'):
         meta = di / 'METADATA'
         if meta.exists():
@@ -180,12 +178,12 @@ stdenv.mkDerivation (finalAttrs: {
     ln -s ${bundledPlugins} $out/share/kova-agent/plugins
     ln -s ${bundledLocales} $out/share/kova-agent/locales
     ln -s ${bundledOptionalMcps} $out/share/kova-agent/optional-mcps
-    ln -s ${kovaWeb} $out/share/kova-agent/web_dist
-    ln -s ${kovaTui}/lib/kova-tui $out/ui-tui
+    ln -s ${hermesWeb} $out/share/kova-agent/web_dist
+    ln -s ${hermesTui}/lib/kova-tui $out/ui-tui
 
     ${lib.concatMapStringsSep "\n"
       (name: ''
-        makeWrapper ${kovaVenv}/bin/${name} $out/bin/${name} \
+        makeWrapper ${hermesVenv}/bin/${name} $out/bin/${name} \
           --suffix PATH : "${runtimePath}" \
           --set KOVA_BUNDLED_SKILLS $out/share/kova-agent/skills \
           --set KOVA_OPTIONAL_SKILLS $out/share/kova-agent/optional-skills \
@@ -194,8 +192,8 @@ stdenv.mkDerivation (finalAttrs: {
           --set KOVA_OPTIONAL_MCPS $out/share/kova-agent/optional-mcps \
           --set KOVA_WEB_DIST $out/share/kova-agent/web_dist \
           --set KOVA_TUI_DIR $out/ui-tui \
-          --set KOVA_PYTHON ${kovaVenv}/bin/python3 \
-          --set KOVA_NODE ${lib.getExe nodejs}${
+          --set KOVA_PYTHON ${hermesVenv}/bin/python3 \
+          --set KOVA_NODE ${lib.getExe hermesNpmLib.nodejs}${
             # Fold the line continuation INTO the optionalString: a bare
             # `\` on the line above an empty expansion would dangle onto a
             # blank line, ending the makeWrapper command early and running
@@ -217,7 +215,7 @@ stdenv.mkDerivation (finalAttrs: {
 
     ${lib.optionalString (extraPythonPackages != [ ]) ''
       echo "=== Checking for plugin/core package collisions ==="
-      ${kovaVenv}/bin/python3 -c "${checkPackageCollisions}"
+      ${hermesVenv}/bin/python3 -c "${checkPackageCollisions}"
       echo "=== No collisions ==="
     ''}
 
@@ -226,26 +224,26 @@ stdenv.mkDerivation (finalAttrs: {
 
   passthru =
     let
-      devPython = (mkKovaVenv (extraDependencyGroups ++ [ "dev" ])).editableVenv;
+      devPython = (mkHermesVenv (extraDependencyGroups ++ [ "dev" ])).editableVenv;
     in
     {
       inherit
-        kovaTui
-        kovaWeb
-        kovaNpmLib
-        kovaVenv
+        hermesTui
+        hermesWeb
+        hermesNpmLib
+        hermesVenv
         ;
 
-      # `kovaDesktop` references `finalAttrs.finalPackage` (this whole
+      # `hermesDesktop` references `finalAttrs.finalPackage` (this whole
       # derivation, after all overrides are applied) so the desktop wrapper
       # can prepend its `/bin` to PATH.  The desktop's resolver step 4
       # ("existing kova on PATH") then picks up the fully wrapped
       # `kova` binary — venv with all deps, bundled skills/plugins,
       # runtime PATH (ripgrep/git/ffmpeg/etc).  No re-implementation
       # of the agent resolution in the desktop wrapper.
-      kovaDesktop = callPackage ./desktop.nix {
-        inherit kovaNpmLib electron;
-        kovaAgent = finalAttrs.finalPackage;
+      hermesDesktop = callPackage ./desktop.nix {
+        inherit hermesNpmLib electron;
+        hermesAgent = finalAttrs.finalPackage;
       };
 
       devShellHook = ''

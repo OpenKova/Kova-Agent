@@ -39,10 +39,14 @@ The Portal proxies a curated catalog of agentic models from across the ecosystem
 | **Tencent** | Hunyuan 3 Preview |
 | **Xiaomi** | MiMo V2.5 Pro |
 | **StepFun** | Step 3.5 Flash |
-| **Kova** | Hermes-4-70B, Hermes-4-405B (chat, see [note below](#a-note-on-hermes-4)) |
+| **Kova** | Kova-4-70B, Kova-4-405B (chat, see [note below](#a-note-on-kova-4)) |
 | **+ everything else** | 280+ additional models — the full agentic frontier |
 
-Routing happens through OpenRouter under the hood, so model availability and failover behavior matches what you'd get with an OpenRouter key — just billed against your Nous subscription instead. Switch between Claude Sonnet 4.6 for code and Gemini 3 Pro for long context with `/model` mid-session — no new credentials, no top-ups, no surprise zero-balance errors.
+Under the hood, the Portal routes each model to the backend best suited for it — some models go through OpenRouter, others through proprietary or secondary providers, and the routing for a given model can change over time. Everything is billed against your Nous subscription either way. Switch between Claude Sonnet 4.6 for code and Gemini 3 Pro for long context with `/model` mid-session — no new credentials, no top-ups, no surprise zero-balance errors.
+
+:::note
+Because routing is per-model and not always through OpenRouter, OpenRouter-specific request extensions (such as `provider` routing preferences, `session_id` sticky routing, or top-level `cache_control`) are not part of the Portal's API contract and may be ignored depending on which backend serves the model.
+:::
 
 ### The Nous Tool Gateway
 
@@ -62,7 +66,7 @@ You can also enable just specific gateway tools (e.g. web search but not image g
 
 ### No credentials in your dotfiles
 
-Because everything routes through one OAuth-authenticated Portal session, you don't accumulate a `.env` file with a dozen long-lived API keys. The refresh token at `~/.hermes/auth.json` is the only credential on disk, and Kova Agent mints short-lived JWTs from it per request — see [Token handling](#token-handling) below.
+Because everything routes through one OAuth-authenticated Portal session, you don't accumulate a `.env` file with a dozen long-lived API keys. The refresh token at `~/.kova/auth.json` is the only credential on disk, and Kova mints short-lived JWTs from it per request — see [Token handling](#token-handling) below.
 
 ### Cross-platform parity
 
@@ -70,7 +74,7 @@ Because everything routes through one OAuth-authenticated Portal session, you do
 
 ## A note on Kova 4
 
-Nous Research's own **Kova 4** family (Hermes-4-70B, Hermes-4-405B) is available through the Portal at heavily discounted rates. These are **frontier hybrid-reasoning chat models** — strong at math, science, instruction following, schema adherence, roleplay, and long-form writing.
+Nous Research's own **Kova 4** family (Kova-4-70B, Kova-4-405B) is available through the Portal at heavily discounted rates. These are **frontier hybrid-reasoning chat models** — strong at math, science, instruction following, schema adherence, roleplay, and long-form writing.
 
 They are **not recommended for use inside Kova Agent**, however. Kova 4 is tuned for chat and reasoning, not the rapid-fire tool-calling loop the agent relies on. Use them for research workflows or via the [subscription proxy](/user-guide/features/subscription-proxy) from other tooling — but for agent work, pick a frontier agentic model from the catalog instead:
 
@@ -94,9 +98,9 @@ kova setup --portal
 This runs the full setup in one shot:
 
 1. Opens your browser to portal.nousresearch.com for OAuth login
-2. Stores the refresh token at `~/.hermes/auth.json`
+2. Stores the refresh token at `~/.kova/auth.json`
 3. Lets you pick a Nous model from the curated list (or skip to keep your current one)
-4. Sets Nous as your inference provider in `~/.hermes/config.yaml` (when you pick a model)
+4. Sets Nous as your inference provider in `~/.kova/config.yaml` (when you pick a model)
 5. Turns on the Tool Gateway (web, image, TTS, browser routing)
 6. Returns you to your terminal ready to `kova chat`
 
@@ -104,7 +108,7 @@ If you don't have a subscription yet, sign up at [portal.nousresearch.com/manage
 
 ### Existing install — add Portal alongside other providers
 
-If you already have Kova Agent configured with OpenRouter, Anthropic, or any other provider and you want to add the Portal alongside them:
+If you already have Kova configured with OpenRouter, Anthropic, or any other provider and you want to add the Portal alongside them:
 
 ```bash
 kova model
@@ -116,7 +120,7 @@ Your existing providers stay configured. You can switch between them with `/mode
 
 ### Headless / SSH / remote setup
 
-OAuth needs a browser, but the loopback callback runs on the machine where Kova Agent is running. For remote hosts, see [OAuth over SSH / Remote Hosts](/guides/oauth-over-ssh) — the same patterns work for the Portal as for any other OAuth-based provider (`ssh -L` port forwarding).
+OAuth needs a browser, but the loopback callback runs on the machine where Kova is running. For remote hosts, see [OAuth over SSH / Remote Hosts](/guides/oauth-over-ssh) — the same patterns work for the Portal as for any other OAuth-based provider (`ssh -L` port forwarding).
 
 ### Profile setup
 
@@ -189,7 +193,7 @@ kova tools
 # → TTS              → "Nous Subscription"
 ```
 
-The Tool Gateway is opt-in per tool, not all-or-nothing. The managed backends show up in `kova tools` whether or not you're logged into Nous Portal — if you pick "Nous Subscription" before authenticating, Kova Agent runs the Portal login inline (it won't change your inference provider or touch your other tools). See the [Tool Gateway docs](/user-guide/features/tool-gateway) for the full per-tool configuration matrix.
+The Tool Gateway is opt-in per tool, not all-or-nothing. The managed backends show up in `kova tools` whether or not you're logged into Nous Portal — if you pick "Nous Subscription" before authenticating, Kova runs the Portal login inline (it won't change your inference provider or touch your other tools). See the [Tool Gateway docs](/user-guide/features/tool-gateway) for the full per-tool configuration matrix.
 
 ### Subscription management
 
@@ -200,7 +204,7 @@ Manage your plan, view usage, or upgrade/cancel at any time:
 
 ## Configuration reference
 
-After `kova setup --portal`, `~/.hermes/config.yaml` will look like:
+After `kova setup --portal`, `~/.kova/config.yaml` will look like:
 
 ```yaml
 model:
@@ -213,25 +217,28 @@ The Tool Gateway settings live under their respective tool sections:
 
 ```yaml
 web:
-  backend: nous       # web search/extract routes through Tool Gateway
+  backend: firecrawl
+  use_gateway: true   # web search/extract routes through Tool Gateway
 
 image_gen:
-  provider: nous
+  use_gateway: true
 
 tts:
-  provider: nous
+  provider: openai
+  use_gateway: true
 
 browser:
-  backend: nous
+  cloud_provider: browser-use
+  use_gateway: true
 ```
 
-The OAuth refresh token is stored separately at `~/.hermes/auth.json` (not in `config.yaml` — credentials and configuration are kept separate by design).
+The OAuth refresh token is stored separately at `~/.kova/auth.json` (not in `config.yaml` — credentials and configuration are kept separate by design).
 
 ## Token handling
 
-Kova Agent mints a short-lived JWT from your stored Portal refresh token on each inference call rather than reusing a long-lived API key. The token lifecycle is fully automatic — refresh, mint, retry on transient 401 — and you never see it.
+Kova mints a short-lived JWT from your stored Portal refresh token on each inference call rather than reusing a long-lived API key. The token lifecycle is fully automatic — refresh, mint, retry on transient 401 — and you never see it.
 
-If the Portal invalidates the refresh token (password change, manual revoke, session expiry), the invalid refresh token is **quarantined locally** so Kova Agent stops replaying it and you don't see a stream of identical 401s. The next call surfaces a clear "re-authentication required" message. Run `kova auth add nous` to log in again; the quarantine clears on the next successful login.
+If the Portal invalidates the refresh token (password change, manual revoke, session expiry), the invalid refresh token is **quarantined locally** so Kova stops replaying it and you don't see a stream of identical 401s. The next call surfaces a clear "re-authentication required" message. Run `kova auth add nous` to log in again; the quarantine clears on the next successful login.
 
 ## Troubleshooting
 
@@ -251,13 +258,13 @@ Your Portal refresh token was invalidated (password change, manual revoke, or se
 
 ### Want to use a specific provider model that the Portal doesn't expose
 
-The Portal proxies through OpenRouter, so any model that OpenRouter supports is generally available. If a specific model isn't appearing in `/model`, try the OpenRouter-style slug directly:
+The Portal routes each model to a suitable backend — some through OpenRouter, others through proprietary or secondary providers — so most models OpenRouter supports are generally available. If a specific model isn't appearing in `/model`, try the OpenRouter-style slug directly:
 
 ```bash
 /model anthropic/claude-opus-4.6
 ```
 
-If a model is genuinely missing, [open an issue](https://github.com/OpenKova/Kova-Agent/issues) — we surface the Portal's catalog to Kova Agent and gaps usually mean a routing config we can update.
+If a model is genuinely missing, [open an issue](https://github.com/OpenKova/Kova-Agent/issues) — we surface the Portal's catalog to Kova and gaps usually mean a routing config we can update.
 
 ### Bills not appearing on my Portal account
 

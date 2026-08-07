@@ -28,11 +28,18 @@ interface CreatedSession {
   stored_session_id: string
 }
 
+export interface RealSessionTurn {
+  /** Local image paths attached before the prompt, as the composer would. */
+  images?: readonly string[]
+  text: string
+}
+
 export interface RealSessionSpec {
-  /** Human-visible sidebar title, persisted by the first completed turn. */
+  /** Session label. The durable row stores no title, so clients fall back to
+   * the preview (the first 60 characters of the first user message). */
   title: string
   /** Each item becomes one real user prompt followed by the mock provider's reply. */
-  turns: readonly string[]
+  turns: readonly (RealSessionTurn | string)[]
 }
 
 export interface RealSession {
@@ -44,7 +51,7 @@ export interface RealSession {
 
 /**
  * Creates durable desktop session history through the real TUI gateway and
- * AIAgent loop, using the E2E mock provider configured in `kovaHome`.
+ * AIAgent loop, using the E2E mock provider configured in `hermesHome`.
  *
  * This intentionally uses the shipped stdio JSON-RPC transport instead of
  * importing SessionDB or launching Electron. The desktop's WebSocket backend
@@ -63,12 +70,12 @@ export class RealSessionBuilder {
   private readonly stderr: string[] = []
   private closed = false
 
-  private constructor(kovaHome: string) {
+  private constructor(hermesHome: string) {
     this.child = spawn('uv', ['run', '--active', '--no-sync', 'python', '-m', 'tui_gateway.entry'], {
       cwd: REPO_ROOT,
       env: {
         ...process.env,
-        HERMES_HOME: kovaHome,
+        HERMES_HOME: hermesHome,
         PYTHONPATH: REPO_ROOT,
       },
       stdio: 'pipe',
@@ -87,8 +94,8 @@ export class RealSessionBuilder {
     })
   }
 
-  static async start(kovaHome: string): Promise<RealSessionBuilder> {
-    const builder = new RealSessionBuilder(kovaHome)
+  static async start(hermesHome: string): Promise<RealSessionBuilder> {
+    const builder = new RealSessionBuilder(hermesHome)
     await builder.waitForEvent(frame => frame.params?.type === 'gateway.ready')
     return builder
   }
@@ -107,7 +114,13 @@ export class RealSessionBuilder {
     const runtimeId = requireString(created, 'session_id')
     const sessionId = requireString(created, 'stored_session_id')
 
-    for (const text of spec.turns) {
+    for (const turn of spec.turns) {
+      const { images = [], text } = typeof turn === 'string' ? { text: turn } : turn
+
+      for (const image of images) {
+        await this.request('image.attach', { session_id: runtimeId, path: image })
+      }
+
       const completion = this.waitForEvent(
         frame => frame.params?.type === 'message.complete' && frame.params.session_id === runtimeId,
       )

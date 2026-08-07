@@ -15,13 +15,14 @@
 
 import {
   JsonRpcGatewayClient,
-  buildKovaWebSocketUrl,
+  buildHermesWebSocketUrl,
   type ConnectionState,
   type GatewayEvent,
   type GatewayEventName,
 } from "@kova/shared";
 
 import { KOVA_BASE_PATH, buildWsAuthParam } from "@/lib/api";
+import { maybeReloadForLoopbackWsAuthFailure } from "@/lib/dashboard-auth-reload";
 
 export type { ConnectionState, GatewayEvent, GatewayEventName };
 
@@ -31,6 +32,7 @@ export class GatewayClient extends JsonRpcGatewayClient {
       closedErrorMessage: "WebSocket closed",
       connectErrorMessage: "WebSocket connection failed",
       notConnectedErrorMessage: "gateway not connected",
+      onSocketClose: (event) => maybeReloadForLoopbackWsAuthFailure(event.code),
       requestIdPrefix: "w",
     });
   }
@@ -51,7 +53,7 @@ export class GatewayClient extends JsonRpcGatewayClient {
     }
 
     await super.connect(
-      buildKovaWebSocketUrl({
+      buildHermesWebSocketUrl({
         authParam,
         basePath: KOVA_BASE_PATH,
         path: "/api/ws",

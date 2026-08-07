@@ -16,10 +16,10 @@ Kova 提供了一套插件系统，可在不修改核心代码的情况下添加
 
 ## 快速概览
 
-在 `~/.hermes/plugins/` 下放入一个目录，包含 `plugin.yaml` 和 Python 代码：
+在 `~/.kova/plugins/` 下放入一个目录，包含 `plugin.yaml` 和 Python 代码：
 
 ```
-~/.hermes/plugins/my-plugin/
+~/.kova/plugins/my-plugin/
 ├── plugin.yaml      # manifest（清单）
 ├── __init__.py      # register() — 将 schema 与处理器绑定
 ├── schemas.py       # tool schema（LLM 所见的内容）
@@ -32,7 +32,7 @@ Kova 提供了一套插件系统，可在不修改核心代码的情况下添加
 
 以下是一个完整插件，添加了一个 `hello_world` 工具，并通过 hook 记录每次工具调用。
 
-**`~/.hermes/plugins/hello-world/plugin.yaml`**
+**`~/.kova/plugins/hello-world/plugin.yaml`**
 
 ```yaml
 name: hello-world
@@ -40,7 +40,7 @@ version: "1.0"
 description: A minimal example plugin
 ```
 
-**`~/.hermes/plugins/hello-world/__init__.py`**
+**`~/.kova/plugins/hello-world/__init__.py`**
 
 ```python
 """Minimal Kova plugin — registers a tool and a hook."""
@@ -85,9 +85,9 @@ def register(ctx):
     ctx.register_hook("post_tool_call", on_tool_call)
 ```
 
-将两个文件放入 `~/.hermes/plugins/hello-world/`，重启 Kova，模型即可立即调用 `hello_world`。每次工具调用后，hook 会打印一行日志。
+将两个文件放入 `~/.kova/plugins/hello-world/`，重启 Kova，模型即可立即调用 `hello_world`。每次工具调用后，hook 会打印一行日志。
 
-`./.hermes/plugins/` 下的项目本地插件默认禁用。仅对可信仓库启用，方法是在启动 Kova 前设置 `KOVA_ENABLE_PROJECT_PLUGINS=true`。
+`./.kova/plugins/` 下的项目本地插件默认禁用。仅对可信仓库启用，方法是在启动 Kova 前设置 `KOVA_ENABLE_PROJECT_PLUGINS=true`。
 
 ## 插件能做什么
 
@@ -118,7 +118,7 @@ def register(ctx):
 | 来源 | 路径 | 使用场景 |
 |--------|------|----------|
 | 内置 | `<repo>/plugins/` | 随 Kova 附带 — 参见 [Built-in Plugins](/user-guide/features/built-in-plugins) |
-| 用户 | `~/.hermes/plugins/` | 个人插件 |
+| 用户 | `~/.kova/plugins/` | 个人插件 |
 | 项目 | `.kova/plugins/` | 项目专属插件（需要 `KOVA_ENABLE_PROJECT_PLUGINS=true`） |
 | pip | `kova_agent.plugins` entry_points | 分发包 |
 | Nix | `services.kova-agent.extraPlugins` / `extraPythonPackages` | NixOS 声明式安装 — 参见 [Nix Setup](/getting-started/nix-setup#plugins) |
@@ -138,13 +138,13 @@ def register(ctx):
 | `plugins/context_engine/<name>/` | 上下文压缩引擎（`ctx.register_context_engine()`） | **独立加载器**，位于 `plugins/context_engine/__init__.py`（同时只有一个激活） |
 | `plugins/model-providers/<name>/` | LLM provider profile（`register_provider(ProviderProfile(...))`） | **独立加载器**，位于 `providers/__init__.py`（首次调用 `get_provider_profile()` 时懒加载扫描） |
 
-`~/.hermes/plugins/model-providers/<name>/` 和 `~/.hermes/plugins/memory/<name>/` 下的用户插件会覆盖同名内置插件 — `register_provider()` / `register_memory_provider()` 中后写者胜出。放入一个目录即可替换内置实现，无需修改仓库。
+`~/.kova/plugins/model-providers/<name>/` 和 `~/.kova/plugins/memory/<name>/` 下的用户插件会覆盖同名内置插件 — `register_provider()` / `register_memory_provider()` 中后写者胜出。放入一个目录即可替换内置实现，无需修改仓库。
 
 子分类插件在 `kova plugins list` 和交互式 `kova plugins` UI 中以**路径派生的 key** 显示 — 例如 `observability/langfuse`、`image_gen/openai`、`platforms/teams`。该 key（而非 manifest 中的 `name:`）是传给 `kova plugins enable …` / `disable …` 的值，也是在 `config.yaml` 的 `plugins.enabled` 下填写的字符串。
 
 ## 插件默认关闭（少数例外）
 
-**通用插件和用户安装的后端默认禁用** — 发现系统会找到它们（因此它们会出现在 `kova plugins` 和 `/plugins` 中），但在你将插件名称添加到 `~/.hermes/config.yaml` 的 `plugins.enabled` 之前，任何带有 hook 或工具的内容都不会加载。这可防止第三方代码在未经明确同意的情况下运行。
+**通用插件和用户安装的后端默认禁用** — 发现系统会找到它们（因此它们会出现在 `kova plugins` 和 `/plugins` 中），但在你将插件名称添加到 `~/.kova/config.yaml` 的 `plugins.enabled` 之前，任何带有 hook 或工具的内容都不会加载。这可防止第三方代码在未经明确同意的情况下运行。
 
 ```yaml
 plugins:
@@ -177,13 +177,13 @@ kova plugins disable <name>     # 从允许列表移除并添加到禁用列表
 | **Context engine**（`plugins/context_engine/`） | 全部发现；同时只有一个激活，由 `config.yaml` 中的 `context.engine` 选择。 |
 | **Model provider**（`plugins/model-providers/`） | `plugins/model-providers/` 下的所有内置 provider 在首次调用 `get_provider_profile()` 时发现并注册。用户通过 `--provider` 或 `config.yaml` 一次选择一个。 |
 | **pip 安装的 `backend` 插件** | 通过 `plugins.enabled` 选择加入（与通用插件相同）。 |
-| **用户安装的平台**（位于 `~/.hermes/plugins/platforms/`） | 通过 `plugins.enabled` 选择加入 — 第三方 gateway 适配器需要明确同意。 |
+| **用户安装的平台**（位于 `~/.kova/plugins/platforms/`） | 通过 `plugins.enabled` 选择加入 — 第三方 gateway 适配器需要明确同意。 |
 
-简而言之：**内置的"始终可用"基础设施自动加载；第三方通用插件需选择加入。** `plugins.enabled` 允许列表专门用于控制用户放入 `~/.hermes/plugins/` 的任意代码。
+简而言之：**内置的"始终可用"基础设施自动加载；第三方通用插件需选择加入。** `plugins.enabled` 允许列表专门用于控制用户放入 `~/.kova/plugins/` 的任意代码。
 
 ### 现有用户的迁移
 
-当你升级到支持选择加入插件的 Kova 版本（config schema v21+）时，已安装在 `~/.hermes/plugins/` 下且不在 `plugins.disabled` 中的用户插件会**自动纳入** `plugins.enabled`。你的现有配置继续正常工作。内置独立插件**不会**自动纳入 — 即使是现有用户也需要明确选择加入。（内置平台/后端插件从未需要纳入，因为它们从未被控制。）
+当你升级到支持选择加入插件的 Kova 版本（config schema v21+）时，已安装在 `~/.kova/plugins/` 下且不在 `plugins.disabled` 中的用户插件会**自动纳入** `plugins.enabled`。你的现有配置继续正常工作。内置独立插件**不会**自动纳入 — 即使是现有用户也需要明确选择加入。（内置平台/后端插件从未需要纳入，因为它们从未被控制。）
 
 ## 可用 hook
 
@@ -208,7 +208,7 @@ Kova 有四种插件：
 
 | 类型 | 作用 | 选择方式 | 位置 |
 |------|-------------|-----------|----------|
-| **通用插件** | 添加工具、hook、斜杠命令、CLI 命令 | 多选（启用/禁用） | `~/.hermes/plugins/` |
+| **通用插件** | 添加工具、hook、斜杠命令、CLI 命令 | 多选（启用/禁用） | `~/.kova/plugins/` |
 | **Memory provider** | 替换或增强内置 memory | 单选（同时只有一个激活） | `plugins/memory/` |
 | **Context engine** | 替换内置上下文压缩器 | 单选（同时只有一个激活） | `plugins/context_engine/` |
 | **Model provider** | 声明推理后端（OpenRouter、Anthropic 等） | 多注册，通过 `--provider` / `config.yaml` 选择 | `plugins/model-providers/` |
@@ -236,7 +236,7 @@ Memory provider 和 context engine 是 **provider 插件** — 每种类型同�
 | **STT 后端**（自定义 whisper 二进制、本地 ASR CLI） | 配置驱动 — 将 `KOVA_LOCAL_STT_COMMAND` 环境变量设置为 shell 模板 | [Voice Message Transcription (STT)](/user-guide/features/tts#voice-message-transcription-stt) |
 | **通过 MCP 使用外部工具**（文件系统、GitHub、Linear、Notion、任意 MCP 服务器） | 配置驱动 — 在 `config.yaml` 中以 `command:` / `url:` 声明 `mcp_servers.<name>`。Kova 自动发现服务器的工具并与内置工具一同注册。 | [MCP](/user-guide/features/mcp) |
 | **额外 skill 来源**（自定义 GitHub 仓库、私有 skill 索引） | CLI — `kova skills tap add <repo>` | [Skills Hub](/user-guide/features/skills#skills-hub) · [发布自定义 tap](/user-guide/features/skills#publishing-a-custom-skill-tap) |
-| **Gateway 事件 hook**（在 `gateway:startup`、`session:start`、`agent:end`、`command:*` 时触发） | 将 `HOOK.yaml` + `handler.py` 放入 `~/.hermes/hooks/<name>/` | [Event Hooks](/user-guide/features/hooks#gateway-event-hooks) |
+| **Gateway 事件 hook**（在 `gateway:startup`、`session:start`、`agent:end`、`command:*` 时触发） | 将 `HOOK.yaml` + `handler.py` 放入 `~/.kova/hooks/<name>/` | [Event Hooks](/user-guide/features/hooks#gateway-event-hooks) |
 | **Shell hook**（在事件时运行 shell 命令 — 通知、审计日志、桌面提醒） | 配置驱动 — 在 `config.yaml` 的 `hooks:` 下声明 | [Shell Hooks](/user-guide/features/hooks#shell-hooks) |
 
 :::note

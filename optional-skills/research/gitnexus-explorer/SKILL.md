@@ -8,7 +8,7 @@ platforms: [linux, macos, windows]
 metadata:
   kova:
     tags: [gitnexus, code-intelligence, knowledge-graph, visualization]
-    related_skills: [native-mcp, codebase-inspection]
+    related_skills: [kova-agent, codebase-inspection]
 ---
 
 # GitNexus Explorer

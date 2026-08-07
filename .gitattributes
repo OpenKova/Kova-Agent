@@ -8,10 +8,3 @@ web/package-lock.json linguist-generated=true
 Dockerfile  text eol=lf
 *.dockerfile text eol=lf
 docker/entrypoint.sh text eol=lf
-
-# s6-overlay service descriptors and cont-init scripts run inside the
-# container — CRLF makes s6-rc-compile reject the `type` file and breaks
-# `exec` on the scripts.
-docker/s6-rc.d/** text eol=lf
-docker/cont-init.d/** text eol=lf
-docker/SOUL.md text eol=lf

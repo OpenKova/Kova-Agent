@@ -82,7 +82,7 @@ def resolve_kova_bin() -> Optional[str]:
 
     Priority:
       1. ``sys.argv[0]`` if it resolves to a real executable.
-      2. ``shutil.which("kova") or shutil.which("kova")`` on PATH.
+      2. ``shutil.which("kova")`` on PATH.
       3. ``None`` → caller should fall back to ``python -m kova_cli.main``.
 
     Windows note: ``os.access(path, os.X_OK)`` returns True for ``.py`` and
@@ -114,7 +114,7 @@ def resolve_kova_bin() -> Optional[str]:
                 return abs_path
 
     # PATH lookup
-    path_bin = shutil.which("kova") or shutil.which("kova")
+    path_bin = shutil.which("kova")
     if path_bin:
         return path_bin
 
@@ -195,7 +195,7 @@ def relaunch(
             # cryptic.  Common causes: ``kova`` not on PATH yet (install
             # hasn't propagated User PATH into this shell) or a stale shim.
             print(
-                f"\nKova relaunch failed: {exc}\n"
+                f"\nHermes relaunch failed: {exc}\n"
                 f"Command: {' '.join(new_argv)}\n"
                 f"Fix: open a new terminal so PATH picks up, then re-run kova.",
                 file=sys.stderr,

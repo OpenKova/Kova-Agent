@@ -3,13 +3,13 @@
 // self-accept so this module's own reload doesn't reset the cache. Prod strips
 // import.meta.hot → byte-for-byte unchanged live unmount.
 
-import type { KovaConnection } from '@/global'
-import type { KovaGateway } from '@/kova'
+import type { HermesConnection } from '@/global'
+import type { HermesGateway } from '@/kova'
 
 export interface GatewaySurvivor {
-  gateway: KovaGateway
+  gateway: HermesGateway
   profile: string
-  connection: KovaConnection | null
+  connection: HermesConnection | null
 }
 
 // One slot on globalThis, keyed by a process-stable Symbol so repeated imports

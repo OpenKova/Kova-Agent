@@ -26,7 +26,6 @@ from typing import Any, Optional
 
 from kova_cli import kanban_db as kb
 from kova_cli import kanban_swarm as ks
-from kova_cli.profiles import get_active_profile_name
 
 
 # ---------------------------------------------------------------------------
@@ -134,7 +133,9 @@ def _parse_branch_flag(value: Optional[str]) -> Optional[str]:
     return branch
 
 
-def _check_dispatcher_presence() -> tuple[bool, str]:
+def _check_dispatcher_presence(
+    kova_home: Optional[Path] = None,
+) -> tuple[bool, str]:
     """Return ``(running, message)``.
 
     - ``running=True``: a gateway is alive for this HERMES_HOME and its
@@ -149,15 +150,35 @@ def _check_dispatcher_presence() -> tuple[bool, str]:
     Defensive against import failures and config-read errors — if the
     probe itself errors, we return ``(True, "")`` so we don't spam
     false warnings (better to miss a warning than to cry wolf).
+
+    ``kova_home`` scopes the probe to a named profile's directory. The
+    dashboard plugin API passes it because the dashboard backend process can
+    be running under a different HERMES_HOME than the profile the request
+    targets, which otherwise produced a "no gateway is running" warning
+    against a perfectly healthy profile gateway (#71211). CLI callers leave
+    it ``None`` and keep the existing process-level behavior.
     """
     try:
-        from gateway.status import get_running_pid  # type: ignore
+        from gateway.status import resolve_gateway_liveness  # type: ignore
     except Exception:
         return (True, "")  # can't probe — silent
     try:
-        pid = get_running_pid()
+        # Same shared ladder the dashboard status endpoints use, so a
+        # PID-file-less (launch-service-managed) or cross-container gateway
+        # is not misreported as absent. use_cache=False: this is a one-shot
+        # CLI/create-time probe, not a polling loop, and it must observe the
+        # gateway's state right now rather than a cached snapshot.
+        liveness = resolve_gateway_liveness(
+            profile_dir=kova_home, use_cache=False
+        )
     except Exception:
         return (True, "")  # probe errored — silent
+    if liveness.probe_error:
+        # The resolver swallows per-rung failures so status endpoints never
+        # 500. This caller must still fail OPEN: an unreadable probe means
+        # "can't tell", not "no gateway", and warning on it cries wolf.
+        return (True, "")
+    pid = liveness.pid
 
     # Even if the gateway is up, dispatch_in_gateway may be off.
     try:
@@ -749,6 +770,7 @@ def build_parser(parent_subparsers: argparse._SubParsersAction) -> argparse.Argu
     p_nsub.add_argument("task_id")
     p_nsub.add_argument("--platform", required=True)
     p_nsub.add_argument("--chat-id", required=True)
+    p_nsub.add_argument("--chat-type", default="", help="dm / group / channel (used by wake routing)")
     p_nsub.add_argument("--thread-id", default=None)
     p_nsub.add_argument("--user-id", default=None)
     p_nsub.add_argument(
@@ -815,7 +837,7 @@ def build_parser(parent_subparsers: argparse._SubParsersAction) -> argparse.Argu
     p_asg = sub.add_parser(
         "assignees",
         help="List known profiles + per-profile task counts "
-             "(union of ~/.hermes/profiles/ and current assignees on the board)",
+             "(union of ~/.kova/profiles/ and current assignees on the board)",
     )
     p_asg.add_argument("--json", action="store_true")
 
@@ -1402,7 +1424,7 @@ def _cmd_init(args: argparse.Namespace) -> int:
         for name in profiles:
             print(f"  {name}")
     else:
-        print("No profiles found under ~/.hermes/profiles/.")
+        print("No profiles found under ~/.kova/profiles/.")
         print("Create one with `kova -p <name> setup` before assigning tasks.")
     print()
     print("Next step: start the gateway so ready tasks actually get picked up.")
@@ -2736,6 +2758,7 @@ def _cmd_notify_subscribe(args: argparse.Namespace) -> int:
         kb.add_notify_sub(
             conn, task_id=args.task_id,
             platform=args.platform, chat_id=args.chat_id,
+            chat_type=args.chat_type,
             thread_id=args.thread_id, user_id=args.user_id,
             notifier_profile=args.notifier_profile or _profile_author(),
         )

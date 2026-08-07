@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 # Maps ACP permission option ids to Kova approval result strings.
 # Option ids are stable across both the ``allow_permanent=True`` and
 # ``allow_permanent=False`` paths even though the option list differs.
-_OPTION_ID_TO_KOVA = {
+_OPTION_ID_TO_HERMES = {
     "allow_once": "once",
     "allow_session": "session",
     "allow_always": "always",
@@ -95,7 +95,7 @@ def _build_permission_tool_call(command: str, description: str):
     )
 
 
-def _map_outcome_to_kova(outcome: object, *, allowed_option_ids: set[str]) -> str:
+def _map_outcome_to_hermes(outcome: object, *, allowed_option_ids: set[str]) -> str:
     """Map an ACP permission outcome into Kova approval strings."""
     if not isinstance(outcome, AllowedOutcome):
         return "deny"
@@ -104,7 +104,7 @@ def _map_outcome_to_kova(outcome: object, *, allowed_option_ids: set[str]) -> st
     if option_id not in allowed_option_ids:
         logger.warning("Permission request returned unknown option_id: %s", option_id)
         return "deny"
-    return _OPTION_ID_TO_KOVA.get(option_id, "deny")
+    return _OPTION_ID_TO_HERMES.get(option_id, "deny")
 
 
 def make_approval_callback(
@@ -158,16 +158,23 @@ def make_approval_callback(
 
         try:
             response = future.result(timeout=timeout)
-        except (FutureTimeout, Exception) as exc:
+        except FutureTimeout:
             future.cancel()
-            logger.warning("Permission request timed out or failed: %s", exc)
+            logger.warning("Permission request timed out after %ss", timeout)
+            # Distinct from an explicit deny: the client never answered.
+            # tools.approval callers report this as "timed out without user
+            # response" instead of a user denial.
+            return "timeout"
+        except Exception as exc:
+            future.cancel()
+            logger.warning("Permission request failed: %s", exc)
             return "deny"
 
         if response is None:
             return "deny"
 
         allowed_option_ids = {option.option_id for option in options}
-        return _map_outcome_to_kova(
+        return _map_outcome_to_hermes(
             response.outcome,
             allowed_option_ids=allowed_option_ids,
         )

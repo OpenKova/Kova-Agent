@@ -37,15 +37,15 @@ async function resolveImageSrc(path: string): Promise<string> {
     return path
   }
 
-  if (window.kovaDesktop && isRemoteGateway()) {
+  if (window.hermesDesktop && isRemoteGateway()) {
     return gatewayMediaDataUrl(path)
   }
 
-  if (!window.kovaDesktop?.readFileDataUrl) {
+  if (!window.hermesDesktop?.readFileDataUrl) {
     return mediaExternalUrl(path)
   }
 
-  return window.kovaDesktop.readFileDataUrl(filePathFromMediaPath(path))
+  return window.hermesDesktop.readFileDataUrl(filePathFromMediaPath(path))
 }
 
 export const GeneratedImage: FC<{ aspectRatio?: string; result?: unknown }> = ({ aspectRatio, result }) => {
@@ -96,11 +96,11 @@ export const GeneratedImage: FC<{ aspectRatio?: string; result?: unknown }> = ({
   if (failed && image) {
     return (
       <a
-        className="mt-2 inline-block font-semibold text-foreground underline underline-offset-4 decoration-current/20 wrap-anywhere"
+        className="mt-2 ref inline-block wrap-anywhere"
         href="#"
         onClick={event => {
           event.preventDefault()
-          void window.kovaDesktop?.openExternal(mediaExternalUrl(image))
+          void window.hermesDesktop?.openExternal(mediaExternalUrl(image))
         }}
       >
         {copy.openImage}: {mediaName(image)}

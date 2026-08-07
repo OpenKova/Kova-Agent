@@ -21,7 +21,7 @@ describe('Kova REST parity helpers (hub / mcp / maintenance)', () => {
 
   beforeEach(() => {
     api = vi.fn().mockResolvedValue({})
-    Object.defineProperty(window, 'kovaDesktop', {
+    Object.defineProperty(window, 'hermesDesktop', {
       configurable: true,
       value: { api }
     })
@@ -29,7 +29,7 @@ describe('Kova REST parity helpers (hub / mcp / maintenance)', () => {
 
   afterEach(() => {
     vi.restoreAllMocks()
-    Reflect.deleteProperty(window, 'kovaDesktop')
+    Reflect.deleteProperty(window, 'hermesDesktop')
   })
 
   it('loads hub sources with a network-tolerant timeout', async () => {

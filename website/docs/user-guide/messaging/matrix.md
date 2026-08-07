@@ -255,7 +255,7 @@ Select **Matrix** when prompted, then provide your homeserver URL, access token 
 
 ### Option B: Manual Configuration
 
-Add the following to your `~/.hermes/.env` file:
+Add the following to your `~/.kova/.env` file:
 
 **Using an access token:**
 
@@ -328,7 +328,7 @@ Treat federated rooms and untrusted homeservers as untrusted input: keep room
 allowlists tight, prefer DMs or private rooms for tool-heavy work, and avoid
 authorizing bridge ghosts or appservice puppets as allowed users.
 
-Optional behavior settings in `~/.hermes/config.yaml`:
+Optional behavior settings in `~/.kova/config.yaml`:
 
 ```yaml
 group_sessions_per_user: true
@@ -363,7 +363,7 @@ E2EE requires the `mautrix` library with encryption extras and the `libolm` C li
 pip install 'mautrix[encryption]'
 
 # Or install with kova extras
-cd ~/.hermes/kova-agent && uv pip install -e ".[matrix]"
+cd ~/.kova/kova-agent && uv pip install -e ".[matrix]"
 ```
 
 You also need `libolm` installed on your system:
@@ -381,7 +381,7 @@ sudo dnf install libolm-devel
 
 ### Enable E2EE
 
-Add to your `~/.hermes/.env`:
+Add to your `~/.kova/.env`:
 
 ```bash
 MATRIX_E2EE_MODE=required
@@ -401,7 +401,7 @@ For backwards compatibility, `MATRIX_ENCRYPTION=true` still enables required E2E
 
 When E2EE is enabled, Kova:
 
-- Stores encryption keys in `~/.hermes/platforms/matrix/store/` (legacy installs: `~/.hermes/matrix/store/`)
+- Stores encryption keys in `~/.kova/platforms/matrix/store/` (legacy installs: `~/.kova/matrix/store/`)
 - Uploads device keys on first connection
 - Decrypts incoming messages and encrypts outgoing messages automatically
 - Auto-joins encrypted rooms when invited
@@ -418,11 +418,7 @@ In Matrix conversations, Kova exposes Matrix-specific tools to the agent:
 - `matrix_set_presence`
 
 These tools are scoped to Matrix contexts and are not available in non-Matrix toolsets. Admin-style tools are disabled by default: redaction requires `MATRIX_TOOLS_ALLOW_REDACTION=true`, invites require `MATRIX_TOOLS_ALLOW_INVITES=true`, and room creation requires `MATRIX_TOOLS_ALLOW_ROOM_CREATE=true`. Public room creation also requires `MATRIX_ALLOW_PUBLIC_ROOMS=true`.
-Matrix tools are limited to the current Matrix room by default. Explicit
-cross-room targets require `MATRIX_TOOLS_ALLOW_CROSS_ROOM=true`; redaction and
-invite-like cross-room actions additionally require
-`MATRIX_TOOLS_ALLOW_CROSS_ROOM_DESTRUCTIVE=true`. If `MATRIX_ALLOWED_ROOMS` is
-set, Matrix tools may only target those rooms.
+If `MATRIX_ALLOWED_ROOMS` is set, Matrix tools may only target those rooms.
 
 Reaction controls use:
 
@@ -447,24 +443,6 @@ Inbound media must use Matrix `mxc://` content URIs. Kova rejects arbitrary
 HTTP(S) media URLs in Matrix events to avoid turning a federated room into an
 unrestricted downloader.
 
-## Synapse Integration Tests
-
-Kova includes an opt-in Synapse harness for local validation:
-
-```bash
-docker compose -f tests/e2e/matrix_synapse_gateway/docker-compose.yml up -d
-KOVA_MATRIX_SYNAPSE_INTEGRATION=1 \
-  scripts/run_tests.sh -m "integration and matrix_synapse" \
-  tests/e2e/matrix_synapse_gateway/test_gateway.py
-docker compose -f tests/e2e/matrix_synapse_gateway/docker-compose.yml down -v
-```
-
-The harness creates temporary users through Synapse shared-secret registration
-and covers private-room send/receive, named-room invite/join, media
-upload/download, bot response delivery, and startup old-event filtering. E2EE
-smoke coverage is separately marked with `matrix_e2ee` so it can stay opt-in on
-developer machines.
-
 ### Cross-Signing Verification (Recommended)
 
 If your Matrix account has cross-signing enabled (the default in Element), set the recovery key so the bot can self-sign its device on startup. Without this, other Matrix clients may refuse to share encryption sessions with the bot after a device key rotation.
@@ -483,7 +461,7 @@ startup to write a generated key once with file mode `0600`; the file is not
 overwritten if it already exists.
 
 :::warning[Deleting the crypto store]
-If you delete `~/.hermes/platforms/matrix/store/crypto.db`, the bot loses its encryption identity. Simply restarting with the same device ID will **not** fully recover — the homeserver still holds one-time keys signed with the old identity key, and peers cannot establish new Olm sessions.
+If you delete `~/.kova/platforms/matrix/store/crypto.db`, the bot loses its encryption identity. Simply restarting with the same device ID will **not** fully recover — the homeserver still holds one-time keys signed with the old identity key, and peers cannot establish new Olm sessions.
 
 Kova detects this condition on startup and refuses to enable E2EE, logging: `device XXXX has stale one-time keys on the server signed with a previous identity key`.
 
@@ -511,7 +489,7 @@ Kova detects this condition on startup and refuses to enable E2EE, logging: `dev
 
 2. Delete the local crypto store and restart Kova:
    ```bash
-   rm -f ~/.hermes/platforms/matrix/store/crypto.db*
+   rm -f ~/.kova/platforms/matrix/store/crypto.db*
    # restart kova
    ```
 
@@ -533,7 +511,7 @@ If your Matrix client intercepts slash commands, type `!sethome` instead.
 
 ### Manual Configuration
 
-Add this to your `~/.hermes/.env`:
+Add this to your `~/.kova/.env`:
 
 ```bash
 MATRIX_HOME_ROOM=!abc123def456:matrix.example.org
@@ -645,7 +623,7 @@ pip install 'mautrix[encryption]'
 Or with Kova extras:
 
 ```bash
-cd ~/.hermes/kova-agent && uv pip install -e ".[matrix]"
+cd ~/.kova/kova-agent && uv pip install -e ".[matrix]"
 ```
 
 ### Encryption errors / "could not decrypt event"
@@ -694,16 +672,16 @@ changed identity keys for the same device as suspicious.
      }'
    ```
 
-   Copy the new `access_token` and update `MATRIX_ACCESS_TOKEN` in `~/.hermes/.env`.
+   Copy the new `access_token` and update `MATRIX_ACCESS_TOKEN` in `~/.kova/.env`.
 
 2. **Delete old encryption state**:
 
    ```bash
-   rm -f ~/.hermes/platforms/matrix/store/crypto.db
-   rm -f ~/.hermes/platforms/matrix/store/crypto_store.*
+   rm -f ~/.kova/platforms/matrix/store/crypto.db
+   rm -f ~/.kova/platforms/matrix/store/crypto_store.*
    ```
 
-3. **Set your recovery key** (if you use cross-signing — most Element users do). Add to `~/.hermes/.env`:
+3. **Set your recovery key** (if you use cross-signing — most Element users do). Add to `~/.kova/.env`:
 
    ```bash
    MATRIX_RECOVERY_KEY=EsT... your recovery key here
@@ -769,7 +747,7 @@ The Docker container only handles Matrix protocol + E2EE. When a message arrives
 
 Enable the API server so the host accepts incoming requests from the Docker container.
 
-Add to `~/.hermes/.env`:
+Add to `~/.kova/.env`:
 
 ```bash
 API_SERVER_ENABLED=true
@@ -816,7 +794,7 @@ services:
       GATEWAY_PROXY_URL: "http://192.168.1.100:8642"
       GATEWAY_PROXY_KEY: "your-secret-key-here"
     volumes:
-      - ./matrix-store:/root/.hermes/platforms/matrix/store
+      - ./matrix-store:/root/.kova/platforms/matrix/store
 ```
 
 **`Dockerfile`:**
@@ -825,7 +803,7 @@ services:
 FROM python:3.11-slim
 
 RUN apt-get update && apt-get install -y libolm-dev && rm -rf /var/lib/apt/lists/*
-RUN cd ~/.hermes/kova-agent && uv pip install -e ".[matrix]"
+RUN cd ~/.kova/kova-agent && uv pip install -e ".[matrix]"
 
 CMD ["kova", "gateway"]
 ```
@@ -908,7 +886,7 @@ the first sync and check logs for `sync event dispatch error`.
 
 **Cause**: Your User ID isn't in `MATRIX_ALLOWED_USERS`.
 
-**Fix**: Add your User ID to `MATRIX_ALLOWED_USERS` in `~/.hermes/.env` and restart the gateway. Use the full `@user:server` format.
+**Fix**: Add your User ID to `MATRIX_ALLOWED_USERS` in `~/.kova/.env` and restart the gateway. Use the full `@user:server` format.
 
 ### Bot ignores an entire room
 

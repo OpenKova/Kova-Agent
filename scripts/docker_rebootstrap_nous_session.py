@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Boot-time re-seed of a terminally-dead Kova bootstrap session.
+"""Boot-time re-seed of a terminally-dead Nous bootstrap session.
 
 Background
 ----------
-A Kova bootstrap session (client_id ``kova-cli-vps``) can take a terminal
+A Nous bootstrap session (client_id ``kova-cli-vps``) can take a terminal
 ``invalid_grant`` and be quarantined locally — the refresh path clears the dead
 tokens from ``auth.json`` and stamps
 ``providers.nous.last_auth_error.relogin_required = true``. From then on every
@@ -212,10 +212,10 @@ def main() -> int:
         return 0
 
     if result == "reseeded":
-        print("[rebootstrap] Kova bootstrap session was terminal; re-seeded auth.json from "
+        print("[rebootstrap] Nous bootstrap session was terminal; re-seeded auth.json from "
               f"{REBOOTSTRAP_ENV}")
     elif result == "reseeded_newer":
-        print("[rebootstrap] Applied newer orchestrator-issued Kova bootstrap session from "
+        print("[rebootstrap] Applied newer orchestrator-issued Nous bootstrap session from "
               f"{REBOOTSTRAP_ENV}")
     else:
         # Quiet by default for the common no-op cases; still emit a breadcrumb.

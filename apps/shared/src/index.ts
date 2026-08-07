@@ -13,6 +13,7 @@ export type {
   BillingErrorPayload,
   BillingMonthlyCap,
   BillingMutationResponse,
+  BillingPaymentMethod,
   BillingRefusalCode,
   BillingStateResponse,
   ChargeFailureReason,
@@ -43,8 +44,9 @@ export {
   JsonRpcGatewayClient,
   type WebSocketLike
 } from './json-rpc-gateway'
+export { skillInvocationText } from './skill-scaffold'
 export {
-  type KovaSkin,
+  type HermesSkin,
   SKIN_BRANDING_TOKENS,
   SKIN_COLOR_TOKENS,
   type SkinBranding,
@@ -53,12 +55,12 @@ export {
   type SkinColorToken
 } from './skin'
 export {
-  buildKovaWebSocketUrl,
+  buildHermesWebSocketUrl,
   type GatewayAuthMode,
   GatewayReauthRequiredError,
   type GatewayWsConnection,
   type GatewayWsUrlResult,
-  type KovaWebSocketUrlOptions,
+  type HermesWebSocketUrlOptions,
   isGatewayReauthRequired,
   resolveGatewayWsUrl,
   type ResolveGatewayWsUrlDeps,

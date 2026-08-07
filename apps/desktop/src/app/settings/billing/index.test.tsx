@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
@@ -64,7 +64,7 @@ function renderBilling(initialEntries: string[] = ['/settings?tab=billing']) {
 beforeEach(() => {
   apiMocks.fetchBillingState.mockResolvedValue(okBilling(todayBillingState))
   apiMocks.fetchSubscriptionState.mockResolvedValue(okSubscription(todaySubscriptionState))
-  Object.defineProperty(window, 'kovaDesktop', {
+  Object.defineProperty(window, 'hermesDesktop', {
     configurable: true,
     value: {
       openExternal: apiMocks.openExternal
@@ -86,7 +86,7 @@ describe('BillingSettings', () => {
     expect(screen.getByText('Visa •••• 3206')).toBeTruthy()
     expect(
       screen.getByText(
-        "Remote spending is off for this account — a billing admin can turn it on from the portal's Kova Agent page.",
+        "Remote spending is off for this account — a billing admin can turn it on from the portal's Kova Agent page."
       )
     ).toBeTruthy()
     expect(screen.queryByRole('button', { name: '$100' })).toBeNull()

@@ -5,11 +5,11 @@ For occasional contributors and PR authors. Full developer docs: https://kova-ag
 ### Project Layout
 
 ```
-kova-agent/            # on-disk install dir (git checkout of OpenKova/Kova-Agent)
+kova-agent/
 ├── run_agent.py          # AIAgent — core conversation loop
 ├── model_tools.py        # Tool discovery and dispatch
 ├── toolsets.py           # Toolset definitions
-├── cli.py                # Interactive CLI (KovaCLI)
+├── cli.py                # Interactive CLI (HermesCLI)
 ├── kova_state.py       # SQLite session store
 ├── agent/                # Prompt builder, context compression, memory, model routing, credential pooling, skill dispatch
 ├── kova_cli/           # CLI subcommands, config, setup, commands
@@ -25,7 +25,7 @@ kova-agent/            # on-disk install dir (git checkout of OpenKova/Kova-Agen
 └── website/              # Docusaurus docs site
 ```
 
-Config: `~/.hermes/config.yaml` (settings), `~/.hermes/.env` (API keys) — both under `$HERMES_HOME` when it is set.
+Config: `~/.kova/config.yaml` (settings), `~/.kova/.env` (API keys) — both under `$HERMES_HOME` when it is set.
 
 ### Adding a Tool
 
@@ -59,8 +59,8 @@ registry.register(
 `_KOVA_CORE_TOOLS` (every platform) or to a specific toolset.
 
 All handlers must return JSON strings. Use `get_kova_home()` for paths,
-never hardcode `~/.hermes`. For custom/local-only tools, write a plugin in
-`~/.hermes/plugins/` instead of editing core — see the developer docs.
+never hardcode `~/.kova`. For custom/local-only tools, write a plugin in
+`~/.kova/plugins/` instead of editing core — see the developer docs.
 
 ### Adding a Slash Command
 
@@ -84,8 +84,9 @@ run_conversation():
 
 ### Testing
 
-Use the canonical runner — it enforces CI-parity (hermetic env, unset
-credentials, TZ=UTC, xdist workers, per-test subprocess isolation):
+Use the canonical runner — it enforces CI-parity (hermetic `env -i`, unset
+credentials, TZ=UTC, per-file subprocess isolation via
+`scripts/run_tests_parallel.py` — no xdist, worker count auto-scaled):
 
 ```bash
 scripts/run_tests.sh                          # full suite
@@ -94,7 +95,7 @@ scripts/run_tests.sh tests/tools/test_x.py    # one file
 scripts/run_tests.sh -v --tb=long             # pass-through pytest flags
 ```
 
-- Tests auto-redirect `HERMES_HOME` to temp dirs — never touch real `~/.hermes/`.
+- Tests auto-redirect `HERMES_HOME` to temp dirs — never touch real `~/.kova/`.
 - The script probes `.venv`, then `venv`, then the shared worktree venv.
 - **Windows:** the wrapper is POSIX-only; see `references/windows-quirks.md`
   for the direct-pytest workaround.
@@ -102,7 +103,7 @@ scripts/run_tests.sh -v --tb=long             # pass-through pytest flags
 **Cross-platform test guards:** tests using POSIX-only syscalls need a skip marker. Common ones already in the codebase:
 - Symlink creation → `@pytest.mark.skipif(sys.platform == "win32", reason="Symlinks require elevated privileges on Windows")` (see `tests/cron/test_cron_script.py`)
 - POSIX file modes (0o600, etc.) → `@pytest.mark.skipif(sys.platform.startswith("win"), reason="POSIX mode bits not enforced on Windows")` (see `tests/kova_cli/test_auth_toctou_file_modes.py`)
-- `signal.SIGALRM` → Unix-only (see `tests/conftest.py::_enforce_test_timeout`)
+- `signal.SIGALRM` → Unix-only (per-test timeouts no longer use it directly; see the win32 timeout-method shim in `tests/conftest.py::pytest_configure`)
 - Live Winsock / Windows-specific regression tests → `@pytest.mark.skipif(sys.platform != "win32", reason="Windows-specific regression")`
 
 **Monkeypatching `sys.platform` is not enough** when the code under test also calls `platform.system()` / `platform.release()` / `platform.mac_ver()`. Those functions re-read the real OS independently, so a test that sets `sys.platform = "linux"` on a Windows runner will still see `platform.system() == "Windows"` and route through the Windows branch. Patch all three together:

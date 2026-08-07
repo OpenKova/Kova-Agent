@@ -1,6 +1,6 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
-import { getKovaConfigRecord, type KovaConfigRecord, saveKovaConfig } from '@/kova'
+import { getHermesConfigRecord, type HermesConfigRecord, saveHermesConfig } from '@/kova'
 
 import { TRANSLATIONS } from './catalog'
 import { DEFAULT_LOCALE, localeConfigValue, normalizeLocale } from './languages'
@@ -10,24 +10,24 @@ import type { Locale, Translations } from './types'
 export { LOCALE_META } from './languages'
 
 export interface I18nConfigClient {
-  getConfig: () => Promise<KovaConfigRecord>
-  saveConfig: (config: KovaConfigRecord) => Promise<{ ok: boolean }>
+  getConfig: () => Promise<HermesConfigRecord>
+  saveConfig: (config: HermesConfigRecord) => Promise<{ ok: boolean }>
 }
 
 const defaultConfigClient: I18nConfigClient = {
   getConfig: () => {
-    if (typeof window === 'undefined' || !window.kovaDesktop?.api) {
+    if (typeof window === 'undefined' || !window.hermesDesktop?.api) {
       return Promise.resolve({})
     }
 
-    return getKovaConfigRecord()
+    return getHermesConfigRecord()
   },
   saveConfig: config => {
-    if (typeof window === 'undefined' || !window.kovaDesktop?.api) {
+    if (typeof window === 'undefined' || !window.hermesDesktop?.api) {
       return Promise.resolve({ ok: true })
     }
 
-    return saveKovaConfig(config)
+    return saveHermesConfig(config)
   }
 }
 
@@ -35,11 +35,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-export function getConfigDisplayLanguage(config: KovaConfigRecord): unknown {
+export function getConfigDisplayLanguage(config: HermesConfigRecord): unknown {
   return isRecord(config.display) ? config.display.language : undefined
 }
 
-export function withConfigDisplayLanguage(config: KovaConfigRecord, locale: Locale): KovaConfigRecord {
+export function withConfigDisplayLanguage(config: HermesConfigRecord, locale: Locale): HermesConfigRecord {
   const display = isRecord(config.display) ? config.display : {}
 
   return {
@@ -53,6 +53,17 @@ export function withConfigDisplayLanguage(config: KovaConfigRecord, locale: Loca
 
 function toError(error: unknown): Error {
   return error instanceof Error ? error : new Error(String(error))
+}
+
+const RTL_LOCALES = new Set<Locale>(['ar'])
+
+function applyDocumentLocale(locale: Locale) {
+  if (typeof document === 'undefined') {
+    return
+  }
+
+  document.documentElement.lang = locale
+  document.documentElement.dir = RTL_LOCALES.has(locale) ? 'rtl' : 'ltr'
 }
 
 export interface I18nContextValue {
@@ -89,9 +100,11 @@ export function I18nProvider({ children, configClient = defaultConfigClient, ini
   const [saveError, setSaveError] = useState<Error | null>(null)
   const localeRef = useRef(locale)
 
+  // eslint-disable-next-line no-restricted-syntax -- legitimate non-atom ref write (see eslint rule comment)
   useEffect(() => {
     localeRef.current = locale
     setRuntimeI18nLocale(locale)
+    applyDocumentLocale(locale)
   }, [locale])
 
   useEffect(() => {

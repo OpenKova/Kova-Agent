@@ -69,7 +69,7 @@ TIPS = [
     "kova chat -t web,terminal enables only specific toolsets for a focused session.",
     "kova chat -s github-pr-workflow preloads a skill at launch.",
     "kova chat -q \"query\" runs a single non-interactive query and exits.",
-    "kova chat --max-turns 200 overrides the default 90-iteration limit per turn.",
+    "kova chat --max-turns 1000 overrides the default 500-iteration limit per turn.",
     "kova chat --checkpoints enables filesystem snapshots before every destructive file change.",
     "kova --yolo bypasses all dangerous command approval prompts for the entire session.",
     "kova chat --source telegram tags the session for filtering in kova sessions list.",
@@ -112,7 +112,7 @@ TIPS = [
     "Set display.busy_input_mode: queue to queue messages instead of interrupting the agent, or steer to inject them mid-run via /steer.",
     "Set display.resume_display: minimal to skip the full conversation recap on session resume.",
     "Set compression.threshold: 0.50 to control when auto-compression fires (default: 50% of context).",
-    "Set agent.max_turns: 200 to let the agent take more tool-calling steps per turn.",
+    "Set agent.max_turns: 1000 to let the agent take more tool-calling steps per turn.",
     "Set file_read_max_chars: 200000 to increase the max content per read_file call.",
     "Set approvals.mode: smart to let an LLM auto-approve safe commands and auto-deny dangerous ones.",
     "Set fallback_model in config.yaml to automatically fail over to a backup provider.",
@@ -209,14 +209,14 @@ TIPS = [
     "SSRF protection blocks private networks, loopback, link-local, and cloud metadata addresses.",
     "Tirith pre-exec scanning detects homograph URL spoofing and pipe-to-interpreter patterns.",
     "MCP subprocesses receive a filtered environment — only safe system vars pass through.",
-    "Context files (.hermes.md, AGENTS.md) are security-scanned for prompt injection before loading.",
+    "Context files (.kova.md, AGENTS.md) are security-scanned for prompt injection before loading.",
     "command_allowlist in config.yaml permanently approves specific shell command patterns.",
 
     # --- Context & Compression ---
     "Context auto-compresses when it reaches the threshold — memories are flushed and history summarized.",
     "The status bar turns yellow, then orange, then red as context fills up.",
     "SOUL.md is the agent's primary identity file — customize it to shape behavior.",
-    "Kova loads project context from .hermes.md, AGENTS.md, CLAUDE.md, or .cursorrules (first match).",
+    "Kova loads project context from .kova.md, AGENTS.md, CLAUDE.md, or .cursorrules (first match).",
     "Subdirectory AGENTS.md files are discovered progressively as the agent navigates into folders.",
     "Context files are capped at 20,000 characters with smart head/tail truncation.",
 
@@ -239,7 +239,7 @@ TIPS = [
     "Checkpoints have zero overhead when no files are modified — enabled by default.",
     "A pre-rollback snapshot is saved automatically so you can undo the undo.",
     "/rollback also undoes the conversation turn, so the agent doesn't remember rolled-back changes.",
-    "Checkpoints use shadow repos in ~/.hermes/checkpoints/ — your project's .git is never touched.",
+    "Checkpoints use shadow repos in ~/.kova/checkpoints/ — your project's .git is never touched.",
 
     # --- Batch & Data ---
     "batch_runner.py processes hundreds of prompts in parallel for training data generation.",
@@ -270,7 +270,7 @@ TIPS = [
 
     # --- Hidden Gems & Power-User Tricks ---
     "Cron jobs can attach a Python script (--script) whose stdout is injected into the prompt as context.",
-    "Cron scripts live in ~/.hermes/scripts/ and run before the agent — perfect for data collection pipelines.",
+    "Cron scripts live in ~/.kova/scripts/ and run before the agent — perfect for data collection pipelines.",
     "prefill_messages_file in config.yaml injects few-shot examples into every API call, never saved to history.",
     "SOUL.md completely replaces the agent's default identity — rewrite it to make Kova your own.",
     "SOUL.md is auto-seeded with a default personality on first run. Edit it to customize.",
@@ -292,17 +292,17 @@ TIPS = [
     "Delegation has a heartbeat thread — child activity propagates to the parent, preventing gateway timeouts.",
     "When a provider returns HTTP 402 (payment required), the auxiliary client auto-falls back to the next one.",
     "agent.tool_use_enforcement steers models that describe actions instead of calling tools — auto for GPT/Codex.",
-    "agent.restart_drain_timeout (default 60s) lets running agents finish before a gateway restart takes effect.",
+    "agent.restart_after_turn_timeout lets in-flight turns finish before /restart enters stop(); restart_drain_timeout is only the force-interrupt budget once stop() begins.",
     "agent.api_max_retries (default 3) controls how many times the agent retries a failed API call before surfacing the error — lower it for fast fallback.",
     "The gateway caches AIAgent instances per session — destroying this cache breaks Anthropic prompt caching.",
     "Any website can expose skills via /.well-known/skills/index.json — the skills hub discovers them automatically.",
-    "The skills audit log at ~/.hermes/skills/.hub/audit.log tracks every install and removal operation.",
+    "The skills audit log at ~/.kova/skills/.hub/audit.log tracks every install and removal operation.",
     "Stale git worktrees are auto-cleaned on startup: clean, fully-merged trees get pruned; dirty or unpushed work is always preserved.",
     "Profiles scope Kova state via HERMES_HOME; host tool subprocesses keep your real HOME unless terminal.home_mode is profile.",
     "HERMES_HOME_MODE env var (octal, e.g. 0701) sets custom directory permissions for web server traversal.",
     "Container mode: place .container-mode in HERMES_HOME and the host CLI auto-execs into the container.",
     "Ctrl+C has 5 priority tiers: cancel recording → cancel prompts → cancel picker → interrupt agent → exit.",
-    "Every interrupt during an agent run is logged to ~/.hermes/interrupt_debug.log with timestamps.",
+    "Every interrupt during an agent run is logged to ~/.kova/interrupt_debug.log with timestamps.",
     "BROWSER_CDP_URL connects browser tools to any running Chromium-family browser — accepts WebSocket, HTTP, or host:port.",
     "BROWSERBASE_ADVANCED_STEALTH=true enables advanced anti-detection with custom Chromium (Scale Plan).",
     "The CLI auto-switches to compact mode in terminals narrower than 80 columns.",
@@ -334,9 +334,9 @@ TIPS = [
     "In interrupt mode, slash commands typed during agent execution bypass interrupt logic and run immediately.",
     "KOVA_DEV=1 bypasses container mode detection for local development.",
     "Each MCP server gets its own toolset (mcp-servername) that can be toggled independently via kova tools.",
-    "MCP ${ENV_VAR} placeholders in config are resolved at server spawn — including vars from ~/.hermes/.env.",
+    "MCP ${ENV_VAR} placeholders in config are resolved at server spawn — including vars from ~/.kova/.env.",
     "Skills from trusted repos (NousResearch) get a 'trusted' security level; community skills get extra scanning.",
-    "The skills quarantine at ~/.hermes/skills/.hub/quarantine/ holds skills pending security review.",
+    "The skills quarantine at ~/.kova/skills/.hub/quarantine/ holds skills pending security review.",
 
     # --- Advanced Slash Commands ---
     '/steer <prompt> injects a note after the next tool call — nudge direction mid-task without interrupting.',
@@ -351,7 +351,7 @@ TIPS = [
     '/approve session|always runs a pending dangerous command with your chosen trust scope; /deny rejects it.',
     '/restart gracefully restarts the gateway after draining active runs, then pings the requester when back up.',
     '/kanban boards switch <slug> changes the active multi-project Kanban board from inside chat.',
-    '/reload reloads ~/.hermes/.env into the running session — pick up new API keys without restarting.',
+    '/reload reloads ~/.kova/.env into the running session — pick up new API keys without restarting.',
 
     # --- Cron (no-agent & scripts) ---
     'cronjob with no_agent=True runs a script on schedule and sends its stdout directly — zero tokens, zero LLM.',
@@ -359,9 +359,9 @@ TIPS = [
     "KOVA_CRON_MAX_PARALLEL (default 4) caps how many cron jobs run per tick so bursts don't saturate your keys.",
 
     # --- Gateway Hooks ---
-    'Gateway hooks live under ~/.hermes/hooks/<name>/ with HOOK.yaml + handler.py — handler must be named `handle`.',
+    'Gateway hooks live under ~/.kova/hooks/<name>/ with HOOK.yaml + handler.py — handler must be named `handle`.',
     'Hook events include gateway:startup, session:start, agent:step, and command:* wildcard subscriptions.',
-    'Drop a ~/.hermes/BOOT.md checklist and a gateway:startup hook runs it as a one-shot agent every boot.',
+    'Drop a ~/.kova/BOOT.md checklist and a gateway:startup hook runs it as a one-shot agent every boot.',
 
     # --- Curator ---
     'kova curator run --dry-run previews what the curator would archive or consolidate without mutating anything.',
@@ -382,8 +382,8 @@ TIPS = [
     'The TUI renders LaTeX inline — $E=mc^2$ becomes Unicode math instead of raw TeX.',
     'kova dashboard launches a local web UI at 127.0.0.1:9119 — zero data leaves localhost.',
     'kova dashboard embeds the full Kova TUI in your browser via xterm.js and a WebSocket PTY.',
-    'Drop a YAML in ~/.hermes/dashboard-themes/ with two palette colors to reskin the entire dashboard.',
-    'Dashboard plugins are drop-in: manifest.json + JS bundle in ~/.hermes/dashboard-plugins/ — no npm build required.',
+    'Drop a YAML in ~/.kova/dashboard-themes/ with two palette colors to reskin the entire dashboard.',
+    'Dashboard plugins are drop-in: manifest.json + JS bundle in ~/.kova/dashboard-plugins/ — no npm build required.',
     'layoutVariant: cockpit in a dashboard theme adds a 260px left rail that plugins can populate via the sidebar slot.',
 
     # --- Env Vars & Config Gates ---
@@ -396,7 +396,7 @@ TIPS = [
     'Checkpoints skip directories with more than 50,000 files to avoid slow git operations on massive monorepos.',
 
     # --- TTS ---
-    'tts.provider: piper runs 44-language local TTS on CPU — voices auto-download to ~/.hermes/cache/piper-voices/.',
+    'tts.provider: piper runs 44-language local TTS on CPU — voices auto-download to ~/.kova/cache/piper-voices/.',
     'tts.providers.<name>.type: command wires any CLI TTS engine with {input_path} and {output_path} placeholders.',
 
     # --- API Server & Proxy ---
@@ -421,7 +421,7 @@ TIPS = [
     '/commands paginates the full slash-command + installed-skill list — useful on platforms without tab completion.',
     '/toolsets lists every available toolset so you know what -t/--toolsets accepts.',
     '/voice tts toggles TTS-only mode — agent replies out loud but you still type your prompts.',
-    '/reload-skills re-scans ~/.hermes/skills/ so drop-in skills appear without restarting the session.',
+    '/reload-skills re-scans ~/.kova/skills/ so drop-in skills appear without restarting the session.',
     '/indicator kaomoji|emoji|unicode|ascii picks the TUI busy-indicator style shown during agent runs.',
     '/debug uploads a support bundle (system info + logs) and returns shareable links — works in chat too.',
 
@@ -441,7 +441,7 @@ TIPS = [
 
     # --- Agent Behavior Env Vars ---
     'KOVA_AGENT_TIMEOUT=0 disables the gateway inactivity kill for a running agent — use for long research runs.',
-    'KOVA_ENABLE_PROJECT_PLUGINS=1 auto-loads repo-local plugins from ./.hermes/plugins/ — trust-gated by design.',
+    'KOVA_ENABLE_PROJECT_PLUGINS=1 auto-loads repo-local plugins from ./.kova/plugins/ — trust-gated by design.',
     "KOVA_DISABLE_FILE_STATE_GUARD=1 turns off the 'file changed since you read it' guard on patch and write_file.",
     'KOVA_ALLOW_PRIVATE_URLS=true lets web tools hit localhost and private networks — off by default in gateway mode.',
     'KOVA_OPTIONAL_SKILLS=name1,name2 auto-installs extra optional-catalog skills on first run per profile.',
@@ -471,7 +471,7 @@ TIPS = [
 
     # --- Misc ---
     'API_SERVER_MODEL_NAME customizes the model name on /v1/models — essential for multi-profile Open WebUI setups.',
-    'Dashboard plugins are served from /dashboard-plugins/<name>/ — drop files into ~/.hermes/dashboard-plugins/.',
+    'Dashboard plugins are served from /dashboard-plugins/<name>/ — drop files into ~/.kova/dashboard-plugins/.',
 ]
 
 

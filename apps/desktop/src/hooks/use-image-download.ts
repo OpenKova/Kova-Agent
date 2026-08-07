@@ -54,8 +54,8 @@ export function useImageDownload(src?: string) {
     setSaving(true)
 
     try {
-      if (window.kovaDesktop?.saveImageFromUrl) {
-        if (await window.kovaDesktop.saveImageFromUrl(src)) {
+      if (window.hermesDesktop?.saveImageFromUrl) {
+        if (await window.hermesDesktop.saveImageFromUrl(src)) {
           notify({ kind: 'success', title: copy.imageSaved, message: imageFilename(src) })
         }
 

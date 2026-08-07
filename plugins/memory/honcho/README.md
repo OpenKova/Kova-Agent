@@ -17,15 +17,17 @@ kova memory setup honcho   # configure Honcho directly (works on a fresh install
 kova memory setup          # generic picker, choose Honcho from the list
 ```
 
-For cloud, the wizard asks **OAuth or API key**. OAuth opens a browser
-sign-in and stores the grant itself — nothing to copy; tokens refresh
-automatically. The desktop app offers the same flow as a **Connect** link
-next to the memory-provider dropdown.
+For cloud, the wizard asks **OAuth, device code, or API key**. OAuth opens a
+browser sign-in and stores the grant itself — nothing to copy; tokens refresh
+automatically. On SSH/headless machines choose **device**: the CLI prints a
+short code and a link you open in a browser on any other machine; setup
+completes once you approve there. The desktop app offers the browser flow as
+a **Connect** link next to the memory-provider dropdown.
 
 Or manually:
 ```bash
 kova config set memory.provider honcho
-echo "HONCHO_API_KEY=***" >> ~/.hermes/.env
+echo "HONCHO_API_KEY=***" >> ~/.kova/.env
 ```
 
 > `kova honcho setup` also works, but only **after** Honcho is the active
@@ -140,10 +142,10 @@ Config is read from the first file that exists:
 | Priority | Path | Scope |
 |----------|------|-------|
 | 1 | `$HERMES_HOME/honcho.json` | Profile-local (isolated Kova instances) |
-| 2 | `~/.hermes/honcho.json` | Default profile (shared host blocks) |
+| 2 | `~/.kova/honcho.json` | Default profile (shared host blocks) |
 | 3 | `~/.honcho/config.json` | Global (cross-app interop) |
 
-Host key is derived from the active Kova profile: `kova` (default) or `hermes_<profile>`.
+Host key is derived from the active Kova profile: `kova` (default) or `kova_<profile>`.
 
 For every key, resolution order is: **host block > root > env var > default**.
 
@@ -274,7 +276,7 @@ Multiple Kova profiles can share one workspace while maintaining separate AI ide
 
 Both profiles see the same user (`yourname`) in the same shared environment (`kova`), but each AI peer builds its own observations, conclusions, and behavior patterns. The coder's memory stays code-oriented; the main agent's stays broad.
 
-Host key is derived from the active Kova profile: `kova` (default) or `hermes_<profile>` (e.g. `kova -p coder` -> host key `kova_coder`). Older `kova.<profile>` host blocks are still read for compatibility and are migrated when the CLI writes profile-scoped Honcho config.
+Host key is derived from the active Kova profile: `kova` (default) or `kova_<profile>` (e.g. `kova -p coder` -> host key `kova_coder`). Older `kova.<profile>` host blocks are still read for compatibility and are migrated when the CLI writes profile-scoped Honcho config.
 
 ### Dialectic & Reasoning
 
@@ -347,6 +349,7 @@ Presets:
 | `HONCHO_OAUTH_DASHBOARD` | OAuth authorize origin (default: cloud dashboard; local-dev `localhost:3000`) |
 | `HONCHO_OAUTH_AUTHORIZE_URL` | Full authorize URL (overrides the dashboard origin) |
 | `HONCHO_OAUTH_TOKEN_URL` | Token endpoint (default: cloud API; local-dev `localhost:8000`) |
+| `HONCHO_OAUTH_DEVICE_AUTH_URL` | Device-authorization endpoint (default: derived from the token URL) |
 | `HONCHO_OAUTH_CLIENT_ID` | OAuth client (default `kova-agent`) |
 | `HONCHO_OAUTH_SCOPE` | Requested scope (default `write`) |
 

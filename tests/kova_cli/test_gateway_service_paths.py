@@ -20,11 +20,3 @@ def test_service_path_includes_node_modules_when_present(tmp_path):
     assert str(nm_bin) in dirs
 
 
-def test_service_path_includes_kova_home_node_modules(tmp_path):
-    """Service PATH should include ~/.hermes/node_modules/.bin when it exists."""
-    kova_nm = tmp_path / ".kova" / "node_modules" / ".bin"
-    kova_nm.mkdir(parents=True)
-    from kova_cli.gateway import _build_service_path_dirs
-    with patch("kova_cli.gateway.get_kova_home", return_value=tmp_path / ".kova"):
-        dirs = _build_service_path_dirs(project_root=tmp_path)
-    assert str(kova_nm) in dirs

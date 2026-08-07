@@ -12,7 +12,7 @@ entries, keybinds, themes — registers into one central registry. Core register
 its surfaces exactly the way a plugin does, so the plugin story is the real one,
 not a bolted-on afterthought.
 
-A **desktop plugin** is a single ESM file that default-exports a `KovaPlugin`.
+A **desktop plugin** is a single ESM file that default-exports a `HermesPlugin`.
 It imports one module — `@kova/plugin-sdk` — and gets everything: the app's
 live state, the gateway JSON-RPC door, a scoped REST/socket backend namespace,
 React Query, and the app's own UI kit so plugin UI looks native by default. No
@@ -24,7 +24,7 @@ and hot-reloads every save.
 "Plugin" means several unrelated things across Kova. This page is the **native
 desktop app** (`kova desktop`) SDK — the `@kova/plugin-sdk` module and
 `$HERMES_HOME/desktop-plugins/`. The **web dashboard** (`kova dashboard`) has
-its own, unrelated plugin system on `window.__KOVA_PLUGIN_SDK__` with a
+its own, unrelated plugin system on `window.__HERMES_PLUGIN_SDK__` with a
 `manifest.json` — documented at
 [Extending the Dashboard](/user-guide/features/extending-the-dashboard). Python
 CLI/gateway plugins are documented at [Build a Kova Plugin](/developer-guide/plugins).
@@ -56,7 +56,7 @@ plugin, and fail to resolve in a disk plugin). Capability comes in tiers:
 | **Disk** (recommended) | `$HERMES_HOME/desktop-plugins/<id>/plugin.js` | users, agents | none — plain ESM, loaded uncompiled |
 | **Bundled** | `apps/desktop/src/plugins/<id>/plugin.tsx` | in-tree, shipped with the app | the app's own Vite build |
 
-Both take the same `KovaPlugin` contract, appear in **Settings → Plugins**, and
+Both take the same `HermesPlugin` contract, appear in **Settings → Plugins**, and
 enable/disable live. Everything on this page is written against the disk door
 (what you and the agent write); [Bundled plugins](#bundled-plugins) notes the two
 differences. No desktop plugins ship in the core tree today — reference demos
@@ -66,12 +66,12 @@ repo.
 
 ## Quick start — your first plugin
 
-Create `$HERMES_HOME/desktop-plugins/hello/plugin.js` (that's `~/.hermes/...`
-by default, or `~/.hermes/profiles/<name>/...` under a named profile). The folder
+Create `$HERMES_HOME/desktop-plugins/hello/plugin.js` (that's `~/.kova/...`
+by default, or `~/.kova/profiles/<name>/...` under a named profile). The folder
 name must equal the plugin `id`.
 
 ```javascript
-// ~/.hermes/desktop-plugins/hello/plugin.js
+// ~/.kova/desktop-plugins/hello/plugin.js
 import { host, haptic, useValue } from '@kova/plugin-sdk'
 import { jsx, jsxs } from 'react/jsx-runtime'
 
@@ -134,10 +134,10 @@ The only importable specifiers are `@kova/plugin-sdk`, `react`, and
 
 ## The plugin contract
 
-A plugin default-exports a `KovaPlugin`:
+A plugin default-exports a `HermesPlugin`:
 
 ```ts
-interface KovaPlugin {
+interface HermesPlugin {
   /** Stable slug — becomes the `plugin:<id>` source and the id namespace. */
   id: string
   /** Human name for Settings / about UI. Defaults to `id`. */
@@ -168,6 +168,8 @@ interface PluginContext {
   rest: <T>(path: string, opts?: PluginRestOptions) => Promise<T>
   /** Live WebSocket to this plugin's own namespace. Returns a disposer. */
   socket: (path: string, onMessage: (data: unknown) => void) => () => void
+  /** The curated OS door: native notification, open-external, reveal-in-file-manager, clipboard. */
+  os: PluginOs
   /** Plugin-scoped JSON persistence (keys live under `kova.plugin.<id>.`). */
   storage: PluginStorage
 }
@@ -370,6 +372,10 @@ host.state.viewport         // ReadableAtom<{ width, height, narrow }>
 
 host.notify({ kind, message, title?, detail?, action? })  // toast; returns id
 host.notifyError(error, fallbackMessage)                   // toast an error
+ctx.os.notify({ title, body?, silent? })   // native OS notification (attributed to your plugin)
+ctx.os.openExternal(url)                   // OS default handler (browser, mail, spotify:) → Promise<boolean>
+ctx.os.revealPath(path)                    // reveal in Finder / Explorer → Promise<boolean>
+ctx.os.writeClipboard(text)                // system clipboard → Promise<boolean>
 host.navigate('/route')                    // hash-route navigation
 host.onEvent(type, fn)                     // gateway event stream ('*' = all); returns disposer
 host.logs(...)                             // tail an app log file
@@ -384,6 +390,18 @@ session lifecycle, tool activity). Listeners are isolated — a throw in your
 listener can't affect app dispatch. Every `host` door is async-safe: a sync throw
 from an internal helper (e.g. no desktop bridge in a plain browser) becomes a
 rejection your `.catch()` sees, never an error-boundary crash.
+
+`ctx.os` is the curated OS door — every way a plugin reaches outside the app
+window, in one namespace attributed to your plugin. `ctx.os.notify` posts a
+**native OS notification** — the same Electron pipeline the app's own
+approval/turn alerts use. It fires only while the user is away from Kova
+(backgrounded / unfocused); use `host.notify` for the in-app toast when
+they're looking at the app. Users can silence it per device under Settings ▸
+Notifications ▸ "Plugin notifications", and repeats from the same plugin are
+throttled, so treat it as a signal for genuinely notable events — not a log.
+The other doors (`openExternal`, `revealPath`, `writeClipboard`) resolve
+`false` instead of throwing when the capability isn't available (older desktop
+shell, plain browser) — branch on the result rather than sniffing the bridge.
 
 ## Data layer — React Query + nanostores
 
@@ -453,7 +471,7 @@ Desktop plugins reuse the dashboard plugin backend mount. Put the backend in a
 `manifest.json`:
 
 ```
-~/.hermes/plugins/<id>/
+~/.kova/plugins/<id>/
 └── dashboard/
     ├── manifest.json      # { "name": "<id>", "api": "plugin_api.py" }
     └── plugin_api.py      # exports `router = APIRouter()`
@@ -484,7 +502,7 @@ for the full backend reference — the mount is identical.
 Enabling a plugin in the desktop **Settings → Plugins** panel is a renderer-side
 choice; it does **not** import Python. A user plugin's `plugin_api.py` is
 imported only when the plugin is in the `plugins.enabled` allow-list in
-`config.yaml` (and not in `plugins.disabled`). Project plugins (`./.hermes/`)
+`config.yaml` (and not in `plugins.disabled`). Project plugins (`./.kova/`)
 never auto-import Python. This is a security boundary, not an oversight
 (GHSA-mcfc-hp25-cjv7).
 :::
@@ -540,7 +558,7 @@ ctx.storage.remove('lastTab')
 ## Bundled plugins
 
 A plugin can ship in-tree at `apps/desktop/src/plugins/<id>/plugin.tsx` (default
-export a `KovaPlugin`). It's discovered by `discoverBundledPlugins()` at boot —
+export a `HermesPlugin`). It's discovered by `discoverBundledPlugins()` at boot —
 no import, no registry edit — and shares the exact inventory + live
 enable/disable contract as a disk plugin. The two differences:
 
@@ -597,7 +615,7 @@ not treat this pipeline as a trust boundary.
 | Category | Exports |
 |----------|---------|
 | Host | `host` (`.state.*`, `.notify`, `.notifyError`, `.navigate`, `.onEvent`, `.logs`, `.status`, `.restartGateway`, `.request`) |
-| Plugin contract | `KovaPlugin`, `PluginContext`, `PluginContribution`, `PluginStorage`, `PluginRestOptions`, `Contribution` |
+| Plugin contract | `HermesPlugin`, `PluginContext`, `PluginContribution`, `PluginStorage`, `PluginOs`, `PluginRestOptions`, `PluginNativeNotificationInput`, `Contribution` |
 | Area constants | `PANES_AREA`, `ROUTES_AREA`, `SIDEBAR_NAV_AREA`, `STATUSBAR_AREAS`, `TITLEBAR_AREAS`, `PALETTE_AREA`, `KEYBINDS_AREA`, `THEMES_AREA`, `COMPOSER_AREAS` |
 | Area payloads | `RouteContribution`, `SidebarNavContribution`, `StatusbarItem`, `TitlebarTool`, `PaletteContribution`, `KeybindContribution`, `ComposerMiddleware`, `ComposerAttachmentProvider` |
 | React / state | `useValue`, `atom`, `computed`, `useQuery`, `useMutation`, `useQueryClient`, `queryClient`, `Contribute` |
@@ -627,9 +645,9 @@ toast naming the failure, and tail `kova logs gui -f`.
 in a `jsx()` call isn't imported. Add it to the import line.
 
 **`ctx.rest` returns 404.** The backend isn't mounted: confirm
-`~/.hermes/plugins/<id>/dashboard/manifest.json` has `"api": "plugin_api.py"`,
+`~/.kova/plugins/<id>/dashboard/manifest.json` has `"api": "plugin_api.py"`,
 that the plugin is in `plugins.enabled` in `config.yaml`, and restart the gateway
-(backend routes mount at startup). Tail `~/.hermes/logs/errors.log` for
+(backend routes mount at startup). Tail `~/.kova/logs/errors.log` for
 `Failed to load plugin <id> API routes`.
 
 **`ctx.socket` never fires.** On an OAuth remote it's a no-op by design — use your

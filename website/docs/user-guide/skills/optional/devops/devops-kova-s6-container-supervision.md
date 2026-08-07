@@ -21,7 +21,7 @@ Modify or debug s6 services in the Kova Docker image.
 | License | MIT |
 | Platforms | linux |
 | Tags | `docker`, `s6`, `supervision`, `gateway`, `profiles` |
-| Related skills | [`kova-agent`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-kova-agent), `kova-agent-dev` |
+| Related skills | [`kova-agent`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-kova-agent) |
 
 ## Reference: full SKILL.md
 

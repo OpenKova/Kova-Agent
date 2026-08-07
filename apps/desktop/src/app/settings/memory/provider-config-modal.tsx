@@ -91,7 +91,7 @@ export function ProviderConfigModal({
 
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
-      <DialogContent className="max-w-2xl dt-portal-scrollbar">
+      <DialogContent bodyClassName="dt-portal-scrollbar" className="max-w-2xl">
         <DialogHeader>
           <DialogTitle icon={SlidersHorizontal}>{config.label} — full configuration</DialogTitle>
           <DialogDescription>
@@ -104,7 +104,7 @@ export function ProviderConfigModal({
               href={config.docs_url}
               onClick={event => {
                 event.preventDefault()
-                void window.kovaDesktop?.openExternal?.(config.docs_url)
+                void window.hermesDesktop?.openExternal?.(config.docs_url)
               }}
               rel="noreferrer"
               target="_blank"

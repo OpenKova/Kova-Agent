@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import {
   Activity,
   Brain,
@@ -42,7 +42,7 @@ import { useConfirmDelete } from "@nous-research/ui/hooks/use-confirm-delete";
 import { ConfirmDialog } from "@nous-research/ui/ui/components/confirm-dialog";
 import { useModalBehavior } from "@/hooks/useModalBehavior";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
-import { KovaConsoleModal } from "@/components/KovaConsoleModal";
+import { HermesConsoleModal } from "@/components/HermesConsoleModal";
 import { cn, themedBody } from "@/lib/utils";
 import { api } from "@/lib/api";
 import type {
@@ -264,7 +264,7 @@ export default function SystemPage() {
       api.getPortal(),
       // Cached (non-forced) check so the version row shows update status on
       // load without a separate effect / a forced network round-trip.
-      api.checkKovaUpdate(false),
+      api.checkHermesUpdate(false),
     ])
       .then(([s, st, m, p, c, h, cur, prt, upd]) => {
         if (s.status === "fulfilled") setStatus(s.value);
@@ -512,10 +512,10 @@ export default function SystemPage() {
   // ── Update check / apply ───────────────────────────────────────────
   const checkForUpdate = useCallback(
     async (force = false) => {
-      if (status?.can_update_kova === false) return;
+      if (status?.can_update_hermes === false) return;
       setCheckingUpdate(true);
       try {
-        const info = await api.checkKovaUpdate(force);
+        const info = await api.checkHermesUpdate(force);
         setUpdateInfo(info);
         if (force) {
           if (info.update_available) {
@@ -537,14 +537,14 @@ export default function SystemPage() {
         setCheckingUpdate(false);
       }
     },
-    [showToast, status?.can_update_kova],
+    [showToast, status?.can_update_hermes],
   );
 
   // Auto-check (cached) runs inside loadAll on mount; this is the
   // user-triggered forced re-check from the "Check for updates" button.
   const applyUpdate = async () => {
     setUpdateConfirmOpen(false);
-    if (status?.can_update_kova === false) {
+    if (status?.can_update_hermes === false) {
       showToast(
         "Kova updates are managed outside this dashboard.",
         "success",
@@ -552,7 +552,7 @@ export default function SystemPage() {
       return;
     }
     try {
-      const resp = await api.updateKova();
+      const resp = await api.updateHermes();
       if (!resp.ok) {
         showToast(
           resp.message ??
@@ -637,7 +637,7 @@ export default function SystemPage() {
   }
 
   const gatewayRunning = status?.gateway_running;
-  const canUpdateKova = status?.can_update_kova !== false;
+  const canUpdateHermes = status?.can_update_hermes !== false;
   const activeMemoryProvider = memory?.active
     ? memory.providers.find((provider) => provider.name === memory.active)
     : null;
@@ -659,7 +659,7 @@ export default function SystemPage() {
       />
 
       <ConfirmDialog
-        open={canUpdateKova && updateConfirmOpen}
+        open={canUpdateHermes && updateConfirmOpen}
         onCancel={() => setUpdateConfirmOpen(false)}
         onConfirm={() => void applyUpdate()}
         title="Update Kova?"
@@ -703,7 +703,7 @@ export default function SystemPage() {
         description="Remove this hook from config and revoke its consent? It stops firing on the next restart."
         loading={hookDelete.isDeleting}
       />
-      <KovaConsoleModal
+      <HermesConsoleModal
         open={consoleOpen}
         onClose={() => setConsoleOpen(false)}
       />
@@ -849,7 +849,7 @@ export default function SystemPage() {
                 <div className="text-xs uppercase tracking-wider text-muted-foreground">Kova</div>
                 <div className="flex items-center gap-2">
                   <span>v{stats?.kova_version}</span>
-                  {canUpdateKova &&
+                  {canUpdateHermes &&
                     updateInfo &&
                     (updateInfo.update_available ? (
                       <Badge tone="warning">
@@ -910,7 +910,7 @@ export default function SystemPage() {
                 CPU / memory / disk metrics.
               </p>
             )}
-            {canUpdateKova && (
+            {canUpdateHermes && (
               <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-4">
                 <Button
                   size="sm"

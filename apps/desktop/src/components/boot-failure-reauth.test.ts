@@ -26,7 +26,8 @@ function config(overrides: Partial<DesktopConnectionConfig> = {}): DesktopConnec
     sshUser: '',
     sshPort: null,
     sshKeyPath: '',
-    sshRemoteKovaPath: '',
+    sshRemoteHermesPath: '',
+    sshRemoteProfile: '',
     ...overrides
   }
 }

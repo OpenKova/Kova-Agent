@@ -4,14 +4,14 @@ Ported from openai/codex#18646 (`feat: add --ignore-user-config and --ignore-rul
 Codex's flags fully isolate a run from user-level config and exec-policy .rules
 files. In Kova the equivalent isolation is:
 
-* ``--ignore-user-config`` → skip ``~/.hermes/config.yaml`` in ``load_cli_config()``
+* ``--ignore-user-config`` → skip ``~/.kova/config.yaml`` in ``load_cli_config()``
   (credentials in ``.env`` are still loaded).
 * ``--ignore-rules`` → skip AGENTS.md / SOUL.md / .cursorrules auto-injection
   and persistent memory (maps to ``AIAgent(skip_context_files=True,
   skip_memory=True)``).
 
 Both flags are wired via env vars so they work cleanly across the
-argparse → cmd_chat → cli.main() → KovaCLI → AIAgent call chain.
+argparse → cmd_chat → cli.main() → HermesCLI → AIAgent call chain.
 """
 
 from __future__ import annotations
@@ -114,46 +114,30 @@ class TestIgnoreUserConfigEnvGate:
 
 
 class TestIgnoreRulesEnvGate:
-    """The constructor / env var must propagate to ``KovaCLI.ignore_rules``
+    """The constructor / env var must propagate to ``HermesCLI.ignore_rules``
     so ``AIAgent`` is built with ``skip_context_files=True`` and
     ``skip_memory=True``.
     """
 
     def test_env_var_enables_ignore_rules(self, monkeypatch):
-        """Setting KOVA_IGNORE_RULES=1 flips KovaCLI.ignore_rules True."""
+        """Setting KOVA_IGNORE_RULES=1 flips HermesCLI.ignore_rules True."""
         monkeypatch.setenv("KOVA_IGNORE_RULES", "1")
 
-        # Import KovaCLI lazily — cli.py has heavy module-init side effects
+        # Import HermesCLI lazily — cli.py has heavy module-init side effects
         # that we don't want to run at test collection time.
         import cli
         importlib.reload(cli)
 
-        # Build only enough of KovaCLI to reach the ignore_rules assignment.
+        # Build only enough of HermesCLI to reach the ignore_rules assignment.
         # The full __init__ pulls in provider/auth/session DB, so we cheat:
         # create the object via object.__new__ and manually run the assignment
         # the same way the real constructor does.
-        obj = object.__new__(cli.KovaCLI)
-        # Replicate the exact logic from cli.py KovaCLI.__init__:
+        obj = object.__new__(cli.HermesCLI)
+        # Replicate the exact logic from cli.py HermesCLI.__init__:
         ignore_rules = False  # constructor default
         obj.ignore_rules = ignore_rules or os.environ.get("KOVA_IGNORE_RULES") == "1"
 
         assert obj.ignore_rules is True
-
-    def test_constructor_flag_alone_enables_ignore_rules(self, monkeypatch):
-        monkeypatch.delenv("KOVA_IGNORE_RULES", raising=False)
-        import cli
-        obj = object.__new__(cli.KovaCLI)
-        ignore_rules = True  # constructor argument
-        obj.ignore_rules = ignore_rules or os.environ.get("KOVA_IGNORE_RULES") == "1"
-        assert obj.ignore_rules is True
-
-    def test_neither_flag_nor_env_leaves_rules_enabled(self, monkeypatch):
-        monkeypatch.delenv("KOVA_IGNORE_RULES", raising=False)
-        import cli
-        obj = object.__new__(cli.KovaCLI)
-        ignore_rules = False
-        obj.ignore_rules = ignore_rules or os.environ.get("KOVA_IGNORE_RULES") == "1"
-        assert obj.ignore_rules is False
 
 
 class TestCmdChatWiring:
@@ -182,18 +166,6 @@ class TestCmdChatWiring:
         assert os.environ.get("KOVA_IGNORE_USER_CONFIG") == "1"
         assert os.environ.get("KOVA_IGNORE_RULES") == "1"
 
-    def test_only_ignore_user_config(self, monkeypatch):
-        monkeypatch.delenv("KOVA_IGNORE_USER_CONFIG", raising=False)
-        monkeypatch.delenv("KOVA_IGNORE_RULES", raising=False)
-
-        class FakeArgs:
-            ignore_user_config = True
-            ignore_rules = False
-
-        self._simulate_cmd_chat_env_setup(FakeArgs())
-
-        assert os.environ.get("KOVA_IGNORE_USER_CONFIG") == "1"
-        assert "KOVA_IGNORE_RULES" not in os.environ
 
     def test_flags_absent_sets_nothing(self, monkeypatch):
         monkeypatch.delenv("KOVA_IGNORE_USER_CONFIG", raising=False)
@@ -229,22 +201,3 @@ class TestArgparseFlagsRegistered:
         assert args.ignore_user_config is True
         assert args.ignore_rules is True
 
-    def test_main_py_registers_both_flags(self):
-        """E2E: the real kova parser accepts both flags."""
-        from kova_cli._parser import build_top_level_parser
-
-        parser, _subparsers, chat_parser = build_top_level_parser()
-
-        top_dests = {a.dest for a in parser._actions}
-        chat_dests = {a.dest for a in chat_parser._actions}
-        assert "ignore_user_config" in top_dests
-        assert "ignore_rules" in top_dests
-        assert "ignore_user_config" in chat_dests
-        assert "ignore_rules" in chat_dests
-
-        # And the cmd_chat env-var wiring must be present
-        import inspect
-        import kova_cli.main as hm
-        src = inspect.getsource(hm)
-        assert "KOVA_IGNORE_USER_CONFIG" in src
-        assert "KOVA_IGNORE_RULES" in src

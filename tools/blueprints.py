@@ -56,8 +56,7 @@ class BlueprintError(ValueError):
 
 @dataclass
 class BlueprintSpec:
-    """Parsed ``metadata.kova.blueprint`` (legacy ``metadata.kova.blueprint``)
-    automation spec for a skill."""
+    """Parsed ``metadata.kova.blueprint`` automation spec for a skill."""
 
     skill_name: str
     schedule: str
@@ -96,8 +95,7 @@ def _split_frontmatter(text: str) -> Optional[Dict[str, Any]]:
 def parse_blueprint(skill_md_text: str) -> Optional[BlueprintSpec]:
     """Extract a BlueprintSpec from a SKILL.md string, or None if not a blueprint.
 
-    A skill is a blueprint iff ``metadata.kova.blueprint`` (or the legacy
-    ``metadata.kova.blueprint`` key) is a mapping containing
+    A skill is a blueprint iff ``metadata.kova.blueprint`` is a mapping containing
     a non-empty ``schedule``. Raises BlueprintError if the block exists but is
     structurally invalid (so a typo surfaces instead of silently no-op'ing).
     """
@@ -108,8 +106,7 @@ def parse_blueprint(skill_md_text: str) -> Optional[BlueprintSpec]:
     name = str(fm.get("name", "")).strip()
 
     meta = fm.get("metadata")
-    # Dual-read: prefer metadata.kova, fall back to legacy metadata.kova.
-    kova = (meta.get("kova") or meta.get("kova")) if isinstance(meta, dict) else None
+    kova = meta.get("kova") if isinstance(meta, dict) else None
     blueprint = kova.get("blueprint") if isinstance(kova, dict) else None
     if blueprint is None:
         return None
@@ -262,7 +259,6 @@ def export_blueprint(job: Dict[str, Any], body: str, *, blueprint_name: Optional
     name = name.strip("-_") or "shared-blueprint"
 
     schedule = job.get("schedule_display") or _schedule_to_string(job.get("schedule"))
-    skills = job.get("skills") or ([job["skill"]] if job.get("skill") else [])
 
     blueprint_block: Dict[str, Any] = {"schedule": schedule}
     deliver = job.get("deliver")

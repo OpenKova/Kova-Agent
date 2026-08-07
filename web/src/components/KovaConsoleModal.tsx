@@ -11,6 +11,7 @@ import { Button } from "@nous-research/ui/ui/components/button";
 import { useModalBehavior } from "@/hooks/useModalBehavior";
 import { useProfileScope } from "@/contexts/useProfileScope";
 import { api } from "@/lib/api";
+import { maybeReloadForLoopbackWsAuthFailure } from "@/lib/dashboard-auth-reload";
 import { cn, themedBody } from "@/lib/utils";
 import { useTheme } from "@/themes";
 
@@ -49,7 +50,7 @@ type ConsoleFrame =
 
 type ConnectionState = "connecting" | "ready" | "running" | "closed" | "error";
 
-interface KovaConsoleModalProps {
+interface HermesConsoleModalProps {
   open: boolean;
   onClose: () => void;
 }
@@ -97,7 +98,7 @@ function isPrintable(data: string): boolean {
   return data >= " " || data === "\t";
 }
 
-export function KovaConsoleModal({ open, onClose }: KovaConsoleModalProps) {
+export function HermesConsoleModal({ open, onClose }: HermesConsoleModalProps) {
   const modalRef = useModalBehavior({ open, onClose });
   const hostRef = useRef<HTMLDivElement | null>(null);
   const termRef = useRef<XtermTerminal | null>(null);
@@ -423,6 +424,9 @@ export function KovaConsoleModal({ open, onClose }: KovaConsoleModalProps) {
         };
 
         ws.onclose = (ev) => {
+          if (maybeReloadForLoopbackWsAuthFailure(ev.code)) {
+            return;
+          }
           wsRef.current = null;
           activeCommandRef.current = false;
           pendingCommandRef.current = null;

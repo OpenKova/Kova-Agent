@@ -5,7 +5,7 @@ Usage:
   scripts/profile-tui.py [--session SID] [--hold KEY] [--seconds N] [--rate HZ]
 
 Defaults: picks the session with the most messages, holds PageUp for 8s at
-~30 Hz (matching xterm key-repeat), summarizes ~/.hermes/perf.log on exit.
+~30 Hz (matching xterm key-repeat), summarizes ~/.kova/perf.log on exit.
 
 The --tui build must exist (run `npm run build` in ui-tui first). This script
 launches `node dist/entry.js` directly with KOVA_TUI_RESUME set so it
@@ -13,7 +13,7 @@ bypasses the kova_cli wrapper — we want repeatable timing, not the CLI's
 session-picker flow.
 
 Environment overrides:
-  KOVA_PERF_LOG     (default ~/.hermes/perf.log)
+  KOVA_PERF_LOG     (default ~/.kova/perf.log)
   KOVA_PERF_NODE    (default node from $PATH)
   KOVA_TUI_DIR      (default: <repo>/ui-tui relative to this script)
 
@@ -516,7 +516,7 @@ def main() -> int:
         if not path.exists():
             print(f"\n⚠ no baseline at {path} — run with --save {args.compare} first")
         else:
-            before = json.loads(path.read_text())
+            before = json.loads(path.read_text(encoding="utf-8"))
             print(f"\n═══ A/B diff vs /tmp/perf-{args.compare}.json ═══")
             print(format_diff(before, metrics))
 
@@ -572,7 +572,7 @@ def loop_mode(args: argparse.Namespace) -> int:
                     ["npm", "run", "build"],
                     cwd=tui_dir,
                     capture_output=True,
-                    text=True,
+                    text=True, encoding='utf-8', errors='replace',
                 )
                 if result.returncode != 0:
                     print("✗ build failed:")

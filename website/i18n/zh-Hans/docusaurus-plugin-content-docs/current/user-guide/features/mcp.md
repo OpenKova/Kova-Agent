@@ -23,11 +23,11 @@ MCP 让 Kova Agent 连接到外部工具服务器，使 agent 能够使用 Kova 
 1. 安装 MCP 支持（如果你使用了标准安装脚本，已包含在内）：
 
 ```bash
-cd ~/.hermes/kova-agent
+cd ~/.kova/kova-agent
 uv pip install -e ".[mcp]"
 ```
 
-2. 在 `~/.hermes/config.yaml` 中添加一个 MCP 服务器：
+2. 在 `~/.kova/config.yaml` 中添加一个 MCP 服务器：
 
 ```yaml
 mcp_servers:
@@ -91,7 +91,7 @@ mcp_servers:
 
 ## 基本配置参考
 
-Kova 从 `~/.hermes/config.yaml` 的 `mcp_servers` 下读取 MCP 配置。
+Kova 从 `~/.kova/config.yaml` 的 `mcp_servers` 下读取 MCP 配置。
 
 ### 常用字段
 
@@ -407,7 +407,7 @@ Inspect the project root and explain the directory layout.
 
 ```bash
 # 验证 MCP 依赖已安装（标准安装已包含）
-cd ~/.hermes/kova-agent && uv pip install -e ".[mcp]"
+cd ~/.kova/kova-agent && uv pip install -e ".[mcp]"
 
 node --version
 npx --version
@@ -523,7 +523,7 @@ kova mcp serve
 {
   "mcpServers": {
     "kova": {
-      "command": "/home/user/.hermes/hermes-agent/venv/bin/kova",
+      "command": "/home/user/.kova/kova-agent/venv/bin/kova",
       "args": ["mcp", "serve"]
     }
   }
@@ -572,7 +572,7 @@ kova mcp serve --verbose    # 在 stderr 输出调试日志
 
 ### 工作原理
 
-MCP 服务器直接从 Kova 的会话存储（`~/.hermes/sessions/sessions.json` 和 SQLite 数据库）读取会话数据。后台线程轮询数据库以获取新消息，并维护一个内存事件队列。发送消息时，使用与 Kova agent 本身相同的 `send_message` 基础设施。
+MCP 服务器直接从 Kova 的会话存储（`~/.kova/sessions/sessions.json` 和 SQLite 数据库）读取会话数据。后台线程轮询数据库以获取新消息，并维护一个内存事件队列。发送消息时，使用与 Kova agent 本身相同的 `send_message` 基础设施。
 
 读取操作（列出会话、读取历史、轮询事件）**不需要** gateway 运行。发送操作**需要** gateway 运行，因为平台适配器需要活跃连接。
 

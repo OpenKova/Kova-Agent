@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 
 import { test } from 'vitest'
 
+import { profileSshOverride } from './connection-config'
 import {
   buildSpawnCommand,
   cleanupStale,
@@ -9,7 +10,7 @@ import {
   expandRemotePath,
   fingerprintToken,
   isForwardBindCollision,
-  locateKova,
+  locateHermes,
   LOCKFILE_SCHEMA_VERSION,
   lockfilePath,
   openForward,
@@ -40,8 +41,8 @@ function ownedLock(over: any = {}) {
     pid: 333,
     port: 40000,
     profile: '',
-    kovaPath: '~/.local/bin/kova',
-    kovaHome: '~/.hermes',
+    hermesPath: '~/.local/bin/kova',
+    hermesHome: '~/.kova',
     logPath: spawnLogPath(OWNERSHIP_ID, SPAWN_NONCE),
     tokenFingerprint: fingerprintToken('stored-token'),
     startedAt: '2026-07-14T00:00:00.000Z',
@@ -78,12 +79,12 @@ function fakeSsh(rules: any[] = []) {
   }
 }
 
-test('locateKova prefers the explicit profile path when executable', async () => {
+test('locateHermes prefers the explicit profile path when executable', async () => {
   const ssh = fakeSsh([[/\[ -x .*\/opt\/kova/, 'OK']])
-  assert.equal(await locateKova(ssh, '/opt/kova'), '/opt/kova')
+  assert.equal(await locateHermes(ssh, '/opt/kova'), '/opt/kova')
 })
 
-test('locateKova throws (no silent fallback) when an EXPLICIT path is not executable', async () => {
+test('locateHermes throws (no silent fallback) when an EXPLICIT path is not executable', async () => {
   // command -v WOULD find a different install, but an explicit path must not
   // silently fall back to it — that is the "connected to the wrong kova" bug.
   const ssh = fakeSsh([
@@ -92,7 +93,7 @@ test('locateKova throws (no silent fallback) when an EXPLICIT path is not execut
   ])
 
   await assert.rejects(
-    () => locateKova(ssh, '/bad/path/kova'),
+    () => locateHermes(ssh, '/bad/path/kova'),
     (err: any) => {
       assert.equal(err.kind, 'kova-not-found')
       assert.match(err.message, /\/bad\/path\/kova/)
@@ -102,44 +103,44 @@ test('locateKova throws (no silent fallback) when an EXPLICIT path is not execut
   )
 })
 
-test('locateKova falls back to the login-shell command -v probe', async () => {
+test('locateHermes falls back to the login-shell command -v probe', async () => {
   const ssh = fakeSsh([
     [/command -v kova/, '/home/u/.local/bin/kova\n'],
     [/\[ -x .*\.local\/bin\/kova/, 'OK']
   ])
 
-  assert.equal(await locateKova(ssh, ''), '/home/u/.local/bin/kova')
+  assert.equal(await locateHermes(ssh, ''), '/home/u/.local/bin/kova')
 })
 
-test('locateKova canonicalizes an installer wrapper to its executable target', async () => {
+test('locateHermes canonicalizes an installer wrapper to its executable target', async () => {
   const ssh = fakeSsh([
     [/command -v kova/, '/home/u/.local/bin/kova\n'],
     [/\[ -x .*\.local\/bin\/kova/, 'OK'],
-    [/python3 -c/, '/home/u/.hermes/hermes-agent/venv/bin/kova\n']
+    [/python3 -c/, '/home/u/.kova/kova-agent/venv/bin/kova\n']
   ])
 
-  assert.equal(await locateKova(ssh, ''), '/home/u/.hermes/hermes-agent/venv/bin/kova')
+  assert.equal(await locateHermes(ssh, ''), '/home/u/.kova/kova-agent/venv/bin/kova')
 })
 
-test('locateKova falls back to ~/.local/bin/kova when the login-shell probe misses', async () => {
+test('locateHermes falls back to ~/.local/bin/kova when the login-shell probe misses', async () => {
   // ~/.local/bin is the non-root installer's command location (scripts/install.sh).
   const ssh = fakeSsh([
     [/command -v kova/, ''],
     [/\[ -x .*\.local\/bin\/kova/, 'OK']
   ])
 
-  assert.equal(await locateKova(ssh, ''), '~/.local/bin/kova')
+  assert.equal(await locateHermes(ssh, ''), '~/.local/bin/kova')
 })
 
-test('locateKova tries the conventional venv path last', async () => {
+test('locateHermes tries the conventional venv path last', async () => {
   const ssh = fakeSsh([[/\[ -x .*venv\/bin\/kova/, 'OK']])
-  assert.equal(await locateKova(ssh, ''), '~/.hermes/hermes-agent/venv/bin/kova')
+  assert.equal(await locateHermes(ssh, ''), '~/.kova/kova-agent/venv/bin/kova')
 })
 
-test('locateKova throws a kova-not-found error with an install hint', async () => {
+test('locateHermes throws a kova-not-found error with an install hint', async () => {
   const ssh = fakeSsh([]) // nothing is executable
   await assert.rejects(
-    () => locateKova(ssh, ''),
+    () => locateHermes(ssh, ''),
     (err: any) => {
       assert.equal(err.kind, 'kova-not-found')
       assert.match(err.message, /install/i)
@@ -149,13 +150,13 @@ test('locateKova throws a kova-not-found error with an install hint', async () =
   )
 })
 
-test('locateKova uses a login shell for the command -v probe', async () => {
+test('locateHermes uses a login shell for the command -v probe', async () => {
   const ssh = fakeSsh([
     [/command -v kova/, '/x/kova'],
     [/\[ -x/, 'OK']
   ])
 
-  await locateKova(ssh, '')
+  await locateHermes(ssh, '')
   assert.ok(
     ssh.calls.some(c => /bash -lc/.test(c)),
     'must probe in a login shell (PATH pitfall)'
@@ -185,9 +186,9 @@ test('probeRemotePlatform rejects unsupported remote platforms', async () => {
 })
 
 test('ownership paths are isolated by ownership ID and spawn nonce', () => {
-  assert.equal(ownershipDirectory(OWNERSHIP_ID), `~/.hermes/desktop-ssh/${OWNERSHIP_ID}`)
-  assert.equal(lockfilePath(OWNERSHIP_ID), `~/.hermes/desktop-ssh/${OWNERSHIP_ID}/backend.lock.json`)
-  assert.equal(spawnLogPath(OWNERSHIP_ID, SPAWN_NONCE), `~/.hermes/desktop-ssh/${OWNERSHIP_ID}/${SPAWN_NONCE}.log`)
+  assert.equal(ownershipDirectory(OWNERSHIP_ID), `~/.kova/desktop-ssh/${OWNERSHIP_ID}`)
+  assert.equal(lockfilePath(OWNERSHIP_ID), `~/.kova/desktop-ssh/${OWNERSHIP_ID}/backend.lock.json`)
+  assert.equal(spawnLogPath(OWNERSHIP_ID, SPAWN_NONCE), `~/.kova/desktop-ssh/${OWNERSHIP_ID}/${SPAWN_NONCE}.log`)
 })
 
 test('readLockfile returns null for missing, empty, malformed, or wrong-schema', async () => {
@@ -248,7 +249,7 @@ test('cleanupStale kills ONLY a provably-ours pid, always drops the lockfile', a
   await cleanupStale(notOurs, OWNERSHIP_ID, {
     pid: 5,
     spawnNonce: SPAWN_NONCE,
-    kovaPath: '/x/kova',
+    hermesPath: '/x/kova',
     logPath: spawnLogPath(OWNERSHIP_ID, SPAWN_NONCE)
   })
   assert.ok(!notOurs.calls.some(c => /kill 5\b/.test(c)), 'must not kill a pid that is not our dashboard')
@@ -258,7 +259,7 @@ test('cleanupStale kills ONLY a provably-ours pid, always drops the lockfile', a
   await cleanupStale(ours, OWNERSHIP_ID, {
     pid: 9,
     spawnNonce: SPAWN_NONCE,
-    kovaPath: '/x/kova',
+    hermesPath: '/x/kova',
     logPath: spawnLogPath(OWNERSHIP_ID, SPAWN_NONCE)
   })
   assert.ok(ours.calls.some(c => /kill 9\b/.test(c)))
@@ -298,7 +299,7 @@ test('spawnRemoteDashboard returns exact ownership artifacts', async () => {
   ])
 
   const { pid, spawnNonce, logPath } = await spawnRemoteDashboard(ssh, {
-    kovaPath: '/x/kova',
+    hermesPath: '/x/kova',
     profile: '',
     token: 'tk',
     ownershipId: OWNERSHIP_ID
@@ -317,7 +318,7 @@ test('spawnRemoteDashboard always spawns serve (legacy dashboard path removed)',
     [/setsid|nohup/, '4242\n']
   ])
 
-  await spawnRemoteDashboard(ssh, { kovaPath: '/x/kova', profile: '', token: 'tk', ownershipId: OWNERSHIP_ID })
+  await spawnRemoteDashboard(ssh, { hermesPath: '/x/kova', profile: '', token: 'tk', ownershipId: OWNERSHIP_ID })
   const spawn = ssh.calls.find(c => /setsid|nohup/.test(c))
   assert.match(spawn, /serve --isolated/)
   assert.doesNotMatch(spawn, /\bdashboard\b/)
@@ -337,7 +338,7 @@ test('spawnRemoteDashboard rejects when no pid is returned', async () => {
   ])
 
   await assert.rejects(
-    () => spawnRemoteDashboard(ssh, { kovaPath: '/x/kova', profile: '', token: 't', ownershipId: OWNERSHIP_ID }),
+    () => spawnRemoteDashboard(ssh, { hermesPath: '/x/kova', profile: '', token: 't', ownershipId: OWNERSHIP_ID }),
     (err: any) => {
       assert.equal(err.kind, 'spawn-failed')
 
@@ -388,7 +389,7 @@ function connectDeps(ssh, over: any = {}) {
     forward: async () => {},
     cancelForward: async () => {},
     pickLocalPort: async () => 50001,
-    waitForKova: async () => {},
+    waitForHermes: async () => {},
     probeReuseProof: async () => 'authenticated-ok',
     adoptServedToken: async (_baseUrl, spawn) => spawn || 'served-token',
     rememberLog: () => {},
@@ -420,6 +421,51 @@ test('connect() spawns fresh when there is no lockfile, adopts the served token'
   assert.equal(result.tokenFingerprint, fingerprintToken('the-served-token'))
 })
 
+test('managed SSH maps a local scope to a different non-default remote profile', async () => {
+  const localScope = 'work'
+
+  const sshConfig = profileSshOverride(
+    {
+      profiles: {
+        [localScope]: {
+          mode: 'ssh',
+          host: 'remote-box',
+          remoteProfile: 'writer_2'
+        }
+      }
+    },
+    localScope
+  )
+
+  assert.equal(sshConfig?.remoteProfile, 'writer_2')
+
+  const ssh = fakeSsh([
+    [/uname/, 'Linux\nx86_64'],
+    [/\[ -x/, 'OK'],
+    [/cat .*lock\.json/, ''],
+    [/grep -q ssh-session-token-file/, 'YES\n'],
+    [/python3 -c/, ''],
+    [/printf '%s\\n'/, ''],
+    [/setsid/, '778\n'],
+    [/kill -0 778/, 'ALIVE'],
+    [/cat .*\.log/, 'KOVA_BACKEND_READY port=52000\n']
+  ])
+
+  await connect(
+    connectDeps(ssh, {
+      profile: sshConfig?.remoteProfile,
+      adoptServedToken: async () => 'mapped-profile-token'
+    })
+  )
+
+  const spawn = ssh.calls.find(command => /setsid|nohup/.test(command)) || ''
+  assert.match(spawn, /--profile\b/)
+  assert.ok(spawn.includes('writer_2'))
+  assert.match(spawn, /serve\s+--isolated/)
+  assert.match(spawn, /\.kova\/desktop-ssh\/[0-9a-f]{32}\/[0-9a-f]{16}\.token/)
+  assert.ok(!spawn.includes(' work'), 'the local Desktop scope must not become the remote profile')
+})
+
 test('connect() reuses a healthy dashboard when fingerprint + probe pass', async () => {
   const reuseToken = 'stored-token'
   const lock = ownedLock({ tokenFingerprint: fingerprintToken(reuseToken) })
@@ -440,9 +486,39 @@ test('connect() reuses a healthy dashboard when fingerprint + probe pass', async
   assert.ok(!ssh.calls.some(c => /setsid/.test(c)), 'reuse path must not spawn a new dashboard')
 })
 
-test('connect() respawns when the lockfile kovaPath differs from the resolved path', async () => {
+test('connect() respawns when the requested remote profile differs from the lockfile profile', async () => {
   const reuseToken = 'stored-token'
-  const lock = ownedLock({ kovaPath: '/old/stale/kova', tokenFingerprint: fingerprintToken(reuseToken) })
+  const lock = ownedLock({ profile: 'desktop-work', tokenFingerprint: fingerprintToken(reuseToken) })
+
+  const ssh = fakeSsh([
+    [/uname/, 'Linux\nx86_64'],
+    [/\[ -x/, 'OK'],
+    [/cat .*lock\.json/, JSON.stringify(lock)],
+    [/kill -0 333/, 'ALIVE'],
+    [/print\("OWNED"/, 'OWNED\n'],
+    [/kill 333/, ''],
+    [/--version/, 'Kova Agent v0.18.2\n'],
+    [/grep -q ssh-session-token-file/, 'YES\n'],
+    [/python3 -c/, ''],
+    [/setsid/, '890\n'],
+    [/kill -0 890/, 'ALIVE'],
+    [/cat .*\.log/, 'KOVA_DASHBOARD_READY port=52050\n']
+  ])
+
+  const result = await connect(
+    connectDeps(ssh, { profile: 'default', reuseToken, adoptServedToken: async () => 'fresh' })
+  )
+
+  assert.equal(result.reused, false)
+  assert.ok(
+    ssh.calls.some(c => /setsid/.test(c)),
+    'profile mismatch must spawn a fresh dashboard'
+  )
+})
+
+test('connect() respawns when the lockfile hermesPath differs from the resolved path', async () => {
+  const reuseToken = 'stored-token'
+  const lock = ownedLock({ hermesPath: '/old/stale/kova', tokenFingerprint: fingerprintToken(reuseToken) })
 
   const ssh = fakeSsh([
     [/uname/, 'Linux\nx86_64'],
@@ -458,7 +534,7 @@ test('connect() respawns when the lockfile kovaPath differs from the resolved pa
   ])
 
   const result = await connect(
-    connectDeps(ssh, { reuseToken, remoteKovaPath: '/new/kova', adoptServedToken: async () => 'fresh' })
+    connectDeps(ssh, { reuseToken, remoteHermesPath: '/new/kova', adoptServedToken: async () => 'fresh' })
   )
 
   assert.equal(result.reused, false, 'must respawn, not reuse the old-path dashboard')
@@ -497,7 +573,7 @@ test('connect() respawns when the lockfile protocolVersion is incompatible', asy
   assert.equal(result.pid, 901)
 })
 
-test('connect() fresh spawn writes kovaHome + protocolVersion into the lockfile', async () => {
+test('connect() fresh spawn writes hermesHome + protocolVersion into the lockfile', async () => {
   const writes: string[] = []
 
   const ssh = fakeSsh([
@@ -524,7 +600,7 @@ test('connect() fresh spawn writes kovaHome + protocolVersion into the lockfile'
   await connect(connectDeps(ssh, { adoptServedToken: async () => 'fresh' }))
   const lockWrite = writes.find(c => c.includes('schemaVersion')) || ''
   assert.match(lockWrite, new RegExp(`"protocolVersion":${PROTOCOL_VERSION}`))
-  assert.match(lockWrite, /"kovaHome":"\/home\/alice\/\.kova"/)
+  assert.match(lockWrite, /"hermesHome":"\/home\/alice\/\.kova"/)
 })
 
 test('connect() respawns when the lockfile pid is dead (killed dashboard)', async () => {
@@ -655,12 +731,12 @@ test('connect() preserves an owned backend when a reuse transport throws', async
 
 test('validateRemotePath accepts absolute POSIX paths', () => {
   assert.doesNotThrow(() => validateRemotePath('/usr/bin/kova'))
-  assert.doesNotThrow(() => validateRemotePath('/home/user/.hermes/hermes-agent/venv/bin/kova'))
+  assert.doesNotThrow(() => validateRemotePath('/home/user/.kova/kova-agent/venv/bin/kova'))
 })
 
 test('validateRemotePath accepts ~/ prefix paths', () => {
   assert.doesNotThrow(() => validateRemotePath('~/bin/kova'))
-  assert.doesNotThrow(() => validateRemotePath('~/.hermes/logs/desktop-ssh.log'))
+  assert.doesNotThrow(() => validateRemotePath('~/.kova/logs/desktop-ssh.log'))
   assert.doesNotThrow(() => validateRemotePath('~'))
 })
 
@@ -690,7 +766,7 @@ test('validateRemotePath preserves shell metacharacters as path data', () => {
 })
 
 test('expandRemotePath expands ~/ to "$HOME"/', () => {
-  const result = expandRemotePath('~/.hermes/logs/desktop-ssh.log')
+  const result = expandRemotePath('~/.kova/logs/desktop-ssh.log')
   assert.match(result, /\$HOME/)
   assert.ok(!result.includes('eval'), 'must not use eval')
   assert.ok(!result.includes('echo'), 'must not use echo for expansion')
@@ -715,7 +791,7 @@ test('buildSpawnCommand does not embed the token in the command string', () => {
 
 test('buildSpawnCommand includes --ssh-session-token-file when tokenFilePath is provided', () => {
   const cmd = buildSpawnCommand('/x/kova', 'work', {
-    tokenFilePath: `~/.hermes/desktop-ssh/${OWNERSHIP_ID}/${SPAWN_NONCE}.token`,
+    tokenFilePath: `~/.kova/desktop-ssh/${OWNERSHIP_ID}/${SPAWN_NONCE}.token`,
     logPath: spawnLogPath(OWNERSHIP_ID, SPAWN_NONCE),
     spawnNonce: SPAWN_NONCE
   })
@@ -742,7 +818,7 @@ test('spawnRemoteDashboard removes a token file when upload reporting fails', as
   ])
 
   await assert.rejects(
-    () => spawnRemoteDashboard(ssh, { kovaPath: '/x/kova', profile: '', token: 'tok', ownershipId: OWNERSHIP_ID }),
+    () => spawnRemoteDashboard(ssh, { hermesPath: '/x/kova', profile: '', token: 'tok', ownershipId: OWNERSHIP_ID }),
     /channel closed/
   )
   assert.ok(ssh.calls.some(command => /rm -f .*\.token/.test(command)))
@@ -782,7 +858,7 @@ test('spawnRemoteDashboard streams the token over stdin, not argv/env', async ()
   }
 
   const { pid } = await spawnRemoteDashboard(ssh as any, {
-    kovaPath: '/x/kova',
+    hermesPath: '/x/kova',
     profile: '',
     token: 'secret_token_val',
     ownershipId: OWNERSHIP_ID
@@ -829,7 +905,7 @@ test('spawnRemoteDashboard upload uses exclusive-create and O_NOFOLLOW', async (
   }
 
   await spawnRemoteDashboard(ssh as any, {
-    kovaPath: '/x/kova',
+    hermesPath: '/x/kova',
     profile: '',
     token: 'tk',
     ownershipId: OWNERSHIP_ID
@@ -888,7 +964,7 @@ test('spawnRemoteDashboard fails with update-required when remote lacks --ssh-se
   const ssh = fakeSsh([[/--ssh-session-token-file/, 'NO\n']])
 
   await assert.rejects(
-    () => spawnRemoteDashboard(ssh, { kovaPath: '/x/kova', profile: '', token: 'tk', ownershipId: OWNERSHIP_ID }),
+    () => spawnRemoteDashboard(ssh, { hermesPath: '/x/kova', profile: '', token: 'tk', ownershipId: OWNERSHIP_ID }),
     (err: any) => {
       assert.match(err.message, /update|upgrade/i)
       assert.equal(err.kind, 'update-required')
@@ -899,14 +975,14 @@ test('spawnRemoteDashboard fails with update-required when remote lacks --ssh-se
 })
 
 test('readLockfile rejects a log path outside the exact ownership and spawn path', async () => {
-  const lock = ownedLock({ logPath: '~/.hermes/desktop-ssh/other.log' })
+  const lock = ownedLock({ logPath: '~/.kova/desktop-ssh/other.log' })
   const ssh = fakeSsh([[/cat .*lock\.json/, JSON.stringify(lock)]])
   assert.equal(await readLockfile(ssh, OWNERSHIP_ID), null)
 })
 
 test('cleanupStale never deletes a lock-supplied unexpected log path', async () => {
   const ssh = fakeSsh([[/print\("OWNED"/, 'OWNED\n']])
-  await cleanupStale(ssh, OWNERSHIP_ID, ownedLock({ logPath: '~/.hermes/unrelated.log' }))
+  await cleanupStale(ssh, OWNERSHIP_ID, ownedLock({ logPath: '~/.kova/unrelated.log' }))
   assert.ok(!ssh.calls.some(command => command.includes('unrelated.log')))
 })
 

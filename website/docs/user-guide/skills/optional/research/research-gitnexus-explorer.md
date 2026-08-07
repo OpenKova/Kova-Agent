@@ -21,7 +21,7 @@ Serve an interactive codebase knowledge graph web UI.
 | License | MIT |
 | Platforms | linux, macos, windows |
 | Tags | `gitnexus`, `code-intelligence`, `knowledge-graph`, `visualization` |
-| Related skills | `native-mcp`, [`codebase-inspection`](/docs/user-guide/skills/bundled/github/github-codebase-inspection) |
+| Related skills | [`kova-agent`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-kova-agent), [`codebase-inspection`](/docs/user-guide/skills/bundled/github/github-codebase-inspection) |
 
 ## Reference: full SKILL.md
 

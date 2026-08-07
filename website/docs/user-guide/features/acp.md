@@ -1,12 +1,13 @@
 ---
 sidebar_position: 11
-title: "ACP Editor Integration"
-description: "Use Kova Agent inside ACP-compatible editors such as VS Code, Zed, and JetBrains"
+title: "ACP Host Integration"
+description: "Use Kova Agent inside ACP-compatible editors and collaboration platforms"
 ---
 
-# ACP Editor Integration
+# ACP Host Integration
 
-Kova Agent can run as an ACP server, letting ACP-compatible editors talk to Kova over stdio and render:
+Kova Agent can run as an ACP server, letting ACP-compatible hosts talk to
+Kova over stdio. Editors can render:
 
 - chat messages
 - tool activity
@@ -15,7 +16,10 @@ Kova Agent can run as an ACP server, letting ACP-compatible editors talk to Kova
 - approval prompts
 - streamed thinking / response chunks
 
-ACP is a good fit when you want Kova to behave like an editor-native coding agent instead of a standalone CLI or messaging bot.
+Other hosts can use the same protocol to route collaboration events into
+Kova. ACP is a good fit when you want Kova to keep its existing identity,
+provider setup, memory, skills, and tools while another application owns the
+conversation transport.
 
 ## What Kova exposes in ACP mode
 
@@ -36,7 +40,7 @@ It intentionally excludes things that do not fit typical editor UX, such as mess
 Install Kova normally, then add the ACP extra from the install checkout:
 
 ```bash
-cd ~/.hermes/kova-agent && uv pip install -e '.[acp]'
+cd ~/.kova/kova-agent && uv pip install -e '.[acp]'
 ```
 
 This installs the `agent-client-protocol` dependency and enables:
@@ -85,13 +89,87 @@ This is the standalone command. The terminal-auth flow (`kova acp --setup`) also
 
 What it does:
 
-- Installs Node.js 22 LTS into `~/.hermes/node/` if missing
+- Installs Node.js 26 into `~/.kova/node/` if missing
 - `npm install -g agent-browser @askjo/camofox-browser` into that prefix (no sudo needed — `npm`'s `--prefix` points at the user-writable Kova-managed Node)
 - Installs Playwright Chromium, or uses a detected system Chrome/Chromium when available
 
 The bootstrap is idempotent — re-running it is fast and skips work that's already done.
 
-## Editor setup
+## Host setup
+
+### Buzz channels (relay bridge)
+
+[Buzz](https://github.com/block/buzz) is a Nostr-based collaboration platform
+for people and agents. Its `buzz-acp` harness connects Buzz channels to any ACP
+agent over stdio:
+
+```text
+Buzz relay <-- WebSocket --> buzz-acp <-- ACP over stdio --> Kova Agent
+```
+
+This is a transport integration, not a second Kova installation. The
+subprocess launched by `buzz-acp` uses the same Kova configuration,
+credentials, memory, skills, and state as `kova` on that host.
+
+(This is distinct from [Buzz Desktop's managed runtime](#buzz-desktop), which
+spawns Kova locally as a preset harness. The relay bridge is for joining Buzz
+*channels* as an agent identity, typically on a server.)
+
+Prerequisites:
+
+- Complete the ACP installation and `kova acp --check` above.
+- Build `buzz-acp` and the `buzz` CLI from the
+  [Buzz repository](https://github.com/block/buzz)
+  (`cargo build --release -p buzz-acp`).
+- Mint a dedicated Nostr keypair for Kova (`buzz-admin generate-key`) and
+  register it as a relay member (`buzz-admin add-member`). Every agent needs
+  its own identity — do not reuse a human keypair.
+- Add that identity to the intended Buzz channels.
+
+Start a bridge with:
+
+```bash
+export BUZZ_RELAY_URL="wss://community.example.com"
+export BUZZ_PRIVATE_KEY="..."
+export BUZZ_API_TOKEN="..."
+export BUZZ_ACP_AGENT_COMMAND="kova"
+export BUZZ_ACP_AGENT_ARGS="acp"
+
+buzz-acp
+```
+
+`BUZZ_API_TOKEN` is needed only when the relay enforces token authentication.
+Do not commit or paste the private key or API token.
+
+For a persistent server deployment, run `buzz-acp` under a service manager as
+the same operating-system user that owns the intended Kova home. Setup,
+key generation, channel discovery, and per-agent options are documented in the
+[buzz-acp README](https://github.com/block/buzz/tree/main/crates/buzz-acp).
+
+The bridge discovers every Buzz channel where the Kova identity is a member
+and automatically subscribes when it is added to another channel. Buzz channel
+membership therefore remains the access boundary; Kova does not need a
+separate channel list in its own configuration.
+
+To expose Kova ACP activity in the owner's Buzz Desktop, add:
+
+```bash
+export BUZZ_ACP_RELAY_OBSERVER="true"
+```
+
+This publishes encrypted kind `24200` observer frames addressed to the agent's
+owner (Buzz's NIP-AO). Desktop renders the live lifecycle, tool, response, and
+usage stream in the agent's **Activity log**. The relay treats these frames as
+ephemeral, so Desktop must be online before the turn starts; its local observer
+archive is the durable owner-side history.
+
+Headless bridges answer ACP permission requests themselves because no editor
+is present to show approval dialogs — see
+[Keep Buzz agents owner-only](#keep-buzz-agents-owner-only). Treat the bridge
+as privileged automation: use a dedicated operating-system account, restrict
+which Buzz users can prompt the agent (`buzz-acp` supports an owner-only
+respond gate via `BUZZ_ACP_AGENT_OWNER`), and grant membership only in channels
+where Kova is expected to work.
 
 ### VS Code
 
@@ -139,22 +217,99 @@ Configure Kova as a custom agent server in Zed settings:
 
 Prerequisites:
 
-- Configure Kova provider credentials first with `kova model`, or set them in `~/.hermes/.env` / `~/.hermes/config.yaml`.
+- Configure Kova provider credentials first with `kova model`, or set them in `~/.kova/.env` / `~/.kova/config.yaml`.
 
 ### JetBrains
 
 Use an ACP-compatible plugin and point it at `kova acp` or `kova-acp`.
 
+### Buzz Desktop
+
+[Buzz](https://github.com/block/buzz) ships Kova Agent as a preset runtime.
+With Kova installed the normal way, Buzz discovers it automatically —
+open **Settings → Runtimes** and Kova appears under your runtimes.
+
+If discovery fails (older installs), make sure the ACP launcher resolves on a
+login-shell PATH:
+
+```bash
+command -v kova-acp || command -v kova
+```
+
+Recent installs write both `kova` and `kova-acp` launchers into
+`~/.local/bin`; running `kova update` adds the `kova-acp` launcher to
+older installs. As a manual fallback, configure Buzz's agent command as
+`kova` with args `["acp"]`.
+
+#### Model picker
+
+Buzz Desktop (v0.5.1+) renders Kova' full model menu in the agent's runtime
+settings. The list comes from Kova itself over ACP: it shows every model
+from providers you have authenticated in Kova (the same inventory behind
+`kova model` and the `/model` command), so a model missing from the menu
+means its provider has no credentials configured on the Kova side.
+
+Entry IDs take the form `provider:model` (e.g. `openrouter:z-ai/glm-5.1`), or
+`custom:<name>:<model>` for custom OpenAI-compatible endpoints defined in
+`config.yaml`. Picking a model applies to that agent's session; it does not
+change your Kova-wide default — use `kova model` for that.
+
+#### Keep Buzz agents owner-only
+
+Buzz creates every agent with **Who can talk to this agent** set to `Owner only`.
+Leave it there when the runtime is Kova.
+
+Two behaviors combine on this path. The `kova-acp` toolset includes `terminal`
+and `execute_code`, and Buzz's ACP bridge answers Kova' permission requests
+itself with `allow_once` rather than surfacing them. A Kova agent in Buzz
+therefore runs shell commands on the host without prompting. I asked one to run
+`rm -rf` against a scratch directory and it deleted it, no prompt anywhere.
+
+Selecting `Anyone` hands that same shell access to every author who can reach
+the channel. Buzz does not warn when you pick it.
+
+Neither of the obvious mitigations works today:
+
+- `approvals.mode: manual` does make Kova raise the permission request, but
+  Buzz auto-approves it and the command still runs.
+- `platform_toolsets.acp` does not narrow the ACP toolset, so it cannot be used
+  to drop `terminal`.
+
+`!shutdown` from the owner stops the agent in any mode, and Buzz ignores that
+command from everyone else.
+
 ## Configuration and credentials
 
 ACP mode uses the same Kova configuration as the CLI:
 
-- `~/.hermes/.env`
-- `~/.hermes/config.yaml`
-- `~/.hermes/skills/`
-- `~/.hermes/state.db`
+- `~/.kova/.env`
+- `~/.kova/config.yaml`
+- `~/.kova/skills/`
+- `~/.kova/state.db`
 
 Provider resolution uses Kova' normal runtime resolver, so ACP inherits the currently configured provider and credentials. Kova also advertises a terminal auth method (`--setup`) for first-run ACP clients; this opens Kova' interactive model/provider setup.
+
+## Host integration
+
+These variables are set by an **ACP host process** (an editor or another agent
+harness) on the Kova subprocess it spawns. They are not user configuration —
+do not set them by hand in `.env` or `config.yaml`.
+
+| Variable | Value | Effect |
+|----------|-------|--------|
+| `KOVA_ACP_SKIP_CONFIGURED_MCP` | `1` | Skip starting the **globally configured** MCP servers from `config.yaml` before the ACP JSON-RPC loop begins. |
+
+Kova normally starts every MCP server configured in `config.yaml` before it
+enters the ACP JSON-RPC loop. A host that owns MCP itself — passing the
+session's servers explicitly through `session/new` — does not need that global
+startup, and an unrelated slow or interactive MCP server would otherwise delay
+`initialize`. Setting the marker to exactly `1` lets such a host skip it.
+
+Only the global `config.yaml` discovery is skipped. **MCP servers supplied by
+the ACP session through `session/new` are still registered**, so a host loses
+no capability it asked for. Any other value (unset, empty, `0`, `false`) keeps
+the default behavior, so an unrelated truthy-looking string cannot silently
+disable MCP.
 
 ## Session behavior
 
@@ -182,6 +337,11 @@ Dangerous terminal commands can be routed back to the editor as approval prompts
 - allow always
 - deny
 
+Whether you actually see a prompt is up to the host. A host is free to answer the
+request programmatically instead of showing it to you, in which case these
+options exist on the wire but never reach a human. Buzz Desktop does this, so
+treat that path as unattended execution regardless of your `approvals` setting.
+
 On timeout or error, the approval bridge denies the request.
 
 ### Session-scoped edit auto-approval
@@ -205,9 +365,9 @@ The ACP bridge maps these options onto Kova' internal approval semantics — `al
 
 Check:
 
-- For manual/local development, verify the custom `agent_servers` command points to `kova acp`.
+- For manual/local development, verify the host command points to `kova acp`.
 - Kova is installed and on your PATH.
-- The ACP extra is installed (`cd ~/.hermes/kova-agent && uv pip install -e '.[acp]'`).
+- The ACP extra is installed (`cd ~/.kova/kova-agent && uv pip install -e '.[acp]'`).
 
 ### ACP starts but immediately errors
 
@@ -228,10 +388,11 @@ ACP mode uses Kova' existing provider setup. Configure credentials with:
 kova model
 ```
 
-or by editing `~/.hermes/.env`. The terminal auth flow (`kova acp --setup`) can also trigger the interactive provider/model setup.
+or by editing `~/.kova/.env`. The terminal auth flow (`kova acp --setup`) can also trigger the interactive provider/model setup.
 
 ## See also
 
+- [Buzz ACP harness](https://github.com/block/buzz/tree/main/crates/buzz-acp)
 - [ACP Internals](../../developer-guide/acp-internals.md)
 - [Provider Runtime Resolution](../../developer-guide/provider-runtime.md)
 - [Tools Runtime](../../developer-guide/tools-runtime.md)

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import type { KovaConfigRecord } from '@/types/kova'
+import type { HermesConfigRecord } from '@/types/kova'
 
 import { FIELD_DESCRIPTIONS, FIELD_LABELS, SECTIONS } from './constants'
 import { defineFieldCopy, fieldCopyForSchemaKey, schemaKeyToFieldCopyKey } from './field-copy'
@@ -122,7 +122,7 @@ describe('settings helpers', () => {
   })
 
   it('reads and writes nested config paths', () => {
-    const config: KovaConfigRecord = { display: { theme: 'mono' } }
+    const config: HermesConfigRecord = { display: { theme: 'mono' } }
     const next = setNested(config, 'display.theme', 'slate')
 
     expect(getNested(next, 'display.theme')).toBe('slate')
@@ -130,7 +130,7 @@ describe('settings helpers', () => {
   })
 
   it('rejects prototype-polluting config paths', () => {
-    const config: KovaConfigRecord = {}
+    const config: HermesConfigRecord = {}
 
     expect(() => setNested(config, '__proto__.polluted', true)).toThrow('Unsafe config path')
     expect(() => setNested(config, 'constructor.prototype.polluted', true)).toThrow('Unsafe config path')
@@ -183,7 +183,7 @@ describe('settings helpers', () => {
   })
 
   describe('enumOptionsFor — backend selector dropdowns', () => {
-    const config: KovaConfigRecord = {}
+    const config: HermesConfigRecord = {}
 
     it('renders a dropdown for the TTS provider including xAI (Grok)', () => {
       const opts = enumOptionsFor('tts.provider', 'edge', config)
@@ -209,6 +209,26 @@ describe('settings helpers', () => {
       expect(opts).toEqual(['local', 'docker', 'singularity', 'modal', 'daytona', 'ssh'])
     })
 
+    it('narrows OpenAI TTS voice suggestions to what the selected model supports', () => {
+      // gpt-4o-mini-tts (and unset/unknown models): full 13-voice set.
+      const full = enumOptionsFor('tts.openai.voice', 'alloy', { tts: { openai: { model: 'gpt-4o-mini-tts' } } })
+      expect(full).toContain('marin')
+      expect(full).toContain('cedar')
+      expect(full).toContain('ballad')
+      expect(full).toContain('verse')
+      expect(full).toHaveLength(13)
+
+      // tts-1 / tts-1-hd: the 9-voice set — no ballad/verse/marin/cedar.
+      for (const model of ['tts-1', 'tts-1-hd']) {
+        const narrowed = enumOptionsFor('tts.openai.voice', 'alloy', { tts: { openai: { model } } })
+        expect(narrowed).toEqual(['alloy', 'ash', 'coral', 'echo', 'fable', 'nova', 'onyx', 'sage', 'shimmer'])
+      }
+
+      // A hand-typed custom voice still stays selectable on tts-1.
+      const custom = enumOptionsFor('tts.openai.voice', 'my-cloned-voice', { tts: { openai: { model: 'tts-1' } } })
+      expect(custom).toContain('my-cloned-voice')
+    })
+
     it('appends a hand-typed value not in the known list so it stays selected', () => {
       const opts = enumOptionsFor('tts.provider', 'my-custom-command-tts', config)
       expect(opts).toContain('my-custom-command-tts')
@@ -216,7 +236,7 @@ describe('settings helpers', () => {
     })
 
     it('surfaces user-defined command-type TTS providers (canonical providers nesting + legacy)', () => {
-      const withCustom: KovaConfigRecord = {
+      const withCustom: HermesConfigRecord = {
         tts: {
           provider: 'neutts',
           // canonical location the runtime resolves first: tts.providers.<name>
@@ -249,7 +269,7 @@ describe('settings helpers', () => {
     })
 
     it('surfaces command-type STT providers too (canonical providers nesting)', () => {
-      const withCustom: KovaConfigRecord = {
+      const withCustom: HermesConfigRecord = {
         stt: {
           provider: 'local',
           providers: { myasr: { type: 'command', command: 'curl …' } }
@@ -268,7 +288,7 @@ describe('settings helpers', () => {
     // STT), where filtering on ENUM_OPTIONS instead of the runtime's built-in set
     // would wrongly offer a provider that can never dispatch.
     it('never offers a built-in name as a command provider, even one absent from the dropdown list', () => {
-      const shadowing: KovaConfigRecord = {
+      const shadowing: HermesConfigRecord = {
         tts: {
           provider: 'edge',
           providers: {
@@ -290,7 +310,7 @@ describe('settings helpers', () => {
     })
 
     it('never offers a built-in STT name absent from the dropdown list as a command provider', () => {
-      const shadowing: KovaConfigRecord = {
+      const shadowing: HermesConfigRecord = {
         stt: {
           provider: 'local',
           providers: {
@@ -312,7 +332,7 @@ describe('settings helpers', () => {
   describe('sectionFieldEntries', () => {
     it('renders memory.provider from config even when the backend schema omits it', () => {
       const schema = { 'memory.memory_enabled': { type: 'boolean' as const } }
-      const config: KovaConfigRecord = { memory: { memory_enabled: true, provider: '' } }
+      const config: HermesConfigRecord = { memory: { memory_enabled: true, provider: '' } }
 
       const memoryKeys = (sectionFieldEntries(schema, config).get('memory') ?? []).map(([key]) => key)
 
@@ -320,7 +340,7 @@ describe('settings helpers', () => {
     })
 
     it('infers the field type from the config value when the schema omits the key', () => {
-      const config: KovaConfigRecord = { memory: { provider: '', memory_enabled: true, memory_char_limit: 2200 } }
+      const config: HermesConfigRecord = { memory: { provider: '', memory_enabled: true, memory_char_limit: 2200 } }
 
       const fields = new Map(sectionFieldEntries({}, config).get('memory') ?? [])
 
@@ -331,7 +351,7 @@ describe('settings helpers', () => {
 
     it('prefers the backend schema entry over inference when both exist', () => {
       const schema = { 'memory.provider': { type: 'select' as const, options: ['honcho'] } }
-      const config: KovaConfigRecord = { memory: { provider: 'honcho' } }
+      const config: HermesConfigRecord = { memory: { provider: 'honcho' } }
 
       const field = new Map(sectionFieldEntries(schema, config).get('memory') ?? []).get('memory.provider')
 

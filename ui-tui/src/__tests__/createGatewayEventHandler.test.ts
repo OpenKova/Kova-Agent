@@ -551,7 +551,7 @@ describe('createGatewayEventHandler', () => {
         cwd: '/repo',
         python: '/opt/venv/bin/python',
         stderr_tail:
-          '[startup] timed out\nModuleNotFoundError: No module named openai\nFileNotFoundError: ~/.hermes/config.yaml'
+          '[startup] timed out\nModuleNotFoundError: No module named openai\nFileNotFoundError: ~/.kova/config.yaml'
       },
       type: 'gateway.start_timeout'
     } as any)
@@ -569,7 +569,7 @@ describe('createGatewayEventHandler', () => {
     const raw = 'Kova here.\n\nLine two.'
     // Rich-rendered ANSI (`final_response_markdown: render`) used to win,
     // which left visible escape codes in Ink output. Raw text must win.
-    const rendered = '\u001b[33mKova here.\u001b[0m\n\n\u001b[2mLine two.\u001b[0m'
+    const rendered = '\u001b[33mHermes here.\u001b[0m\n\n\u001b[2mLine two.\u001b[0m'
 
     onEvent({ payload: { rendered, text: raw }, type: 'message.complete' } as any)
 
@@ -849,6 +849,99 @@ describe('createGatewayEventHandler', () => {
     expect(polarityBackgroundFromForeground('#ffffff')).toBeUndefined()
     expect(polarityBackgroundFromForeground('#808080')).toBeUndefined()
     expect(polarityBackgroundFromForeground('not-a-color')).toBeUndefined()
+  })
+
+  it('claims wake-word ownership when the gateway becomes ready', () => {
+    const ctx = buildCtx([])
+
+    createGatewayEventHandler(ctx)({ payload: {}, type: 'gateway.ready' } as any)
+
+    expect(ctx.gateway.rpc).toHaveBeenCalledWith('wake.start', { surface: 'tui' })
+  })
+
+  it('ends voice mode on a stop-phrase transcript without submitting a turn', () => {
+    const ctx = buildCtx([])
+    const onEvent = createGatewayEventHandler(ctx)
+
+    onEvent({ payload: { stop_phrase: true, text: 'stop' }, type: 'voice.transcript' } as any)
+
+    expect(ctx.voice.setVoiceEnabled).toHaveBeenCalledWith(false)
+    expect(ctx.voice.setRecording).toHaveBeenCalledWith(false)
+    expect(ctx.voice.setProcessing).toHaveBeenCalledWith(false)
+    expect(ctx.system.sys).toHaveBeenCalledWith('voice: stop phrase — voice chat ended')
+    // The stop phrase is user intent to END the chat — never a turn.
+    expect(ctx.submission.submitRef.current).not.toHaveBeenCalled()
+  })
+
+  it('ends voice mode on a typed stop phrase consumed server-side', () => {
+    const ctx = buildCtx([])
+    const onEvent = createGatewayEventHandler(ctx)
+
+    onEvent({ payload: { stop_phrase: true, typed: true }, type: 'voice.transcript' } as any)
+
+    expect(ctx.voice.setVoiceEnabled).toHaveBeenCalledWith(false)
+    expect(ctx.submission.submitRef.current).not.toHaveBeenCalled()
+  })
+
+  it('still submits ordinary voice transcripts as turns', async () => {
+    const ctx = buildCtx([])
+    const onEvent = createGatewayEventHandler(ctx)
+
+    onEvent({ payload: { text: 'stop the docker container' }, type: 'voice.transcript' } as any)
+
+    await vi.waitFor(() => expect(ctx.submission.submitRef.current).toHaveBeenCalledWith('stop the docker container'))
+    expect(ctx.voice.setVoiceEnabled).not.toHaveBeenCalled()
+  })
+
+  it('opens a fresh session before starting voice after wake detection', async () => {
+    const ctx = buildCtx([])
+    ctx.session.newSession = vi.fn(async () => patchUiState({ sid: 'wake-session' }))
+    patchUiState({ sid: 'old-session' })
+
+    createGatewayEventHandler(ctx)({
+      payload: { phrase: 'hey kova', start_new_session: true },
+      type: 'wake.detected'
+    } as any)
+
+    await vi.waitFor(() =>
+      expect(ctx.gateway.rpc).toHaveBeenCalledWith('voice.record', {
+        action: 'start',
+        session_id: 'wake-session'
+      })
+    )
+    expect(ctx.session.newSession).toHaveBeenCalledOnce()
+    expect(ctx.voice.setVoiceEnabled).toHaveBeenCalledWith(true)
+  })
+
+  it('keeps the current session when wake detection disables session creation', async () => {
+    const ctx = buildCtx([])
+    patchUiState({ sid: 'current-session' })
+
+    createGatewayEventHandler(ctx)({
+      payload: { phrase: 'hey kova', start_new_session: false },
+      type: 'wake.detected'
+    } as any)
+
+    await vi.waitFor(() =>
+      expect(ctx.gateway.rpc).toHaveBeenCalledWith('voice.record', {
+        action: 'start',
+        session_id: 'current-session'
+      })
+    )
+    expect(ctx.session.newSession).not.toHaveBeenCalled()
+  })
+
+  it('rearms wake detection when no session is available', async () => {
+    const ctx = buildCtx([])
+    patchUiState({ sid: '' })
+
+    createGatewayEventHandler(ctx)({
+      payload: { start_new_session: false },
+      type: 'wake.detected'
+    } as any)
+
+    await vi.waitFor(() => expect(ctx.gateway.rpc).toHaveBeenCalledWith('wake.resume', {}))
+    expect(ctx.gateway.rpc).not.toHaveBeenCalledWith('voice.record', expect.anything())
   })
 
   it('on gateway.ready with no STARTUP_RESUME_ID and auto_resume off, forges a new session', async () => {

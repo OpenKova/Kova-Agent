@@ -4,7 +4,7 @@
  *
  *   source (plain ESM js) -> [integrity check] -> bare-specifier rewrite
  *   (`@kova/plugin-sdk` / `react*` -> live shim blobs, see sdk/runtime.ts)
- *   -> blob `import()` -> validate default KovaPlugin -> register(ctx)
+ *   -> blob `import()` -> validate default HermesPlugin -> register(ctx)
  *
  * Loading the same plugin id again disposes the previous registrations first
  * (agent rewrites a plugin file -> clean reload). Failures toast + log; a
@@ -27,11 +27,10 @@
  * trust seam.
  */
 
-import { getStatus } from '@/kova'
 import { installPluginSdk, sdkImportMap } from '@/sdk/runtime'
 import { notifyError } from '@/store/notifications'
 
-import { createPluginContext, type KovaPlugin } from './plugin'
+import { createPluginContext, type HermesPlugin } from './plugin'
 import { dropPlugin, pluginActive, type PluginKind, publishPlugin } from './plugins-store'
 
 interface LoadOptions {
@@ -123,7 +122,7 @@ export async function loadRuntimePlugin(
 
     const url = URL.createObjectURL(new Blob([rewriteSpecifiers(source)], { type: 'text/javascript' }))
 
-    let mod: { default?: KovaPlugin }
+    let mod: { default?: HermesPlugin }
 
     try {
       mod = await import(/* @vite-ignore */ url)
@@ -134,7 +133,7 @@ export async function loadRuntimePlugin(
     const plugin = mod.default
 
     if (!plugin?.id || typeof plugin.register !== 'function') {
-      throw new Error(`${origin} has no valid default KovaPlugin export`)
+      throw new Error(`${origin} has no valid default HermesPlugin export`)
     }
 
     const record = {
@@ -183,8 +182,9 @@ export async function loadRuntimePlugin(
 // (agent- or user-written). SELF-MAINTAINING — no reload ceremony:
 //  - each plugin.js is fs-watched (the preview watcher IPC, debounced in
 //    main): saving the file hot-reloads the plugin in place;
-//  - a slow visible-tab poll of the directory picks up new folders (load +
-//    watch) and removed ones (unload + unwatch).
+//  - the directory itself is fs-watched too (watchDirectory IPC), so new
+//    folders load + removed ones unload on the change tick; older Electron
+//    shells without watchDirectory fall back to the slow visible-tab poll.
 // Panes land via placement adoption and STAY where the user drags them —
 // the tree treats not-yet-loaded pane ids as hidden, so boot and reload are
 // collapse -> appear, never a placeholder flash.
@@ -204,7 +204,7 @@ let watching = false
 let scanning = false
 
 async function loadDiskPlugin(name: string, file: string): Promise<void> {
-  const desktop = window.kovaDesktop!
+  const desktop = window.hermesDesktop!
   const entry = disk.get(name)
   const prevId = entry?.id
 
@@ -235,7 +235,7 @@ async function loadDiskPlugin(name: string, file: string): Promise<void> {
 }
 
 async function scanDiskPlugins(): Promise<void> {
-  const desktop = window.kovaDesktop
+  const desktop = window.hermesDesktop
 
   // Re-entrancy guard: the 5s poll must not overlap a slow in-flight scan
   // (reads/loads can exceed the interval).
@@ -246,8 +246,16 @@ async function scanDiskPlugins(): Promise<void> {
   scanning = true
 
   try {
-    const { kova_home } = await getStatus()
-    const { entries } = await desktop.readDir(`${kova_home}/desktop-plugins`)
+    // The plugin root is a LOCAL Electron path, resolved independently of the
+    // connected backend — a remote backend's kova_home is a remote path and
+    // yields `undefined/desktop-plugins` here (#66899).
+    const root = await desktop.desktopPluginsRoot?.()
+
+    if (!root) {
+      return
+    }
+
+    const { entries } = await desktop.readDir(root)
     const seen = new Set<string>()
 
     for (const dir of entries.filter(e => e.isDirectory)) {
@@ -307,9 +315,9 @@ async function scanDiskPlugins(): Promise<void> {
 export const discoverRuntimePlugins = scanDiskPlugins
 
 /** Start the self-maintaining disk door: initial scan, per-file hot reload,
- *  slow folder reconciliation while the window is visible. Idempotent. */
+ *  fs-watched folder reconciliation (poll fallback on older shells). Idempotent. */
 export function watchRuntimePlugins(): void {
-  const desktop = window.kovaDesktop
+  const desktop = window.hermesDesktop
 
   if (watching || !desktop) {
     return
@@ -317,7 +325,16 @@ export function watchRuntimePlugins(): void {
 
   watching = true
 
+  let dirWatchId: null | string = null
+
   desktop.onPreviewFileChanged(({ id }) => {
+    // Directory tick: a plugin folder appeared or vanished — reconcile.
+    if (dirWatchId && id === dirWatchId) {
+      void scanDiskPlugins()
+
+      return
+    }
+
     for (const [name, record] of disk) {
       if (record.watchId === id) {
         void loadDiskPlugin(name, record.file)
@@ -327,10 +344,52 @@ export function watchRuntimePlugins(): void {
     }
   })
 
-  void scanDiskPlugins()
-  window.setInterval(() => {
-    if (document.visibilityState === 'visible') {
-      void scanDiskPlugins()
+  const startDirWatch = async (): Promise<boolean> => {
+    if (!desktop.watchDirectory) {
+      return false
     }
-  }, DISK_POLL_MS)
+
+    try {
+      // Same Electron-local root as the scanner — never the backend's
+      // kova_home, which is a remote path in remote mode (#66899).
+      const root = await desktop.desktopPluginsRoot?.()
+
+      if (!root) {
+        return false
+      }
+
+      dirWatchId = (await desktop.watchDirectory(root)).id
+
+      return true
+    } catch {
+      // Dir missing (no plugins yet) or unwatchable — fall back to the poll,
+      // which also handles the dir being created later.
+      return false
+    }
+  }
+
+  void scanDiskPlugins()
+  void startDirWatch().then(watched => {
+    if (watched) {
+      return
+    }
+
+    const timer = window.setInterval(() => {
+      if (document.visibilityState !== 'visible') {
+        return
+      }
+
+      void scanDiskPlugins()
+
+      // The dir may have been created since — upgrade to the watch and retire
+      // this poll once it lands.
+      if (dirWatchId === null) {
+        void startDirWatch().then(upgraded => {
+          if (upgraded) {
+            window.clearInterval(timer)
+          }
+        })
+      }
+    }, DISK_POLL_MS)
+  })
 }

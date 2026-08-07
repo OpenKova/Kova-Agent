@@ -53,7 +53,7 @@ If you have a public endpoint available, check out [Automated GitHub PR Comments
 - **Messaging configured** (optional) — [Telegram](/user-guide/messaging/telegram) or [Discord](/user-guide/messaging/discord)
 
 :::tip No messaging? No problem
-Use `deliver: "local"` to save reviews to `~/.hermes/cron/output/`. Great for testing before wiring up notifications.
+Use `deliver: "local"` to save reviews to `~/.kova/cron/output/`. Great for testing before wiring up notifications.
 :::
 
 ---
@@ -69,7 +69,7 @@ kova
 Test with a simple command:
 
 ```
-Run: gh pr list --repo NousResearch/kova-agent --state open --limit 3
+Run: gh pr list --repo OpenKova/Kova-Agent --state open --limit 3
 ```
 
 You should see a list of open PRs. If this works, you're ready.
@@ -84,7 +84,7 @@ Still in the chat, ask Kova to review a real PR:
 Review this pull request. Read the diff, check for bugs, security issues,
 and code quality. Be specific about line numbers and quote problematic code.
 
-Run: gh pr diff 3888 --repo NousResearch/kova-agent
+Run: gh pr diff 3888 --repo OpenKova/Kova-Agent
 ```
 
 Kova will:
@@ -101,10 +101,10 @@ If you're happy with the quality, time to automate it.
 A skill gives Kova consistent review guidelines that persist across sessions and cron runs. Without one, review quality varies.
 
 ```bash
-mkdir -p ~/.hermes/skills/code-review
+mkdir -p ~/.kova/skills/code-review
 ```
 
-Create `~/.hermes/skills/code-review/SKILL.md`:
+Create `~/.kova/skills/code-review/SKILL.md`:
 
 ```markdown
 ---

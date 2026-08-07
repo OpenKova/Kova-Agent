@@ -1776,13 +1776,13 @@ class SlackAdapter(BasePlatformAdapter):
             logger.error(
                 "[Slack] SLACK_BOT_TOKEN not set — this is a permanent config "
                 "error; set SLACK_BOT_TOKEN via `kova gateway setup` "
-                "or in the active profile's ~/.hermes/.env file, then restart "
+                "or in the active profile's ~/.kova/.env file, then restart "
                 "the gateway.",
             )
             self._set_fatal_error(
                 "missing_slack_bot_token",
                 "SLACK_BOT_TOKEN not configured. Use `kova gateway setup` "
-                "or add it to your active profile's ~/.hermes/.env file, "
+                "or add it to your active profile's ~/.kova/.env file, "
                 "then restart the gateway.",
                 retryable=False,
             )
@@ -1791,13 +1791,13 @@ class SlackAdapter(BasePlatformAdapter):
             logger.error(
                 "[Slack] SLACK_APP_TOKEN not set — this is a permanent config "
                 "error; set SLACK_APP_TOKEN via `kova gateway setup` "
-                "or in the active profile's ~/.hermes/.env file, then restart "
+                "or in the active profile's ~/.kova/.env file, then restart "
                 "the gateway.",
             )
             self._set_fatal_error(
                 "missing_slack_app_token",
                 "SLACK_APP_TOKEN not configured. Use `kova gateway setup` "
-                "or add it to your active profile's ~/.hermes/.env file, "
+                "or add it to your active profile's ~/.kova/.env file, "
                 "then restart the gateway.",
                 retryable=False,
             )
@@ -3936,10 +3936,13 @@ class SlackAdapter(BasePlatformAdapter):
             return ""
         return (
             f"You are connected to this Slack workspace as the bot "
-            f'"@{name}". In messages, each line is prefixed with the sender\'s '
-            f"name, and mentions are shown as @DisplayName. Only treat a "
-            f'message as directed at you when it mentions "@{name}" '
-            f"specifically; a mention of any other participant is not a "
+            f'"@{name}". The adapter already applied mention and channel '
+            f"routing; treat every delivered turn as intentionally routed to "
+            f'you. Your routing mention "@{name}" may have been stripped from '
+            f'the visible text — do not reject or ignore a message solely '
+            f'because "@{name}" is absent. In messages, each line is prefixed '
+            f"with the sender's name, and visible mentions are shown as "
+            f"@DisplayName; a mention of any other participant is not a "
             f"mention of you, even if their name is similar."
         )
 
@@ -7650,11 +7653,10 @@ class SlackAdapter(BasePlatformAdapter):
         if team_id and channel_id:
             self._remember_channel_team(channel_id, team_id)
 
-        if slash_name in {"kova", "kova", ""}:
-            # Legacy /kova <subcommand> [args] routing + free-form questions
-            # (and the /kova equivalent). Empty slash_name falls into this
-            # branch for backward compat with any caller that didn't populate
-            # command["command"].
+        if slash_name in {"kova", ""}:
+            # Legacy /kova <subcommand> [args] routing + free-form questions.
+            # Empty slash_name falls into this branch for backward compat
+            # with any caller that didn't populate command["command"].
             legacy_text = raw_text.strip()
             from kova_cli.commands import slack_subcommand_map
 
@@ -8607,7 +8609,10 @@ async def _standalone_send(
     ``chat.postMessage``.
     """
     del force_document  # signature parity with other standalone senders
-    raw_token = getattr(pconfig, "token", None) or os.getenv("SLACK_BOT_TOKEN", "")
+    # Profile-scoped read: under multiplex os.environ may hold ANOTHER
+    # profile's bot token (first-writer-wins env bridges), so honor the
+    # secret scope's verdict instead of reading the process env directly.
+    raw_token = getattr(pconfig, "token", None) or get_secret("SLACK_BOT_TOKEN", "")
 
     # ``SLACK_BOT_TOKEN`` can be a comma-separated list in multi-workspace
     # gateways, and OAuth installs persist per-workspace tokens in

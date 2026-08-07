@@ -96,7 +96,7 @@ kova gateway setup
 
 ### 手动配置
 
-在 `~/.hermes/.env` 中添加：
+在 `~/.kova/.env` 中添加：
 
 ```bash
 # 必填

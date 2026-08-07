@@ -49,7 +49,7 @@ Before enabling the meetings pipeline, make sure you have:
 
 ## Step 1: Add Microsoft Graph Credentials
 
-Add Graph app-only credentials to `~/.hermes/.env`:
+Add Graph app-only credentials to `~/.kova/.env`:
 
 ```bash
 MSGRAPH_TENANT_ID=<tenant-id>
@@ -69,11 +69,12 @@ The webhook listener is a gateway platform named `msgraph_webhook`. At minimum, 
 
 ```bash
 MSGRAPH_WEBHOOK_ENABLED=true
-MSGRAPH_WEBHOOK_HOST=127.0.0.1
 MSGRAPH_WEBHOOK_PORT=8646
 MSGRAPH_WEBHOOK_CLIENT_STATE=<random-shared-secret>
 MSGRAPH_WEBHOOK_ACCEPTED_RESOURCES=communications/onlineMeetings
 ```
+
+The bind host is read from the platform's `extra.host` in `config.yaml` (there is no `MSGRAPH_WEBHOOK_HOST` env var — see the [webhook listener reference](msgraph-webhook.md)).
 
 The listener exposes:
 - `/msgraph/webhook` for Graph notifications
@@ -89,7 +90,7 @@ https://ops.example.com/msgraph/webhook
 
 The meeting pipeline reads its runtime config from the existing `teams` platform entry. Pipeline-specific knobs live under `teams.extra.meeting_pipeline`. Teams outbound delivery stays on the normal Teams platform config surface.
 
-Example `~/.hermes/config.yaml`:
+Example `~/.kova/config.yaml`:
 
 ```yaml
 platforms:

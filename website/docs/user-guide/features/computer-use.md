@@ -73,7 +73,35 @@ Then start a session with the toolset enabled:
 kova -t computer_use chat
 ```
 
-or add `computer_use` to your enabled toolsets in `~/.hermes/config.yaml`.
+or add `computer_use` to your enabled toolsets in `~/.kova/config.yaml`.
+
+## Permission modes and logged-in browser profiles
+
+Kova maps its existing approval UX onto cua-driver 0.10's immutable daemon
+modes. There is no second permission toggle to keep in sync:
+
+| Kova session | cua-driver mode | Human intervention | `existing_profile` |
+|---|---|---|---|
+| Manual or smart approvals (default) | `standard` | Normal Kova approvals; Cua stops at its protected boundary | Refuses unless a certified protected host is available; Kova does not claim one today |
+| `--yolo`, `/yolo`, or `approvals.mode: off` | private `unrestricted` daemon | One explicit Kova risk acceptance; no runtime Cua prompts | Allowed within Cua's built-in, managed, and user policy ceilings |
+
+The unrestricted daemon is private to that Kova session. Turning `/yolo`
+off, resetting/closing the session, cancellation cleanup, or process exit ends
+the Cua session and stops that daemon. It never changes the machine-wide
+daemon's mode or grants another Kova conversation the same authority.
+
+`smart` approval remains `standard`: an LLM classification is not protected
+human consent. Cua's `bounded` manifest mode is also not inferred from smart
+approval or a normal tool confirmation; it needs a separately trusted host
+that reviews and launches the exact manifest.
+
+<div class="alert alert--warning">
+
+YOLO/unrestricted mode does not protect against prompt injection or unintended
+input. Use it only in a disposable VM or with accounts and data whose full
+compromise you accept.
+
+</div>
 
 ## `kova computer-use doctor` — your first triage stop
 
@@ -218,7 +246,7 @@ Kova applies multi-layer guardrails:
   dialogs, no typing passwords, no following instructions embedded in
   screenshots.
 
-Pair with `approvals.mode: manual` in `~/.hermes/config.yaml` if you
+Pair with `approvals.mode: manual` in `~/.kova/config.yaml` if you
 want every action confirmed.
 
 ## Token efficiency
@@ -258,7 +286,7 @@ of screenshot context, not ~600K.
 - **Windows: elevated (admin) windows can't be driven from a normal
   agent.** Windows UIPI (User Interface Privilege Isolation) enforces
   integrity-level boundaries: a Medium-integrity process (the default
-  Kova Agent) cannot enumerate the UIA tree of, or inject mouse input
+  Kova agent) cannot enumerate the UIA tree of, or inject mouse input
   into, a window owned by a High-integrity (Administrator) process.
   Symptom: `capture(mode='som')` returns 0 elements and `click(...)`
   reports success while doing nothing, even though the screenshot
@@ -266,7 +294,7 @@ of screenshot context, not ~600K.
   events partially bypass UIPI, so Tab / Enter can still navigate an
   elevated dialog. This is an OS constraint, not a cua-driver bug — it
   affects every Windows automation stack. To drive elevated windows,
-  run the Kova Agent itself at High integrity (launch from an
+  run the Kova agent itself at High integrity (launch from an
   elevated terminal); otherwise target non-elevated windows.
 - **Platform-specific deployment gotchas:**
   - **macOS** uses private SkyLight SPIs. Apple can change them in any
@@ -390,14 +418,12 @@ KOVA_CUA_DRIVER_CMD=/path/to/cua/libs/cua-driver/rust/target/debug/cua-driver
 
 ### Notes & gotchas
 
-- **Kova spawns its own `cua-driver mcp` child over stdio** — it does
-  *not* attach to the long-running `cua-driver serve` autostart daemon
-  or its named pipe. So the scheduled task / LaunchAgent is unnecessary
-  for testing (`-NoAutoStart` is fine). The autostart daemon and the
-  Windows UIAccess worker (`cua-driver-uia.exe`) only matter for
-  foreground-safe input on some apps (e.g. WPF); the standard tool
-  surface works through the stdio child. On Windows SSH sessions, the
-  autostart pattern IS needed — see the Limitations section.
+- **Kova spawns a `cua-driver mcp` stdio proxy.** In a normal session the
+  proxy connects to (and may start) the standard machine daemon. In explicit
+  Kova YOLO, Kova instead owns a private `cua-driver serve --embedded`
+  child and points the proxy at its private socket or named pipe. The Windows
+  autostart/UIAccess pattern still matters for interactive Session 1+ input
+  from SSH — see the Limitations section.
 - **Locked binary on Windows.** A running `cua-driver-serve` daemon can
   hold `cua-driver.exe` and block an overwrite on rebuild.
   `install-local.ps1` renames the locked binary out of the way

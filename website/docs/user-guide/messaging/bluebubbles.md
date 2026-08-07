@@ -31,7 +31,7 @@ kova gateway setup
 
 Select **BlueBubbles (iMessage)** and enter your server URL and password.
 
-Or set environment variables directly in `~/.hermes/.env`:
+Or set environment variables directly in `~/.kova/.env`:
 
 ```bash
 BLUEBUBBLES_SERVER_URL=http://192.168.1.10:1234
@@ -50,7 +50,7 @@ platforms:
       require_mention: true
 ```
 
-With `require_mention: true`, DMs still work normally, but group-chat messages are ignored unless they match a mention pattern. If you do not configure custom patterns, Kova uses conservative defaults for `Kova` and `@Kova Agent` variants.
+With `require_mention: true`, DMs still work normally, but group-chat messages are ignored unless they match a mention pattern. If you do not configure custom patterns, Kova uses conservative defaults for `Kova` and `@Kova agent` variants.
 
 For a custom agent name, set regex patterns:
 
@@ -74,12 +74,12 @@ kova pairing approve bluebubbles <CODE>
 ```
 Use `kova pairing list` to see pending codes and approved users.
 
-**Pre-authorize specific users** (in `~/.hermes/.env`):
+**Pre-authorize specific users** (in `~/.kova/.env`):
 ```bash
 BLUEBUBBLES_ALLOWED_USERS=user@icloud.com,+15551234567
 ```
 
-**Open access** (in `~/.hermes/.env`):
+**Open access** (in `~/.kova/.env`):
 ```bash
 BLUEBUBBLES_ALLOW_ALL_USERS=true
 ```
@@ -118,7 +118,7 @@ Kova → BlueBubbles REST API → Messages.app → iMessage
 | `BLUEBUBBLES_REQUIRE_MENTION` | No | `false` | Require a mention pattern before responding in group chats |
 | `BLUEBUBBLES_MENTION_PATTERNS` | No | Kova wake words | JSON array, newline-separated, or comma-separated regex patterns for group mention matching |
 
-Auto-marking messages as read is controlled by the `send_read_receipts` key under `platforms.bluebubbles.extra` in `~/.hermes/config.yaml` (default: `true`). There is no corresponding environment variable.
+Auto-marking messages as read is controlled by the `send_read_receipts` key under `platforms.bluebubbles.extra` in `~/.kova/config.yaml` (default: `true`). There is no corresponding environment variable.
 
 ## Features
 

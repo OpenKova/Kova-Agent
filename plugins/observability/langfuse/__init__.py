@@ -8,7 +8,7 @@ observability/langfuse`` or ``kova tools → Langfuse Observability``). At
 runtime the plugin also requires the ``langfuse`` SDK and credentials; if
 either is missing the hooks are inert.
 
-Required env vars (set via ``kova tools`` or ~/.hermes/.env):
+Required env vars (set via ``kova tools`` or ~/.kova/.env):
   KOVA_LANGFUSE_PUBLIC_KEY  - Langfuse project public key (pk-lf-...)
   KOVA_LANGFUSE_SECRET_KEY  - Langfuse project secret key (sk-lf-...)
   KOVA_LANGFUSE_BASE_URL    - Langfuse server URL (default: https://cloud.langfuse.com)

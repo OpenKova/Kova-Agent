@@ -33,7 +33,7 @@ Kova on Discord is not a webhook that replies statelessly. It runs through the f
 2. mention / free-response checks
 3. session lookup
 4. session transcript loading
-5. normal Kova Agent execution, including tools, memory, and slash commands
+5. normal Kova agent execution, including tools, memory, and slash commands
 6. response delivery back to Discord
 
 That matters because behavior in a busy server depends on both Discord routing and Kova session policy.
@@ -257,7 +257,7 @@ Select **Discord** when prompted, then paste your bot token and user ID when ask
 
 ### Option B: Manual Configuration
 
-Add the following to your `~/.hermes/.env` file:
+Add the following to your `~/.kova/.env` file:
 
 ```bash
 # Required
@@ -282,7 +282,7 @@ You can run `kova gateway` in the background or as a systemd service for persist
 
 ## Configuration Reference
 
-Discord behavior is controlled through two files: **`~/.hermes/.env`** for credentials and env-level toggles, and **`~/.hermes/config.yaml`** for structured settings. Environment variables always take precedence over config.yaml values when both are set.
+Discord behavior is controlled through two files: **`~/.kova/.env`** for credentials and env-level toggles, and **`~/.kova/config.yaml`** for structured settings. Environment variables always take precedence over config.yaml values when both are set.
 
 ### Environment Variables (`.env`)
 
@@ -327,7 +327,7 @@ Wiring multiple Kova profiles to reply to one another in a shared channel — by
 
 ### Config File (`config.yaml`)
 
-The `discord` section in `~/.hermes/config.yaml` mirrors the env vars above. Config.yaml settings are applied as defaults — if the equivalent env var is already set, the env var wins.
+The `discord` section in `~/.kova/config.yaml` mirrors the env vars above. Config.yaml settings are applied as defaults — if the equivalent env var is already set, the env var wins.
 
 ```yaml
 # Discord-specific settings
@@ -348,6 +348,8 @@ discord:
     limit: 100                    # Global scan cap per reconnect
     max_dispatches: 10            # Recovery dispatch cap per reconnect
   channel_prompts: {}             # Per-channel ephemeral system prompts
+  voice_channel_inactivity_timeout_seconds: 300  # Set 0 to stay in VC until explicit /voice leave
+  voice_playback_timeout_seconds: 120             # Minimum playback watchdog; long clips get duration+padding
   allow_mentions:                 # What the bot is allowed to ping (safe defaults)
     everyone: false               # @everyone / @here pings (default: false)
     roles: false                  # @role pings (default: false)
@@ -575,6 +577,19 @@ display:
   tool_progress_command: true
 ```
 
+#### `display.reasoning_style`
+
+**Type:** string — **Default (Discord):** `"subtext"` — **Values:** `code`, `blockquote`, `subtext`
+
+Controls how the model's reasoning block is rendered when reasoning display is enabled. Discord defaults to `subtext`, which uses Discord's native `-# ` small grey metadata text so reasoning stays visually secondary to the answer. `blockquote` renders it as a `>` quote, and `code` (the default on other platforms) uses a fenced code block. Long reasoning is collapsed to the first 15 lines.
+
+```yaml
+display:
+  platforms:
+    discord:
+      reasoning_style: subtext   # code | blockquote | subtext
+```
+
 ## Slash Command Access Control
 
 By default, every allowed user can run every slash command. To split your allowlist into **admins** (full slash command access) and **regular users** (only commands you explicitly enable), add `allow_admin_from` and `user_allowed_commands` to the Discord platform's `extra` block:
@@ -667,7 +682,7 @@ Discord's per-upload size limit depends on the server's boost tier (25 MB free, 
 
 ## Receiving Arbitrary File Types
 
-Any file type a user uploads is accepted. Authorization to message the agent is the gate — not the file extension. Every upload is downloaded, cached under `~/.hermes/cache/documents/`, and surfaced to the agent as a `DOCUMENT`-typed message event so it can inspect the file with `terminal` (`ffprobe`, `unzip`, `file`, `strings`, etc.) or `read_file`.
+Any file type a user uploads is accepted. Authorization to message the agent is the gate — not the file extension. Every upload is downloaded, cached under `~/.kova/cache/documents/`, and surfaced to the agent as a `DOCUMENT`-typed message event so it can inspect the file with `terminal` (`ffprobe`, `unzip`, `file`, `strings`, etc.) or `read_file`.
 
 - Known types (PDF, docx/xlsx/pptx, zip, images/audio/video, etc.) keep their precise MIME.
 - Unknown types fall back to the upload's reported content type, or `application/octet-stream` when none is given.
@@ -701,7 +716,7 @@ When the agent calls the `clarify` tool — to ask which approach you prefer, ge
 
 Click a numbered button to answer, or click **Other** to type a free-form response (the next message you send in that channel becomes the answer). Open-ended `clarify` calls (no preset choices) skip the buttons and just capture your next message.
 
-The buttons disable themselves once a choice is made so duplicate clicks don't double-resolve the prompt. Configure the response timeout via `agent.clarify_timeout` in `~/.hermes/config.yaml` (default `600` seconds). If you don't respond within the timeout, the agent unblocks with a sentinel message and adapts rather than hanging.
+The buttons disable themselves once a choice is made so duplicate clicks don't double-resolve the prompt. Configure the response timeout via `agent.clarify_timeout` in `~/.kova/config.yaml` (default `600` seconds). If you don't respond within the timeout, the agent unblocks with a sentinel message and adapts rather than hanging.
 
 ## Home Channel
 
@@ -713,7 +728,7 @@ Type `/sethome` in any Discord channel where the bot is present. That channel be
 
 ### Manual Configuration
 
-Add these to your `~/.hermes/.env`:
+Add these to your `~/.kova/.env`:
 
 ```bash
 DISCORD_HOME_CHANNEL=123456789012345678
@@ -759,6 +774,8 @@ discord:
 ```
 
 Notes:
+- Set `voice_channel_inactivity_timeout_seconds: 0` if you want the bot to remain in the voice channel until an explicit `/voice leave` or manual disconnect. The default preserves the historical 300-second idle auto-leave.
+- `voice_playback_timeout_seconds` is a floor, not a hard cap for long TTS. Kova probes the generated audio duration and waits for `duration + 30s` when that is longer than the configured floor.
 - The acknowledgement fires at most once per turn, only when the bot is in a voice channel and the mixer is active. It uses your configured TTS provider.
 - `ambient_path` accepts any file `ffmpeg` can decode; it's looped seamlessly. Leave it empty to use the built-in synthesised pad (no asset needed).
 - All settings live in `config.yaml` (not `.env`) — they're behavioral, not secrets.
@@ -801,7 +818,7 @@ Refreshing the directory (`/channels refresh` on platforms that expose it, or a 
    kova gateway restart
    ```
 
-If the gateway log says Discord is connected and REST API checks work, but every inbound message is silent, look for this warning in `~/.hermes/logs/gateway.log`:
+If the gateway log says Discord is connected and REST API checks work, but every inbound message is silent, look for this warning in `~/.kova/logs/gateway.log`:
 
 ```text
 No Discord access policy configured; inbound Discord messages will be denied by default.
@@ -837,13 +854,13 @@ Kova 0.18 intentionally fails closed on externally reachable adapters. A Discord
 
 **Cause**: Your User ID isn't in `DISCORD_ALLOWED_USERS`.
 
-**Fix**: Add your User ID to `DISCORD_ALLOWED_USERS` in `~/.hermes/.env` and restart the gateway.
+**Fix**: Add your User ID to `DISCORD_ALLOWED_USERS` in `~/.kova/.env` and restart the gateway.
 
 ### People in the same channel are sharing context unexpectedly
 
 **Cause**: `group_sessions_per_user` is disabled, or the platform cannot provide a user ID for the messages in that context.
 
-**Fix**: Set this in `~/.hermes/config.yaml` and restart the gateway:
+**Fix**: Set this in `~/.kova/config.yaml` and restart the gateway:
 
 ```yaml
 group_sessions_per_user: true
@@ -862,7 +879,7 @@ Always set `DISCORD_ALLOWED_USERS` (or `DISCORD_ALLOWED_ROLES`) to restrict who 
 For servers where access is managed by roles instead of individual user lists (moderator teams, support staff, internal tooling), use `DISCORD_ALLOWED_ROLES` — a comma-separated list of role IDs. Any member with one of those roles is authorized.
 
 ```bash
-# ~/.hermes/.env — works alongside or instead of DISCORD_ALLOWED_USERS
+# ~/.kova/.env — works alongside or instead of DISCORD_ALLOWED_USERS
 DISCORD_ALLOWED_ROLES=987654321098765432,876543210987654321
 ```
 
@@ -882,7 +899,7 @@ By default, Kova blocks the bot from pinging `@everyone`, `@here`, and role ment
 You can relax these defaults via either env vars or `config.yaml`:
 
 ```yaml
-# ~/.hermes/config.yaml
+# ~/.kova/config.yaml
 discord:
   allow_mentions:
     everyone: false      # allow the bot to ping @everyone / @here
@@ -892,7 +909,7 @@ discord:
 ```
 
 ```bash
-# ~/.hermes/.env — env vars win over config.yaml
+# ~/.kova/.env — env vars win over config.yaml
 DISCORD_ALLOW_MENTION_EVERYONE=false
 DISCORD_ALLOW_MENTION_ROLES=false
 DISCORD_ALLOW_MENTION_USERS=true

@@ -18,10 +18,10 @@ Conversational style and visual style are separate concepts:
 ```bash
 /skin                # show the current skin and list available skins
 /skin ares           # switch to a built-in skin
-/skin mytheme        # switch to a custom skin from ~/.hermes/skins/mytheme.yaml
+/skin mytheme        # switch to a custom skin from ~/.kova/skins/mytheme.yaml
 ```
 
-Or set the default skin in `~/.hermes/config.yaml`:
+Or set the default skin in `~/.kova/config.yaml`:
 
 ```yaml
 display:
@@ -56,7 +56,7 @@ Controls all color values throughout the CLI. Values are hex color strings.
 | `banner_dim` | Muted text in the banner (separators, secondary labels) | `#B8860B` (dark goldenrod) |
 | `banner_text` | Body text in the banner (tool names, skill names) | `#FFF8DC` (cornsilk) |
 | `ui_accent` | General UI accent color (highlights, active elements) | `#FFBF00` |
-| `ui_label` | UI labels and tags | `#4dd0e1` (teal) |
+| `ui_label` | UI labels and tags | `#DAA520` (goldenrod) |
 | `ui_ok` | Success indicators (checkmarks, completion) | `#4caf50` (green) |
 | `ui_error` | Error indicators (failures, blocked) | `#ef5350` (red) |
 | `ui_warn` | Warning indicators (caution, approval prompts) | `#ffa726` (orange) |
@@ -67,7 +67,7 @@ Controls all color values throughout the CLI. Values are hex color strings.
 | `session_border` | Session ID dim border color | `#8B8682` |
 | `status_bar_bg` | Background color for the TUI status / usage bar | `#1a1a2e` |
 | `voice_status_bg` | Background color for the voice-mode status badge | `#1a1a2e` |
-| `selection_bg` | Background color for the TUI mouse-selection highlighter. Falls back to `completion_menu_current_bg` when unset. | `#333355` |
+| `selection_bg` | Background color for the TUI mouse-selection highlighter. Falls back to `completion_menu_current_bg` when unset. | `#3a3a55` |
 | `completion_menu_bg` | Background color for the completion menu list | `#1a1a2e` |
 | `completion_menu_current_bg` | Background color for the active completion row | `#333355` |
 | `completion_menu_meta_bg` | Background color for the completion meta column | `#1a1a2e` |
@@ -110,12 +110,12 @@ Text strings used throughout the CLI interface.
 
 ## Custom skins
 
-Create YAML files under `~/.hermes/skins/`. User skins inherit missing values from the built-in `default` skin, so you only need to specify the keys you want to change.
+Create YAML files under `~/.kova/skins/`. User skins inherit missing values from the built-in `default` skin, so you only need to specify the keys you want to change.
 
 ### Full custom skin YAML template
 
 ```yaml
-# ~/.hermes/skins/mytheme.yaml
+# ~/.kova/skins/mytheme.yaml
 # Complete skin template — all keys shown. Delete any you don't need;
 # missing values automatically inherit from the 'default' skin.
 
@@ -224,8 +224,8 @@ tool_prefix: "▏"
 - Opens any skin into a visual editor with all Kova skin fields (colors, spinner, branding, tool prefix, tool emojis)
 - Generates `banner_logo` text art from a text prompt
 - Converts uploaded images (PNG, JPG, GIF, WEBP) into `banner_hero` ASCII art with multiple render styles (braille, ASCII ramp, blocks, dots)
-- Saves directly to `~/.hermes/skins/`
-- Activates a skin by updating `~/.hermes/config.yaml`
+- Saves directly to `~/.kova/skins/`
+- Activates a skin by updating `~/.kova/config.yaml`
 - Shows the generated YAML and a live preview
 
 ### Install
@@ -256,7 +256,7 @@ npm start
 3. Choose a built-in or custom skin to edit.
 4. Generate a logo from text and/or upload an image for hero art. Pick a render style and width.
 5. Edit colors, spinner, branding, and other fields.
-6. Click **Save** to write the skin YAML to `~/.hermes/skins/`.
+6. Click **Save** to write the skin YAML to `~/.kova/skins/`.
 7. Click **Activate** to set it as the current skin (updates `display.skin` in `config.yaml`).
 
 Kova Mod respects the `HERMES_HOME` environment variable, so it works with [profiles](/user-guide/profiles) too.
@@ -266,6 +266,6 @@ Kova Mod respects the `HERMES_HOME` environment variable, so it works with [prof
 - Built-in skins load from `kova_cli/skin_engine.py`.
 - Unknown skins automatically fall back to `default`.
 - `/skin` updates the active CLI theme immediately for the current session.
-- User skins in `~/.hermes/skins/` take precedence over built-in skins with the same name.
+- User skins in `~/.kova/skins/` take precedence over built-in skins with the same name.
 - Skin changes via `/skin` are session-only. To make a skin your permanent default, set it in `config.yaml`.
 - The `banner_logo` and `banner_hero` fields support Rich console markup (e.g., `[bold #FF0000]text[/]`) for colored ASCII art.

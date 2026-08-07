@@ -6,6 +6,7 @@ import { TUI_SESSION_MODEL_FLAG } from '../domain/slash.js'
 import type { GatewayClient } from '../gatewayClient.js'
 import type { ModelOptionProvider, ModelOptionsResponse } from '../gatewayTypes.js'
 import { fuzzyRank } from '../lib/fuzzy.js'
+import { modelSearchText } from '../lib/model-search-text.js'
 import { asRpcResult, rpcErrorMessage } from '../lib/rpc.js'
 import type { Theme } from '../theme.js'
 
@@ -136,7 +137,9 @@ export function ModelPicker({
       return allModels
     }
 
-    return fuzzyRank(allModels, filter, m => m).map(r => r.item)
+    // modelSearchText adds aliases for brand-less wire ids (e.g. Kimi
+    // Coding `k3` still matches a "kimi" query).
+    return fuzzyRank(allModels, filter, modelSearchText).map(r => r.item)
   }, [allModels, filter, stage])
 
   const models = filteredModels
@@ -471,7 +474,7 @@ export function ModelPicker({
         </Text>
 
         <Text color={t.color.muted} wrap="truncate-end">
-          Paste your API key below (saved to ~/.hermes/.env)
+          Paste your API key below (saved to ~/.kova/.env)
         </Text>
 
         <Text color={t.color.muted} wrap="truncate-end">

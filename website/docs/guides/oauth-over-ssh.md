@@ -21,7 +21,7 @@ The fix is a one-line SSH local-forward. For MCP servers on an interactive termi
 ssh -N -L 43827:127.0.0.1:43827 user@remote-host
 
 # In your existing SSH session on the remote machine:
-kova auth add spotify --no-browser
+kova auth spotify --no-browser
 # → Kova prints an authorize URL. Open it in a browser on your laptop.
 # → Your browser redirects to 127.0.0.1:43827/callback, the tunnel forwards
 #   the request to the remote listener, login completes.
@@ -71,7 +71,7 @@ ssh -N -L <port>:127.0.0.1:<port> user@remote-host
 
 Then open the authorize URL in your browser as normal; the redirect tunnels through and the listener picks it up. Use this when you need the flow to complete unattended (e.g. scripted re-auth where you can't paste interactively).
 
-**Pitfall — the 30s config-reload race.** If you edit `~/.hermes/config.yaml` to add an OAuth MCP server from inside a running Kova session, the CLI auto-reloads MCP connections with a 30s timeout. That's not enough time to complete an interactive OAuth flow, and the reload will give up. Use `kova mcp login <server>` from a fresh terminal instead — it has no such cap and waits the full 5 min for you to paste back.
+**Pitfall — the 30s config-reload race.** If you edit `~/.kova/config.yaml` to add an OAuth MCP server from inside a running Kova session, the CLI auto-reloads MCP connections with a 30s timeout. That's not enough time to complete an interactive OAuth flow, and the reload will give up. Use `kova mcp login <server>` from a fresh terminal instead — it has no such cap and waits the full 5 min for you to paste back.
 
 ## Why the listener can't just bind 0.0.0.0
 
@@ -92,7 +92,7 @@ ssh -N -L 43827:127.0.0.1:43827 user@remote-host
 
 ```bash
 ssh user@remote-host
-kova auth add spotify --no-browser
+kova auth spotify --no-browser
 ```
 
 Kova detects the SSH session, skips the browser auto-open, and prints an authorize URL plus a `Waiting for callback on http://127.0.0.1:<port>/callback` line.
@@ -151,9 +151,9 @@ Then retry the `ssh -L` command.
 
 The redirect never made it back to the remote listener. Check the tunnel is still alive (`ssh -N` doesn't show output, so look at the terminal you started it from), confirm you used the port from the latest `Waiting for callback on ...` line (Kova may auto-bump if the preferred port is busy), restart the tunnel if needed, and re-run the auth command.
 
-### Tokens land in the wrong `~/.hermes`
+### Tokens land in the wrong `~/.kova`
 
-The tokens are written under the Linux user that ran `kova auth add ...`. If your gateway / systemd service runs as a different user (e.g. `root` or a dedicated `kova` user), authenticate as **that** user so the tokens land in their `~/.hermes/auth.json`. `sudo -u kova -i` or equivalent.
+The tokens are written under the Linux user that ran `kova auth add ...`. If your gateway / systemd service runs as a different user (e.g. `root` or a dedicated `kova` user), authenticate as **that** user so the tokens land in their `~/.kova/auth.json`. `sudo -u kova -i` or equivalent.
 
 ## See Also
 

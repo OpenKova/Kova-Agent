@@ -41,12 +41,13 @@ Three pieces fit together:
 | Category | Extensions | Delivery |
 |---|---|---|
 | Images | `.png .jpg .jpeg .gif .webp .bmp .tiff .svg` | Inline embed |
-| Video | `.mp4 .mov .avi .mkv .webm` | Inline embed (where supported) |
-| Audio | `.mp3 .wav .ogg .m4a .flac` | Voice / audio attachment |
-| Documents | `.pdf .docx .doc .odt .rtf .txt .md` | File upload |
-| Data | `.xlsx .xls .csv .tsv .json .xml .yaml .yml` | File upload |
-| Presentations | `.pptx .ppt .odp` | File upload |
-| Archives | `.zip .tar .gz .tgz .bz2 .7z` | File upload |
+| Video | `.mp4 .mov .avi .mkv .webm .3gp` | Inline embed (where supported) |
+| Audio | `.mp3 .m2a .wav .ogg .opus .m4a .flac` | Voice / audio attachment |
+| Documents | `.pdf .docx .doc .odt .rtf .txt .md .epub` | File upload |
+| Data | `.xlsx .xls .ods .csv .tsv .json .xml .yaml .yml` | File upload |
+| Geospatial | `.kmz .kml .geojson .gpx` | File upload |
+| Presentations | `.pptx .ppt .odp .key` | File upload |
+| Archives | `.zip .tar .gz .tgz .bz2 .xz .7z .rar .apk .ipa` | File upload |
 | Web | `.html .htm` | File upload |
 
 `.py`, `.log`, and other source-file extensions are intentionally excluded so
@@ -65,8 +66,8 @@ messaging platforms.
 
 **Project-level:** add the bias to `AGENTS.md` / `CLAUDE.md` /
 `.cursorrules` in a project the agent works from, to your global
-persona in `~/.hermes/SOUL.md`, or as a named preset under
-`agent.personalities` in `~/.hermes/config.yaml` (switchable per session
+persona in `~/.kova/SOUL.md`, or as a named preset under
+`agent.personalities` in `~/.kova/config.yaml` (switchable per session
 via `/personality`).
 
 The mechanic the agent has to use is simple: render the file to an
@@ -114,7 +115,7 @@ community servers for most popular tools — install whichever you need:
 | **Snowflake / BigQuery** | SQL against data warehouses |
 | **Google Drive** | File search, contents, share management |
 
-Install MCP servers via `~/.hermes/config.yaml` under the `mcp_servers`
+Install MCP servers via `~/.kova/config.yaml` under the `mcp_servers`
 section. See [MCP integration](./mcp.md) for the full setup guide.
 
 ## Comparison to Perplexity Computer in Slack

@@ -29,9 +29,9 @@ load_dotenv()
 # Default datasets to sample from
 DEFAULT_DATASETS = [
     "NousResearch/swe-terminus-agent-glm-kimi-minimax",
-    "NousResearch/kova-agent-megascience-sft1",
-    "NousResearch/Kova-Agent-Thinking-GLM-4.7-SFT2",
-    "NousResearch/Kova-Agent-Thinking-GLM-4.7-SFT1",
+    "OpenKova/Kova-Agent-megascience-sft1",
+    "OpenKova/Kova-Agent-Thinking-GLM-4.7-SFT2",
+    "OpenKova/Kova-Agent-Thinking-GLM-4.7-SFT1",
     "NousResearch/terminal-tasks-glm-kova-agent"
 ]
 

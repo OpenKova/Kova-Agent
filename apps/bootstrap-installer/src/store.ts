@@ -75,7 +75,7 @@ export const $route = atom<Route>('welcome')
 export const $mode = atom<AppMode>('install')
 export const $bootstrap = atom<BootstrapStateModel>(INITIAL)
 export const $logPath = atom<string | null>(null)
-export const $kovaHome = atom<string | null>(null)
+export const $hermesHome = atom<string | null>(null)
 
 export const $progress = computed($bootstrap, (b) => {
   const total = b.stageOrder.length
@@ -178,7 +178,7 @@ export async function initialize(): Promise<void> {
   if (fake) {
     unlisten = () => {}
     $logPath.set('~/.kova/logs/bootstrap-installer.log')
-    $kovaHome.set('~/.kova')
+    $hermesHome.set('~/.kova')
     $mode.set(fake === 'update' ? 'update' : 'install')
 
     // Update auto-runs (it's a hand-off); install/failure wait for the welcome click.
@@ -189,14 +189,14 @@ export async function initialize(): Promise<void> {
 
   // Pull static info on mount for the diagnostics footer.
   try {
-    const [logPath, kovaHome, mode] = await Promise.all([
+    const [logPath, hermesHome, mode] = await Promise.all([
       invoke<string>('get_log_path'),
       invoke<string>('get_kova_home'),
       invoke<AppMode>('get_mode')
     ])
 
     $logPath.set(logPath)
-    $kovaHome.set(kovaHome)
+    $hermesHome.set(hermesHome)
     $mode.set(mode)
   } catch (err) {
     console.warn('failed to fetch installer paths', err)
@@ -347,7 +347,7 @@ export async function cancelInstall(): Promise<void> {
   await invoke('cancel_bootstrap')
 }
 
-export async function launchKovaDesktop(): Promise<void> {
+export async function launchHermesDesktop(): Promise<void> {
   if (fakeMode()) {throw new Error('Preview mode — launching is disabled.')}
   const installRoot = $bootstrap.get().installRoot
 

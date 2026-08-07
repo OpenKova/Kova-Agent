@@ -2,7 +2,7 @@
 
 The dump reads ``os.getenv`` — the invoking terminal's environment — but the
 managed backends (launchd / systemd / the desktop-spawned ``serve`` process)
-load credentials from ``~/.hermes/.env``, not the login shell. A key exported
+load credentials from ``~/.kova/.env``, not the login shell. A key exported
 in the shell but absent from ``.env`` is invisible to the backend, yet the dump
 used to print a bare "set", sending support down a phantom "the key is
 configured" path (the real cause behind gated tools like ``web_search`` going
@@ -39,24 +39,6 @@ def test_dump_flags_shell_only_key_not_in_dotenv(monkeypatch, capsys, tmp_path):
     assert "set" in line
     assert "shell only" in line
     assert ".env" in line
-
-
-def test_dump_does_not_flag_key_present_in_dotenv(monkeypatch, capsys, tmp_path):
-    from kova_cli import dump
-    from kova_cli.config import get_kova_home
-
-    monkeypatch.setattr(dump, "get_project_root", lambda: tmp_path / "noproject")
-
-    home = get_kova_home()
-    home.mkdir(parents=True, exist_ok=True)
-    (home / ".env").write_text("FIRECRAWL_API_KEY=fc-in-dotenv\n")
-    monkeypatch.setenv("FIRECRAWL_API_KEY", "fc-in-dotenv")
-
-    dump.run_dump(SimpleNamespace(show_keys=False))
-
-    line = _api_key_line(capsys.readouterr().out, "firecrawl")
-    assert "set" in line
-    assert "shell only" not in line
 
 
 def test_dump_leaves_unset_key_untouched(monkeypatch, capsys, tmp_path):

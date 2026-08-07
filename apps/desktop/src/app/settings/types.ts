@@ -1,6 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react'
 
-import type { KovaGateway } from '@/kova'
+import type { HermesGateway } from '@/kova'
 import type { IconComponent } from '@/lib/icons'
 import type { EnvVarInfo } from '@/types/kova'
 
@@ -18,7 +18,7 @@ export type SettingsView =
 export type EnvPatch = Partial<Pick<EnvVarInfo, 'is_set' | 'redacted_value'>>
 
 export interface SettingsPageProps {
-  gateway?: KovaGateway | null
+  gateway?: HermesGateway | null
   onClose: () => void
   onConfigSaved?: () => void
   onMainModelChanged?: (provider: string, model: string) => void

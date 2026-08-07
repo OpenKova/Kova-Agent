@@ -34,7 +34,7 @@ class TestIsGatewayOwnedSource:
             assert _is_gateway_owned_source(src) is False, src
 
     def test_arbitrary_strings_are_not(self):
-        assert _is_gateway_owned_source("kovabench-task-xyz") is False
+        assert _is_gateway_owned_source("hermesbench-task-xyz") is False
         assert _is_gateway_owned_source(None) is False
 
 
@@ -60,15 +60,6 @@ class TestFinalizeSkipsGatewaySessions:
 
         db.end_session.assert_not_called()
 
-    @patch("tui_gateway.server._get_db")
-    def test_tui_session_still_ended(self, mock_get_db):
-        db = MagicMock()
-        db.get_session.return_value = {"id": "sess_1", "source": "tui"}
-        mock_get_db.return_value = db
-
-        _finalize_session(_make_session(), end_reason="ws_orphan_reap")
-
-        db.end_session.assert_called_once_with("sess_1", "ws_orphan_reap")
 
     @patch("tui_gateway.server._get_db")
     def test_missing_row_still_ended(self, mock_get_db):

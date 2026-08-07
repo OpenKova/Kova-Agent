@@ -12,15 +12,25 @@ import {
   urlSlugTitleLabel
 } from './external-link'
 
-const desktopWindow = window as unknown as { kovaDesktop?: Window['kovaDesktop'] }
-const initialKovaDesktop = desktopWindow.kovaDesktop
+const desktopWindow = window as unknown as { hermesDesktop?: Window['hermesDesktop'] }
+const initialHermesDesktop = desktopWindow.hermesDesktop
 
-function installDesktopBridge(partial: Partial<Window['kovaDesktop']> = {}) {
-  desktopWindow.kovaDesktop = {
+function installDesktopBridge(partial: Partial<Window['hermesDesktop']> = {}) {
+  desktopWindow.hermesDesktop = {
     fetchLinkTitle: vi.fn().mockResolvedValue(''),
     openExternal: vi.fn().mockResolvedValue(undefined),
     ...partial
-  } as unknown as Window['kovaDesktop']
+  } as unknown as Window['hermesDesktop']
+}
+
+const FORGEJO_URL = 'https://forgejo.home.example/homelab/homelab-ops/issues/101'
+
+function installTitleBridge(title: string) {
+  const bridge = vi.fn().mockResolvedValue(title)
+
+  installDesktopBridge({ fetchLinkTitle: bridge as unknown as Window['hermesDesktop']['fetchLinkTitle'] })
+
+  return bridge
 }
 
 afterEach(() => {
@@ -28,10 +38,10 @@ afterEach(() => {
   vi.restoreAllMocks()
   cleanup()
 
-  if (initialKovaDesktop) {
-    desktopWindow.kovaDesktop = initialKovaDesktop
+  if (initialHermesDesktop) {
+    desktopWindow.hermesDesktop = initialHermesDesktop
   } else {
-    delete desktopWindow.kovaDesktop
+    delete desktopWindow.hermesDesktop
   }
 })
 
@@ -61,7 +71,7 @@ describe('external link helpers', () => {
 
   it('deduplicates in-flight title fetches and caches results', async () => {
     const bridge = vi.fn().mockResolvedValue('El Yunque Tour Water Slide, Rope Swing & Pickup')
-    installDesktopBridge({ fetchLinkTitle: bridge as unknown as Window['kovaDesktop']['fetchLinkTitle'] })
+    installDesktopBridge({ fetchLinkTitle: bridge as unknown as Window['hermesDesktop']['fetchLinkTitle'] })
 
     const url =
       'https://www.expedia.com/things-to-do/puerto-rico-el-yunque-rainforest-adventure-with-transport.a46272756.activity-details'
@@ -80,7 +90,7 @@ describe('external link helpers', () => {
 
   it('shares cache across protocol/www URL variants', async () => {
     const bridge = vi.fn().mockResolvedValue('Shared Canonical Title')
-    installDesktopBridge({ fetchLinkTitle: bridge as unknown as Window['kovaDesktop']['fetchLinkTitle'] })
+    installDesktopBridge({ fetchLinkTitle: bridge as unknown as Window['hermesDesktop']['fetchLinkTitle'] })
 
     const first = 'https://www.getyourguide.com/san-juan-puerto-rico-l355/sunset-tours-tc306/'
     const second = 'http://getyourguide.com/san-juan-puerto-rico-l355/sunset-tours-tc306/'
@@ -94,7 +104,7 @@ describe('external link helpers', () => {
 
   it('opens links via the desktop bridge', () => {
     const openExternal = vi.fn().mockResolvedValue(undefined)
-    installDesktopBridge({ openExternal: openExternal as unknown as Window['kovaDesktop']['openExternal'] })
+    installDesktopBridge({ openExternal: openExternal as unknown as Window['hermesDesktop']['openExternal'] })
 
     render(<ExternalLink href="https://example.com/path/to/resource">Example link</ExternalLink>)
 
@@ -102,10 +112,23 @@ describe('external link helpers', () => {
     expect(openExternal).toHaveBeenCalledWith('https://example.com/path/to/resource')
   })
 
-  it('shows a trailing external-link icon', () => {
+  it('hides the trailing external-link icon by default', () => {
     installDesktopBridge()
 
     render(<ExternalLink href="https://example.com/path/to/resource">Example link</ExternalLink>)
+
+    const link = screen.getByRole('link', { name: 'Example link' })
+    expect(link.querySelector('svg')).toBeNull()
+  })
+
+  it('shows a trailing external-link icon when opted in', () => {
+    installDesktopBridge()
+
+    render(
+      <ExternalLink href="https://example.com/path/to/resource" showExternalIcon>
+        Example link
+      </ExternalLink>
+    )
 
     const link = screen.getByRole('link', { name: 'Example link' })
     expect(link.querySelector('svg')).toBeTruthy()
@@ -113,7 +136,7 @@ describe('external link helpers', () => {
 
   it('renders pretty links with fetched titles and no host suffix', async () => {
     const bridge = vi.fn().mockResolvedValue('From Fajardo: Full-Day Culebra Islands Catamaran Tour')
-    installDesktopBridge({ fetchLinkTitle: bridge as unknown as Window['kovaDesktop']['fetchLinkTitle'] })
+    installDesktopBridge({ fetchLinkTitle: bridge as unknown as Window['hermesDesktop']['fetchLinkTitle'] })
 
     const url =
       'https://www.getyourguide.com/culebra-island-l145468/from-fajardo-full-day-cordillera-islands-catamaran-tour-t19894/'
@@ -142,7 +165,7 @@ describe('external link helpers', () => {
 
   it('ignores error-like fetched titles and falls back to slug label', async () => {
     const bridge = vi.fn().mockResolvedValue('GetYourGuide – Error')
-    installDesktopBridge({ fetchLinkTitle: bridge as unknown as Window['kovaDesktop']['fetchLinkTitle'] })
+    installDesktopBridge({ fetchLinkTitle: bridge as unknown as Window['hermesDesktop']['fetchLinkTitle'] })
 
     const url =
       'https://www.getyourguide.com/culebra-island-l145468/from-fajardo-full-day-cordillera-islands-catamaran-tour-t19894/'
@@ -153,6 +176,39 @@ describe('external link helpers', () => {
     await waitFor(() => {
       expect(link.textContent).toBe('From Fajardo Full Day Cordillera Islands Catamaran Tour')
     })
+  })
+
+  it('treats not-found fetched titles as unusable', async () => {
+    const bridge = installTitleBridge('Page not found - Forgejo')
+
+    await expect(fetchLinkTitle(FORGEJO_URL)).resolves.toBe('')
+    expect(bridge).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps an authored fallbackLabel ahead of a fetched title, and skips the fetch', async () => {
+    const bridge = installTitleBridge('Kinkolino Forgejo')
+
+    // Chat markdown passes authored link text as `fallbackLabel`, not `label`.
+    render(<PrettyLink fallbackLabel="FJ #101" href={FORGEJO_URL} />)
+
+    const link = screen.getByTitle(FORGEJO_URL)
+
+    await waitFor(() => {
+      expect(link.textContent).toContain('FJ #101')
+    })
+    expect(link.textContent).not.toContain('Kinkolino Forgejo')
+    expect(bridge).not.toHaveBeenCalled()
+  })
+
+  it('still resolves a title when no label was authored', async () => {
+    const bridge = installTitleBridge('Homelab Ops Issue 101')
+
+    render(<PrettyLink href={FORGEJO_URL} />)
+
+    await waitFor(() => {
+      expect(screen.getByTitle(FORGEJO_URL).textContent).toContain('Homelab Ops Issue 101')
+    })
+    expect(bridge).toHaveBeenCalledTimes(1)
   })
 
   it('normalizes scheme-less links before opening', () => {
@@ -191,5 +247,29 @@ describe('external link helpers', () => {
 
     const link = screen.getByRole('link', { name: 'agent.log' })
     expect(link.getAttribute('href')).toBe('https://agent.log')
+  })
+
+  it('prefixes a pretty link to a known host with its brand glyph', () => {
+    installDesktopBridge()
+
+    const url = 'https://github.com/OpenKova/Kova-Agent/pull/123'
+
+    render(<PrettyLink fallbackLabel="#123" href={url} />)
+
+    const link = screen.getByTitle(url)
+
+    expect(link.querySelector('svg')).toBeTruthy()
+    // The glyph is decorative — it must not pollute the link's accessible name.
+    expect(link.textContent).toBe('#123')
+  })
+
+  it('renders no brand glyph for an unknown host', () => {
+    installDesktopBridge()
+
+    const url = 'https://example.com/some/page'
+
+    render(<PrettyLink fallbackLabel="Some Page" href={url} />)
+
+    expect(screen.getByTitle(url).querySelector('svg')).toBeNull()
   })
 })

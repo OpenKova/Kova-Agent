@@ -1,9 +1,9 @@
 # nix/desktop.nix — Kova Desktop (Electron) app build + wrapper
 #
-# `kovaAgent` is the fully-built `.#default` package — it ships the
+# `hermesAgent` is the fully-built `.#default` package — it ships the
 # `kova` binary with the venv, runtime PATH, bundled skills/plugins, etc.
 # already wired up.  We point the desktop at it via the existing
-# `KOVA_DESKTOP_BIN` override env var, so the desktop's resolver
+# `KOVA_DESKTOP_HERMES` override env var, so the desktop's resolver
 # uses our fully wrapped binary at step 4 ("existing Kova CLI").
 # No reimplementation of the agent resolution in this wrapper.
 {
@@ -11,27 +11,16 @@
   lib,
   stdenv,
   makeWrapper,
-  kovaNpmLib,
+  hermesNpmLib,
   electron,
-  kovaAgent,
+  hermesAgent,
+  python3,
   ...
 }:
 let
-  # apps/shared ships as a file: workspace dep of apps/desktop, so its
-  # source must be in the filtered src tree too.
-  npm = kovaNpmLib.mkNpmPassthru {
-    dirs = [
-      "apps/desktop"
-      "apps/shared"
-    ];
-  };
-
-  packageJson = builtins.fromJSON (builtins.readFile (npm.src + "/apps/desktop/package.json"));
-  version = packageJson.version;
-
   electronHeaders = pkgs.fetchurl {
     url = "https://artifacts.electronjs.org/headers/dist/v${electron.version}/node-v${electron.version}-headers.tar.gz";
-    sha256 = "sha256-zi/QMwRZ0+FwE9XTE+DiSIeJXAwxmLKEaBWD5W3pMOI=";
+    sha256 = "sha256-f8bSbLRmtbP93CJAvEBs+sHWDZ1xP2bcpLhC1EnOmZU=";
   };
 
   # node-pty ships no Electron-tagged prebuild we can trust to match this
@@ -54,104 +43,109 @@ let
       throw "kova-desktop: unsupported host arch for node-pty staging";
 
   # Build the renderer (dist/ + electron/ + package.json).
-  renderer = pkgs.buildNpmPackage (
-    npm
-    // {
-      pname = "kova-desktop-renderer";
-      inherit version;
-      doCheck = true;
+  renderer = hermesNpmLib.buildNpmPackage {
+    dirs = [
+      "apps/desktop"
+      "apps/shared"
+    ];
+    pname = "kova-desktop-renderer";
 
-      buildPhase = ''
-        runHook preBuild
+    doCheck = true;
 
-        mkdir -p apps/desktop/build
+    buildPhase = ''
+      runHook preBuild
 
-        patchShebangs .
+      mkdir -p apps/desktop/build
 
-        pushd apps/desktop
-          # typecheck :3
-          npm exec tsc -b
+      patchShebangs .
 
-          # build the renderer bundle
-          # vite's emptyOutDir wipes dist/ on every run
-          # so it has to be first
-          npm exec vite build
+      pushd apps/desktop
+        # typecheck :3
+        npm exec -- tsc -b
 
-          # build the electron bundle
-          node scripts/bundle-electron-main.mjs
+        # build the renderer bundle
+        # vite's emptyOutDir wipes dist/ on every run
+        # so it has to be first
+        npm exec -- vite build
 
-          # Compile node-pty against Electron's actual ABI (the nixpkgs
-          # `electron` we ship). Headers come from a pinned fetchurl input
-          # since the sandbox has no network here, so node-gyp's
-          # normal --disturl download path can't run.
-          mkdir -p "$TMPDIR/electron-headers"
-          tar -xzf ${electronHeaders} -C "$TMPDIR/electron-headers" --strip-components=1
+        # build the electron bundle
+        node scripts/bundle-electron-main.mjs
 
-          npm rebuild node-pty \
-            --build-from-source \
-            --runtime=electron \
-            --target=${electron.version} \
-            --nodedir="$TMPDIR/electron-headers" \
-            --disturl="" \
-            --offline
+        # Compile node-pty against Electron's actual ABI (the nixpkgs
+        # `electron` we ship). Headers come from a pinned fetchurl input
+        # since the sandbox has no network here, so node-gyp's
+        # normal --disturl download path can't run.
+        mkdir -p "$TMPDIR/electron-headers"
+        tar -xzf ${electronHeaders} -C "$TMPDIR/electron-headers" --strip-components=1
 
-          # Target platform/arch come from stdenv.hostPlatform, not the
-          # build host's own process.platform/arch.
-          node scripts/stage-native-deps.mjs ${targetPlatform} ${targetArch}
-        popd
+        ${lib.getExe hermesNpmLib.node-gyp} rebuild \
+          --directory=../../node_modules/node-pty \
+          --build-from-source \
+          --runtime=electron \
+          --target=${electron.version} \
+          --nodedir="$TMPDIR/electron-headers" \
+          --disturl="" \
+          --offline
 
-        runHook postBuild
-      '';
+        # Target platform/arch come from stdenv.hostPlatform, not the
+        # build host's own process.platform/arch.
+        node scripts/stage-native-deps.mjs ${targetPlatform} ${targetArch}
+      popd
 
-      checkPhase = ''
-        runHook preCheck
+      runHook postBuild
+    '';
 
-        pushd apps/desktop
+    checkPhase = ''
+      runHook preCheck
 
-          npm run postbuild
+      pushd apps/desktop
 
-          # validate staged node-pty native binary is present.
-          STAGED_PTY_NODE="./dist/node_modules/node-pty/build/Release/pty.node"
+        npm run postbuild
 
-          if [ ! -f "$STAGED_PTY_NODE" ]; then
-            echo "FATAL: Missing staged node-pty native binary at $STAGED_PTY_NODE"
-            echo "node-pty must be compiled natively"
-            exit 1
-          fi
-          
-        popd
+        # validate staged node-pty native binary is present.
+        STAGED_PTY_NODE="./dist/node_modules/node-pty/build/Release/pty.node"
 
-        runHook postCheck
-      '';
+        if [ ! -f "$STAGED_PTY_NODE" ]; then
+          echo "FATAL: Missing staged node-pty native binary at $STAGED_PTY_NODE"
+          echo "node-pty must be compiled natively"
+          exit 1
+        fi
+        
+      popd
 
-      installPhase = ''
-        runHook preInstall
-        mkdir -p $out
-        # vite writes to apps/desktop/dist/ (we cd'd there in buildPhase).
-        # stage-native-deps.mjs stages node-pty into dist/node_modules/node-pty,
-        # so copying dist/ wholesale carries the native dep along with the
-        # esbuild bundle that require()s it. apps/desktop/build was created
-        # before the cd.
-        cp -rn apps/desktop/dist $out/
+      runHook postCheck
+    '';
 
-        echo '{"schemaVersion":1,"commit":"nix-dummy-commit","branch":"nix","dirty":false,"source":"nix"}' > $out/install-stamp.json
+    installPhase = ''
+      runHook preInstall
+      mkdir -p $out
+      # vite writes to apps/desktop/dist/ (we cd'd there in buildPhase).
+      # stage-native-deps.mjs stages node-pty into dist/node_modules/node-pty,
+      # so copying dist/ wholesale carries the native dep along with the
+      # esbuild bundle that require()s it. apps/desktop/build was created
+      # before the cd.
+      cp -rn apps/desktop/dist $out/
 
-        cp -n apps/desktop/package.json $out/
-        runHook postInstall
-      '';
-    }
-  );
+      echo '{"schemaVersion":1,"commit":"nix-dummy-commit","branch":"nix","dirty":false,"source":"nix"}' > $out/install-stamp.json
+
+      cp -n apps/desktop/package.json $out/
+      runHook postInstall
+    '';
+  };
 in
 
 # Electron wrapper: nixpkgs' electron binary pointed at the renderer dir.
 stdenv.mkDerivation {
   pname = "kova-desktop";
-  inherit version;
+  inherit (renderer) version;
 
   dontUnpack = true;
   dontBuild = true;
 
-  nativeBuildInputs = [ makeWrapper ];
+  nativeBuildInputs = [
+    makeWrapper
+    python3
+  ];
 
   installPhase = ''
     runHook preInstall
@@ -166,16 +160,25 @@ stdenv.mkDerivation {
       --replace-fail "process.resourcesPath" "'$out/share/kova-desktop'"
 
     # Wrap the nixpkgs electron binary to launch our app.  Set
-    # KOVA_DESKTOP_BIN to the absolute path of the nix-built `kova`
+    # KOVA_DESKTOP_HERMES to the absolute path of the nix-built `kova`
     # binary so the desktop's resolver step 4 ("existing Kova CLI on
     # PATH") uses our fully wrapped binary — venv with all deps,
     # bundled skills/plugins, runtime PATH (ripgrep/git/ffmpeg/etc).
     # No reimplementation of the agent resolver in the wrapper.
     makeWrapper ${lib.getExe electron} $out/bin/kova-desktop \
       --add-flags "$out/share/kova-desktop" \
-      --set KOVA_DESKTOP_BIN "${lib.getExe kovaAgent}" \
+      --set KOVA_DESKTOP_HERMES "${lib.getExe hermesAgent}" \
       --set ELECTRON_IS_DEV 0
 
+    # XDG launcher entry
+    mkdir -p $out/share/applications $out/share/icons/hicolor/1024x1024/apps
+    install -m 0644 ${../apps/desktop/assets/icon.png} \
+      $out/share/icons/hicolor/1024x1024/apps/kova.png
+    export PYTHONPATH=$(mktemp -d)
+    cp ${../kova_cli/linux_desktop_entry.py} "$PYTHONPATH/linux_desktop_entry.py"
+    export DESKTOP_EXEC="$out/bin/kova-desktop"
+    export DESKTOP_ICON="$out/share/icons/hicolor/1024x1024/apps/kova.png"
+    python3 -c 'import os; from linux_desktop_entry import render_desktop_entry; print(render_desktop_entry(os.environ["DESKTOP_EXEC"], os.environ["DESKTOP_ICON"]))' > $out/share/applications/kova.desktop
     runHook postInstall
   '';
 

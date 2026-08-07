@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 
-contextBridge.exposeInMainWorld('kovaDesktop', {
+contextBridge.exposeInMainWorld('hermesDesktop', {
   getConnection: profile => ipcRenderer.invoke('kova:connection', profile),
   revalidateConnection: () => ipcRenderer.invoke('kova:connection:revalidate'),
   touchBackend: profile => ipcRenderer.invoke('kova:backend:touch', profile),
@@ -8,6 +8,16 @@ contextBridge.exposeInMainWorld('kovaDesktop', {
   openSessionWindow: (sessionId, opts) => ipcRenderer.invoke('kova:window:openSession', sessionId, opts),
   openWindow: () => ipcRenderer.invoke('kova:window:openInstance'),
   claimAmbientCue: key => ipcRenderer.invoke('kova:ambient:claim', key),
+  wakeIndicator: {
+    getState: () => ipcRenderer.invoke('kova:wake-indicator:get'),
+    setState: state => ipcRenderer.send('kova:wake-indicator:set', state),
+    onState: callback => {
+      const listener = (_event, state) => callback(state)
+      ipcRenderer.on('kova:wake-indicator:state', listener)
+
+      return () => ipcRenderer.removeListener('kova:wake-indicator:state', listener)
+    }
+  },
   petOverlay: {
     // Main renderer → main process: window lifecycle + drag. `request` is
     // `{ bounds, screen }`; resolves with the screen bounds it actually used.
@@ -34,6 +44,41 @@ contextBridge.exposeInMainWorld('kovaDesktop', {
       ipcRenderer.on('kova:pet-overlay:control', listener)
 
       return () => ipcRenderer.removeListener('kova:pet-overlay:control', listener)
+    }
+  },
+  // Quick Entry: the global-hotkey mini composer window. Main owns the OS
+  // shortcut + the persisted preference; the quick window only captures text
+  // and hands it back, and the primary renderer submits it through the normal
+  // prompt path.
+  quickEntry: {
+    getSettings: () => ipcRenderer.invoke('kova:quick-entry:settings:get'),
+    setSettings: patch => ipcRenderer.invoke('kova:quick-entry:settings:set', patch),
+    submit: payload => ipcRenderer.send('kova:quick-entry:submit', payload),
+    dismiss: () => ipcRenderer.send('kova:quick-entry:dismiss'),
+    // Primary renderer → main → quick window: gateway connection state + the
+    // recent-session options the target picker offers. Main caches the latest
+    // payload so a freshly spawned quick window starts from truth.
+    pushState: payload => ipcRenderer.send('kova:quick-entry:state', payload),
+    // Quick window subscribes to those pushes.
+    onState: callback => {
+      const listener = (_event, payload) => callback(payload)
+      ipcRenderer.on('kova:quick-entry:state', listener)
+
+      return () => ipcRenderer.removeListener('kova:quick-entry:state', listener)
+    },
+    // Main → primary renderer: a submit captured by the quick window.
+    onSubmit: callback => {
+      const listener = (_event, payload) => callback(payload)
+      ipcRenderer.on('kova:quick-entry:submit', listener)
+
+      return () => ipcRenderer.removeListener('kova:quick-entry:submit', listener)
+    },
+    // Main → quick window: you were just summoned (reset draft + refocus).
+    onShown: callback => {
+      const listener = () => callback()
+      ipcRenderer.on('kova:quick-entry:shown', listener)
+
+      return () => ipcRenderer.removeListener('kova:quick-entry:shown', listener)
     }
   },
   getBootProgress: () => ipcRenderer.invoke('kova:boot-progress:get'),
@@ -63,9 +108,16 @@ contextBridge.exposeInMainWorld('kovaDesktop', {
   notify: payload => ipcRenderer.invoke('kova:notify', payload),
   requestMicrophoneAccess: () => ipcRenderer.invoke('kova:requestMicrophoneAccess'),
   readFileDataUrl: filePath => ipcRenderer.invoke('kova:readFileDataUrl', filePath),
+  readFileDataUrlForAttach: filePath => ipcRenderer.invoke('kova:readFileDataUrlForAttach', filePath),
+  dataUrlReadMax: {
+    get: () => ipcRenderer.invoke('kova:data-url-read-max:get'),
+    set: maxMb => ipcRenderer.invoke('kova:data-url-read-max:set', maxMb)
+  },
   readFileText: filePath => ipcRenderer.invoke('kova:readFileText', filePath),
   selectPaths: options => ipcRenderer.invoke('kova:selectPaths', options),
+  selectSavePath: options => ipcRenderer.invoke('kova:selectSavePath', options),
   writeClipboard: text => ipcRenderer.invoke('kova:writeClipboard', text),
+  readClipboard: () => ipcRenderer.invoke('kova:readClipboard'),
   saveImageFromUrl: url => ipcRenderer.invoke('kova:saveImageFromUrl', url),
   saveImageBuffer: (data, ext) => ipcRenderer.invoke('kova:saveImageBuffer', { data, ext }),
   saveClipboardImage: () => ipcRenderer.invoke('kova:saveClipboardImage'),
@@ -78,7 +130,9 @@ contextBridge.exposeInMainWorld('kovaDesktop', {
   },
   normalizePreviewTarget: (target, baseDir) => ipcRenderer.invoke('kova:normalizePreviewTarget', target, baseDir),
   watchPreviewFile: url => ipcRenderer.invoke('kova:watchPreviewFile', url),
+  watchDirectory: dir => ipcRenderer.invoke('kova:watchDirectory', dir),
   stopPreviewFileWatch: id => ipcRenderer.invoke('kova:stopPreviewFileWatch', id),
+  setActiveWork: payload => ipcRenderer.send('kova:active-work', payload),
   setTitleBarTheme: payload => ipcRenderer.send('kova:titlebar-theme', payload),
   setNativeTheme: mode => ipcRenderer.send('kova:native-theme', mode),
   setTranslucency: payload => ipcRenderer.send('kova:translucency', payload),
@@ -112,6 +166,7 @@ contextBridge.exposeInMainWorld('kovaDesktop', {
   gitRoot: startPath => ipcRenderer.invoke('kova:fs:gitRoot', startPath),
   revealPath: targetPath => ipcRenderer.invoke('kova:fs:reveal', targetPath),
   openDir: dirPath => ipcRenderer.invoke('kova:fs:openDir', dirPath),
+  desktopPluginsRoot: () => ipcRenderer.invoke('kova:fs:desktopPluginsRoot'),
   renamePath: (targetPath, newName) => ipcRenderer.invoke('kova:fs:rename', targetPath, newName),
   writeTextFile: (filePath, content) => ipcRenderer.invoke('kova:fs:writeText', filePath, content),
   trashPath: targetPath => ipcRenderer.invoke('kova:fs:trash', targetPath),
@@ -167,6 +222,12 @@ contextBridge.exposeInMainWorld('kovaDesktop', {
     ipcRenderer.on('kova:close-preview-requested', listener)
 
     return () => ipcRenderer.removeListener('kova:close-preview-requested', listener)
+  },
+  onOpenFolderRequested: callback => {
+    const listener = () => callback()
+    ipcRenderer.on('kova:open-folder-requested', listener)
+
+    return () => ipcRenderer.removeListener('kova:open-folder-requested', listener)
   },
   onOpenUpdatesRequested: callback => {
     const listener = () => callback()
@@ -225,6 +286,14 @@ contextBridge.exposeInMainWorld('kovaDesktop', {
 
     return () => ipcRenderer.removeListener('kova:power-resume', listener)
   },
+  // AC ↔ battery transitions; renderers slow their backstop polls on battery.
+  getOnBattery: () => ipcRenderer.invoke('kova:power-battery:get'),
+  onBatteryChanged: callback => {
+    const listener = (_event, onBattery) => callback(Boolean(onBattery))
+    ipcRenderer.on('kova:power-battery', listener)
+
+    return () => ipcRenderer.removeListener('kova:power-battery', listener)
+  },
   onBootProgress: callback => {
     const listener = (_event, payload) => callback(payload)
     ipcRenderer.on('kova:boot-progress', listener)
@@ -237,6 +306,7 @@ contextBridge.exposeInMainWorld('kovaDesktop', {
   // current snapshot via getBootstrapState() to recover after a devtools
   // reload mid-bootstrap.
   getBootstrapState: () => ipcRenderer.invoke('kova:bootstrap:get'),
+  continueBootstrapLocal: () => ipcRenderer.invoke('kova:bootstrap:continue-local'),
   resetBootstrap: () => ipcRenderer.invoke('kova:bootstrap:reset'),
   repairBootstrap: () => ipcRenderer.invoke('kova:bootstrap:repair'),
   cancelBootstrap: () => ipcRenderer.invoke('kova:bootstrap:cancel'),
@@ -267,5 +337,19 @@ contextBridge.exposeInMainWorld('kovaDesktop', {
   themes: {
     fetchMarketplace: id => ipcRenderer.invoke('kova:vscode-theme:fetch', id),
     searchMarketplace: query => ipcRenderer.invoke('kova:vscode-theme:search', query)
+  },
+  // Find-in-page (Ctrl/Cmd+F): delegates to Electron's
+  // webContents.findInPage on the IPC sender's window so a Cmd+F pressed
+  // in a secondary session window searches THAT window, not the primary.
+  // `onFoundInPage` returns the unsubscribe fn; the renderer wires it via
+  // `initFindInPageListener` in store/find-in-page.ts and tears it down
+  // when the FindBar unmounts.
+  findInPage: (query, options) => ipcRenderer.invoke('kova:find-in-page', query, options),
+  stopFindInPage: () => ipcRenderer.invoke('kova:stop-find-in-page'),
+  onFoundInPage: callback => {
+    const listener = (_event, result) => callback(result)
+    ipcRenderer.on('kova:found-in-page', listener)
+
+    return () => ipcRenderer.removeListener('kova:found-in-page', listener)
   }
 })

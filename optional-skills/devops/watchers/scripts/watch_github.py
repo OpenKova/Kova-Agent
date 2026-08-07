@@ -6,10 +6,10 @@ Usage (via cron with --no-agent):
     kova cron create kova-issues \\
       --schedule "*/5 * * * *" --no-agent \\
       --script "$HERMES_HOME/skills/devops/watchers/scripts/watch_github.py" \\
-      --script-args "--name kova-issues --repo NousResearch/kova-agent --scope issues"
+      --script-args "--name kova-issues --repo OpenKova/Kova-Agent --scope issues"
 
 Set GITHUB_TOKEN (or GH_TOKEN) in the Kova .env file
-(``${HERMES_HOME:-~/.hermes}/.env``) to avoid the 60 req/hr
+(``${HERMES_HOME:-~/.kova}/.env``) to avoid the 60 req/hr
 anonymous rate limit.
 
 Scopes: issues | pulls | releases | commits.  Or pass --search QUERY to

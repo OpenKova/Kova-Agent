@@ -61,19 +61,19 @@ If that is not solid yet, fix text mode first.
 ### CLI microphone + playback
 
 ```bash
-cd ~/.hermes/kova-agent && uv pip install -e ".[voice]"
+cd ~/.kova/kova-agent && uv pip install -e ".[voice]"
 ```
 
 ### Messaging platforms
 
 ```bash
-cd ~/.hermes/kova-agent && uv pip install -e ".[messaging]"
+cd ~/.kova/kova-agent && uv pip install -e ".[messaging]"
 ```
 
 ### Premium ElevenLabs TTS
 
 ```bash
-cd ~/.hermes/kova-agent && uv pip install -e ".[tts-premium]"
+cd ~/.kova/kova-agent && uv pip install -e ".[tts-premium]"
 ```
 
 ### Local NeuTTS (optional)
@@ -85,7 +85,7 @@ python -m pip install -U neutts[all]
 ### Everything
 
 ```bash
-cd ~/.hermes/kova-agent && uv pip install -e ".[all]"
+cd ~/.kova/kova-agent && uv pip install -e ".[all]"
 ```
 
 ## Step 3: install system dependencies
@@ -124,7 +124,7 @@ This is usually the best place to start.
 
 ### Environment file example
 
-Add to `~/.hermes/.env`:
+Add to `~/.kova/.env`:
 
 ```bash
 # Cloud STT options (local needs no key)
@@ -444,7 +444,7 @@ By default, the bot needs an `@mention` in Discord server text channels unless c
 If you want the shortest path to success:
 
 1. get text Kova working
-2. run `kova setup voice` to enable voice support
+2. run `kova setup tts` to enable voice support
 3. use CLI voice mode with local STT + Edge TTS
 4. then enable `/voice on` in Telegram or Discord
 5. only after that, try Discord VC mode

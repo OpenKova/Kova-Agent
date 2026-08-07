@@ -22,7 +22,7 @@ Some VPS providers (Hetzner Cloud, and several others) offer a browser-based
 console for managing hosts. These consoles transmit special characters
 incorrectly — `:` may arrive as `;`, `@` may be mis-rendered, and non-English
 keyboard layouts fare worse — which silently corrupts `docker run` arguments
-like `-v ~/.hermes:/opt/data`, `-e KEY=value`, and pasted API keys / tokens.
+like `-v ~/.kova:/opt/data`, `-e KEY=value`, and pasted API keys / tokens.
 
 **Connect over SSH instead** (`ssh root@<host>`) for copy-paste-safe command
 entry. If you must use the browser console, type the commands manually
@@ -31,16 +31,16 @@ result before hitting Enter.
 :::
 
 ```sh
-mkdir -p ~/.hermes
+mkdir -p ~/.kova
 docker run -it --rm \
-  -v ~/.hermes:/opt/data \
+  -v ~/.kova:/opt/data \
   nousresearch/kova-agent setup
 ```
 
-This drops you into the setup wizard, which will prompt you for your API keys and write them to `~/.hermes/.env`. You only need to do this once. It is highly recommended to set up a chat system for the gateway to work with at this point.
+This drops you into the setup wizard, which will prompt you for your API keys and write them to `~/.kova/.env`. You only need to do this once. It is highly recommended to set up a chat system for the gateway to work with at this point.
 
 :::tip
-Inside the container, run `kova setup --portal` once — the refresh token persists in the mounted `~/.hermes` volume. See [Nous Portal](/integrations/nous-portal).
+Inside the container, run `kova setup --portal` once — the refresh token persists in the mounted `~/.kova` volume. See [Nous Portal](/integrations/nous-portal).
 :::
 
 ## Running in gateway mode
@@ -51,7 +51,7 @@ Once configured, run the container in the background as a persistent gateway (Te
 docker run -d \
   --name kova \
   --restart unless-stopped \
-  -v ~/.hermes:/opt/data \
+  -v ~/.kova:/opt/data \
   -p 8642:8642 \
   nousresearch/kova-agent gateway run
 ```
@@ -88,7 +88,7 @@ Note: the API server is gated on `API_SERVER_ENABLED=true`. To expose it beyond 
 docker run -d \
   --name kova \
   --restart unless-stopped \
-  -v ~/.hermes:/opt/data \
+  -v ~/.kova:/opt/data \
   -p 8642:8642 \
   -e API_SERVER_ENABLED=true \
   -e API_SERVER_HOST=0.0.0.0 \
@@ -107,7 +107,7 @@ The built-in web dashboard runs as a supervised s6-rc service alongside the gate
 docker run -d \
   --name kova \
   --restart unless-stopped \
-  -v ~/.hermes:/opt/data \
+  -v ~/.kova:/opt/data \
   -p 8642:8642 \
   -p 9119:9119 \
   -e KOVA_DASHBOARD=1 \
@@ -152,7 +152,7 @@ To open an interactive chat session against a running data directory:
 
 ```sh
 docker run -it --rm \
-  -v ~/.hermes:/opt/data \
+  -v ~/.kova:/opt/data \
   nousresearch/kova-agent
 ```
 
@@ -164,7 +164,7 @@ Or if you have already opened a terminal in your running container (via Docker D
 
 ## Persistent volumes
 
-The `/opt/data` volume is the single source of truth for all Kova state. It maps to your host's `~/.hermes/` directory and contains:
+The `/opt/data` volume is the single source of truth for all Kova state. It maps to your host's `~/.kova/` directory and contains:
 
 | Path | Contents |
 |------|----------|
@@ -198,7 +198,7 @@ Never run two Kova **gateway** containers against the same data directory simult
 
 ## Multi-profile support
 
-Kova supports [multiple profiles](../reference/profile-commands.md) — separate `~/.hermes/` subdirectories that let you run independent agents (different SOUL, skills, memory, sessions, credentials) from a single installation. **Inside the official Docker image, the s6 supervision tree treats each profile as a first-class supervised service**, so the recommended deployment is **one container hosting all profiles**.
+Kova supports [multiple profiles](../reference/profile-commands.md) — separate `~/.kova/` subdirectories that let you run independent agents (different SOUL, skills, memory, sessions, credentials) from a single installation. **Inside the official Docker image, the s6 supervision tree treats each profile as a first-class supervised service**, so the recommended deployment is **one container hosting all profiles**.
 
 Each profile created with `kova profile create <name>` gets:
 
@@ -261,7 +261,7 @@ Before the s6 migration, "one container per profile" was the recommended pattern
 | Profile creation | `docker exec ... kova profile create <name>` (seconds) | New `docker run` invocation + port allocation + bind-mount config |
 | Per-profile crash recovery | `s6-supervise` auto-restart | Docker's `--restart unless-stopped` (slower, kills sibling work) |
 | Logs | Per-profile rotated file via `s6-log`, plus container-boot audit log | `docker logs <name>` per container — no built-in rotation |
-| Backup | One `~/.hermes` directory | N directories to coordinate |
+| Backup | One `~/.kova` directory | N directories to coordinate |
 
 The default profile (`default`) is always registered on first boot, so a fresh container ships with one supervised gateway out of the box. Additional profiles are pure runtime adds.
 
@@ -286,7 +286,7 @@ services:
     ports:
       - "8642:8642"
     volumes:
-      - ~/.hermes-work:/opt/data
+      - ~/.kova-work:/opt/data
 
   kova-personal:
     image: nousresearch/kova-agent:latest
@@ -296,10 +296,10 @@ services:
     ports:
       - "8643:8642"
     volumes:
-      - ~/.hermes-personal:/opt/data
+      - ~/.kova-personal:/opt/data
 ```
 
-The warning from [Persistent volumes](#persistent-volumes) still applies: never point two containers at the same `~/.hermes` directory simultaneously. The s6 supervisor inside each container manages its own profile set; cross-container sharing of a data volume corrupts session files and memory stores.
+The warning from [Persistent volumes](#persistent-volumes) still applies: never point two containers at the same `~/.kova` directory simultaneously. The s6 supervisor inside each container manages its own profile set; cross-container sharing of a data volume corrupts session files and memory stores.
 
 ## Where the logs go
 
@@ -307,15 +307,15 @@ The s6 container has four distinct log surfaces, and "why isn't my gateway showi
 
 | Source | Where it lands | How to read it |
 |---|---|---|
-| **Per-profile gateway** (`kova gateway run` and per-profile gateways under s6) | Tee'd to two places: `docker logs <container>` (real time, no extra prefix) **and** `${HERMES_HOME}/logs/gateways/<profile>/current` (rotated, ISO-8601 timestamped, 10 archives × 1 MB each) | `docker logs -f kova` or `tail -F ~/.hermes/logs/gateways/default/current` on the host |
+| **Per-profile gateway** (`kova gateway run` and per-profile gateways under s6) | Tee'd to two places: `docker logs <container>` (real time, no extra prefix) **and** `${HERMES_HOME}/logs/gateways/<profile>/current` (rotated, ISO-8601 timestamped, 10 archives × 1 MB each) | `docker logs -f kova` or `tail -F ~/.kova/logs/gateways/default/current` on the host |
 | **Dashboard** (when `KOVA_DASHBOARD=1`) | `docker logs <container>` (no prefix) | `docker logs -f kova` — interleaved with gateway lines |
-| **Boot reconciler** (records which profile gateways were restored on each container start) | `${HERMES_HOME}/logs/container-boot.log` (append-only audit log) | `tail -F ~/.hermes/logs/container-boot.log` |
+| **Boot reconciler** (records which profile gateways were restored on each container start) | `${HERMES_HOME}/logs/container-boot.log` (append-only audit log) | `tail -F ~/.kova/logs/container-boot.log` |
 | **Generic Kova logs** (`agent.log`, `errors.log`) | `${HERMES_HOME}/logs/` (profile-aware) | `docker exec kova kova logs --follow [--level WARNING] [--session <id>]` |
 
 Two practical consequences worth knowing:
 
 - The file copy at `logs/gateways/<profile>/current` is what survives container restarts. `docker logs` only retains output from the current container's lifetime (and is wiped on `docker rm`); the rotated files persist on the bind-mounted volume.
-- The boot reconciler's audit line shape is `<iso-timestamp> profile=<name> prior_state=<state> action=<registered|started>`, so a quick `grep profile=coder ~/.hermes/logs/container-boot.log` reveals when a given profile was last restored and whether s6 auto-started it.
+- The boot reconciler's audit line shape is `<iso-timestamp> profile=<name> prior_state=<state> action=<registered|started>`, so a quick `grep profile=coder ~/.kova/logs/container-boot.log` reveals when a given profile was last restored and whether s6 auto-started it.
 
 ## Environment variable forwarding
 
@@ -323,7 +323,7 @@ API keys are read from `/opt/data/.env` inside the container. You can also pass 
 
 ```sh
 docker run -it --rm \
-  -v ~/.hermes:/opt/data \
+  -v ~/.kova:/opt/data \
   -e ANTHROPIC_API_KEY="sk-ant-..." \
   -e OPENAI_API_KEY="sk-..." \
   nousresearch/kova-agent
@@ -350,7 +350,7 @@ services:
       - "8642:8642"   # gateway API
       - "9119:9119"   # dashboard (only reached when KOVA_DASHBOARD=1)
     volumes:
-      - ~/.hermes:/opt/data
+      - ~/.kova:/opt/data
     environment:
       - KOVA_DASHBOARD=1
       # Uncomment to forward specific env vars instead of using .env file:
@@ -418,7 +418,7 @@ services:
     restart: unless-stopped
     command: gateway run
     volumes:
-      - ~/.hermes:/opt/data
+      - ~/.kova:/opt/data
       - /run/user/${KOVA_UID}/pulse:/run/user/${KOVA_UID}/pulse
       - ~/.config/pulse/cookie:/tmp/pulse-cookie:ro
       - ./asound.conf:/etc/asound.conf:ro
@@ -463,7 +463,7 @@ docker run -d \
   --name kova \
   --restart unless-stopped \
   --memory=4g --cpus=2 \
-  -v ~/.hermes:/opt/data \
+  -v ~/.kova:/opt/data \
   nousresearch/kova-agent gateway run
 ```
 
@@ -472,7 +472,7 @@ docker run -d \
 The official image is based on `debian:13.4` and includes:
 
 - Python 3.13 with dependencies synced from the lockfile via `uv sync --frozen --no-install-project` for the baked extras (`all`, `messaging`, Anthropic/Bedrock/Azure identity, Hindsight, Matrix), followed by a no-dependency editable install of Kova itself.
-- Node.js 22 + npm (for browser automation, WhatsApp bridge, TUI/Desktop bundles, and workspace build tooling)
+- Node.js 26 + npm (for browser automation, WhatsApp bridge, TUI/Desktop bundles, and workspace build tooling)
 - Playwright with Chromium (`npx playwright install --with-deps chromium --only-shell`)
 - ripgrep, ffmpeg, git, and `xz-utils` as system utilities
 - **`docker-cli`** — so agents running inside the container can drive the host's Docker daemon (bind-mount `/var/run/docker.sock` to opt in) for `docker build`, `docker run`, container inspection, etc.
@@ -482,7 +482,9 @@ The official image is based on `debian:13.4` and includes:
 
 The image treats `/opt/kova` as an immutable install tree at runtime. Optional Python extras, Node workspaces, and TUI assets that must be available inside Docker need to be baked during the image build; runtime lazy installs are disabled so supervised gateways and `docker exec kova …` commands do not try to write dependency artifacts back into the read-only source tree.
 
-The container's `ENTRYPOINT` is s6-overlay's `/init`. On boot it:
+The container's `ENTRYPOINT` is a small dispatcher (`docker/entrypoint-dispatch.sh`). When the container owns PID 1 (normal Docker / Podman), it exec's s6-overlay's `/init` and you get the full supervision tree described below. When a platform wraps the image entrypoint under its own PID-1 init (Fly.io Machines, `docker run --init`, some Nomad/Kubernetes setups), `/init` would abort with `s6-overlay-suexec: fatal: can only run as pid 1` — so the dispatcher instead runs the stage2 bootstrap directly and exec's the main wrapper without s6. On that fallback path the requested command still runs, but supervised services (dashboard, per-profile gateways) are unavailable.
+
+On the PID-1 path, `/init`:
 1. Runs `/etc/cont-init.d/01-kova-setup` (= `docker/stage2-hook.sh`) as root: optional UID/GID remap, fixes volume ownership, seeds `.env` / `config.yaml` / `SOUL.md` on first boot, runs non-interactive config-schema migrations unless `KOVA_SKIP_CONFIG_MIGRATION=1`, syncs bundled skills.
 2. Runs `/etc/cont-init.d/02-reconcile-profiles` (= `kova_cli.container_boot`): walks `$HERMES_HOME/profiles/<name>/`, recreates the per-profile gateway s6 service slot under `/run/service/gateway-<profile>/`, and auto-starts only those whose last recorded state was `running` (see [Per-profile gateway supervision](#per-profile-gateway-supervision)).
 3. Starts the static `main-kova` and `dashboard` s6-rc services.
@@ -493,7 +495,7 @@ The container's `ENTRYPOINT` is s6-overlay's `/init`. On boot it:
    The container exits when this main program exits, with its exit code.
 
 :::warning Breaking change vs. pre-s6 images
-The container ENTRYPOINT is now `/init` (s6-overlay), not `/usr/bin/tini`. All five documented `docker run` invocation patterns (no args, `chat -q "…"`, `sleep infinity`, `bash`, `--tui`) behave identically to the tini-based image. If you have a downstream wrapper that depended on tini-specific signal behavior or hard-coded `/usr/bin/tini --` invocation, pin to the previous image tag.
+The container ENTRYPOINT is now the `entrypoint-dispatch.sh` dispatcher (which delegates to s6-overlay's `/init` under PID 1), not `/usr/bin/tini`. All five documented `docker run` invocation patterns (no args, `chat -q "…"`, `sleep infinity`, `bash`, `--tui`) behave identically to the tini-based image. If you have a downstream wrapper that depended on tini-specific signal behavior or hard-coded `/usr/bin/tini --` invocation, pin to the previous image tag.
 :::
 
 :::warning Privilege model
@@ -539,7 +541,7 @@ docker rm -f kova
 docker run -d \
   --name kova \
   --restart unless-stopped \
-  -v ~/.hermes:/opt/data \
+  -v ~/.kova:/opt/data \
   nousresearch/kova-agent gateway run
 ```
 
@@ -555,7 +557,7 @@ persisted config manually before letting the new image rewrite it.
 
 ## Skills and credential files
 
-When using Docker as the execution environment (not the methods above, but when the agent runs commands inside a Docker sandbox — see [Configuration → Docker Backend](./configuration.md#docker-backend)), Kova reuses a single long-lived container for all tool calls and automatically bind-mounts the skills directory (`~/.hermes/skills/`) and any credential files declared by skills into that container as read-only volumes. Skill scripts, templates, and references are available inside the sandbox without manual configuration, and because the container persists for the life of the Kova process, any dependencies you install or files you write stay around for the next tool call.
+When using Docker as the execution environment (not the methods above, but when the agent runs commands inside a Docker sandbox — see [Configuration → Docker Backend](./configuration.md#docker-backend)), Kova reuses a single long-lived container for all tool calls and automatically bind-mounts the skills directory (`~/.kova/skills/`) and any credential files declared by skills into that container as read-only volumes. Skill scripts, templates, and references are available inside the sandbox without manual configuration, and because the container persists for the life of the Kova process, any dependencies you install or files you write stay around for the next tool call.
 
 The same syncing happens for SSH and Modal backends — skills and credential files are uploaded via rsync or the Modal mount API before each command.
 
@@ -596,7 +598,7 @@ docker build -t my-kova:latest .
 docker run -d \
   --name kova \
   --restart unless-stopped \
-  -v ~/.hermes:/opt/data \
+  -v ~/.kova:/opt/data \
   -p 8642:8642 \
   my-kova:latest gateway run
 ```
@@ -617,7 +619,7 @@ services:
     ports:
       - "8642:8642"
     volumes:
-      - ~/.hermes:/opt/data
+      - ~/.kova:/opt/data
     networks:
       - kova-net
 
@@ -675,7 +677,7 @@ services:
     ports:
       - "8642:8642"
     volumes:
-      - ~/.hermes:/opt/data
+      - ~/.kova:/opt/data
     networks:
       - kova-net
 
@@ -684,7 +686,7 @@ networks:
     driver: bridge
 ```
 
-Then in your `~/.hermes/config.yaml`, use the **container name** as the hostname:
+Then in your `~/.kova/config.yaml`, use the **container name** as the hostname:
 
 ```yaml
 model:
@@ -710,7 +712,7 @@ If your inference server runs directly on the host (not in Docker), use `host.do
 ```sh
 docker run -d \
   --name kova \
-  -v ~/.hermes:/opt/data \
+  -v ~/.kova:/opt/data \
   -p 8642:8642 \
   nousresearch/kova-agent gateway run
 ```
@@ -730,7 +732,7 @@ model:
 docker run -d \
   --name kova \
   --network host \
-  -v ~/.hermes:/opt/data \
+  -v ~/.kova:/opt/data \
   nousresearch/kova-agent gateway run
 ```
 
@@ -782,10 +784,10 @@ Check logs: `docker logs kova`. Common causes:
 
 ### "Permission denied" errors
 
-The container's stage2 hook drops privileges to the non-root `kova` user (UID 10000) via `s6-setuidgid` inside each supervised service. If your host `~/.hermes/` is owned by a different UID, set `KOVA_UID`/`KOVA_GID` — or their `PUID`/`PGID` aliases, for parity with LinuxServer.io and NAS images — to match your host user, or ensure the data directory is writable:
+The container's stage2 hook drops privileges to the non-root `kova` user (UID 10000) via `s6-setuidgid` inside each supervised service. If your host `~/.kova/` is owned by a different UID, set `KOVA_UID`/`KOVA_GID` — or their `PUID`/`PGID` aliases, for parity with LinuxServer.io and NAS images — to match your host user, or ensure the data directory is writable:
 
 ```sh
-chmod -R 755 ~/.hermes
+chmod -R 755 ~/.kova
 ```
 
 On a NAS (UGOS, Synology, unRAID) the data directory is typically a **bind mount** owned by a host UID the container cannot `chown`. Set `PUID`/`PGID` (or `KOVA_UID`/`KOVA_GID`) to that host user so the runtime runs as the owner of the mount rather than UID 10000:
@@ -808,7 +810,7 @@ Playwright needs shared memory. Add `--shm-size=1g` to your Docker run command:
 docker run -d \
   --name kova \
   --shm-size=1g \
-  -v ~/.hermes:/opt/data \
+  -v ~/.kova:/opt/data \
   nousresearch/kova-agent gateway run
 ```
 

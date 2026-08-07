@@ -1,10 +1,11 @@
 import { isGatewayReauthRequired, resolveGatewayWsUrl } from '@kova/shared'
 import { useEffect, useRef } from 'react'
 
-import type { KovaConnection } from '@/global'
-import { KovaGateway } from '@/kova'
+import type { HermesConnection } from '@/global'
+import { HermesGateway } from '@/kova'
 import { translateNow } from '@/i18n'
 import { desktopDefaultCwd } from '@/lib/desktop-fs'
+import { reconnectBackoffDelayMs } from '@/lib/reconnect-backoff'
 import {
   $desktopBoot,
   applyDesktopBootProgress,
@@ -42,21 +43,25 @@ import type { RpcEvent } from '@/types/kova'
 
 import { stashGatewaySurvivor, survivorIsStale, takeGatewaySurvivor } from './gateway-hmr-survivor'
 
-// After this many consecutive failed reconnects (≈45s with the 1→15s backoff)
-// raise a recoverable boot error. Otherwise a dropped remote gateway loops the
-// backoff forever behind the fullscreen CONNECTING overlay with no way to reach
-// Settings / sign in / switch to local — the "lost connection breaks the app"
-// dead end. The next successful reconnect clears it.
-const RECONNECT_ESCALATE_AFTER = 6
+// After the reconnect loop has been failing for this long, raise a recoverable
+// boot error. Otherwise a dropped remote gateway loops the backoff forever
+// behind the fullscreen CONNECTING overlay with no way to reach Settings /
+// sign in / switch to local — the "lost connection breaks the app" dead end.
+// The next successful reconnect clears it. Time-based (not attempt-count)
+// because the full-jitter backoff makes attempt counts a meaningless clock:
+// six jittered attempts can elapse in ~9s, while the old deterministic
+// 1→15s ladder took ~45s to reach six failures — this threshold keeps that
+// original ~45s calibration.
+const RECONNECT_ESCALATE_AFTER_MS = 45_000
 
 interface GatewayBootOptions {
   beforeConnectionSwitch: () => void
   handleGatewayEvent: (event: RpcEvent) => void
   onConnectionReady: (
-    connection: Awaited<ReturnType<NonNullable<typeof window.kovaDesktop>['getConnection']>> | null
+    connection: Awaited<ReturnType<NonNullable<typeof window.hermesDesktop>['getConnection']>> | null
   ) => void
-  onGatewayReady: (gateway: KovaGateway | null) => void
-  refreshKovaConfig: () => Promise<void>
+  onGatewayReady: (gateway: HermesGateway | null) => void
+  refreshHermesConfig: () => Promise<void>
   refreshSessions: () => Promise<void>
 }
 
@@ -65,7 +70,7 @@ export function useGatewayBoot({
   handleGatewayEvent,
   onConnectionReady,
   onGatewayReady,
-  refreshKovaConfig,
+  refreshHermesConfig,
   refreshSessions
 }: GatewayBootOptions) {
   const callbacksRef = useRef({
@@ -73,7 +78,7 @@ export function useGatewayBoot({
     handleGatewayEvent,
     onConnectionReady,
     onGatewayReady,
-    refreshKovaConfig,
+    refreshHermesConfig,
     refreshSessions
   })
 
@@ -82,15 +87,15 @@ export function useGatewayBoot({
     handleGatewayEvent,
     onConnectionReady,
     onGatewayReady,
-    refreshKovaConfig,
+    refreshHermesConfig,
     refreshSessions
   }
 
   useEffect(() => {
     let cancelled = false
-    const desktop = window.kovaDesktop
+    const desktop = window.hermesDesktop
 
-    const publish = (next: KovaConnection | null) => {
+    const publish = (next: HermesConnection | null) => {
       callbacksRef.current.onConnectionReady(next)
       setConnection(next)
     }
@@ -114,13 +119,18 @@ export function useGatewayBoot({
     let reconnecting = false
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null
     let reconnectAttempt = 0
+    // Wall-clock start of the current disconnect episode (first failed
+    // reconnect attempt); null while healthy. Drives the time-based
+    // escalation below. Reset on a clean open or a manual/wake reconnect.
+    let reconnectFailingSince: number | null = null
     // Surface "sign in again" once per disconnect episode, not on every backoff
     // tick — a stale OAuth ticket fails every attempt and would otherwise stack
     // identical error toasts (and their haptics). Reset on the next clean open.
     let reauthNotified = false
-    // Raised once the reconnect loop crosses RECONNECT_ESCALATE_AFTER so the
-    // recovery overlay replaces the dead-end CONNECTING screen. Reset on a clean
-    // open or a manual/wake-driven reconnect.
+    // Raised once the reconnect loop has been failing for
+    // RECONNECT_ESCALATE_AFTER_MS so the recovery overlay replaces the
+    // dead-end CONNECTING screen. Reset on a clean open or a manual/
+    // wake-driven reconnect.
     let escalated = false
 
     // Wrap the live getter in a call so TS control-flow analysis doesn't narrow
@@ -173,11 +183,12 @@ export function useGatewayBoot({
         }
 
         reconnectAttempt = 0
+        reconnectFailingSince = null
         // A respawned backend re-mints (recycles) runtime ids, so any tile's
         // bound runtime id is now stale — drop them so each tile re-resumes.
         resetTileRuntimeBindings()
         // Resync state that may have moved on the backend while we were asleep.
-        await callbacksRef.current.refreshKovaConfig().catch(() => undefined)
+        await callbacksRef.current.refreshHermesConfig().catch(() => undefined)
         await callbacksRef.current.refreshSessions().catch(() => undefined)
       } catch (err) {
         // OAuth session expired mid-reconnect: surface the actionable "sign in
@@ -192,7 +203,11 @@ export function useGatewayBoot({
         reconnecting = false
 
         if (!cancelled && !gatewayOpen() && !$gatewaySwitching.get()) {
-          if (reconnectAttempt >= RECONNECT_ESCALATE_AFTER && !escalated) {
+          if (reconnectFailingSince === null) {
+            reconnectFailingSince = Date.now()
+          }
+
+          if (Date.now() - reconnectFailingSince >= RECONNECT_ESCALATE_AFTER_MS && !escalated) {
             escalated = true
             failDesktopBoot(translateNow('boot.errors.gatewayConnectionLost'))
           }
@@ -207,8 +222,11 @@ export function useGatewayBoot({
         return
       }
 
-      // 1s, 2s, 4s … capped at 15s.
-      const delay = Math.min(15_000, 1_000 * 2 ** Math.min(reconnectAttempt, 4))
+      // Full-jitter exponential backoff (300ms base, 15s cap) so a gateway
+      // restart doesn't get redialed by every desktop client in lockstep —
+      // an immediate-retry reconnect storm can exhaust the gateway's file
+      // descriptors while it's still coming back up.
+      const delay = reconnectBackoffDelayMs(reconnectAttempt)
       reconnectAttempt += 1
       reconnectTimer = setTimeout(() => {
         reconnectTimer = null
@@ -223,6 +241,7 @@ export function useGatewayBoot({
 
       clearReconnectTimer()
       reconnectAttempt = 0
+      reconnectFailingSince = null
       escalated = false
       reconnectSecondaryGateways()
 
@@ -269,6 +288,7 @@ export function useGatewayBoot({
       $gatewaySwitching.set(true)
       clearReconnectTimer()
       reconnectAttempt = 0
+      reconnectFailingSince = null
       escalated = false
       reauthNotified = false
       callbacksRef.current.beforeConnectionSwitch()
@@ -297,7 +317,7 @@ export function useGatewayBoot({
         await adoptPrimaryProfile()
         await Promise.all([
           seedDefaultCwd(),
-          callbacksRef.current.refreshKovaConfig().catch(() => undefined),
+          callbacksRef.current.refreshHermesConfig().catch(() => undefined),
           callbacksRef.current.refreshSessions().catch(() => undefined)
         ])
         completeDesktopBoot()
@@ -315,7 +335,7 @@ export function useGatewayBoot({
     }
 
     const offBootProgress = desktop.onBootProgress(payload => {
-      // Soft switch / post-boot startKova re-emits progress — ignore so the
+      // Soft switch / post-boot startHermes re-emits progress — ignore so the
       // cold-boot CONNECTING overlay stays down. Errors still surface.
       if ($gatewaySwitching.get() || bootCompleted) {
         if (payload.error) {
@@ -357,7 +377,7 @@ export function useGatewayBoot({
       }
     }
 
-    const gateway = adoptedFromHmr ? survivor!.gateway : new KovaGateway()
+    const gateway = adoptedFromHmr ? survivor!.gateway : new HermesGateway()
 
     callbacksRef.current.onGatewayReady(gateway)
     setPrimaryGateway(gateway, survivor?.profile ?? normalizeProfileKey($activeGatewayProfile.get()))
@@ -371,6 +391,7 @@ export function useGatewayBoot({
 
       if (st === 'open') {
         reconnectAttempt = 0
+        reconnectFailingSince = null
         reauthNotified = false
         escalated = false
         clearReconnectTimer()
@@ -506,7 +527,7 @@ export function useGatewayBoot({
 
         await Promise.all([
           seedDefaultCwd(),
-          callbacksRef.current.refreshKovaConfig(),
+          callbacksRef.current.refreshHermesConfig(),
           // Session-list population is never boot-fatal. The gateway WS is
           // already open by this point — a failed sidebar fetch (transient
           // blip, or an endpoint the fallback couldn't cover) must leave the
@@ -556,7 +577,7 @@ export function useGatewayBoot({
       // input doesn't sit disabled after the swap.
       reportPrimaryGatewayState(gateway.connectionState)
 
-      await callbacksRef.current.refreshKovaConfig().catch(() => undefined)
+      await callbacksRef.current.refreshHermesConfig().catch(() => undefined)
 
       if (cancelled) {
         return

@@ -57,14 +57,15 @@ class AuditEvent(enum.Enum):
 
 
 def _resolve_log_path() -> Path:
-    """``$HERMES_HOME/logs/dashboard-auth.log`` with the standard fallback.
+    """``$HERMES_HOME/logs/dashboard-auth.log``.
 
-    Mirrors ``kova_constants.get_kova_home`` semantics: env var wins,
-    else ``~/.hermes``. A local copy avoids an import cycle with the
-    middleware which lives below ``kova_cli``.
+    Uses ``kova_constants.get_kova_home()`` (a leaf module — no import
+    cycle) so profile overrides and the native-Windows ``%LOCALAPPDATA%``
+    fallback are honored.
     """
-    home = os.environ.get("HERMES_HOME") or str(Path.home() / ".kova")
-    return Path(home) / "logs" / "dashboard-auth.log"
+    from kova_constants import get_kova_home
+
+    return get_kova_home() / "logs" / "dashboard-auth.log"
 
 
 def audit_log(event: AuditEvent, **fields: Any) -> None:

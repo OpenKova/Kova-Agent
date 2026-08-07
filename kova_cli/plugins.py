@@ -7,8 +7,8 @@ Discovers, loads, and manages plugins from four sources:
 1. **Bundled plugins** – ``<repo>/plugins/<name>/`` (shipped with kova-agent;
    ``memory/`` and ``context_engine/`` subdirs are excluded — they have their
    own discovery paths)
-2. **User plugins**   – ``~/.hermes/plugins/<name>/``
-3. **Project plugins** – ``./.hermes/plugins/<name>/`` (opt-in via
+2. **User plugins**   – ``~/.kova/plugins/<name>/``
+3. **Project plugins** – ``./.kova/plugins/<name>/`` (opt-in via
    ``KOVA_ENABLE_PROJECT_PLUGINS``)
 4. **Pip plugins**     – packages that expose the ``kova_agent.plugins``
    entry-point group.
@@ -84,7 +84,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 #
 # Set ``KOVA_PLUGINS_DEBUG=1`` to surface verbose plugin-discovery logs to
-# stderr in addition to ~/.hermes/logs/agent.log. Aimed at plugin authors
+# stderr in addition to ~/.kova/logs/agent.log. Aimed at plugin authors
 # trying to figure out why their plugin isn't showing up: which directories
 # were scanned, which manifests parsed, which plugins were skipped (and why),
 # what each ``register(ctx)`` call registered, and full tracebacks on load
@@ -161,6 +161,9 @@ VALID_HOOKS: Set[str] = {
     "on_session_end",
     "on_session_finalize",
     "on_session_reset",
+    # Successful skill lifecycle facts. The local skill name is available to
+    # plugins, while built-in shared metrics emit only bounded classifications.
+    "on_skill_lifecycle",
     "subagent_start",
     "subagent_stop",
     # Gateway pre-dispatch hook. Fired once per incoming MessageEvent
@@ -303,7 +306,7 @@ class PluginManifest:
     # ``platform``: gateway messaging platform adapter (e.g. IRC). Bundled
     #              platform plugins auto-load so every shipped platform is
     #              available out of the box; user-installed platform plugins
-    #              in ~/.hermes/plugins/ still gated by ``plugins.enabled``
+    #              in ~/.kova/plugins/ still gated by ``plugins.enabled``
     #              (untrusted code).
     kind: str = "standalone"
     # Registry key — path-derived, used by ``plugins.enabled``/``disabled``
@@ -344,6 +347,7 @@ class PluginContext:
         self._manager = manager
         # Lazy-built host-owned LLM facade — see ctx.llm property below.
         self._llm: Any = None
+        self._subagent_lifecycle: Any = None
 
     # -- host-owned LLM access ----------------------------------------------
 
@@ -364,6 +368,24 @@ class PluginContext:
             self._llm = PluginLlm(plugin_id=plugin_id)
         return self._llm
 
+    @property
+    def subagent_lifecycle(self) -> Any:
+        """Return the public, plugin-safe subagent lifecycle service.
+
+        The service only resolves the active host-owned parent agent when a
+        child is launched. Plugins receive serializable handles and immutable
+        snapshots; they never receive a live agent or a private registry.
+        """
+        if self._subagent_lifecycle is None:
+            from agent.subagent_lifecycle import (
+                SubagentLifecycleService,
+                get_active_subagent_parent,
+            )
+            self._subagent_lifecycle = SubagentLifecycleService(
+                get_active_subagent_parent
+            )
+        return self._subagent_lifecycle
+
     # -- profile awareness --------------------------------------------------
 
     @property
@@ -377,7 +399,7 @@ class PluginContext:
         ``_cli_ref`` (which is ``None`` outside an interactive CLI run).
 
         Returns ``"default"`` for the default profile, the profile id when
-        running under ``~/.hermes/profiles/<name>``, or ``"custom"`` when
+        running under ``~/.kova/profiles/<name>``, or ``"custom"`` when
         ``HERMES_HOME`` points somewhere unrecognized.
         """
         try:
@@ -805,7 +827,7 @@ class PluginContext:
         ``source`` must be an instance of
         :class:`agent.secret_sources.base.SecretSource`.  Registered
         sources run during ``load_kova_dotenv()`` startup — after
-        ``~/.hermes/.env`` loads, before Kova reads credentials — when
+        ``~/.kova/.env`` loads, before Kova reads credentials — when
         their ``secrets.<source.name>`` config section is enabled.  The
         orchestrator (``agent.secret_sources.registry.apply_all``) owns
         ordering, mapped-vs-bulk precedence, conflict warnings, and
@@ -1205,7 +1227,7 @@ class PluginContext:
 
         The skill becomes resolvable as ``'<plugin_name>:<name>'`` via
         ``skill_view()``.  It does **not** enter the flat
-        ``~/.hermes/skills/`` tree and is **not** listed in the system
+        ``~/.kova/skills/`` tree and is **not** listed in the system
         prompt's ``<available_skills>`` index — plugin skills are
         opt-in explicit loads only.
 
@@ -1346,14 +1368,14 @@ class PluginManager:
         logger.debug("  bundled/platforms: %d manifest(s)", len(bundled_platforms))
         manifests.extend(bundled_platforms)
 
-        # 2. User plugins (~/.hermes/plugins/)
+        # 2. User plugins (~/.kova/plugins/)
         user_dir = get_kova_home() / "plugins"
         logger.debug("Scanning user plugins: %s", user_dir)
         user_manifests = self._scan_directory(user_dir, source="user")
         logger.debug("  user: %d manifest(s)", len(user_manifests))
         manifests.extend(user_manifests)
 
-        # 3. Project plugins (./.hermes/plugins/)
+        # 3. Project plugins (./.kova/plugins/)
         if _env_enabled("KOVA_ENABLE_PROJECT_PLUGINS"):
             project_dir = Path.cwd() / ".kova" / "plugins"
             logger.debug("Scanning project plugins: %s", project_dir)
@@ -1601,7 +1623,7 @@ class PluginManager:
                 init_file = plugin_dir / "__init__.py"
                 if init_file.exists():
                     try:
-                        source_text = init_file.read_text(errors="replace")[:8192]
+                        source_text = init_file.read_text(errors="replace", encoding="utf-8")[:8192]
                         if (
                             "register_memory_provider" in source_text
                             or "MemoryProvider" in source_text
@@ -2047,7 +2069,7 @@ def discover_plugins(force: bool = False) -> None:
 
 
 def invoke_hook(hook_name: str, **kwargs: Any) -> List[Any]:
-    """Invoke a lifecycle hook on all loaded plugins.
+    """Invoke a lifecycle hook on loaded plugins.
 
     Returns a list of non-``None`` return values from plugin callbacks.
     """
@@ -2072,7 +2094,7 @@ def has_middleware(kind: str) -> bool:
 
 
 def has_hook(hook_name: str) -> bool:
-    """Return True when a hook has registered callbacks."""
+    """Return True when a loaded plugin handles a hook."""
     return get_plugin_manager().has_hook(hook_name)
 
 
@@ -2142,7 +2164,9 @@ def _get_pre_tool_call_directive_details(
             message=fmt.format(tool_name=tool_name),
         )
 
-    hook_results = invoke_hook(
+    from kova_cli.lifecycle import invoke_hook as invoke_lifecycle_hook
+
+    hook_results = invoke_lifecycle_hook(
         "pre_tool_call",
         tool_name=tool_name,
         args=args if isinstance(args, dict) else {},
@@ -2258,12 +2282,32 @@ def resolve_pre_tool_block(
         return details.message
     if details.action == "approve":
         try:
-            from tools.approval import request_tool_approval
-            result = request_tool_approval(
-                tool_name,
-                details.message or "",
-                rule_key=details.rule_key or tool_name,
+            from tools.approval import (
+                request_tool_approval,
+                reset_current_observability_context,
+                set_current_observability_context,
             )
+
+            approval_tokens = None
+            try:
+                approval_tokens = set_current_observability_context(
+                    turn_id=turn_id,
+                    tool_call_id=tool_call_id,
+                )
+            except Exception:
+                pass
+            try:
+                result = request_tool_approval(
+                    tool_name,
+                    details.message or "",
+                    rule_key=details.rule_key or tool_name,
+                )
+            finally:
+                if approval_tokens is not None:
+                    try:
+                        reset_current_observability_context(approval_tokens)
+                    except Exception:
+                        pass
         except Exception:
             # Fail-closed: if the gate itself errors, block rather than
             # silently execute an action a plugin flagged for approval.

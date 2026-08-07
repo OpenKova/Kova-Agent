@@ -73,12 +73,16 @@ The setup, in order:
    user with that number already exists, so re-running is safe.
 5. **Prints your assigned iMessage line** — the number you text to reach
    your agent.
-6. **Runs `npm install`** inside the plugin's sidecar directory.
+6. **Runs `npm install`** inside the plugin's sidecar directory. On
+   read-only / immutable install trees (hosted Docker images, Podman,
+   Nix) the sidecar automatically falls back to a writable mirror under
+   `~/.kova/photon/sidecar`; set `PHOTON_SIDECAR_DIR` to pin an
+   explicit location.
 
-Runtime credentials are written to `~/.hermes/.env`
+Runtime credentials are written to `~/.kova/.env`
 (`PHOTON_PROJECT_ID` = the Spectrum project id, `PHOTON_PROJECT_SECRET`),
 the same place every other channel keeps its token. Management metadata
-(device token, dashboard project id) lives in `~/.hermes/auth.json` under
+(device token, dashboard project id) lives in `~/.kova/auth.json` under
 `credential_pool.photon` / `credential_pool.photon_project`.
 
 ## Authorizing users
@@ -95,13 +99,13 @@ kova pairing approve photon <CODE>
 
 Use `kova pairing list` to see pending codes and approved users.
 
-**Pre-authorize specific numbers** (in `~/.hermes/.env`):
+**Pre-authorize specific numbers** (in `~/.kova/.env`):
 
 ```bash
 PHOTON_ALLOWED_USERS=+15551234567,+15559876543
 ```
 
-**Open access** (dev only, in `~/.hermes/.env`):
+**Open access** (dev only, in `~/.kova/.env`):
 
 ```bash
 PHOTON_ALLOW_ALL_USERS=true
@@ -127,7 +131,7 @@ gateway:
 
 With `require_mention: true`, group-chat messages are ignored unless
 they match a wake-word pattern. The defaults match `Kova` and
-`@Kova Agent` variants. For a custom agent name, set regex patterns:
+`@Kova agent` variants. For a custom agent name, set regex patterns:
 
 ```yaml
 gateway:
@@ -202,9 +206,27 @@ Common issues:
   `voice()` content builders via the sidecar's `/send-attachment`
   endpoint. Captions arrive as a separate iMessage bubble after the
   media.
+- **Native polls are supported.** Kova sends poll content through
+  spectrum-ts' `poll()` builder via the sidecar's `/send-poll` endpoint.
+- **Message effects are supported.** Kova sends text with native iMessage
+  bubble/screen effects through spectrum-ts' iMessage `effect()` builder
+  via the sidecar's `/send-effect` endpoint.
 - **Photon's free quotas:** 5,000 messages per server per day,
   50 new-conversation initiations per shared line per day. Increases
   available — email `help@photon.codes`.
+- **Cron and standalone sends need the gateway running.** Out-of-process
+  senders (cron jobs, `kova send`, the dashboard) reuse the sidecar the
+  gateway spawned — they read its port/token from
+  `<kova-home>/runtime/photon-sidecar.json`, written once the sidecar
+  passes its health check and removed when it stops. If a standalone send
+  reports the gateway appears to be down, start (or restart) the gateway
+  first.
+- **Shared/free-tier lines can't initiate conversations with new
+  targets.** Photon-side policy: a shared line can only message a number
+  after that number has texted the line first. A cron/standalone send to a
+  brand-new recipient will be rejected by Photon even when Kova is set
+  up correctly — either have the recipient message the line once, or move
+  to a dedicated line.
 
 ## Env vars
 

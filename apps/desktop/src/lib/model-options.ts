@@ -1,4 +1,4 @@
-import { getGlobalModelOptions, type KovaGateway, type ModelOptionsResponse } from '@/kova'
+import { getGlobalModelOptions, type HermesGateway, type ModelOptionsResponse } from '@/kova'
 import type { ModelOptionProvider } from '@/types/kova'
 
 /**
@@ -39,7 +39,7 @@ interface ModelOptionsRequest {
    *  surfaces). Chat pickers default to true so only explicitly configured
    *  providers are listed (#56974). */
   explicitOnly?: boolean
-  gateway?: KovaGateway
+  gateway?: HermesGateway
   refresh?: boolean
   sessionId?: null | string
 }

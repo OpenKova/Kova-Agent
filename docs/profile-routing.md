@@ -60,7 +60,7 @@ profile_routes:
 |---|---|---|
 | `name` | yes | Human-readable route identifier (used in logs). |
 | `platform` | yes | Adapter platform: `discord`, `telegram`, `feishu`, `slack`, … |
-| `profile` | yes | Target profile name (must exist under `~/.hermes/profiles/<name>`). |
+| `profile` | yes | Target profile name (must exist under `~/.kova/profiles/<name>`). |
 | `guild_id` | no | Server/guild (Discord). |
 | `chat_id` | no | Channel/group/DM id. |
 | `thread_id` | no | Thread id within a channel. |

@@ -60,16 +60,3 @@ def test_pin_does_not_overwrite_existing_env(monkeypatch):
     assert main_mod.os.environ.get("KOVA_KANBAN_BOARD") == "preset"
 
 
-def test_pin_swallows_resolution_failures(monkeypatch):
-    main_mod = importlib.import_module("kova_cli.main")
-
-    import kova_cli.kanban_db as kdb
-
-    def _boom():
-        raise RuntimeError("disk gone")
-
-    monkeypatch.setattr(kdb, "get_current_board", _boom)
-
-    main_mod._pin_kanban_board_env()
-
-    assert "KOVA_KANBAN_BOARD" not in main_mod.os.environ

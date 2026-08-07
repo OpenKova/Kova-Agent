@@ -1,10 +1,10 @@
 # Kova Desktop ☤
 
 <p align="center">
-  <a href="https://github.com/Kova/kova-agent/releases"><img src="https://img.shields.io/badge/Download-macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-FFD700?style=for-the-badge" alt="Download"></a>
+  <a href="https://github.com/OpenKova/Kova-Agent/releases"><img src="https://img.shields.io/badge/Download-macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-FFD700?style=for-the-badge" alt="Download"></a>
   <a href="https://kova-agent.kova.ai/docs/"><img src="https://img.shields.io/badge/Docs-kova-agent.kova.ai-FFD700?style=for-the-badge" alt="Documentation"></a>
   <a href="https://discord.gg/openkova"><img src="https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord"></a>
-  <a href="https://github.com/Kova/kova-agent/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
+  <a href="https://github.com/OpenKova/Kova-Agent/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
 </p>
 
 **The native desktop app for [Kova Agent](../../README.md) — the self-improving AI agent from [Kova](https://github.com/OpenKova).** Same agent, same skills, same memory as the CLI and gateway, in a polished native window — chat with streaming tool output, side-by-side previews, a file browser, voice, and settings, no terminal required. Available for **macOS, Windows, and Linux**.
@@ -30,7 +30,7 @@ Already have the Kova CLI? Just run:
 kova desktop
 ```
 
-It builds and launches the GUI against your existing install — same config, keys, sessions, and skills. On first launch Kova walks you through picking a provider and model; nothing else to configure.
+It builds and launches the GUI against your existing install — same config, keys, sessions, and skills. If Desktop cannot find a usable runtime or saved remote connection, first launch lets you connect to an existing Kova gateway or install Kova locally. Local onboarding then walks you through choosing a provider and model.
 
 ### Prebuilt installers
 
@@ -89,7 +89,7 @@ Installers are built and uploaded to GitHub Releases manually. macOS/Windows sig
 
 The packaged app ships the Electron shell and a native React chat surface. On
 first launch it can install the Kova Agent runtime into `HERMES_HOME`
-(`~/.hermes`, or `%LOCALAPPDATA%\kova` on Windows), using the same layout as a
+(`~/.kova`, or `%LOCALAPPDATA%\kova` on Windows), using the same layout as a
 CLI install.
 
 The app has three boundaries:
@@ -107,7 +107,7 @@ Backend resolution is an ordered ladder:
 1. `KOVA_DESKTOP_KOVA_ROOT`
 2. the current source checkout during development
 3. a completed managed install
-4. `KOVA_DESKTOP_BIN`, or `kova` on `PATH`
+4. `KOVA_DESKTOP_HERMES`, or `kova` on `PATH`
 5. a system Python that can import the Kova runtime
 6. the first-launch bootstrap installer
 
@@ -133,6 +133,19 @@ Before changing the app, read:
 Desktop supports a managed local backend, explicit remote gateways, and Kova
 Cloud connections. Remote and cloud modes use the same remote-capability path;
 authentication and discovery differ, not the renderer feature model.
+
+When no usable local runtime or saved remote connection exists, the first-run
+screen offers **Connect to existing Kova** before starting the local installer.
+Desktop probes the gateway to discover token or OAuth authentication, requires a
+successful HTTP and WebSocket connection test, and saves the connection using
+the same encrypted Desktop configuration used by Settings. A saved remote
+connection bypasses this choice on later launches. The regular Desktop build
+still includes the local-install option; this is a remote operating mode, not a
+separate client-only application.
+
+In remote mode the gateway host is the execution boundary: agent tools,
+terminal commands, and file operations run against the remote Kova host, not
+the computer displaying the Desktop UI.
 
 Projects are the workspace abstraction. A project may own multiple folders,
 repositories, worktrees, and sessions; a bare new chat remains detached unless
@@ -168,9 +181,9 @@ Boot logs land in `HERMES_HOME/logs/desktop.log` (includes backend output and re
 
 ```bash
 # Force a clean first-launch setup
-rm "$HOME/.hermes/kova-agent/.hermes-bootstrap-complete"
+rm "$HOME/.kova/kova-agent/.kova-bootstrap-complete"
 # Rebuild a broken Python venv
-rm -rf "$HOME/.hermes/hermes-agent/venv"
+rm -rf "$HOME/.kova/kova-agent/venv"
 # Reset a stuck macOS microphone prompt (macOS only)
 tccutil reset Microphone com.nousresearch.kova
 ```
@@ -179,7 +192,7 @@ tccutil reset Microphone com.nousresearch.kova
 
 ```powershell
 # Force a clean first-launch setup
-Remove-Item "$env:LOCALAPPDATA\kova\kova-agent\.hermes-bootstrap-complete"
+Remove-Item "$env:LOCALAPPDATA\kova\kova-agent\.kova-bootstrap-complete"
 # Rebuild a broken Python venv
 Remove-Item -Recurse -Force "$env:LOCALAPPDATA\kova\kova-agent\venv"
 ```
@@ -192,7 +205,7 @@ Remove-Item -Recurse -Force "$env:LOCALAPPDATA\kova\kova-agent\venv"
 
 - 💬 [Discord](https://discord.gg/openkova)
 - 📖 [Documentation](https://kova-agent.kova.ai/docs/)
-- 🐛 [Issues](https://github.com/Kova/kova-agent/issues)
+- 🐛 [Issues](https://github.com/OpenKova/Kova-Agent/issues)
 
 ---
 

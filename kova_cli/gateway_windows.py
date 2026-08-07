@@ -55,12 +55,7 @@ _FALLBACK_PATTERNS = re.compile(
 )
 _ACCESS_DENIED_PATTERN = re.compile(r"(access is denied|acceso denegado)", re.IGNORECASE)
 
-_TASK_NAME_DEFAULT = "Kova_Gateway"
-# Legacy name from before the Kova rename. Installs registered under this
-# name (e.g. older desktop app versions) must still be found by status /
-# start / stop / uninstall — hence the dual lookup in is_task_registered()
-# and query_task_status().
-_TASK_NAME_LEGACY = "Hermes_Gateway"
+_TASK_NAME_DEFAULT = "Hermes_Gateway"
 _TASK_DESCRIPTION = "Kova Agent Gateway - Messaging Platform Integration"
 _TASK_LOGON_DELAY = "PT30S"
 _TASK_RESTART_INTERVAL = "PT1M"
@@ -295,8 +290,8 @@ def _launch_elevated_uninstall() -> bool:
 def get_task_name() -> str:
     """Scheduled Task name, scoped per profile.
 
-    Default profile: ``Kova_Gateway``
-    Named profile X: ``Kova_Gateway_<X>``
+    Default profile: ``Hermes_Gateway``
+    Named profile X: ``Hermes_Gateway_<X>``
     """
     _assert_windows()
     # Local import to avoid circular module initialization during kova_cli boot.
@@ -306,22 +301,6 @@ def get_task_name() -> str:
     if not suffix:
         return _TASK_NAME_DEFAULT
     return f"{_TASK_NAME_DEFAULT}_{suffix}"
-
-
-def _task_name_candidates() -> list[str]:
-    """Current + legacy task names, most-recent first.
-
-    The current name is ``Kova_Gateway[_<profile>]``; the legacy name
-    ``Hermes_Gateway[_<profile>]`` matches registrations made by older
-    installs. Lookup/status sites iterate this list so both are found.
-    """
-    _assert_windows()
-    from kova_cli.gateway import _profile_suffix
-
-    suffix = _profile_suffix()
-    if suffix:
-        return [f"{_TASK_NAME_DEFAULT}_{suffix}", f"{_TASK_NAME_LEGACY}_{suffix}"]
-    return [_TASK_NAME_DEFAULT, _TASK_NAME_LEGACY]
 
 
 def _sanitize_filename(value: str) -> str:
@@ -685,11 +664,6 @@ def _install_scheduled_task(task_name: str, script_path: Path) -> tuple[bool, st
     """
     delete_code, delete_out, delete_err = _exec_schtasks(["/Delete", "/F", "/TN", task_name])
     delete_detail = (delete_err or delete_out or "").strip()
-    # Also drop any legacy Kova-named task so a pre-rename install can't
-    # leave an orphaned duplicate that double-launches the gateway.
-    for legacy in _task_name_candidates():
-        if legacy != task_name:
-            _exec_schtasks(["/Delete", "/F", "/TN", legacy])
     if delete_code != 0 and delete_detail and "cannot find" not in delete_detail.lower():
         if _is_access_denied(delete_detail):
             return (False, f"schtasks /Delete failed (code {delete_code}): {delete_detail}")
@@ -770,8 +744,26 @@ def _resolve_detached_python(python_exe: str) -> tuple[str, Path, list[str]]:
     ``extra_pythonpath`` is always empty now; the tuple shape is kept so the
     call sites (argv builders, cmd/vbs renderers, restart-spec rewriter,
     gateway watcher) stay unchanged.
+
+    Legacy normalization: launchers and argv snapshots from pre-aa2ae36c3f
+    installs lead with ``pythonw.exe``. When the sibling console
+    ``python.exe`` exists, swap to it so respawns and regenerated launchers
+    get the hidden-console design instead of resurrecting the console-less
+    daemon (the #54220/#56747 flash class, plus the ``sys.stderr is None``
+    startup-crash class from #71671).
     """
     p = Path(python_exe)
+    if p.name.lower() in ("pythonw.exe", "pythonw"):
+        sibling = p.with_name("python.exe" if p.suffix else "python")
+        try:
+            if sibling.exists():
+                p = sibling
+                python_exe = str(sibling)
+        except OSError:
+            # Can't stat the sibling — keep the original interpreter. A
+            # console-less gateway is worse than a hidden-console one, but a
+            # failed respawn is worse still.
+            pass
     venv_dir = p.parent.parent
     return (python_exe, venv_dir, [])
 
@@ -1218,16 +1210,12 @@ def uninstall() -> None:
     legacy_startup_entry = _legacy_startup_entry_path()
 
     scheduled_task_removed = False
-    # Delete both the current (Kova_Gateway) and legacy (Hermes_Gateway)
-    # registrations so a pre-rename install is fully cleaned up.
-    for task_candidate in _task_name_candidates():
-        if not _task_registered_by_name(task_candidate):
-            continue
-        code, _out, err = _exec_schtasks(["/Delete", "/F", "/TN", task_candidate])
+    if is_task_registered():
+        code, _out, err = _exec_schtasks(["/Delete", "/F", "/TN", task_name])
         detail = err.strip()
         if code == 0:
             scheduled_task_removed = True
-            print(f"✓ Removed Scheduled Task {task_candidate!r}")
+            print(f"✓ Removed Scheduled Task {task_name!r}")
         elif _is_access_denied(detail) and not _is_running_as_admin():
             from kova_cli.setup import prompt_yes_no
 
@@ -1257,28 +1245,16 @@ def uninstall() -> None:
             pass
 
     if is_task_registered() and not scheduled_task_removed:
-        still_registered = next(
-            (c for c in _task_name_candidates() if _task_registered_by_name(c)), None
-        )
-        print(f"⚠ Scheduled Task still registered: {still_registered or task_name}")
+        print(f"⚠ Scheduled Task still registered: {task_name}")
 
 
 # ---------------------------------------------------------------------------
 # Status / start / stop / restart
 # ---------------------------------------------------------------------------
 
-def _task_registered_by_name(task_name: str) -> bool:
-    code, _out, _err = _exec_schtasks(["/Query", "/TN", task_name])
-    return code == 0
-
-
 def is_task_registered() -> bool:
-    # Dual lookup: current Kova_Gateway first, then legacy Hermes_Gateway
-    # so installs registered before the rename are still detected.
-    for candidate in _task_name_candidates():
-        if _task_registered_by_name(candidate):
-            return True
-    return False
+    code, _out, _err = _exec_schtasks(["/Query", "/TN", get_task_name()])
+    return code == 0
 
 
 def is_startup_entry_installed() -> bool:
@@ -1292,27 +1268,24 @@ def is_installed() -> bool:
 
 def query_task_status() -> dict[str, str]:
     """Parse ``schtasks /Query /V /FO LIST`` and pull the interesting keys."""
-    # Dual lookup: try Kova_Gateway first, fall back to legacy Hermes_Gateway.
-    for candidate in _task_name_candidates():
-        code, out, err = _exec_schtasks(["/Query", "/TN", candidate, "/V", "/FO", "LIST"])
-        if code != 0:
+    code, out, err = _exec_schtasks(["/Query", "/TN", get_task_name(), "/V", "/FO", "LIST"])
+    if code != 0:
+        return {}
+    info: dict[str, str] = {}
+    for raw in out.splitlines():
+        line = raw.strip()
+        if not line or ":" not in line:
             continue
-        info: dict[str, str] = {}
-        for raw in out.splitlines():
-            line = raw.strip()
-            if not line or ":" not in line:
-                continue
-            key, _, value = line.partition(":")
-            key = key.strip().lower()
-            value = value.strip()
-            # Some Windows locales emit "Last Result" instead of "Last Run Result".
-            if key in {"status", "last run time", "last run result", "last result"}:
-                if key == "last result":
-                    info.setdefault("last run result", value)
-                else:
-                    info[key] = value
-        return info
-    return {}
+        key, _, value = line.partition(":")
+        key = key.strip().lower()
+        value = value.strip()
+        # Some Windows locales emit "Last Result" instead of "Last Run Result".
+        if key in {"status", "last run time", "last run result", "last result"}:
+            if key == "last result":
+                info.setdefault("last run result", value)
+            else:
+                info[key] = value
+    return info
 
 
 def _gateway_pids() -> list[int]:
@@ -1458,15 +1431,13 @@ def _print_deep_probes() -> None:
 def status(deep: bool = False) -> None:
     """Print a status report for the Windows gateway service."""
     _assert_windows()
+    task_name = get_task_name()
     task_installed = is_task_registered()
     startup_installed = is_startup_entry_installed()
     pids = _gateway_pids()
 
     if task_installed:
-        registered = next(
-            (c for c in _task_name_candidates() if _task_registered_by_name(c)), None
-        )
-        print(f"✓ Scheduled Task registered: {registered or get_task_name()}")
+        print(f"✓ Scheduled Task registered: {task_name}")
         info = query_task_status()
         if info:
             for key in ("status", "last run time", "last run result"):
@@ -1648,11 +1619,8 @@ def stop() -> None:
         drained = _drain_gateway_pid(pid, _windows_stop_drain_timeout())
 
     stopped_any = drained
-    # End both current and legacy task names so a pre-rename install stops too.
-    for task_candidate in _task_name_candidates():
-        if not _task_registered_by_name(task_candidate):
-            continue
-        code, _out, err = _exec_schtasks(["/End", "/TN", task_candidate])
+    if is_task_registered():
+        code, _out, err = _exec_schtasks(["/End", "/TN", get_task_name()])
         # schtasks returns nonzero when the task isn't currently running — don't treat that as an error.
         if code == 0:
             stopped_any = True

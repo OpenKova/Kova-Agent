@@ -164,6 +164,26 @@ def _list_targets(platform_filter: Optional[str], *, json_mode: bool) -> int:
 
     platforms = dict(raw.get("platforms") or {})
 
+    # Merge in configured-but-undiscovered platforms so `--list` never hides
+    # a working send target. The directory only contains platforms the
+    # gateway has discovered channels for; a platform configured via env /
+    # config.yaml that has never run channel discovery (e.g. a fresh SimpleX
+    # setup used only for outbound `kova send`) would otherwise be
+    # invisible, leaving users guessing at platform names.
+    try:
+        from gateway.config import load_gateway_config
+
+        gw_config = load_gateway_config()
+        for plat in gw_config.get_connected_platforms():
+            plat_name = getattr(plat, "value", str(plat))
+            if plat_name in ("local", "api_server", "webhook"):
+                continue
+            platforms.setdefault(plat_name, [])
+    except Exception:
+        # Directory contents alone are still useful; don't fail --list over
+        # a config parse problem.
+        pass
+
     if platform_filter:
         key = platform_filter.strip().lower()
         filtered = {k: v for k, v in platforms.items() if k.lower() == key}
@@ -180,16 +200,17 @@ def _list_targets(platform_filter: Optional[str], *, json_mode: bool) -> int:
         print(json.dumps({"platforms": platforms}, indent=2, default=str))
         return _SUCCESS_EXIT
 
-    if not any(platforms.values()):
+    if not platforms:
         print("No messaging platforms configured or no channels discovered yet.")
         print("Set one up with `kova gateway setup`, or run the gateway once so")
-        print("channel discovery can populate ~/.hermes/channel_directory.json.")
+        print("channel discovery can populate ~/.kova/channel_directory.json.")
         return _SUCCESS_EXIT
 
     # Human display — when unfiltered, reuse the shared formatter the agent
-    # already sees. When filtered, build a minimal view ourselves.
+    # already sees (passing the merged view so configured-but-undiscovered
+    # platforms are listed too). When filtered, build a minimal view ourselves.
     if platform_filter is None:
-        print(format_directory_for_display())
+        print(format_directory_for_display(platforms))
         return _SUCCESS_EXIT
 
     for plat_name in sorted(platforms):
@@ -209,7 +230,7 @@ def _list_targets(platform_filter: Optional[str], *, json_mode: bool) -> int:
 
 
 def _load_kova_env() -> None:
-    """Populate ``os.environ`` from ``~/.hermes/.env`` AND bridge top-level
+    """Populate ``os.environ`` from ``~/.kova/.env`` AND bridge top-level
     ``config.yaml`` keys into the environment so the underlying gateway
     config loader sees platform credentials and home channel IDs.
 
@@ -217,8 +238,8 @@ def _load_kova_env() -> None:
     ``os.getenv(...)`` on each call. The gateway process does two things at
     startup that ``kova send`` must replicate when invoked standalone:
 
-    1. ``load_dotenv(~/.hermes/.env)`` — brings bot tokens into the env.
-    2. Bridge top-level simple values from ``~/.hermes/config.yaml`` into
+    1. ``load_dotenv(~/.kova/.env)`` — brings bot tokens into the env.
+    2. Bridge top-level simple values from ``~/.kova/config.yaml`` into
        ``os.environ`` (without overriding existing env vars). This is where
        ``TELEGRAM_HOME_CHANNEL`` and friends live when the user saved them
        via ``kova config set``.
@@ -260,13 +281,10 @@ def _load_kova_env() -> None:
         return
 
     try:
-        import yaml  # type: ignore[import-not-found]
-    except Exception:
-        return
-
-    try:
-        with open(config_path, "r", encoding="utf-8") as fh:
-            raw = yaml.safe_load(fh) or {}
+        # Presence-sensitive env bridge: raw read is deliberate — only keys
+        # the user actually wrote get bridged. Overlay + expansion below.
+        from kova_cli.config import read_user_config_raw
+        raw = read_user_config_raw(config_path)
     except Exception:
         return
 
@@ -298,7 +316,7 @@ def _load_kova_env() -> None:
 def cmd_send(args: argparse.Namespace) -> None:
     """Entry point wired into the top-level argparse dispatcher."""
 
-    # Bridge ~/.hermes/.env and ~/.hermes/config.yaml into os.environ so the
+    # Bridge ~/.kova/.env and ~/.kova/config.yaml into os.environ so the
     # gateway config loader (invoked downstream by send_message_tool and by
     # the channel directory) can see platform credentials and home channels.
     _load_kova_env()
@@ -378,7 +396,7 @@ def register_send_subparser(subparsers) -> argparse.ArgumentParser:
         description=(
             "Pipe text from any shell script to any messaging platform Kova "
             "is already configured for. Reuses the gateway's platform "
-            "credentials (~/.hermes/.env + ~/.hermes/config.yaml) — no LLM, "
+            "credentials (~/.kova/.env + ~/.kova/config.yaml) — no LLM, "
             "no agent loop, no running gateway required for bot-token "
             "platforms like Telegram/Discord/Slack/Signal."
         ),

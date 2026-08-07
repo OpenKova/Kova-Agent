@@ -71,15 +71,31 @@ export async function resolveMediaDisplaySrc(path: string): Promise<string> {
     return path
   }
 
-  if (window.kovaDesktop && isRemoteGateway()) {
+  if (window.hermesDesktop && isRemoteGateway()) {
     return gatewayMediaDataUrl(path)
   }
 
-  if (!window.kovaDesktop?.readFileDataUrl) {
+  if (!window.hermesDesktop?.readFileDataUrl) {
     return mediaExternalUrl(path)
   }
 
-  return window.kovaDesktop.readFileDataUrl(filePathFromMediaPath(path))
+  return window.hermesDesktop.readFileDataUrl(filePathFromMediaPath(path))
+}
+
+// Audio/video need a seekable source instead of a whole-file data URL. Keep
+// remote URLs untouched, route gateway-local files through the authenticated
+// download endpoint, and reserve the Electron protocol for files on this
+// desktop machine.
+export async function resolveMediaPlaybackSrc(path: string): Promise<string> {
+  if (isInlineMediaSrc(path)) {
+    return path
+  }
+
+  if (window.hermesDesktop && ['audio', 'video'].includes(mediaKind(path))) {
+    return isRemoteGateway() ? mediaExternalUrl(path) : mediaStreamUrl(path)
+  }
+
+  return resolveMediaDisplaySrc(path)
 }
 
 // Resolve a media path to a URL the shell can open. Remote mode rewrites
@@ -142,7 +158,7 @@ export function isRemoteGateway(): boolean {
 
 // Fetch gateway-local media as a data URL via the authenticated desktop FS
 // bridge. Remote Desktop artifacts can live anywhere the gateway can read
-// (workspace, skills, ~/.hermes/cache, etc.); /api/media is intentionally
+// (workspace, skills, ~/.kova/cache, etc.); /api/media is intentionally
 // narrower and rejects non-images plus images outside its media roots.
 export async function gatewayMediaDataUrl(path: string): Promise<string> {
   return readDesktopFileDataUrl(filePathFromMediaPath(path))

@@ -88,7 +88,7 @@ describe('/subscription slash command', () => {
 
     await run('')
 
-    expect(printed(sys)).toContain('Not logged into Kova Portal')
+    expect(printed(sys)).toContain('Not logged into Nous Portal')
     expect(getOverlayState().subscription).toBeNull()
   })
 

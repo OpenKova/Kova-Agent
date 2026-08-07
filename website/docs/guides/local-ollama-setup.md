@@ -34,7 +34,7 @@ By the end, you'll have:
 Ollama runs on CPU-only servers. A 9B model on a modern 8-core CPU gives ~10 tokens/sec. A 31B model on CPU is slower (~2–5 tokens/sec) — each response takes 30–120 seconds, but it works. A GPU dramatically improves this. For CPU-only setups, widen the API timeout via the env var (it's not a `config.yaml` key):
 
 ```bash
-# ~/.hermes/.env
+# ~/.kova/.env
 KOVA_API_TIMEOUT=1800   # 30 minutes — generous for slow local models
 ```
 :::
@@ -105,7 +105,7 @@ When prompted for a provider, select **Custom Endpoint** and enter:
 - **API Key:** Leave empty or type `no-key` (Ollama doesn't need one)
 - **Model:** `gemma4:31b` (or whichever model you pulled)
 
-Alternatively, edit `~/.hermes/config.yaml` directly:
+Alternatively, edit `~/.kova/config.yaml` directly:
 
 ```yaml
 model:
@@ -205,7 +205,7 @@ Once Kova works locally in the CLI, you can expose it as a Telegram or Discord b
 ### Telegram
 
 1. Create a bot via [@BotFather](https://t.me/BotFather) and get the token
-2. Add to your `~/.hermes/config.yaml`:
+2. Add to your `~/.kova/config.yaml`:
 
 ```yaml
 model:
@@ -276,6 +276,17 @@ ollama serve
 - **Check `ollama ps`:** If no GPU layers are offloaded, responses are CPU-bound. This is normal for CPU-only servers.
 - **Reduce context:** Large conversations slow down inference. Use `/compress` regularly, or set a lower compression threshold in config.
 
+### Slow first response (prefill)
+
+Kova sends a fixed payload on every API call — the system prompt plus the tool schemas for all enabled tools — before any of your conversation content. On CPU-only or low-VRAM setups, processing that prompt (the *prefill* phase) dominates the first turn: the model can sit silent for minutes while it works through the prompt, then generate at its normal pace. This is expected behaviour, not a hang. The [Mac local-LLM guide](./local-llm-on-mac.md#timeouts) documents the same effect — during prefill on large contexts, local models may produce no output for minutes while processing the prompt — and Kova automatically raises its stream read timeout from 120s to 1800s for local endpoints (`KOVA_STREAM_READ_TIMEOUT`).
+
+What helps:
+
+- **Keep the model loaded** — Ollama unloads idle models after 5 minutes, adding a full reload before the next prefill. Set `OLLAMA_KEEP_ALIVE=24h` (see [Step 6](#keep-the-model-loaded)).
+- **Widen the API timeout** — set `KOVA_API_TIMEOUT=1800` in `~/.kova/.env` (see [What You Need](#what-you-need)).
+- **Measure and trim the fixed prompt** — run `kova prompt-size` for a byte breakdown of the system prompt and tool schemas, then disable unused toolsets with `kova tools` and uninstall skills you don't need with `kova skills`.
+- **Use GPU offloading** — even a partial offload gives a significant speedup (see [Step 6](#use-gpu-offloading-if-available)).
+
 ### Model doesn't follow tool calls
 
 Smaller models (3B, 7B) sometimes ignore tool-call instructions and produce plain text instead of structured function calls. Solutions:
@@ -283,6 +294,8 @@ Smaller models (3B, 7B) sometimes ignore tool-call instructions and produce plai
 - **Use a bigger model** — `gemma4:31b` or `gemma2:27b` handle tool calls much better than 3B/7B models.
 - **Kova has auto-repair** — it detects malformed tool calls and attempts to fix them automatically.
 - **Set up a fallback** — if the local model fails 3 times, Kova falls back to a cloud provider.
+
+If the model prints raw JSON like `{"name": "web_search", ...}` in its reply instead of actually running the tool, that's usually the *server*, not the model — tool calling isn't enabled or the tool-call format isn't parsed. See the per-server fix table in [Tool calls appear as text instead of executing](/integrations/providers#tool-calls-appear-as-text-instead-of-executing) (llama.cpp needs `--jinja`, vLLM needs `--enable-auto-tool-choice --tool-call-parser kova`, and so on).
 
 ### Context window errors
 

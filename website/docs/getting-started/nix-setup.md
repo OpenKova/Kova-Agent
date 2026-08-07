@@ -41,22 +41,22 @@ No clone needed. Nix fetches, builds, and runs everything:
 
 ```bash
 # Run the desktop app
-nix run github:NousResearch/kova-agent#desktop
+nix run github:OpenKova/Kova-Agent#desktop
 
 # Or install persistently
-nix profile install github:NousResearch/kova-agent#desktop
+nix profile install github:OpenKova/Kova-Agent#desktop
 
 # run the tui
-nix run github:NousResearch/kova-agent -- setup
-nix run github:NousResearch/kova-agent -- --tui
+nix run github:OpenKova/Kova-Agent -- setup
+nix run github:OpenKova/Kova-Agent -- --tui
 
 # or install it in your profile
-nix profile install github:NousResearch/kova-agent
+nix profile install github:OpenKova/Kova-Agent
 kova setup
 kova --tui
 ```
 
-After `nix profile install`, `kova`, `kova-agent`, and `kova-acp` are on your PATH. From here, the workflow is identical to the [standard installation](./installation.md) — `kova setup` walks you through provider selection, `kova gateway install` sets up a launchd (macOS) or systemd user service, and config lives in `~/.hermes/`.
+After `nix profile install`, `kova`, `kova-agent`, and `kova-acp` are on your PATH. From here, the workflow is identical to the [standard installation](./installation.md) — `kova setup` walks you through provider selection, `kova gateway install` sets up a launchd (macOS) or systemd user service, and config lives in `~/.kova/`.
 
 :::warning Messaging platforms (Discord, Telegram, Slack)
 The default package includes ALL libraries kova-agent might need. if you want a smaller variant, check the other flake outputs. 
@@ -94,7 +94,7 @@ This module requires NixOS. For non-NixOS systems (macOS, other Linux distros), 
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    kova-agent.url = "github:NousResearch/kova-agent";
+    kova-agent.url = "github:OpenKova/Kova-Agent";
   };
 
   outputs = { nixpkgs, kova-agent, ... }: {
@@ -138,7 +138,7 @@ services.kova-agent.environmentFiles = [ "/var/lib/kova/env" ];
 :::
 
 :::tip addToSystemPackages
-Setting `addToSystemPackages = true` does two things: puts the `kova` CLI on your system PATH **and** sets `HERMES_HOME` system-wide so the interactive CLI shares state (sessions, skills, cron) with the gateway service. Without it, running `kova` in your shell creates a separate `~/.hermes/` directory.
+Setting `addToSystemPackages = true` does two things: puts the `kova` CLI on your system PATH **and** sets `HERMES_HOME` system-wide so the interactive CLI shares state (sessions, skills, cron) with the gateway service. Without it, running `kova` in your shell creates a separate `~/.kova/` directory.
 :::
 
 ### Container-aware CLI
@@ -151,7 +151,7 @@ When `container.enable = true` and `addToSystemPackages = true`, **every** `kova
 - If the container isn't running, the CLI retries briefly (5s with a spinner for interactive use, 10s silently for scripts) then fails with a clear error — no silent fallback
 - For developers working on the kova codebase, set `KOVA_DEV=1` to bypass container routing and run the local checkout directly
 
-Set `container.hostUsers` to create a `~/.hermes` symlink to the service state directory, so the host CLI and the container share sessions, config, and memories:
+Set `container.hostUsers` to create a `~/.kova` symlink to the service state directory, so the host CLI and the container share sessions, config, and memories:
 
 ```nix
 services.kova-agent = {
@@ -336,7 +336,7 @@ Quick reference for the most common things Nix users want to customize:
 | Change the LLM model | `settings.model.default` | `"anthropic/claude-sonnet-4"` |
 | Use a different provider endpoint | `settings.model.base_url` | `"https://openrouter.ai/api/v1"` |
 | Add API keys | `environmentFiles` | `[ config.sops.secrets."kova-env".path ]` |
-| Give the agent a personality | `${services.kova-agent.stateDir}/.hermes/SOUL.md` | manage the file directly |
+| Give the agent a personality | `${services.kova-agent.stateDir}/.kova/SOUL.md` | manage the file directly |
 | Add MCP tool servers | `mcpServers.<name>` | See [MCP Servers](#mcp-servers) |
 | Enable Discord/Telegram/Slack | `extraDependencyGroups` | `[ "messaging" ]` |
 | Mount host directories into container | `container.extraVolumes` | `[ "/data:/data:rw" ]` |
@@ -421,7 +421,7 @@ The `documents` option installs files into the agent's working directory (the `w
 - **`USER.md`** — context about the user the agent is interacting with.
 - Any other files you place here are visible to the agent as workspace files.
 
-The agent identity file is separate: Kova loads its primary `SOUL.md` from `$HERMES_HOME/SOUL.md`, which in the NixOS module is `${services.kova-agent.stateDir}/.hermes/SOUL.md`. Putting `SOUL.md` in `documents` only creates a workspace file and will not replace the main persona file.
+The agent identity file is separate: Kova loads its primary `SOUL.md` from `$HERMES_HOME/SOUL.md`, which in the NixOS module is `${services.kova-agent.stateDir}/.kova/SOUL.md`. Putting `SOUL.md` in `documents` only creates a workspace file and will not replace the main persona file.
 
 ```nix
 {
@@ -501,7 +501,7 @@ docker exec -it kova-agent \
   kova mcp add my-oauth-server --url https://mcp.example.com/mcp --auth oauth
 
 # Native mode
-sudo -u kova HERMES_HOME=/var/lib/kova/.hermes \
+sudo -u kova HERMES_HOME=/var/lib/kova/.kova \
   kova mcp add my-oauth-server --url https://mcp.example.com/mcp --auth oauth
 ```
 
@@ -511,8 +511,8 @@ The container uses `--network=host`, so the OAuth callback listener on `127.0.0.
 
 ```bash
 kova mcp add my-oauth-server --url https://mcp.example.com/mcp --auth oauth
-scp ~/.hermes/mcp-tokens/my-oauth-server{,.client}.json \
-    server:/var/lib/kova/.hermes/mcp-tokens/
+scp ~/.kova/mcp-tokens/my-oauth-server{,.client}.json \
+    server:/var/lib/kova/.kova/mcp-tokens/
 # Ensure: chown kova:kova, chmod 0600
 ```
 
@@ -573,7 +573,7 @@ When container mode is enabled, kova runs inside a persistent Ubuntu container w
 Host                                    Container
 ────                                    ─────────
 /nix/store/...-kova-agent-0.1.0  ──►  /nix/store/... (ro)
-~/.hermes -> /var/lib/kova/.hermes       (symlink bridge, per hostUsers)
+~/.kova -> /var/lib/kova/.kova       (symlink bridge, per hostUsers)
 /var/lib/kova/                    ──►  /data/          (rw)
   ├── current-package -> /nix/store/...    (symlink, updated each rebuild)
   ├── .gc-root -> /nix/store/...           (prevents nix-collect-garbage)
@@ -733,7 +733,7 @@ External flakes can override the package directly:
 
 ```nix
 {
-  inputs.kova-agent.url = "github:NousResearch/kova-agent";
+  inputs.kova-agent.url = "github:OpenKova/Kova-Agent";
   outputs = { kova-agent, nixpkgs, ... }: {
     nixpkgs.overlays = [ kova-agent.overlays.default ];
     # Then:
@@ -772,7 +772,7 @@ nix develop
 
 # Shell provides:
 #   - Python 3.12 + uv (deps installed into .venv on first entry)
-#   - Node.js 22, ripgrep, git, openssh, ffmpeg on PATH
+#   - Node.js 26, ripgrep, git, openssh, ffmpeg on PATH
 #   - Stamp-file optimization: re-entry is near-instant if deps haven't changed
 
 kova setup
@@ -897,7 +897,7 @@ nix build .#checks.x86_64-linux.config-roundtrip    # merge script preserves use
 | `container.image` | `str` | `"ubuntu:24.04"` | Base image (pulled at runtime) |
 | `container.extraVolumes` | `listOf str` | `[]` | Extra volume mounts (`host:container:mode`) |
 | `container.extraOptions` | `listOf str` | `[]` | Extra args passed to `docker create` |
-| `container.hostUsers` | `listOf str` | `[]` | Interactive users who get a `~/.hermes` symlink to the service stateDir and are auto-added to the `kova` group |
+| `container.hostUsers` | `listOf str` | `[]` | Interactive users who get a `~/.kova` symlink to the service stateDir and are auto-added to the `kova` group |
 
 ---
 
@@ -997,10 +997,10 @@ If the agent starts but can't authenticate with the LLM provider, check that the
 
 ```bash
 # Native mode
-sudo -u kova cat /var/lib/kova/.hermes/.env
+sudo -u kova cat /var/lib/kova/.kova/.env
 
 # Container mode
-docker exec kova-agent cat /data/.hermes/.env
+docker exec kova-agent cat /data/.kova/.env
 ```
 
 ### GC Root Verification

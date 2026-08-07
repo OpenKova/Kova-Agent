@@ -1,6 +1,6 @@
 """ACP session manager — maps ACP sessions to Kova AIAgent instances.
 
-Sessions are persisted to the shared SessionDB (``~/.hermes/state.db``) so they
+Sessions are persisted to the shared SessionDB (``~/.kova/state.db``) so they
 survive process restarts and appear in ``session_search``.  When the editor
 reconnects after idle/restart, the ``load_session`` / ``resume_session`` calls
 find the persisted session in the database and restore the full conversation
@@ -187,7 +187,7 @@ class SessionManager:
                            Used by tests. When omitted, a real AIAgent is created
                            using the current Kova runtime provider configuration.
             db:            Optional SessionDB instance. When omitted, the default
-                           SessionDB (``~/.hermes/state.db``) is lazily created.
+                           SessionDB (``~/.kova/state.db``) is lazily created.
         """
         self._sessions: Dict[str, SessionState] = {}
         self._lock = Lock()
@@ -648,6 +648,30 @@ class SessionManager:
             logger.debug("ACP session falling back to default provider resolution", exc_info=True)
 
         _register_task_cwd(session_id, cwd)
+
+        # Bounded wait for background MCP discovery so already-spawning fast
+        # servers land in the agent's tool snapshot.  ACP entry.py fires
+        # discovery in a background daemon thread (start_background_mcp_discovery);
+        # the agent snapshots tools once at build (run_agent/agent_init) and
+        # never re-reads the registry, so without this join a reachable-but-
+        # slow configured server would be invisible for the whole session.
+        # ``ensure_mcp_discovery_before_agent_build`` also (re)starts discovery
+        # when the entry.py spawn never ran or exited with zero connected
+        # servers (the retry-after-zero-connected allowance), making this
+        # construction site self-sufficient.  Bounded by
+        # ``mcp_discovery_timeout`` (config.yaml, default ~1.5s) so a dead
+        # server can't block — servers that miss the bound are picked up by
+        # the automatic late-refresh (see HermesACPAgent._schedule_mcp_late_refresh).
+        try:
+            from kova_cli.mcp_startup import ensure_mcp_discovery_before_agent_build
+
+            ensure_mcp_discovery_before_agent_build(
+                logger=logger,
+                thread_name="acp-mcp-discovery",
+            )
+        except Exception:
+            logger.debug("ACP: bounded MCP discovery wait failed", exc_info=True)
+
         agent = AIAgent(**kwargs)
         # Codex app-server sessions are spawned lazily on the first turn. Stamp
         # the ACP workspace onto the agent so the Codex runtime starts from the

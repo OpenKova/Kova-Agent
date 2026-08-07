@@ -21,7 +21,7 @@ Hybrid local search over notes, docs, and transcripts.
 | License | MIT |
 | Platforms | macos, linux |
 | Tags | `Search`, `Knowledge-Base`, `RAG`, `Notes`, `MCP`, `Local-AI` |
-| Related skills | [`obsidian`](/docs/user-guide/skills/bundled/note-taking/note-taking-obsidian), `native-mcp`, [`arxiv`](/docs/user-guide/skills/bundled/research/research-arxiv) |
+| Related skills | [`obsidian`](/docs/user-guide/skills/bundled/note-taking/note-taking-obsidian), [`kova-agent`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-kova-agent), [`arxiv`](/docs/user-guide/skills/bundled/research/research-arxiv) |
 
 ## Reference: full SKILL.md
 
@@ -244,7 +244,7 @@ without needing to load this skill.
 
 ### Option A: Stdio Mode (Simple)
 
-Add to `~/.hermes/config.yaml`:
+Add to `~/.kova/config.yaml`:
 
 ```yaml
 mcp_servers:

@@ -8,7 +8,7 @@ platforms: [linux, macos]
 metadata:
   kova:
     tags: [MCP, OAuth, PKCE, Remote-Deployment]
-    related_skills: [native-mcp, mcporter, fastmcp]
+    related_skills: [kova-agent, mcporter, fastmcp]
 ---
 
 # MCP OAuth on a Remote Kova Gateway
@@ -117,7 +117,7 @@ are out of the dashboard's scope regardless.
 ## The Workaround
 
 Do the OAuth dance manually, then write the resulting tokens into the exact files
-Kova' `KovaTokenStorage` would have written, so on `/reload-mcp` Kova finds
+Kova' `HermesTokenStorage` would have written, so on `/reload-mcp` Kova finds
 cached tokens and skips the browser flow entirely.
 
 Run the shell commands below through the `terminal` tool on the gateway host and
@@ -242,7 +242,7 @@ When the user pastes the callback URL:
 
 ### 8. Write tokens in Kova' exact schema
 
-`tools/mcp_oauth.py::KovaTokenStorage` expects two files under
+`tools/mcp_oauth.py::HermesTokenStorage` expects two files under
 `$HERMES_HOME/mcp-tokens/` (create dir with `0o700`, files with `0o600`):
 
 **`<server_name>.json`** — the `OAuthToken` pydantic model:
@@ -314,7 +314,7 @@ UA** — Cloudflare will 403 you even though Kova (which uses httpx) will succee
 
 ### 11. Tell the user to run `/reload-mcp`
 
-On reload, Kova sees `auth: oauth`, calls `KovaTokenStorage.get_tokens()`,
+On reload, Kova sees `auth: oauth`, calls `HermesTokenStorage.get_tokens()`,
 finds your cached tokens, skips the browser flow, and registers `mcp_<name>_*`
 tools. Refresh happens automatically before `expires_in` elapses.
 

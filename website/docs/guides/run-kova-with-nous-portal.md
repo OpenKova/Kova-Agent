@@ -31,8 +31,8 @@ kova setup --portal
 This single command does five things:
 
 1. Opens your browser to portal.nousresearch.com for OAuth login
-2. Stores the refresh token at `~/.hermes/auth.json`
-3. Sets `model.provider: nous` in `~/.hermes/config.yaml`
+2. Stores the refresh token at `~/.kova/auth.json`
+3. Sets `model.provider: nous` in `~/.kova/config.yaml`
 4. Picks a default agentic model (`anthropic/claude-sonnet-4.6` or similar)
 5. Turns on the Tool Gateway for web search, image generation, TTS, and browser automation
 
@@ -40,7 +40,7 @@ When it finishes, you're back at your terminal ready to chat.
 
 ### What if I'm SSH'd into a server?
 
-OAuth needs a browser, but the loopback callback runs on the machine where Kova Agent is running. Two options:
+OAuth needs a browser, but the loopback callback runs on the machine where Kova is running. Two options:
 
 ```bash
 # Option A: SSH port forwarding (preferred)
@@ -91,7 +91,7 @@ Try something that exercises both the model and the Tool Gateway:
 Hey, search the web for "Kova Agent release notes" and summarize the top 3 hits.
 ```
 
-You should see Kova Agent call `web_search` (Firecrawl-backed, through the gateway) and respond with a summary. If the search runs and the response makes sense, you're done — the Portal is wired up end to end.
+You should see Kova call `web_search` (Firecrawl-backed, through the gateway) and respond with a summary. If the search runs and the response makes sense, you're done — the Portal is wired up end to end.
 
 ## 5. Pick the model you actually want
 
@@ -118,9 +118,9 @@ Pick a different default permanently:
 kova config set model.default anthropic/claude-sonnet-4.6
 ```
 
-### Don't pick Hermes-4 for agent work
+### Don't pick Kova-4 for agent work
 
-Hermes-4-70B and Hermes-4-405B are available on the Portal at deep discounts, but they're **chat/reasoning models**, not tool-call-tuned. They will struggle with multi-step agent loops. Use them for conversation/research work through the [subscription proxy](/user-guide/features/subscription-proxy) from non-agent tools. For Kova Agent itself, stick to the frontier agentic models above.
+Kova-4-70B and Kova-4-405B are available on the Portal at deep discounts, but they're **chat/reasoning models**, not tool-call-tuned. They will struggle with multi-step agent loops. Use them for conversation/research work through the [subscription proxy](/user-guide/features/subscription-proxy) from non-agent tools. For Kova Agent itself, stick to the frontier agentic models above.
 
 The Portal's own [info page](https://portal.nousresearch.com/info) carries this warning too — it's the official Nous guidance, not just a Kova-side opinion.
 
@@ -136,7 +136,7 @@ kova tools
 # → TTS              → "Nous Subscription"     (recommended)
 ```
 
-These rows appear in `kova tools` even before you've logged into Nous Portal — if you pick "Nous Subscription" without an active session, Kova Agent runs the Portal login inline (without changing your inference provider or your other tools).
+These rows appear in `kova tools` even before you've logged into Nous Portal — if you pick "Nous Subscription" without an active session, Kova runs the Portal login inline (without changing your inference provider or your other tools).
 
 Verify your mix with:
 
@@ -151,19 +151,19 @@ You'll see per-tool routing — `via Nous Portal` for the ones routed through th
 Because the Tool Gateway includes OpenAI TTS, [voice mode](/user-guide/features/voice-mode) works without a separate OpenAI key:
 
 ```bash
-kova setup voice
+kova setup tts
 # → pick "Nous Subscription" for TTS
 # → pick a speech-to-text backend (local faster-whisper is free, no setup)
 ```
 
-Then in any messaging-platform session (Telegram, Discord, Signal, etc.), send a voice message and Kova Agent will transcribe it, respond, and reply with synthesized voice — all on your Portal subscription.
+Then in any messaging-platform session (Telegram, Discord, Signal, etc.), send a voice message and Kova will transcribe it, respond, and reply with synthesized voice — all on your Portal subscription.
 
 ## 8. (Optional) Cron + always-on workflows
 
 The Portal subscription works for [cron jobs](/user-guide/features/cron) and [batch processing](/user-guide/features/batch-processing) the same way it works for interactive chat — the OAuth refresh token is reused automatically. No additional setup; just schedule cron jobs and they'll bill against your subscription.
 
 ```bash
-kova cron create "every day at 9am" \
+kova cron create "0 9 * * *" \
   "Search the web for top AI news and summarize the 5 most important stories" \
   --name "Daily AI news"
 ```
@@ -174,7 +174,7 @@ The cron job runs unattended, calls the model + web search + summarization all t
 
 If you use [Kova profiles](/user-guide/profiles) (e.g. a separate config per project), the Portal refresh token is automatically shared across all profiles via a shared token store. Sign in once on any profile, and the rest pick it up automatically.
 
-For team setups where multiple humans share a machine, each human has their own Portal account → each home directory holds its own `~/.hermes/auth.json` → no token sharing across users. This is the right boundary.
+For team setups where multiple humans share a machine, each human has their own Portal account → each home directory holds its own `~/.kova/auth.json` → no token sharing across users. This is the right boundary.
 
 ## Troubleshooting
 
@@ -218,7 +218,7 @@ Some users intentionally mix — e.g. routing web through Nous but using their o
 
 ### "Re-authentication required" mid-session
 
-Your Portal refresh token was invalidated (password change, manual revoke, session expiry). The token is now quarantined locally so Kova Agent doesn't replay it endlessly. Just log in again:
+Your Portal refresh token was invalidated (password change, manual revoke, session expiry). The token is now quarantined locally so Kova doesn't replay it endlessly. Just log in again:
 
 ```bash
 kova auth add nous
@@ -228,7 +228,7 @@ The quarantine clears automatically on successful re-login.
 
 ### Model I want isn't in the `/model` picker
 
-The Portal catalog mirrors OpenRouter's model list (300+). If a model is missing, try typing the OpenRouter-style slug directly:
+The Portal catalog draws on OpenRouter's model list (300+) plus models served through proprietary or secondary providers. If a model is missing, try typing the OpenRouter-style slug directly:
 
 ```bash
 /model anthropic/claude-opus-4.6

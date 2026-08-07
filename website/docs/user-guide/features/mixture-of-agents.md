@@ -87,7 +87,7 @@ moa:
         model: anthropic/claude-opus-4.8
       # Optional: pin sampling temperatures. When omitted (the default),
       # temperature is NOT sent and each model uses its provider default —
-      # the same behavior as a single-model Kova Agent.
+      # the same behavior as a single-model Kova agent.
       # reference_temperature: 0.6
       # aggregator_temperature: 0.4
       max_tokens: 4096
@@ -241,9 +241,9 @@ kova moa delete review
 
 ## Benchmarks
 
-On KovaBench, a two-model MoA preset — `claude-opus-4.8` aggregating over a `gpt-5.5` reference — outscores either model run on its own:
+On HermesBench, a two-model MoA preset — `claude-opus-4.8` aggregating over a `gpt-5.5` reference — outscores either model run on its own:
 
-| Model | KovaBench score |
+| Model | HermesBench score |
 |---|---|
 | **Opus aggregator (opus-4.8 + gpt-5.5 reference) — MoA** | **0.8202** |
 | `anthropic/claude-opus-4.8` | 0.7607 |

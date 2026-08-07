@@ -26,7 +26,7 @@ When you run `kova update`, the following steps occur:
 
 1. **Pre-update snapshot** — a lightweight state snapshot is saved by default (covers pairing data, cron jobs, `config.yaml`, `.env`, `auth.json`, and other state files that get modified at runtime; individual files over 1 GiB are skipped so a large sessions DB never slows the update down). Controlled by `updates.pre_update_backup` (`quick` by default, `full` for a zip of all of `HERMES_HOME`, `off` to disable). Recoverable via the snapshot restore flow described under [Snapshots and rollback](../user-guide/checkpoints-and-rollback.md).
 2. **Git pull** — pulls the latest code from the `main` branch and updates submodules
-3. **Post-pull syntax validation + auto-rollback** — after the pull, Kova compiles the eight critical files every `kova` invocation imports at startup. If any fails to parse (e.g. an orphan merge-conflict marker, an accidentally truncated file), Kova runs `git reset --hard <pre-pull-sha>` to roll the install back so your shell stays bootable. Re-run `kova update` once the upstream fix lands.
+3. **Post-pull syntax validation + auto-rollback** — after the pull, Kova compiles the nine critical files every `kova` invocation imports at startup. If any fails to parse (e.g. an orphan merge-conflict marker, an accidentally truncated file), Kova runs `git reset --hard <pre-pull-sha>` to roll the install back so your shell stays bootable. Re-run `kova update` once the upstream fix lands.
 4. **Dependency install** — runs `uv pip install -e ".[all]"` to pick up new or changed dependencies
 5. **Config migration** — detects new config options added since your version and prompts you to set them
 6. **Gateway auto-restart** — running gateways are refreshed after the update completes so the new code takes effect immediately. Service-managed gateways (systemd on Linux, launchd on macOS) are restarted through the service manager. Manual gateways are relaunched automatically when Kova can map the running PID back to a profile.
@@ -49,7 +49,7 @@ When you run `kova update` in a terminal, Kova stashes any uncommitted source-tr
 When the update runs **without a terminal** — from the desktop/chat app's "Update" button or a gateway-triggered update — there's no prompt to answer. The `updates.non_interactive_local_changes` setting decides what happens to your stashed changes:
 
 ```yaml
-# ~/.hermes/config.yaml
+# ~/.kova/config.yaml
 updates:
   non_interactive_local_changes: stash   # default: keep + auto-restore
   # non_interactive_local_changes: discard  # throw local source edits away
@@ -75,12 +75,16 @@ kova update --backup
 Or make it the default for every run:
 
 ```yaml
-# ~/.hermes/config.yaml
+# ~/.kova/config.yaml
 updates:
   pre_update_backup: full
 ```
 
 `updates.pre_update_backup` is a single knob with three modes: `quick` (default — the lightweight state snapshot described above), `full` (the quick snapshot plus a complete `HERMES_HOME` zip; can add minutes on large homes), and `off` (no pre-update backup at all — `--no-backup` does the same for a single run). Legacy boolean values still work: `true` means `full`, `false` means `off`.
+
+:::tip Moving to a new machine instead?
+Update backups protect an in-place update. If you're migrating your whole setup to different hardware, use `kova backup` + `kova import` instead — see [Exporting Kova to another machine](/reference/faq#exporting-kova-to-another-machine) and [`kova backup` vs `kova profile export`](/reference/faq#kova-backup-vs-kova-profile-export).
+:::
 
 ### Windows: another `kova.exe` is running
 
@@ -139,10 +143,10 @@ If `git status --short` shows unexpected changes after `kova update`, stop and i
 `kova update` protects itself against accidental terminal loss:
 
 - The update ignores `SIGHUP`, so closing your SSH session or terminal window no longer kills it mid-install. `pip` and `git` child processes inherit this protection, so the Python environment cannot be left half-installed by a dropped connection.
-- All output is mirrored to `~/.hermes/logs/update.log` while the update runs. If your terminal disappears, reconnect and inspect the log to see whether the update finished and whether the gateway restart succeeded:
+- All output is mirrored to `~/.kova/logs/update.log` while the update runs. If your terminal disappears, reconnect and inspect the log to see whether the update finished and whether the gateway restart succeeded:
 
 ```bash
-tail -f ~/.hermes/logs/update.log
+tail -f ~/.kova/logs/update.log
 ```
 
 - `Ctrl-C` (SIGINT) and system shutdown (SIGTERM) are still honored — those are deliberate cancellations, not accidents.
@@ -174,7 +178,7 @@ If you installed manually (not via the quick installer):
 ```bash
 cd /path/to/kova-agent
 # Activate the venv you created during install (outside the source tree)
-export VIRTUAL_ENV="$HOME/.hermes/venvs/kova-dev"
+export VIRTUAL_ENV="$HOME/.kova/venvs/kova-dev"
 export PATH="$VIRTUAL_ENV/bin:$PATH"
 
 # Pull latest code
@@ -245,14 +249,14 @@ See [Nix Setup](./nix-setup.md) for more details.
 kova uninstall
 ```
 
-The uninstaller gives you the option to keep your configuration files (`~/.hermes/`) for a future reinstall.
+The uninstaller gives you the option to keep your configuration files (`~/.kova/`) for a future reinstall.
 
 ### Manual Uninstall
 
 ```bash
 rm -f ~/.local/bin/kova
 rm -rf /path/to/kova-agent
-rm -rf ~/.hermes            # Optional — keep if you plan to reinstall
+rm -rf ~/.kova            # Optional — keep if you plan to reinstall
 ```
 
 :::info

@@ -29,7 +29,7 @@ function Harness({ activeSessionId }: { activeSessionId: string | null }) {
     activeSessionIdRef: sessionIdRef,
     hydrateFromStoredSession: vi.fn(async () => undefined),
     queryClient: queryClientRef.current,
-    refreshKovaConfig: vi.fn(async () => undefined),
+    refreshHermesConfig: vi.fn(async () => undefined),
     refreshSessions: vi.fn(async () => undefined),
     sessionStateByRuntimeIdRef,
     updateSessionState: (sessionId, updater) => {

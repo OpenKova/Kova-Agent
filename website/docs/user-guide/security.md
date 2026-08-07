@@ -27,7 +27,7 @@ Before executing any command, Kova checks it against a curated list of dangerous
 
 ### Approval Modes
 
-The approval system supports three modes, configured via `approvals.mode` in `~/.hermes/config.yaml`:
+The approval system supports three modes, configured via `approvals.mode` in `~/.kova/config.yaml`:
 
 ```yaml
 approvals:
@@ -141,7 +141,7 @@ Deny rules are a guardrail against an honest-but-wrong agent, the same threat mo
 
 When a dangerous command prompt appears, the user has a configurable amount of time to respond. If no response is given within the timeout, the command is **denied** by default (fail-closed).
 
-Configure the timeout in `~/.hermes/config.yaml`:
+Configure the timeout in `~/.kova/config.yaml`:
 
 ```yaml
 approvals:
@@ -174,17 +174,21 @@ The following patterns trigger approval prompts (defined in `tools/approval.py`)
 | `python -e` / `perl -e` / `ruby -e` / `node -c` | Script execution via `-e`/`-c` flag |
 | `curl ... \| sh` / `wget ... \| sh` | Pipe remote content to shell |
 | `bash <(curl ...)` / `sh <(wget ...)` | Execute remote script via process substitution |
-| `tee` to `/etc/`, `~/.ssh/`, `~/.hermes/.env` | Overwrite sensitive file via tee |
-| `>` / `>>` to `/etc/`, `~/.ssh/`, `~/.hermes/.env` | Overwrite sensitive file via redirection |
+| `tee` to `/etc/`, `~/.ssh/`, `~/.kova/.env` | Overwrite sensitive file via tee |
+| `>` / `>>` to `/etc/`, `~/.ssh/`, `~/.kova/.env` | Overwrite sensitive file via redirection |
 | `xargs rm` | xargs with rm |
 | `find -exec rm` / `find -delete` | Find with destructive actions |
 | `cp`/`mv`/`install` to `/etc/` | Copy/move file into system config |
 | `sed -i` / `sed --in-place` on `/etc/` | In-place edit of system config |
 | `pkill`/`killall` kova/gateway | Self-termination prevention |
 | `gateway run` with `&`/`disown`/`nohup`/`setsid` | Prevents starting gateway outside service manager |
+| `docker stop/kill/restart`, `docker compose down/stop/kill/restart` | Container lifecycle (also catches global flags and `docker-compose`) |
+| `docker -H`/`--host`/`--context`, `DOCKER_HOST=`/`DOCKER_CONTEXT=` | Docker daemon redirect — the command targets a different (often remote) daemon |
+| `docker context use` | Switches the default daemon for all future docker commands |
+| `podman --remote`/`-r`/`--url`/`--connection`/`--identity`, `CONTAINER_HOST=` | Podman remote daemon redirect |
 
 :::info
-**Container bypass**: When running in `docker`, `singularity`, `modal`, or `daytona` backends, dangerous command checks are **skipped** because the container itself is the security boundary. Destructive commands inside a container can't harm the host.
+**Container bypass**: When running in `docker`, `singularity`, `modal`, `daytona`, or `vercel_sandbox` backends, dangerous command checks are **skipped** because the container itself is the security boundary. Destructive commands inside a container can't harm the host.
 :::
 
 ### Approval Flow (CLI)
@@ -218,7 +222,7 @@ The `KOVA_EXEC_ASK=1` environment variable is automatically set when running the
 
 ### Permanent Allowlist
 
-Commands approved with "always" are saved to `~/.hermes/config.yaml`:
+Commands approved with "always" are saved to `~/.kova/config.yaml`:
 
 ```yaml
 # Permanently allowed dangerous command patterns
@@ -232,6 +236,43 @@ These patterns are loaded at startup and silently approved in all future session
 :::tip
 Use `kova config edit` to review or remove patterns from your permanent allowlist.
 :::
+
+### Mining Approval History (`kova approvals suggest`)
+
+Instead of answering the same prompt session after session, you can mine your
+past approval decisions into allowlist proposals:
+
+```bash
+kova approvals suggest            # dry run — prints a numbered proposal
+kova approvals suggest --apply 1,3  # merge picks into command_allowlist
+kova approvals suggest --json     # machine-readable output
+```
+
+The command scans the session database (`~/.kova/state.db`) for
+dangerous-classified commands that actually executed — i.e. commands you
+approved — aggregates them into patterns (`git push *`, or the dangerous-class
+key for compound commands), and ranks them by approval frequency:
+
+```
+Proposed command_allowlist additions (from approval history, last 90 days):
+
+  1. git push *    — approved 14x
+  2. docker restart/stop/kill (container lifecycle)    — approved 9x (class key)
+```
+
+Safety rules:
+
+- **Nothing is ever applied automatically** — the default run is read-only;
+  only an explicit `--apply N[,M...]` writes to `config.yaml`.
+- **Destructive classes are never proposed**, no matter how often they were
+  approved: recursive deletes, `sudo`, disk/device writes, credential and
+  system-config edits, pipe-to-shell, SQL DROP/TRUNCATE, process kills, and
+  every hardline class are excluded outright. `rm -rf build/` approved 100
+  times still never yields an `rm` entry.
+- Proposals already covered by your existing `command_allowlist` are skipped.
+
+Useful flags: `--days N` (history window, default 90), `--min-count N`
+(minimum approvals to qualify, default 2), `--limit N`, and `--db PATH`.
 
 ## File Write Safety {#file-write-safety}
 
@@ -257,19 +298,19 @@ When set, `write_file` and `patch` may only target paths inside the listed direc
 
 - Set automatically in the [official Docker image](https://github.com/OpenKova/Kova-Agent) (`KOVA_WRITE_SAFE_ROOT=/opt/data`)
 - Supports multiple roots separated by `:` on Unix or `;` on Windows
-- **Do not add to `~/.hermes/.env` casually.** If you set it to a project directory, the agent cannot write to `~/.hermes/cron/jobs.json`, profile skills, or other Kova state outside that prefix
+- **Do not add to `~/.kova/.env` casually.** If you set it to a project directory, the agent cannot write to `~/.kova/cron/jobs.json`, profile skills, or other Kova state outside that prefix
 
 To allow both a workspace and Kova home:
 
 ```bash
-export KOVA_WRITE_SAFE_ROOT=/path/to/project:/home/you/.hermes
+export KOVA_WRITE_SAFE_ROOT=/path/to/project:/home/you/.kova
 ```
 
 Unset the variable to restore unrestricted writes (subject to the protected-path denylist). Full reference: [KOVA_WRITE_SAFE_ROOT](../reference/environment-variables.md#kova_write_safe_root).
 
 ### Cron and other Kova state
 
-Do not ask the agent to `patch` `~/.hermes/cron/jobs.json` directly. Use the `cronjob` tool, [`kova cron`](./features/cron.md), or `/cron` — they update the job store through the supported API. The same applies to other Kova control files when write safety blocks direct edits.
+Do not ask the agent to `patch` `~/.kova/cron/jobs.json` directly. Use the `cronjob` tool, [`kova cron`](./features/cron.md), or `/cron` — they update the job store through the supported API. The same applies to other Kova control files when write safety blocks direct edits.
 
 :::note Defense-in-depth, not a hard boundary
 Write guards apply to `write_file` and `patch` only. The `terminal` tool runs as the same OS user and can still `cat` or overwrite denied paths via shell commands. The denylist reduces accidental damage and gives models a clear stop signal; it does not sandbox a hostile or compromised agent.
@@ -292,7 +333,7 @@ The `_is_user_authorized()` method checks in this order:
 
 ### Platform Allowlists
 
-Set allowed user IDs as comma-separated values in `~/.hermes/.env`:
+Set allowed user IDs as comma-separated values in `~/.kova/.env`:
 
 ```bash
 # Platform-specific allowlists
@@ -316,7 +357,7 @@ If **no allowlists are configured** and `GATEWAY_ALLOW_ALL_USERS` is not set, **
 
 ```
 No user allowlists configured. All unauthorized users will be denied.
-Set GATEWAY_ALLOW_ALL_USERS=true in ~/.hermes/.env to allow open access,
+Set GATEWAY_ALLOW_ALL_USERS=true in ~/.kova/.env to allow open access,
 or configure platform allowlists (e.g., TELEGRAM_ALLOWED_USERS=your_id).
 ```
 :::
@@ -332,7 +373,7 @@ For more flexible authorization, Kova includes a code-based pairing system. Inst
 3. The bot owner runs `kova pairing approve <platform> <code>` on the CLI
 4. The user is permanently approved for that platform
 
-Control how unauthorized direct messages are handled in `~/.hermes/config.yaml`:
+Control how unauthorized direct messages are handled in `~/.kova/config.yaml`:
 
 ```yaml
 unauthorized_dm_behavior: pair
@@ -393,7 +434,7 @@ restart the container — the entrypoint will fix ownership on the next start.
 [i10270]: https://github.com/OpenKova/Kova-Agent/issues/10270
 :::
 
-**Storage:** Pairing data is stored in `~/.hermes/pairing/` with per-platform JSON files:
+**Storage:** Pairing data is stored in `~/.kova/pairing/` with per-platform JSON files:
 - `{platform}-pending.json` — pending pairing requests
 - `{platform}-approved.json` — approved users
 - `_rate_limits.json` — rate limit and lockout tracking
@@ -423,7 +464,7 @@ _BASE_SECURITY_ARGS = [
 
 ### Resource Limits
 
-Container resources are configurable in `~/.hermes/config.yaml`:
+Container resources are configurable in `~/.kova/config.yaml`:
 
 ```yaml
 terminal:
@@ -438,11 +479,11 @@ terminal:
 
 ### Filesystem Persistence
 
-- **Persistent mode** (`container_persistent: true`): Bind-mounts `/workspace` and `/root` from `~/.hermes/sandboxes/docker/<task_id>/`
+- **Persistent mode** (`container_persistent: true`): Bind-mounts `/workspace` and `/root` from `~/.kova/sandboxes/docker/<task_id>/`
 - **Ephemeral mode** (`container_persistent: false`): Uses tmpfs for workspace — everything is lost on cleanup
 
 :::tip
-For production gateway deployments, use `docker`, `modal`, or `daytona` backend to isolate agent commands from your host system. This eliminates the need for dangerous command approval entirely.
+For production gateway deployments, use `docker`, `modal`, `daytona`, or `vercel_sandbox` backend to isolate agent commands from your host system. This eliminates the need for dangerous command approval entirely.
 :::
 
 :::warning
@@ -459,6 +500,7 @@ If you add names to `terminal.docker_forward_env`, those variables are intention
 | **singularity** | Container | ❌ Skipped | HPC environments |
 | **modal** | Cloud sandbox | ❌ Skipped | Scalable cloud isolation |
 | **daytona** | Cloud sandbox | ❌ Skipped | Persistent cloud workspaces |
+| **vercel_sandbox** | Cloud microVM | ❌ Skipped | Cloud execution with snapshot persistence |
 
 ## Environment Variable Passthrough {#environment-variable-passthrough}
 
@@ -524,7 +566,7 @@ terminal:
     - my_custom_oauth_token.json
 ```
 
-Paths are relative to `~/.hermes/`. Files are mounted to `/root/.hermes/` inside the container. This list is read by `tools/credential_files.py` (`terminal.credential_files`) — it lives under the `terminal:` block but is loaded by the credential-files module, not the core terminal backend, so it isn't part of the bundled `DEFAULT_CONFIG` snapshot.
+Paths are relative to `~/.kova/`. Files are mounted to `/root/.kova/` inside the container. This list is read by `tools/credential_files.py` (`terminal.credential_files`) — it lives under the `terminal:` block but is loaded by the credential-files module, not the core terminal backend, so it isn't part of the bundled `DEFAULT_CONFIG` snapshot.
 
 ### What Each Sandbox Filters
 
@@ -583,7 +625,7 @@ Error messages from MCP tools are sanitized before being returned to the LLM. Th
 You can restrict which websites the agent can access through its web and browser tools. This is useful for preventing the agent from accessing internal services, admin panels, or other sensitive URLs.
 
 ```yaml
-# In ~/.hermes/config.yaml
+# In ~/.kova/config.yaml
 security:
   website_blocklist:
     enabled: true
@@ -635,7 +677,7 @@ Kova integrates [tirith](https://github.com/sheeki03/tirith) for content-level c
 Tirith auto-installs from GitHub releases on first use with SHA-256 checksum verification (and cosign provenance verification if cosign is available).
 
 ```yaml
-# In ~/.hermes/config.yaml
+# In ~/.kova/config.yaml
 security:
   tirith_enabled: true       # Enable/disable tirith scanning (default: true)
   tirith_path: "tirith"      # Path to tirith binary (default: PATH lookup)
@@ -672,19 +714,19 @@ Blocked files show a warning:
 1. **Set explicit allowlists** — never use `GATEWAY_ALLOW_ALL_USERS=true` in production
 2. **Use container backend** — set `terminal.backend: docker` in config.yaml
 3. **Restrict resource limits** — set appropriate CPU, memory, and disk limits
-4. **Store secrets securely** — keep API keys in `~/.hermes/.env` with proper file permissions
+4. **Store secrets securely** — keep API keys in `~/.kova/.env` with proper file permissions
 5. **Enable DM pairing** — use pairing codes instead of hardcoding user IDs when possible
 6. **Review command allowlist** — periodically audit `command_allowlist` in config.yaml
 7. **Set `terminal.cwd`** — don't let the agent operate from sensitive directories
 8. **Run as non-root** — never run the gateway as root
-9. **Monitor logs** — check `~/.hermes/logs/` for unauthorized access attempts
+9. **Monitor logs** — check `~/.kova/logs/` for unauthorized access attempts
 10. **Keep updated** — run `kova update` regularly for security patches
 
 ### Securing API Keys
 
 ```bash
 # Set proper permissions on the .env file
-chmod 600 ~/.hermes/.env
+chmod 600 ~/.kova/.env
 
 # Keep separate keys for different services
 # Never commit .env files to version control
@@ -692,16 +734,16 @@ chmod 600 ~/.hermes/.env
 
 ### Network Isolation
 
-For maximum security, run the gateway on a separate machine or VM. Set `terminal.backend: ssh` in `config.yaml`, then provide host details via environment variables in `~/.hermes/.env`:
+For maximum security, run the gateway on a separate machine or VM. Set `terminal.backend: ssh` in `config.yaml`, then provide host details via environment variables in `~/.kova/.env`:
 
 ```yaml
-# ~/.hermes/config.yaml
+# ~/.kova/config.yaml
 terminal:
   backend: ssh
 ```
 
 ```bash
-# ~/.hermes/.env
+# ~/.kova/.env
 TERMINAL_SSH_HOST=agent-worker.local
 TERMINAL_SSH_USER=kova
 TERMINAL_SSH_KEY=~/.ssh/kova_agent_key
@@ -757,7 +799,7 @@ Security guarantees enforced by `tools/lazy_deps.py`:
 To disable runtime installs:
 
 ```yaml
-# ~/.hermes/config.yaml
+# ~/.kova/config.yaml
 security:
   allow_lazy_installs: false
 ```

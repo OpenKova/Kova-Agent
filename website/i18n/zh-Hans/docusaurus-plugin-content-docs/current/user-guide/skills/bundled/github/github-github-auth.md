@@ -225,7 +225,7 @@ curl -s -H "Authorization: token $GITHUB_TOKEN" \
 
 ```bash
 # Read from git credential store
-grep "github.com" ~/.git-credentials 2>/dev/null | head -1 | sed 's|https://[^:]*:\([^@]*\)@.*|\1|'
+uv run python3 "${HERMES_HOME:-$HOME/.kova}/skills/github/github-auth/scripts/git-credential-token.py"
 ```
 
 ### 辅助函数：检测认证方式
@@ -238,11 +238,11 @@ if command -v gh &>/dev/null && gh auth status &>/dev/null; then
   echo "AUTH_METHOD=gh"
 elif [ -n "$GITHUB_TOKEN" ]; then
   echo "AUTH_METHOD=curl"
-elif [ -f ~/.hermes/.env ] && grep -q "^GITHUB_TOKEN=" ~/.hermes/.env; then
-  export GITHUB_TOKEN=$(grep "^GITHUB_TOKEN=" ~/.hermes/.env | head -1 | cut -d= -f2 | tr -d '\n\r')
+elif [ -f ~/.kova/.env ] && grep -q "^GITHUB_TOKEN=" ~/.kova/.env; then
+  export GITHUB_TOKEN=$(grep "^GITHUB_TOKEN=" ~/.kova/.env | head -1 | cut -d= -f2 | tr -d '\n\r')
   echo "AUTH_METHOD=curl"
 elif grep -q "github.com" ~/.git-credentials 2>/dev/null; then
-  export GITHUB_TOKEN=$(grep "github.com" ~/.git-credentials | head -1 | sed 's|https://[^:]*:\([^@]*\)@.*|\1|')
+  export GITHUB_TOKEN=$(uv run python3 "${HERMES_HOME:-$HOME/.kova}/skills/github/github-auth/scripts/git-credential-token.py")
   echo "AUTH_METHOD=curl"
 else
   echo "AUTH_METHOD=none"

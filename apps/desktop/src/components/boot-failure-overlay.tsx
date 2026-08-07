@@ -70,7 +70,7 @@ export function BootFailureOverlay() {
       return
     }
 
-    void window.kovaDesktop
+    void window.hermesDesktop
       ?.getRecentLogs()
       .then(res => setLogs(res.lines ?? []))
       .catch(() => undefined)
@@ -92,7 +92,7 @@ export function BootFailureOverlay() {
     let cancelled = false
 
     void (async () => {
-      const desktop = window.kovaDesktop
+      const desktop = window.hermesDesktop
 
       if (!desktop?.getConnectionConfig) {
         return
@@ -145,20 +145,20 @@ export function BootFailureOverlay() {
 
   const retry = async () => {
     setBusy('retry')
-    await window.kovaDesktop?.resetBootstrap().catch(() => undefined)
+    await window.hermesDesktop?.resetBootstrap().catch(() => undefined)
     window.location.reload()
   }
 
   const repair = async () => {
     setBusy('repair')
-    await window.kovaDesktop?.repairBootstrap().catch(() => undefined)
+    await window.hermesDesktop?.repairBootstrap().catch(() => undefined)
     window.location.reload()
   }
 
   const switchToLocalGateway = async () => {
     setBusy('local')
     // Soft apply: tears down the primary and re-dials in place (shell stays).
-    await window.kovaDesktop?.applyConnectionConfig({ mode: 'local' }).catch(() => undefined)
+    await window.hermesDesktop?.applyConnectionConfig({ mode: 'local' }).catch(() => undefined)
     setBusy(null)
   }
 
@@ -176,8 +176,8 @@ export function BootFailureOverlay() {
     setBusy('signin')
 
     try {
-      await window.kovaDesktop?.oauthLogoutConnectionConfig?.()
-      const result = await window.kovaDesktop?.oauthLoginConnectionConfig(remoteReauth.url)
+      await window.hermesDesktop?.oauthLogoutConnectionConfig?.()
+      const result = await window.hermesDesktop?.oauthLoginConnectionConfig(remoteReauth.url)
 
       if (result?.connected) {
         notify({ kind: 'success', title: t.boot.failure.signedInTitle, message: t.boot.failure.signedInMessage })
@@ -198,7 +198,7 @@ export function BootFailureOverlay() {
     }
   }
 
-  const openLogs = () => void window.kovaDesktop?.revealLogs().catch(() => undefined)
+  const openLogs = () => void window.hermesDesktop?.revealLogs().catch(() => undefined)
   const copy = t.boot.failure
 
   const label = signInLabel(remoteReauth, {
@@ -284,7 +284,7 @@ export function BootFailureOverlay() {
 
   if (view === 'connect') {
     return (
-      <div className="fixed inset-0 z-[1400] flex items-center justify-center bg-(--ui-chat-surface-background) p-6">
+      <div className="fixed inset-0 z-(--z-setup) flex items-center justify-center bg-(--ui-chat-surface-background) p-6">
         <div className="flex max-h-[86vh] w-full max-w-[46rem] flex-col overflow-hidden rounded-xl border border-(--stroke-nous) bg-(--ui-chat-bubble-background) shadow-nous">
           {/* Subtle back affordance (projects/overlay idiom): muted → foreground
               on hover, no divider. */}
@@ -307,7 +307,7 @@ export function BootFailureOverlay() {
   }
 
   return (
-    <div className="fixed inset-0 z-[1400] flex items-center justify-center bg-(--ui-chat-surface-background) p-6">
+    <div className="fixed inset-0 z-(--z-setup) flex items-center justify-center bg-(--ui-chat-surface-background) p-6">
       <div className="w-full max-w-[40rem] overflow-hidden rounded-xl border border-(--stroke-nous) bg-(--ui-chat-bubble-background) shadow-nous">
         <div className="flex items-start gap-3 px-5 py-4">
           <ErrorIcon className="mt-0.5" size="1.25rem" />

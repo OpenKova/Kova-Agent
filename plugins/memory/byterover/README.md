@@ -21,7 +21,7 @@ Or manually:
 ```bash
 kova config set memory.provider byterover
 # Optional cloud sync:
-echo "BRV_API_KEY=your-key" >> ~/.hermes/.env
+echo "BRV_API_KEY=your-key" >> ~/.kova/.env
 ```
 
 ## Config

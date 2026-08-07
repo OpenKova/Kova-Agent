@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-import { getElevenLabsVoices, getKovaConfigSchema, saveKovaConfig } from '@/kova'
+import { getElevenLabsVoices, getHermesConfigSchema, saveHermesConfig } from '@/kova'
 import { useI18n } from '@/i18n'
 import { notifyError } from '@/store/notifications'
-import type { KovaConfigRecord } from '@/types/kova'
+import type { HermesConfigRecord } from '@/types/kova'
 
-import { setKovaConfigCache, useKovaConfigRecord } from '../hooks/use-config-record'
+import { setHermesConfigCache, useHermesConfigRecord } from '../hooks/use-config-record'
 
 import { ConfigField } from './config-field'
 import { SECTIONS } from './constants'
@@ -33,20 +33,21 @@ export function voiceProviderKeys(section: 'tts' | 'stt', providerKey: string): 
 export function VoiceProviderFields({ section, providerKey }: { section: 'tts' | 'stt'; providerKey: string }) {
   const { t } = useI18n()
   const keys = useMemo(() => voiceProviderKeys(section, providerKey), [section, providerKey])
-  const { data: loadedConfig } = useKovaConfigRecord()
+  const { data: loadedConfig } = useHermesConfigRecord()
 
   const { data: schemaResponse } = useQuery({
     queryKey: ['kova-config-schema'],
-    queryFn: getKovaConfigSchema,
+    queryFn: getHermesConfigSchema,
     staleTime: 5 * 60 * 1000
   })
 
   // Local editable draft, seeded once from the shared cache (background
   // refetches must not clobber in-progress edits) — the same shape as
   // config-settings.tsx's autosave loop.
-  const [config, setConfig] = useState<KovaConfigRecord | null>(null)
+  const [config, setConfig] = useState<HermesConfigRecord | null>(null)
   const seeded = useRef(false)
 
+  // eslint-disable-next-line no-restricted-syntax -- one-shot config seed flag, not an atom mirror
   useEffect(() => {
     if (loadedConfig && !seeded.current) {
       seeded.current = true
@@ -63,8 +64,8 @@ export function VoiceProviderFields({ section, providerKey }: { section: 'tts' |
     }
 
     const timeout = window.setTimeout(() => {
-      void saveKovaConfig(config)
-        .then(() => setKovaConfigCache(config))
+      void saveHermesConfig(config)
+        .then(() => setHermesConfigCache(config))
         .catch(err => notifyError(err, t.settings.config.autosaveFailed))
     }, 550)
 
@@ -110,7 +111,7 @@ export function VoiceProviderFields({ section, providerKey }: { section: 'tts' |
 
   const schema = schemaResponse?.fields ?? {}
 
-  const updateConfig = (next: KovaConfigRecord) => {
+  const updateConfig = (next: HermesConfigRecord) => {
     saveVersionRef.current += 1
     setConfig(next)
     setSaveVersion(saveVersionRef.current)

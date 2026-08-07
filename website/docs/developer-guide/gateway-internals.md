@@ -21,7 +21,9 @@ The messaging gateway is the long-running process that connects Kova to 20+ exte
 | `gateway/mirror.py` | Cross-session message mirroring for `send_message` |
 | `gateway/status.py` | Token lock management for profile-scoped gateway instances |
 | `gateway/builtin_hooks/` | Extension point for always-registered hooks (none shipped) |
-| `gateway/platforms/` | Platform adapters (one per messaging platform) |
+| `gateway/platform_registry.py` | Adapter registry, factories, and deferred (lazy) loaders for bundled platform plugins |
+| `plugins/platforms/<name>/` | Bundled messaging adapters (most platforms: `adapter.py` + `plugin.yaml`) |
+| `gateway/platforms/` | Shared `base.py` plus legacy/direct adapters (Signal, API server, webhooks, …) |
 
 ## Architecture Overview
 
@@ -135,8 +137,8 @@ The gateway reads configuration from multiple sources:
 
 | Source | What it provides |
 |--------|-----------------|
-| `~/.hermes/.env` | API keys, bot tokens, platform credentials |
-| `~/.hermes/config.yaml` | Model settings, tool configuration, display options |
+| `~/.kova/.env` | API keys, bot tokens, platform credentials |
+| `~/.kova/config.yaml` | Model settings, tool configuration, display options |
 | Environment variables | Override any of the above |
 
 Unlike the CLI (which uses `load_cli_config()` with hardcoded defaults), the gateway reads `config.yaml` directly via YAML loader. This means config keys that exist in the CLI's defaults dict but not in the user's config file may behave differently between CLI and gateway.
@@ -176,12 +178,14 @@ gateway/platforms/                  # core base + legacy direct adapters
 └── api_server.py        # REST API server adapter
 ```
 
+**Deferred loading:** Bundled `kind: platform` plugins register cheap `register_deferred` loaders in `gateway/platform_registry.py` (via `kova_cli/plugins.py`) so platform SDKs import only when the gateway starts, delivers, or runs setup/status — not on plain `kova chat`. Resolution loads one adapter on lookup; full enumeration runs pending loaders only on paths that need every platform.
+
 Experimental connector-backed platforms use the generic relay adapter in `gateway/relay/` instead of a direct platform module. When `GATEWAY_RELAY_URL` or `gateway.relay_url` is configured, the gateway registers the `relay` platform, dials the connector over an outbound WebSocket, and receives `descriptor`, `inbound`, and `interrupt_inbound` frames on that same socket. The connector advertises a `CapabilityDescriptor`; Kova can send normal outbound replies, token-less `follow_up` operations, and interrupt frames back through the relay. The source-grounded wire contract lives in [`docs/relay-connector-contract.md`](https://github.com/OpenKova/Kova-Agent/blob/main/docs/relay-connector-contract.md).
 
 Adapters implement a common interface:
 - `connect()` / `disconnect()` — lifecycle management
-- `send_message()` — outbound message delivery
-- `on_message()` — inbound message normalization → `MessageEvent`
+- `send()` — outbound message delivery
+- inbound events are normalized into a `MessageEvent` and forwarded via `handle_message()`
 
 ### Token Locks
 
@@ -215,7 +219,7 @@ Gateway hooks are Python modules that respond to lifecycle events:
 | `agent:end` | Agent finishes and returns response |
 | `command:*` | Any slash command is executed |
 
-Hooks are discovered from `gateway/builtin_hooks/` (an extension point — currently empty in the shipped distribution; `_register_builtin_hooks()` is a no-op stub) and `~/.hermes/hooks/` (user-installed). Each hook is a directory with a `HOOK.yaml` manifest and `handler.py`.
+Hooks are discovered from `gateway/builtin_hooks/` (an extension point — currently empty in the shipped distribution; `_register_builtin_hooks()` is a no-op stub) and `~/.kova/hooks/` (user-installed). Each hook is a directory with a `HOOK.yaml` manifest and `handler.py`.
 
 ## Memory Provider Integration
 
@@ -256,7 +260,7 @@ The gateway runs as a long-lived process, managed via:
 
 - `kova gateway start` / `kova gateway stop` — manual control
 - `systemctl` (Linux) or `launchctl` (macOS) — service management
-- PID file at `~/.hermes/gateway.pid` — profile-scoped process tracking
+- PID file at `~/.kova/gateway.pid` — profile-scoped process tracking
 
 **Profile-scoped vs global**: `start_gateway()` uses profile-scoped PID files. `kova gateway stop` stops only the current profile's gateway. `kova gateway stop --all` uses global `ps aux` scanning to kill all gateway processes (used during updates).
 

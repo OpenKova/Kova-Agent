@@ -8,7 +8,7 @@ This guide covers adding a new messaging platform to the Kova gateway. A platfor
 
 :::tip
 There are two ways to add a platform:
-- **Plugin** (recommended for community/third-party): Drop a plugin directory into `~/.hermes/plugins/` — zero core code changes needed. See [Plugin Path](#plugin-path-recommended) below.
+- **Plugin** (recommended for community/third-party): Drop a plugin directory into `~/.kova/plugins/` — zero core code changes needed. See [Plugin Path](#plugin-path-recommended) below.
 - **Built-in**: Modify 20+ files across code, config, and docs. Use the [Built-in Checklist](#step-by-step-checklist-built-in-path) below.
 :::
 
@@ -33,7 +33,7 @@ Inbound messages are received by the adapter and forwarded via `self.handle_mess
 The plugin system lets you add a platform adapter without modifying any core Kova code. Your plugin is a directory with two files:
 
 ```
-~/.hermes/plugins/my-platform/
+~/.kova/plugins/my-platform/
   plugin.yaml      # Plugin metadata
   adapter.py       # Adapter class + register() entry point
 ```
@@ -77,7 +77,7 @@ class MyPlatformAdapter(BasePlatformAdapter):
         extra = config.extra or {}
         self.token = os.getenv("MY_PLATFORM_TOKEN") or extra.get("token", "")
 
-    async def connect(self) -> bool:
+    async def connect(self, *, is_reconnect: bool = False) -> bool:
         # Connect to the platform API, start listeners
         self._mark_connected()
         return True
@@ -200,7 +200,7 @@ When you call `ctx.register_platform()`, the following integration points are ha
 
 ## Env-Driven Auto-Configuration
 
-Most users set up a platform by dropping env vars into `~/.hermes/.env` rather than editing `config.yaml`. The `env_enablement_fn` hook lets your plugin pick those env vars up **before** the adapter is constructed, so `kova gateway status`, `get_connected_platforms()`, and cron delivery see the correct state without instantiating the platform SDK.
+Most users set up a platform by dropping env vars into `~/.kova/.env` rather than editing `config.yaml`. The `env_enablement_fn` hook lets your plugin pick those env vars up **before** the adapter is constructed, so `kova gateway status`, `get_connected_platforms()`, and cron delivery see the correct state without instantiating the platform SDK.
 
 ```python
 def _env_enablement() -> dict | None:
@@ -469,7 +469,7 @@ This checklist is for adding a platform directly to the Kova core codebase — t
 Add your platform to the `Platform` enum in `gateway/config.py`:
 
 ```python
-class Platform(str, Enum):
+class Platform(Enum):
     # ... existing platforms ...
     NEWPLAT = "newplat"
 ```
@@ -495,7 +495,7 @@ class NewPlatAdapter(BasePlatformAdapter):
         extra = config.extra or {}
         self._api_key = extra.get("api_key") or os.getenv("NEWPLAT_API_KEY", "")
 
-    async def connect(self) -> bool:
+    async def connect(self, *, is_reconnect: bool = False) -> bool:
         # Set up connection, start polling/webhook
         self._mark_connected()
         return True
@@ -541,7 +541,7 @@ Three touchpoints:
 
 ### 4. Gateway Runner (`gateway/run.py`)
 
-Five touchpoints:
+Six touchpoints:
 
 1. **`_create_adapter()`** — Add an `elif platform == Platform.NEWPLAT:` branch
 2. **`_is_user_authorized()` allowed_users map** — `Platform.NEWPLAT: "NEWPLAT_ALLOWED_USERS"`
@@ -576,10 +576,10 @@ Five touchpoints:
 
 ### 9. Optional: Platform Hints
 
-**`agent/prompt_builder.py`** — If your platform has specific rendering limitations (no markdown, message length limits, etc.), add an entry to the `_PLATFORM_HINTS` dict. This injects platform-specific guidance into the system prompt:
+**`agent/prompt_builder.py`** — If your platform has specific rendering limitations (no markdown, message length limits, etc.), add an entry to the `PLATFORM_HINTS` dict. This injects platform-specific guidance into the system prompt:
 
 ```python
-_PLATFORM_HINTS = {
+PLATFORM_HINTS = {
     # ...
     "newplat": (
         "You are chatting via NewPlat. It supports markdown formatting "
@@ -672,8 +672,9 @@ If the adapter holds a persistent connection with a unique credential, add a sco
 ```python
 from gateway.status import acquire_scoped_lock, release_scoped_lock
 
-async def connect(self):
-    if not acquire_scoped_lock("newplat", self._token):
+async def connect(self, *, is_reconnect: bool = False):
+    acquired, _existing = acquire_scoped_lock("newplat", self._token)
+    if not acquired:
         logger.error("Token already in use by another profile")
         return False
     # ... connect
@@ -688,5 +689,5 @@ async def disconnect(self):
 |---------|---------|------------|-------------------|
 | `bluebubbles.py` | REST + webhook | Medium | Simple REST API integration |
 | `weixin.py` | Long-poll + CDN | High | Media handling, encryption |
-| `wecom_callback.py` | Callback/webhook | Medium | HTTP server, AES crypto, multi-app |
+| `plugins/platforms/wecom/callback_adapter.py` | Callback/webhook | Medium | HTTP server, AES crypto, multi-app |
 | `plugins/platforms/irc/adapter.py` | Long-poll + IRC protocol | High | Full-featured plugin adapter with scoped token lock |

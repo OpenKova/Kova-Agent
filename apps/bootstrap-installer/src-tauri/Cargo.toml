@@ -26,7 +26,7 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 # Tauri runtime + plugins
-tauri = { version = "2", features = ["custom-protocol"] }
+tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
 tauri-plugin-process = "2"
@@ -43,7 +43,7 @@ serde_json = "1"
 # HTTP — rustls so we don't need OpenSSL on the build box
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream"] }
 
-# Logging — emitted to a file under KOVA_HOME/logs/ and (optionally) the
+# Logging — emitted to a file under HERMES_HOME/logs/ and (optionally) the
 # webview console via Tauri's event channel.
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
@@ -65,6 +65,10 @@ windows-sys = { version = "0.59", features = [
     "Win32_System_Console",
     "Win32_UI_WindowsAndMessaging",
 ] }
+
+# Signal-0 liveness probe for the update-lock marker owner (update.rs).
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
 
 [profile.release]
 # A 5-10MB signed installer is the goal. LTO + size-opt + single codegen unit.

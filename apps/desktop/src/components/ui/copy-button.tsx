@@ -19,8 +19,8 @@ export async function writeClipboardText(text: string) {
     return
   }
 
-  if (window.kovaDesktop?.writeClipboard) {
-    await window.kovaDesktop.writeClipboard(text)
+  if (window.hermesDesktop?.writeClipboard) {
+    await window.hermesDesktop.writeClipboard(text)
 
     return
   }

@@ -14,7 +14,7 @@ metadata:
 
 # Kova Agent
 
-Kova Agent is an open-source AI agent framework by Kova AI that runs in your terminal, a native desktop app, messaging platforms, and IDEs. It's in the same category as Claude Code (Anthropic), Codex (OpenAI), and OpenClaw — autonomous coding and task-execution agents that use tool calling to interact with your system. Kova works with any LLM provider (OpenRouter, Anthropic, OpenAI, Google, DeepSeek, xAI, local models, and 20+ others) and runs on Linux, macOS, Windows, and WSL.
+Kova Agent is an open-source AI agent framework by Nous Research that runs in your terminal, a native desktop app, messaging platforms, and IDEs. It's in the same category as Claude Code (Anthropic), Codex (OpenAI), and OpenClaw — autonomous coding and task-execution agents that use tool calling to interact with your system. Kova works with any LLM provider (OpenRouter, Anthropic, OpenAI, Google, DeepSeek, xAI, local models, and 20+ others) and runs on Linux, macOS, Windows, and WSL.
 
 What makes Kova different:
 
@@ -66,21 +66,21 @@ kova proxy                   # OpenAI-compatible local proxy backed by your OAut
 ## Key Paths
 
 ```
-~/.hermes/config.yaml       Main configuration (settings — never secrets)
-~/.hermes/.env              API keys and secrets ONLY (under $HERMES_HOME if set)
+~/.kova/config.yaml       Main configuration (settings — never secrets)
+~/.kova/.env              API keys and secrets ONLY (under $HERMES_HOME if set)
 $HERMES_HOME/skills/        Installed skills
-~/.hermes/skins/            Custom themes (see references/themes.md)
-~/.hermes/desktop-plugins/  Desktop app UI plugins (see references/desktop-plugins.md)
-~/.hermes/tui-widgets/      TUI widget apps (see references/tui-widgets.md)
-~/.hermes/pets/             Installed pet mascots (see references/petdex.md)
-~/.hermes/state.db          Canonical session store (SQLite + FTS5)
-~/.hermes/sessions/         Gateway routing index, request dumps, *.jsonl transcripts
-~/.hermes/logs/             Gateway and error logs
-~/.hermes/auth.json         OAuth tokens and credential pools
-~/.hermes/kova-agent/     Source code (if git-installed)
+~/.kova/skins/            Custom themes (see references/themes.md)
+~/.kova/desktop-plugins/  Desktop app UI plugins (see references/desktop-plugins.md)
+~/.kova/tui-widgets/      TUI widget apps (see references/tui-widgets.md)
+~/.kova/pets/             Installed pet mascots (see references/petdex.md)
+~/.kova/state.db          Canonical session store (SQLite + FTS5)
+~/.kova/sessions/         Gateway routing index, request dumps, *.jsonl transcripts
+~/.kova/logs/             Gateway and error logs
+~/.kova/auth.json         OAuth tokens and credential pools
+~/.kova/kova-agent/     Source code (if git-installed)
 ```
 
-Profiles use `~/.hermes/profiles/<name>/` with the same layout. When a profile is active, resolve the real home from `$HERMES_HOME` — never hardcode `~/.hermes`.
+Profiles use `~/.kova/profiles/<name>/` with the same layout. When a profile is active, resolve the real home from `$HERMES_HOME` — never hardcode `~/.kova`.
 
 ## Routing Table — load the reference for the task
 
@@ -90,7 +90,7 @@ Profiles use `~/.hermes/profiles/<name>/` with the same layout. When a profile i
 | In-session slash commands | `references/slash-commands.md` |
 | Provider setup, API keys, OAuth | `references/providers-and-models.md` |
 | config.yaml sections, toolsets, voice/STT/TTS | `references/configuration.md` |
-| AGENTS.md / .hermes.md / CLAUDE.md project rules | `references/project-context-files.md` |
+| AGENTS.md / .kova.md / CLAUDE.md project rules | `references/project-context-files.md` |
 | Secret redaction, PII, approval modes, "reset permissions" | `references/security-privacy.md` |
 | Delegation, cron, curator, kanban | `references/background-systems.md` |
 | MCP servers (add, catalog, `kova mcp`) | `references/native-mcp.md` |

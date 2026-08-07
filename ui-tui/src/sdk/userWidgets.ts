@@ -26,7 +26,7 @@ import { isCtrl } from './types.js'
  * production bundle can import it — no bundler, no JSX; `sdk.h` is
  * React.createElement.
  *
- * Trust model matches `~/.hermes/plugins/`: files under HERMES_HOME execute
+ * Trust model matches `~/.kova/plugins/`: files under HERMES_HOME execute
  * with the TUI's privileges. Load errors log and skip — a broken widget
  * never takes the TUI down.
  */

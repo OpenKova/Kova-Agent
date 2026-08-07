@@ -167,7 +167,7 @@ export async function startIsolatedInstance({
   devPort = 5174,
   prod = false,
   coldStart = false,
-  kovaHome,
+  hermesHome,
   userDataDir,
   seedConfig = true,
   settleMs = 2500,
@@ -183,11 +183,11 @@ export async function startIsolatedInstance({
     return dir
   }
 
-  const home = kovaHome ?? mkTemp('kova-perf-home-')
+  const home = hermesHome ?? mkTemp('kova-perf-home-')
   const userData = userDataDir ?? mkTemp('kova-perf-ud-')
   const devUrl = prod ? null : `http://127.0.0.1:${devPort}`
 
-  if (seedConfig && !kovaHome) {
+  if (seedConfig && !hermesHome) {
     seedConfigFrom(join(homedir(), '.kova'), home)
   }
 
@@ -350,7 +350,7 @@ export async function coldStartSamples({ runs = 3, port = 9222, devPort = 5174, 
           devPort: devPort + i,
           prod,
           coldStart: true,
-          kovaHome: home,
+          hermesHome: home,
           userDataDir,
           seedConfig: false
         })

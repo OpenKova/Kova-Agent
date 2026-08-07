@@ -13,7 +13,7 @@ def _kova_home_path() -> Path:
         from kova_constants import get_kova_home  # local import to avoid cycles
         return get_kova_home()
     except Exception:
-        return Path(os.path.expanduser("~/.hermes"))
+        return Path(os.path.expanduser("~/.kova"))
 
 
 def _kova_root_path() -> Path:
@@ -22,7 +22,7 @@ def _kova_root_path() -> Path:
         from kova_constants import get_default_kova_root  # local import to avoid cycles
         return get_default_kova_root()
     except Exception:
-        return Path(os.path.expanduser("~/.hermes"))
+        return Path(os.path.expanduser("~/.kova"))
 
 
 def build_write_denied_paths(home: str) -> set[str]:
@@ -216,7 +216,7 @@ def get_read_block_error(path: str) -> Optional[str]:
 
     **This is NOT a security boundary.** The terminal tool runs as the
     same OS user with shell access; the agent can still ``cat auth.json``
-    or ``cat ~/.hermes/.env`` and exfiltrate the file. The read-deny exists
+    or ``cat ~/.kova/.env`` and exfiltrate the file. The read-deny exists
     as defense-in-depth that:
 
       * Returns a clear error to models that respect tool denials, which
@@ -378,8 +378,8 @@ def raise_if_read_blocked(path: str) -> None:
 # exists, and explicit user direction is required to cross it.
 #
 # Reference: May 2026 incident where a kova-security profile session
-# edited skills under both ``~/.hermes/profiles/kova-security/skills/``
-# AND ``~/.hermes/skills/`` (the default profile's skills) without realizing
+# edited skills under both ``~/.kova/profiles/kova-security/skills/``
+# AND ``~/.kova/skills/`` (the default profile's skills) without realizing
 # the second path belonged to a different profile.
 # ---------------------------------------------------------------------------
 
@@ -392,8 +392,8 @@ PROFILE_SCOPED_AREAS = ("skills", "plugins", "cron", "memories")
 def _resolve_active_profile_name() -> str:
     """Return the active profile name derived from HERMES_HOME.
 
-    ``~/.hermes``              -> ``"default"``
-    ``~/.hermes/profiles/X``  -> ``"X"``
+    ``~/.kova``              -> ``"default"``
+    ``~/.kova/profiles/X``  -> ``"X"``
 
     Falls back to ``"default"`` on any resolution failure so the guard
     never raises into the tool path.
@@ -512,7 +512,7 @@ def get_cross_profile_warning(path: str) -> Optional[str]:
 # Non-local terminal backends (Docker, Daytona, etc.) bind a sandbox-local
 # directory to the container's ``$HOME``. The on-disk layout looks like
 #
-#   <HERMES_HOME>/profiles/<name>/sandboxes/<backend>/<task>/home/.hermes/...
+#   <HERMES_HOME>/profiles/<name>/sandboxes/<backend>/<task>/home/.kova/...
 #
 # When the agent (running host-side) speculates that authoritative profile
 # state lives at one of those sandbox-mirror paths, the write lands on the
@@ -521,10 +521,10 @@ def get_cross_profile_warning(path: str) -> Optional[str]:
 # disk two divergent copies accumulate. See #32049 for evidence.
 #
 # This guard is path-shape-only: it detects the
-# ``…/sandboxes/<backend>/<task>/home/.hermes/…`` segment and warns
+# ``…/sandboxes/<backend>/<task>/home/.kova/…`` segment and warns
 # regardless of which Kova profile is active. It does NOT cover the
 # inner-container case where the bind mount strips the ``sandboxes/`` prefix
-# (the agent's view inside the container is plain ``/root/.hermes/...``);
+# (the agent's view inside the container is plain ``/root/.kova/...``);
 # that case needs a separate dispatch-layer or host-side ``profile_state``
 # tool.
 # ---------------------------------------------------------------------------
@@ -533,7 +533,7 @@ def get_cross_profile_warning(path: str) -> Optional[str]:
 def _find_sandbox_mirror_segments(parts: tuple) -> Optional[int]:
     """Return the index of the inner ``.kova`` part in a sandbox-mirror path.
 
-    Matches ``…/sandboxes/<backend>/<task>/home/.hermes/…`` and returns the
+    Matches ``…/sandboxes/<backend>/<task>/home/.kova/…`` and returns the
     index where the inner Kova-state portion starts. Returns ``None`` for
     paths that do not contain the sandbox-mirror shape.
     """
@@ -620,9 +620,9 @@ def get_sandbox_mirror_warning(path: str) -> Optional[str]:
 # Container-context mirror guard (inner-container case — #32049 follow-up)
 #
 # Brian's shape-based detector (#32213) catches paths that still carry the
-# full ``…/sandboxes/<backend>/<task>/home/.hermes/…`` prefix on the host.
+# full ``…/sandboxes/<backend>/<task>/home/.kova/…`` prefix on the host.
 # But when file tools execute *inside* the container the bind-mount strips
-# that prefix: the agent sees plain ``/root/.hermes/…``.  The root:root
+# that prefix: the agent sees plain ``/root/.kova/…``.  The root:root
 # ownership on the divergent SOUL.md in #32049 confirms this is the primary
 # failure mode.
 #

@@ -4,15 +4,15 @@ import { Buffer } from 'node:buffer'
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { KovaReadDirEntry, KovaReadDirResult } from '@/global'
+import type { HermesReadDirEntry, HermesReadDirResult } from '@/global'
 
 import { clearProjectDirCache, readProjectDir } from './ipc'
 
-const readDir = vi.fn<(path: string) => Promise<KovaReadDirResult>>()
+const readDir = vi.fn<(path: string) => Promise<HermesReadDirResult>>()
 const readFileDataUrl = vi.fn<(path: string) => Promise<string>>()
 const gitRoot = vi.fn<(path: string) => Promise<string | null>>()
 
-function ok(entries: KovaReadDirEntry[]): KovaReadDirResult {
+function ok(entries: HermesReadDirEntry[]): HermesReadDirResult {
   return { entries }
 }
 
@@ -23,13 +23,13 @@ function dataUrl(text: string) {
 function installBridge() {
   ;(
     window as unknown as {
-      kovaDesktop: {
+      hermesDesktop: {
         gitRoot: typeof gitRoot
         readDir: typeof readDir
         readFileDataUrl: typeof readFileDataUrl
       }
     }
-  ).kovaDesktop = { gitRoot, readDir, readFileDataUrl }
+  ).hermesDesktop = { gitRoot, readDir, readFileDataUrl }
 }
 
 describe('readProjectDir', () => {
@@ -43,11 +43,11 @@ describe('readProjectDir', () => {
 
   afterEach(() => {
     clearProjectDirCache()
-    delete (window as unknown as { kovaDesktop?: unknown }).kovaDesktop
+    delete (window as unknown as { hermesDesktop?: unknown }).hermesDesktop
   })
 
   it('returns no-bridge when the desktop bridge is unavailable', async () => {
-    delete (window as unknown as { kovaDesktop?: unknown }).kovaDesktop
+    delete (window as unknown as { hermesDesktop?: unknown }).hermesDesktop
 
     await expect(readProjectDir('/repo')).resolves.toEqual({ entries: [], error: 'no-bridge' })
   })
@@ -80,6 +80,33 @@ describe('readProjectDir', () => {
     expect(result.entries.map(entry => entry.name)).toEqual(['keep.ts'])
     expect(gitRoot).toHaveBeenCalledWith('C:/repo')
     expect(readFileDataUrl).toHaveBeenCalledWith('C:/repo/.gitignore')
+  })
+
+  it('filters gitignored entries when Windows path casing differs across IPC results', async () => {
+    gitRoot.mockResolvedValue('C:\\Repo')
+    readDir.mockImplementation(async path => {
+      if (path === 'c:\\repo\\src') {
+        return ok([
+          { name: 'debug.log', path: 'c:\\repo\\src\\debug.log', isDirectory: false },
+          { name: 'keep.ts', path: 'c:\\repo\\src\\keep.ts', isDirectory: false }
+        ])
+      }
+
+      if (path === 'C:/Repo') {
+        return ok([{ name: '.gitignore', path: 'C:/Repo/.gitignore', isDirectory: false }])
+      }
+
+      if (path === 'C:/Repo/src') {
+        return ok([])
+      }
+
+      return ok([])
+    })
+    readFileDataUrl.mockResolvedValue(dataUrl('src/*.log\n'))
+
+    const result = await readProjectDir('c:\\repo\\src', 'c:\\repo')
+
+    expect(result.entries.map(entry => entry.name)).toEqual(['keep.ts'])
   })
 
   it('does not fetch .gitignore contents when listings do not contain .gitignore', async () => {

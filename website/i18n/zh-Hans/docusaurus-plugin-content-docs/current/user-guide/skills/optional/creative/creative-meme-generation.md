@@ -21,7 +21,7 @@ description: "使用 Pillow 选取模板并叠加文字，生成真实的表情�
 | 许可证 | MIT |
 | 平台 | linux, macos, windows |
 | 标签 | `creative`, `memes`, `humor`, `images` |
-| 相关 skill | [`ascii-art`](/user-guide/skills/bundled/creative/creative-ascii-art), `generative-widgets` |
+| 相关 skill | [`ascii-art`](/user-guide/skills/bundled/creative/creative-ascii-art) |
 
 ## 参考：完整 SKILL.md
 
@@ -74,7 +74,7 @@ python "$SKILL_DIR/scripts/generate_meme.py" --search "disaster"
 3. 为每个字段编写简短说明文字（每个字段最多 8-12 个词，越短越好）。
 4. 找到 skill 的脚本目录：
    ```
-   SKILL_DIR=$(dirname "$(find ~/.hermes/skills -path '*/meme-generation/SKILL.md' 2>/dev/null | head -1)")
+   SKILL_DIR=$(dirname "$(find ~/.kova/skills -path '*/meme-generation/SKILL.md' 2>/dev/null | head -1)")
    ```
 5. 运行生成器：
    ```bash

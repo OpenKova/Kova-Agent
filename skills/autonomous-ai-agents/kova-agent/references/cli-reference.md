@@ -146,5 +146,5 @@ Plugin- and provider-supplied subcommands (e.g. `kova photon setup`) only appear
 | Skills catalog | `kova skills browse` · [Skills catalog](https://kova-agent.kova.ai/docs/reference/skills-catalog) |
 | Provider setup | `kova model` · [Providers guide](https://kova-agent.kova.ai/docs/integrations/providers) |
 | Env variables | `kova config env-path` · [Env vars reference](https://kova-agent.kova.ai/docs/reference/environment-variables) |
-| Gateway logs | `~/.hermes/logs/gateway.log` (or `kova logs`) |
+| Gateway logs | `~/.kova/logs/gateway.log` (or `kova logs`) |
 | Sessions | `kova sessions browse` (reads state.db) |

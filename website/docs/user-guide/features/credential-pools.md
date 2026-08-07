@@ -33,7 +33,7 @@ Your request
           → Second 429 → rotate to next pool key
       → All keys exhausted → fallback_model (different provider)
   → 402 billing error?
-      → Immediately rotate to next pool key (24h cooldown)
+      → Immediately rotate to next pool key (1h cooldown)
   → 401 auth expired?
       → Try refreshing the token (OAuth)
       → Refresh failed → rotate to next pool key
@@ -141,15 +141,17 @@ The pool handles different errors differently:
 | Error | Behavior | Cooldown |
 |-------|----------|----------|
 | **429 Rate Limit** | Retry same key once (transient). Second consecutive 429 rotates to next key | 1 hour |
-| **402 Billing/Quota** | Immediately rotate to next key | 24 hours |
-| **401 Auth Expired** | Try refreshing the OAuth token first. Rotate only if refresh fails | — |
+| **402 Billing/Quota** | Immediately rotate to next key | 1 hour |
+| **401 Auth Expired** | Try refreshing the OAuth token first. Rotate only if refresh fails | 5 minutes |
 | **All keys exhausted** | Fall through to `fallback_model` if configured | — |
+
+Provider-supplied `reset_at` timestamps override these default cooldowns.
 
 The `has_retried_429` flag resets on every successful API call, so a single transient 429 doesn't trigger rotation.
 
 ## Custom Endpoint Pools
 
-Custom OpenAI-compatible endpoints (Together.ai, RunPod, local servers) get their own pools, keyed by the endpoint name from `custom_providers` in config.yaml.
+Custom OpenAI-compatible endpoints (Together.ai, RunPod, local servers) get their own pools, keyed by the endpoint name from the `providers:` dict in config.yaml (or the legacy `custom_providers` list, which is auto-migrated).
 
 When you set up a custom endpoint via `kova model`, it auto-generates a name like "Together.ai" or "Local (localhost:8080)". This name becomes the pool key.
 
@@ -184,7 +186,7 @@ Kova automatically discovers credentials from multiple sources and seeds the poo
 | Environment variables | `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY` | Yes |
 | OAuth tokens (auth.json) | Codex device code, Nous device code | Yes |
 | Claude Code credentials | `~/.claude/.credentials.json` | Yes (Anthropic) |
-| Kova PKCE OAuth | `~/.hermes/auth.json` | Yes (Anthropic) |
+| Kova PKCE OAuth | `~/.kova/auth.json` | Yes (Anthropic) |
 | Custom endpoint config | `model.api_key` in config.yaml | Yes (custom endpoints) |
 | Manual entries | Added via `kova auth add` | Persisted in auth.json |
 
@@ -219,7 +221,7 @@ The credential pool integrates at the provider resolution layer:
 
 ## Storage
 
-Pool state is stored in `~/.hermes/auth.json` under the `credential_pool` key:
+Pool state is stored in `~/.kova/auth.json` under the `credential_pool` key:
 
 ```json
 {

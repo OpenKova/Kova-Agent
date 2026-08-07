@@ -25,7 +25,7 @@ try:
 except (ModuleNotFoundError, ImportError):
 
     def get_kova_home() -> Path:
-        """Return the Kova home directory (default: ~/.hermes).
+        """Return the Kova home directory (default: ~/.kova).
 
         Mirrors ``kova_constants.get_kova_home()``."""
         val = os.environ.get("HERMES_HOME", "").strip()

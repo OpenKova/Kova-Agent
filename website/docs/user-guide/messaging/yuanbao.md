@@ -53,7 +53,7 @@ The WebSocket URL and API Domain have sensible defaults built in. You only need 
 
 ### 3. Configure Environment Variables
 
-After initial setup, verify these variables in `~/.hermes/.env`:
+After initial setup, verify these variables in `~/.kova/.env`:
 
 ```bash
 # Required
@@ -98,6 +98,7 @@ The adapter will connect to the Yuanbao WebSocket gateway, authenticate using HM
 - **Automatic reconnection** — handles WebSocket disconnections with exponential backoff
 - **Group information queries** — retrieve group details and member lists
 - **Sticker/Emoji support** — send TIMFaceElem stickers and emoji in conversations
+- **WeChat forwarded chat-history support** — when a user forwards a WeChat chat-history bundle into Yuanbao, the adapter decodes the forwarded records (sender nicknames, text, and multimedia entries, including nested forwards) and injects them into the conversation so the agent can read the full forwarded thread
 - **Auto-sethome** — first user to message the bot is automatically set as the home channel owner
 - **Slow-response notification** — sends a waiting message when the agent takes longer than expected
 
@@ -130,7 +131,7 @@ Use the `/sethome` command in any Yuanbao chat (DM or group) to designate it as 
 If no home channel is configured, the first user to message the bot will be automatically set as the home channel owner. If the current home channel is a group chat, the first DM will upgrade it to a direct channel.
 :::
 
-You can also set it manually in `~/.hermes/.env`:
+You can also set it manually in `~/.kova/.env`:
 
 ```bash
 YUANBAO_HOME_CHANNEL=direct:user_account_id
@@ -204,7 +205,7 @@ When you ask the bot to create or export a file, it sends the file directly to y
 1. Verify APP_ID and APP_SECRET are correct
 2. Check that the WebSocket URL is accessible
 3. Ensure the bot account has proper permissions
-4. Review gateway logs: `tail -f ~/.hermes/logs/gateway.log`
+4. Review gateway logs: `tail -f ~/.kova/logs/gateway.log`
 
 ### "Connection refused" error
 
@@ -244,7 +245,7 @@ When you ask the bot to create or export a file, it sends the file directly to y
 1. Check gateway logs for error patterns
 2. Increase heartbeat timeout in connection settings
 3. Ensure stable network connection to Yuanbao API
-4. Consider enabling verbose logging: `KOVA_LOG_LEVEL=debug`
+4. Consider enabling verbose logging: `kova gateway run -vv`
 
 ## Access Control
 
@@ -302,7 +303,7 @@ These values are currently not configurable via environment variables. They are 
 Enable debug logging to troubleshoot connection issues:
 
 ```bash
-KOVA_LOG_LEVEL=debug kova gateway
+kova gateway run -vv
 ```
 
 ## Integration with Other Features

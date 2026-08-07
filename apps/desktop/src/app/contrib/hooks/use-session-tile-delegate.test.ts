@@ -1,7 +1,7 @@
 import { renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type * as KovaModule from '@/kova'
+import type * as HermesModule from '@/kova'
 import { setSessions } from '@/store/session'
 import { sessionTileDelegate } from '@/store/session-states'
 import type { SessionInfo } from '@/types/kova'
@@ -9,7 +9,7 @@ import type { SessionInfo } from '@/types/kova'
 import { useSessionTileDelegate } from './use-session-tile-delegate'
 
 vi.mock('@/kova', async importActual => ({
-  ...(await importActual<typeof KovaModule>()),
+  ...(await importActual<typeof HermesModule>()),
   getSessionMessages: vi.fn(async () => ({ messages: [], session_id: '' }))
 }))
 
@@ -77,7 +77,8 @@ describe('useSessionTileDelegate resumeTile', () => {
     expect(requestGateway).toHaveBeenCalledWith('session.resume', {
       session_id: 'stored-x',
       cols: 96,
-      profile: 'ai-engineer'
+      profile: 'ai-engineer',
+      omit_messages: true
     })
   })
 
@@ -94,7 +95,8 @@ describe('useSessionTileDelegate resumeTile', () => {
     expect(requestGateway).toHaveBeenCalledWith('session.resume', {
       session_id: 'stored-y',
       cols: 96,
-      profile: 'default'
+      profile: 'default',
+      omit_messages: true
     })
   })
 })

@@ -115,28 +115,28 @@ describe('buildToolView browser_navigate title', () => {
     const view = buildToolView(
       part({
         toolName: 'browser_navigate',
-        args: { url: 'https://hermes-agent.nousresearch.com/docs' },
+        args: { url: 'https://kova-agent.nousresearch.com/docs' },
         result: { success: false, error: 'Command timed out after 60 seconds' }
       }),
       ''
     )
 
     expect(view.status).toBe('error')
-    expect(view.title).toBe('Failed to open hermes-agent.nousresearch.com/docs')
+    expect(view.title).toBe('Failed to open kova-agent.nousresearch.com/docs')
   })
 
   it('shows opened title on success', () => {
     const view = buildToolView(
       part({
         toolName: 'browser_navigate',
-        args: { url: 'https://hermes-agent.nousresearch.com/docs' },
-        result: { success: true, url: 'https://hermes-agent.nousresearch.com/docs', title: 'Docs' }
+        args: { url: 'https://kova-agent.nousresearch.com/docs' },
+        result: { success: true, url: 'https://kova-agent.nousresearch.com/docs', title: 'Docs' }
       }),
       ''
     )
 
     expect(view.status).toBe('success')
-    expect(view.title).toBe('Opened hermes-agent.nousresearch.com/docs')
+    expect(view.title).toBe('Opened kova-agent.nousresearch.com/docs')
   })
 })
 
@@ -340,6 +340,28 @@ describe('buildToolView title actions', () => {
     expect(view.titleAction).toEqual({ prefix: '', text: 'Running', suffix: ' pnpm run lint' })
   })
 
+  it('never stutters the verb or echoes the command when the backend context is a phrased label', () => {
+    // Older backends stamped tool.start with a *phrased* label
+    // ("Running sleep 70 + 2 commands") rather than a raw arg preview, and the
+    // desktop merges that into args.context. The row must still prepend its own
+    // verb exactly once, show the real command in the `$` transcript, and not
+    // repeat either string as detail.
+    const command = 'sleep 70; echo "a"; echo "b"'
+
+    const view = buildToolView(
+      part({
+        args: { command, context: 'Running sleep 70 + 2 commands' },
+        result: { exit_code: 0 },
+        toolName: 'terminal'
+      }),
+      ''
+    )
+
+    expect(view.title).toBe('Ran sleep 70 + 2 commands')
+    expect(view.terminalCommand).toBe(command)
+    expect(view.detail).toBe('')
+  })
+
   it('uses the runtime locale for title text and action placement', () => {
     setRuntimeI18nLocale('ja')
 
@@ -391,5 +413,40 @@ describe('prettyJson caps serialized result size', () => {
 describe('countDiffLineStats', () => {
   it('counts added and removed lines', () => {
     expect(countDiffLineStats(`--- a/x\n+++ b/x\n@@\n-old\n+new\n context\n+another`)).toEqual({ added: 2, removed: 1 })
+  })
+})
+
+describe('buildToolView memory status', () => {
+  const memory = (overrides: Partial<Parameters<typeof part>[0]> = {}) =>
+    buildToolView(part({ toolName: 'memory', ...overrides }), '')
+
+  it('treats an explicit success payload as success even with isError', () => {
+    const view = memory({
+      isError: true,
+      result: {
+        success: true,
+        entry_count: 13,
+        message: 'Applied 1 operation(s).',
+        duration_s: 0.003
+      }
+    })
+
+    expect(view.status).toBe('success')
+    expect(view.title).toBe('Saved to memory')
+    expect(view.countLabel).toBe('13 entries')
+    expect(view.subtitle).toBe('Applied 1 operation(s).')
+  })
+
+  it('uses soft warning copy for over-budget refusals, not "Saved"', () => {
+    const view = memory({
+      result: {
+        success: false,
+        error: 'Memory is full (2,200/2,200). Consolidate before adding more.'
+      }
+    })
+
+    expect(view.status).toBe('warning')
+    expect(view.title).toBe('Memory write noted')
+    expect(view.subtitle).toContain('Memory is full')
   })
 })

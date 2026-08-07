@@ -48,21 +48,21 @@ Pick the row that matches your goal:
 
 ## 1. Install Kova Agent
 ### With the Kova Desktop installer on macOS or Windows (recommended)
-To easily install the command-line and desktop applications, [download the Kova Desktop installer](https://hermes-agent.nousresearch.com/) from our website and run it.
+To easily install the command-line and desktop applications, [download the Kova Desktop installer](https://kova-agent.nousresearch.com/) from our website and run it.
 
 ### Without Kova Desktop:
 For a command-line only install without Kova Desktop, run:
 
 #### Linux / macOS / WSL2 / Android (Termux)
 ```bash
-curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+curl -fsSL https://kova-agent.nousresearch.com/install.sh | bash
 ```
 
 #### Windows (native)
 
 Run in powershell:
 ```powershell
-iex (irm https://hermes-agent.nousresearch.com/install.ps1) 
+iex (irm https://kova-agent.nousresearch.com/install.ps1) 
 ```
 
 :::tip Android / Termux
@@ -119,6 +119,7 @@ Good defaults:
 | **Kimi / Moonshot China** | China-region Moonshot endpoint | Set `KIMI_CN_API_KEY` |
 | **Arcee AI** | Trinity models | Set `ARCEEAI_API_KEY` |
 | **GMI Cloud** | Multi-model direct API | Set `GMI_API_KEY` |
+| **Actual Computer** | Your own hardware as a private inference cluster — hosted relay or local daemon | Set `ACTUAL_API_KEY` (relay) or `ACTUAL_BASE_URL=http://127.0.0.1:8080` (local, no key) |
 | **MiniMax (OAuth)** | MiniMax frontier model via browser OAuth — no API key needed (model name in `kova_cli/models.py` may change between releases) | `kova model` → MiniMax (OAuth) |
 | **MiniMax** | International MiniMax endpoint | Set `MINIMAX_API_KEY` |
 | **MiniMax China** | China-region MiniMax endpoint | Set `MINIMAX_CN_API_KEY` |
@@ -143,6 +144,7 @@ Good defaults:
 | **NVIDIA NIM** | Nemotron models via build.nvidia.com or local NIM | Set `NVIDIA_API_KEY` (optional: `NVIDIA_BASE_URL`) |
 | **GitHub Copilot** | GitHub Copilot subscription (GPT-5.x, Claude, Gemini, etc.) | OAuth via `kova model`, or `COPILOT_GITHUB_TOKEN` / `GH_TOKEN` |
 | **GitHub Copilot ACP** | Copilot ACP agent backend (spawns local `copilot` CLI) | `kova model` (requires `copilot` CLI + `copilot login`) |
+| **Vercel AI Gateway** | Vercel AI Gateway routing | Set `AI_GATEWAY_API_KEY` |
 | **Custom Endpoint** | VLLM, SGLang, Ollama, or any OpenAI-compatible API | Set base URL + API key |
 
 For most first-time users: choose a provider, accept the defaults unless you know why you're changing them. The full provider catalog with env vars and setup steps lives on the [Providers](../integrations/providers.md) page.
@@ -159,8 +161,8 @@ You can switch providers at any time with `kova model` — no lock-in. For a ful
 
 Kova separates secrets from normal config:
 
-- **Secrets and tokens** → `~/.hermes/.env`
-- **Non-secret settings** → `~/.hermes/config.yaml`
+- **Secrets and tokens** → `~/.kova/.env`
+- **Non-secret settings** → `~/.kova/config.yaml`
 
 The easiest way to set values correctly is through the CLI:
 
@@ -274,13 +276,15 @@ kova config set terminal.backend docker    # Docker isolation
 kova config set terminal.backend ssh       # Remote server
 ```
 
+For Docker sandboxes, you can also enable the **egress credential-injection proxy** so the sandbox never sees your real API keys — only opaque proxy tokens that work exclusively from behind a local TLS-intercepting daemon. See [Egress proxy](../user-guide/egress/iron-proxy.md). Setup is `kova egress setup && kova egress start`; `kova setup terminal` also points Docker users at it. Modal, SSH, Daytona, and Singularity are not wired yet.
+
 ### Voice mode
 
 ```bash
 # From the Kova install directory (the curl installer placed it at
-# ~/.hermes/kova-agent on Linux/macOS or %LOCALAPPDATA%\kova\kova-agent on Windows):
-cd ~/.hermes/kova-agent
-uv pip install -e ".[voice]"
+# ~/.kova/kova-agent on Linux/macOS or %LOCALAPPDATA%\kova\kova-agent on Windows):
+cd ~/.kova/kova-agent
+uv pip install --python ./venv/bin/python -e ".[voice]"
 # Includes faster-whisper for free local speech-to-text
 ```
 
@@ -290,7 +294,7 @@ Then in the CLI: `/voice on`. Press `Ctrl+B` to record. See [Voice Mode](../user
 
 Skills are on-demand instruction documents that teach Kova how to do a specific task — deploy to Kubernetes, open a GitHub PR, fine-tune a model, search for GIFs. Each is a `SKILL.md` file with a name, a description, and a step-by-step procedure. The agent reads the short descriptions for free and only loads a skill's full content when a task actually calls for it, so adding skills doesn't bloat every request.
 
-Kova ships with a catalog of bundled skills already installed in `~/.hermes/skills/`. You can add more from the Skills Hub, or write your own.
+Kova ships with a catalog of bundled skills already installed in `~/.kova/skills/`. You can add more from the Skills Hub, or write your own.
 
 **Browse and install from the hub:**
 
@@ -316,7 +320,7 @@ See [Skills System](../user-guide/features/skills.md) for writing your own, exte
 ### MCP servers
 
 ```yaml
-# Add to ~/.hermes/config.yaml
+# Add to ~/.kova/config.yaml
 mcp_servers:
   github:
     command: npx
@@ -333,7 +337,7 @@ ACP support ships with the standard `[all]` extras, so the curl installer alread
 kova acp
 ```
 
-(If you installed without `[all]`, run `cd ~/.hermes/kova-agent && uv pip install -e ".[acp]"` first.)
+(If you installed without `[all]`, run `cd ~/.kova/kova-agent && uv pip install -e ".[acp]"` first.)
 
 See [ACP Editor Integration](../user-guide/features/acp.md).
 
@@ -389,3 +393,4 @@ That sequence gets you from "broken vibes" back to a known state fast.
 - **[AI Providers](../integrations/providers.md)** — Full provider list and setup details
 - **[Skills System](../user-guide/features/skills.md)** — Reusable workflows and knowledge
 - **[Tips & Best Practices](../guides/tips.md)** — Power user tips
+- **[Moving to another machine](/reference/faq#exporting-kova-to-another-machine)** — `kova backup` migrates your whole setup (or [a single profile](/reference/faq#moving-a-single-profile-to-another-machine)); no need to rebuild from scratch

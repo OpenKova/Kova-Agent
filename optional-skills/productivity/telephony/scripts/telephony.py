@@ -69,7 +69,7 @@ class OwnedTwilioNumber:
 
 
 def _kova_home() -> Path:
-    return Path(os.environ.get("HERMES_HOME", "~/.hermes")).expanduser()
+    return Path(os.environ.get("HERMES_HOME", "~/.kova")).expanduser()
 
 
 def _env_path() -> Path:

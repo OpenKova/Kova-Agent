@@ -80,7 +80,7 @@ Temporary access tokens expire after **24 hours**, which means a token generated
    - `whatsapp_business_messaging`
    - `whatsapp_business_management`
 5. Set **token expiration: Never**.
-6. Copy the token → update `WHATSAPP_CLOUD_ACCESS_TOKEN` in `~/.hermes/.env` → restart the gateway.
+6. Copy the token → update `WHATSAPP_CLOUD_ACCESS_TOKEN` in `~/.kova/.env` → restart the gateway.
 
 System User tokens don't expire unless you explicitly revoke them.
 
@@ -142,7 +142,7 @@ Once your tunnel is running:
    ```bash
    python -c "import secrets; print(secrets.token_urlsafe(32))"
    ```
-   Save it as `WHATSAPP_CLOUD_VERIFY_TOKEN` in `~/.hermes/.env`.
+   Save it as `WHATSAPP_CLOUD_VERIFY_TOKEN` in `~/.kova/.env`.
 3. Start the Kova gateway: `kova gateway`.
 4. In the Meta App Dashboard → **WhatsApp → Configuration** (or **Use cases → Customize → Configuration** depending on UI version) → click **Edit** on the Webhook section.
 5. Fill in:
@@ -180,7 +180,7 @@ Up to 5 numbers in dev mode.  Going to App Review removes this limit.
 
 ## Allowlist (Kova-side)
 
-In addition to Meta's recipient whitelist, Kova has its own per-platform allowlist that controls **which incoming messages the agent processes**.  Add to `~/.hermes/.env`:
+In addition to Meta's recipient whitelist, Kova has its own per-platform allowlist that controls **which incoming messages the agent processes**.  Add to `~/.kova/.env`:
 
 ```bash
 # Comma-separated phone numbers, country code, no '+' / spaces / dashes
@@ -213,7 +213,7 @@ The `kova whatsapp-cloud` wizard prints these links at the end of setup. None of
 
 ## Configuration reference
 
-All settings live in `~/.hermes/.env`.  Required values are in **bold**.
+All settings live in `~/.kova/.env`.  Required values are in **bold**.
 
 | Variable | Default | Description |
 |---|---|---|
@@ -225,7 +225,7 @@ All settings live in `~/.hermes/.env`.  Required values are in **bold**.
 | `WHATSAPP_CLOUD_ALLOW_ALL_USERS` | `false` | Set to `true` to bypass the allowlist. |
 | `WHATSAPP_CLOUD_APP_ID` | — | Optional, for future analytics integration. |
 | `WHATSAPP_CLOUD_WABA_ID` | — | Optional, for future analytics integration. |
-| `WHATSAPP_CLOUD_WEBHOOK_HOST` | `0.0.0.0` | Interface the webhook server binds to. |
+| `WHATSAPP_CLOUD_WEBHOOK_HOST` | unset (dual-stack: all interfaces, IPv4+IPv6) | Interface the webhook server binds to. |
 | `WHATSAPP_CLOUD_WEBHOOK_PORT` | `8090` | Port the webhook server binds to.  Must match the port your tunnel forwards. |
 | `WHATSAPP_CLOUD_WEBHOOK_PATH` | `/whatsapp/webhook` | URL path Meta posts to. |
 | `WHATSAPP_CLOUD_API_VERSION` | `v20.0` | Meta Graph API version. Only override if a newer version is recommended in Meta's docs. |
@@ -328,7 +328,7 @@ Meta's default throughput is **80 messages/second per business phone number**, w
 Almost always one of:
 
 - **Tunnel URL is wrong or stale** — cloudflared quick tunnels rotate.  Get a fresh URL and update both `.env` and Meta's dashboard.
-- **Verify token mismatch** — the token in `~/.hermes/.env`'s `WHATSAPP_CLOUD_VERIFY_TOKEN` must match exactly what you typed into Meta's dashboard.  Run the curl probe above to confirm the gateway's verify handshake works locally first.
+- **Verify token mismatch** — the token in `~/.kova/.env`'s `WHATSAPP_CLOUD_VERIFY_TOKEN` must match exactly what you typed into Meta's dashboard.  Run the curl probe above to confirm the gateway's verify handshake works locally first.
 - **Gateway not running** — check `kova gateway` is up.
 - **App Secret not set** — without it, Kova refuses inbound POSTs with 503.  Meta interprets that as "can't validate."
 

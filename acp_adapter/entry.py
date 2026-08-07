@@ -1,6 +1,6 @@
 """CLI entry point for the kova-agent ACP adapter.
 
-Loads environment variables from ``~/.hermes/.env``, configures logging
+Loads environment variables from ``~/.kova/.env``, configures logging
 to write to stderr (so stdout is reserved for ACP JSON-RPC transport),
 and starts the ACP agent server.
 
@@ -32,6 +32,7 @@ else:
 import argparse
 import asyncio
 import logging
+import os
 import sys
 from pathlib import Path
 from kova_constants import get_kova_home
@@ -99,7 +100,7 @@ def _setup_logging() -> None:
 
 
 def _load_env() -> None:
-    """Load .env from HERMES_HOME (default ``~/.hermes``)."""
+    """Load .env from HERMES_HOME (default ``~/.kova``)."""
     from kova_cli.env_loader import load_kova_dotenv
 
     kova_home = get_kova_home()
@@ -132,7 +133,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--setup-browser",
         action="store_true",
-        help="Install agent-browser + Playwright Chromium into ~/.hermes/node/ "
+        help="Install agent-browser + Playwright Chromium into ~/.kova/node/ "
              "for browser tool support. Idempotent.",
     )
     parser.add_argument(
@@ -154,7 +155,7 @@ def _print_version() -> None:
 
 def _run_check() -> None:
     import acp  # noqa: F401
-    from acp_adapter.server import KovaACPAgent  # noqa: F401
+    from acp_adapter.server import HermesACPAgent  # noqa: F401
 
     print("Kova ACP check OK")
 
@@ -244,20 +245,28 @@ def main(argv: list[str] | None = None) -> None:
         sys.path.insert(0, project_root)
 
     import acp
-    from .server import KovaACPAgent
+    from .server import HermesACPAgent
 
-    # MCP tool discovery from config.yaml — run before asyncio.run() so
-    # it's safe to use blocking waits.  (ACP also registers per-session
-    # MCP servers dynamically via asyncio.to_thread inside the event
-    # loop; that path is unaffected.)  Moved from model_tools.py module
-    # scope to avoid freezing the gateway's loop on lazy import (#16856).
-    try:
-        from tools.mcp_tool import discover_mcp_tools
-        discover_mcp_tools()
-    except Exception:
-        logger.debug("MCP tool discovery failed at ACP startup", exc_info=True)
+    # MCP tool discovery from config.yaml — fire-and-forget in a
+    # background daemon thread so the ACP server becomes responsive
+    # immediately while MCP servers connect.  Previously this blocked
+    # asyncio.run() for 2-5 s.  (ACP also registers per-session MCP
+    # servers dynamically via asyncio.to_thread inside the event loop;
+    # that path is unaffected.)  Moved from model_tools.py module scope
+    # to avoid freezing the gateway's loop on lazy import (#16856).
+    # Metadata-only hosts can opt out of unrelated global MCP startup.
+    if os.environ.get("KOVA_ACP_SKIP_CONFIGURED_MCP", "").strip() != "1":
+        try:
+            from kova_cli.mcp_startup import start_background_mcp_discovery
 
-    agent = KovaACPAgent()
+            start_background_mcp_discovery(
+                logger=logger,
+                thread_name="acp-mcp-discovery",
+            )
+        except Exception:
+            logger.debug("MCP tool discovery failed at ACP startup", exc_info=True)
+
+    agent = HermesACPAgent()
     try:
         asyncio.run(acp.run_agent(agent, use_unstable_protocol=True))
     except KeyboardInterrupt:

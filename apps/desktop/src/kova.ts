@@ -1,15 +1,18 @@
 import { JsonRpcGatewayClient } from '@kova/shared'
 
+import { reconnectBackoffDelayMs } from '@/lib/reconnect-backoff'
 import type {
   ActionResponse,
   ActionStatusResponse,
   AnalyticsResponse,
   AudioSpeakResponse,
   AudioTranscriptionResponse,
+  AutomationBlueprint,
   AuxiliaryModelsResponse,
   BackendUpdateCheckResponse,
   ComputerUseStatus,
   ConfigSchemaResponse,
+  CronDeliveryTarget,
   CronJob,
   CronJobCreatePayload,
   CronJobUpdates,
@@ -20,8 +23,8 @@ import type {
   DebugShareResponse,
   ElevenLabsVoicesResponse,
   EnvVarInfo,
-  KovaConfig,
-  KovaConfigRecord,
+  HermesConfig,
+  HermesConfigRecord,
   LogsResponse,
   McpCatalogResponse,
   McpServerSummary,
@@ -41,7 +44,10 @@ import type {
   OAuthStartResponse,
   OAuthSubmitResponse,
   PaginatedSessions,
+  PairingResponse,
+  PairingUser,
   ProfileCreatePayload,
+  ProfileDesktopOverlay,
   ProfileSetupCommand,
   ProfileSoul,
   ProfilesResponse,
@@ -58,7 +64,11 @@ import type {
   TerminalBackendsResponse,
   ToolsetConfig,
   ToolsetInfo,
-  ToolsetModelsResponse
+  ToolsetModelsResponse,
+  WebhookCreatePayload,
+  WebhookCreateResponse,
+  WebhookEnableResponse,
+  WebhooksResponse
 } from '@/types/kova'
 
 // Desktop startup fires a burst of read-only data calls (config, profiles,
@@ -126,6 +136,8 @@ export type {
   AnalyticsTotals,
   AudioSpeakResponse,
   AudioTranscriptionResponse,
+  AutomationBlueprint,
+  AutomationBlueprintField,
   AuxiliaryModelsResponse,
   BackendUpdateCheckResponse,
   ComputerUseCheck,
@@ -133,6 +145,7 @@ export type {
   ComputerUseStatus,
   ConfigFieldSchema,
   ConfigSchemaResponse,
+  CronDeliveryTarget,
   CronJob,
   CronJobCreatePayload,
   CronJobSchedule,
@@ -147,8 +160,8 @@ export type {
   ElevenLabsVoicesResponse,
   EnvVarInfo,
   GatewayReadyPayload,
-  KovaConfig,
-  KovaConfigRecord,
+  HermesConfig,
+  HermesConfigRecord,
   LogsResponse,
   McpCatalogEntry,
   McpCatalogResponse,
@@ -171,7 +184,10 @@ export type {
   ModelOptionProvider,
   ModelOptionsResponse,
   PaginatedSessions,
+  PairingResponse,
+  PairingUser,
   ProfileCreatePayload,
+  ProfileDesktopOverlay,
   ProfileInfo,
   ProfileSetupCommand,
   ProfileSoul,
@@ -202,10 +218,15 @@ export type {
   ToolsetConfig,
   ToolsetInfo,
   ToolsetModel,
-  ToolsetModelsResponse
+  ToolsetModelsResponse,
+  WebhookCreatePayload,
+  WebhookCreateResponse,
+  WebhookEnableResponse,
+  WebhookRoute,
+  WebhooksResponse
 } from '@/types/kova'
 
-export class KovaGateway extends JsonRpcGatewayClient {
+export class HermesGateway extends JsonRpcGatewayClient {
   constructor() {
     super({
       closedErrorMessage: 'Kova gateway connection closed',
@@ -235,12 +256,19 @@ function profileScoped(profile?: null | string): { profile?: string } {
   return selected ? { profile: selected } : {}
 }
 
-/** Options for a plugin REST call — mirrors the app's own `kovaDesktop.api`
+/** Profile that profile-scoped REST/WS calls should target (null → primary).
+ *  Read-only twin of setApiRequestProfile for modules (e.g. voice playback)
+ *  that build their own connection URLs and must stay on the same backend. */
+export function getApiRequestProfile(): null | string {
+  return _apiProfile
+}
+
+/** Options for a plugin REST call — mirrors the app's own `hermesDesktop.api`
  *  shape, minus the path (which is namespace-derived). */
 export interface PluginRestOptions {
   method?: string
   body?: unknown
-  /** Single-file multipart upload (see KovaApiRequest.upload). */
+  /** Single-file multipart upload (see HermesApiRequest.upload). */
   upload?: { filename: string; contentType?: string; bytes: ArrayBuffer }
   timeoutMs?: number
 }
@@ -266,13 +294,13 @@ function pluginPathSuffix(caller: string, path: string): string {
  *  REST call. Broader reach (core endpoints, another namespace) is the future
  *  declared-capability seam; today the namespace IS the boundary. */
 export async function pluginRest<T>(pluginId: string, path: string, opts: PluginRestOptions = {}): Promise<T> {
-  if (!window.kovaDesktop?.api) {
+  if (!window.hermesDesktop?.api) {
     throw new Error('Kova desktop bridge unavailable')
   }
 
   const suffix = pluginPathSuffix('pluginRest', path)
 
-  return window.kovaDesktop.api<T>({
+  return window.hermesDesktop.api<T>({
     path: `/api/plugins/${pluginId}${suffix}`,
     method: opts.method,
     body: opts.body,
@@ -296,7 +324,7 @@ export function pluginSocket(pluginId: string, path: string, onMessage: (data: u
   let attempt = 0
 
   const connect = async () => {
-    const connection = await window.kovaDesktop.getConnection().catch(() => null)
+    const connection = await window.hermesDesktop.getConnection().catch(() => null)
 
     // No bridge / OAuth cookie auth (WS tickets are single-use, core-managed):
     // stay on the polling fallback rather than half-working.
@@ -324,8 +352,12 @@ export function pluginSocket(pluginId: string, path: string, onMessage: (data: u
       socket = null
 
       if (!disposed) {
+        // Full-jitter exponential backoff: same rationale as the gateway
+        // socket reconnect loops — an immediate-retry loop across many
+        // desktop clients floods the gateway with connection attempts
+        // during a restart.
+        window.setTimeout(() => void connect(), reconnectBackoffDelayMs(attempt, { baseDelayMs: 500, capMs: 30_000 }))
         attempt += 1
-        window.setTimeout(() => void connect(), Math.min(30_000, 1_000 * 2 ** attempt))
       }
     }
   }
@@ -338,13 +370,33 @@ export function pluginSocket(pluginId: string, path: string, onMessage: (data: u
   }
 }
 
+/**
+ * Trim a page to its window WITHOUT discarding pinned rows.
+ *
+ * The list endpoints deliberately back-fill pinned conversations past their
+ * LIMIT — a pin means "always reachable", so an aged-out pinned chat is
+ * appended after the recency window. A plain `slice(0, limit)` throws exactly
+ * those rows away again, which is why pins silently stopped rendering past
+ * some count: the sidebar could only ever show the pins that happened to fall
+ * inside the most-recent page.
+ */
+function pageWindow(sessions: SessionInfo[], limit: number): SessionInfo[] {
+  if (sessions.length <= limit) {
+    return sessions
+  }
+
+  const recent = sessions.slice(0, limit)
+
+  return [...recent, ...sessions.slice(limit).filter(session => session.pinned)]
+}
+
 export async function listSessions(
   limit = 40,
   minMessages = 0,
   archived: 'exclude' | 'include' | 'only' = 'exclude',
   order: 'created' | 'recent' = 'recent'
 ): Promise<PaginatedSessions> {
-  const result = await window.kovaDesktop.api<PaginatedSessions>({
+  const result = await window.hermesDesktop.api<PaginatedSessions>({
     path:
       `/api/sessions?limit=${limit}&offset=0&min_messages=${Math.max(0, minMessages)}` +
       `&archived=${archived}&order=${order}`,
@@ -353,7 +405,7 @@ export async function listSessions(
 
   return {
     ...result,
-    sessions: result.sessions.slice(0, limit),
+    sessions: pageWindow(result.sessions, limit),
     offset: 0
   }
 }
@@ -385,7 +437,7 @@ export async function listAllProfileSessions(
     ? `&exclude_sources=${encodeURIComponent(filter.excludeSources.join(','))}`
     : ''
 
-  const result = await window.kovaDesktop.api<PaginatedSessions>({
+  const result = await window.hermesDesktop.api<PaginatedSessions>({
     path:
       `/api/profiles/sessions?limit=${limit}&offset=0&min_messages=${Math.max(0, minMessages)}` +
       `&archived=${archived}&order=${order}&profile=${encodeURIComponent(profile)}${sourceParam}${excludeParam}`,
@@ -394,7 +446,7 @@ export async function listAllProfileSessions(
 
   return {
     ...result,
-    sessions: result.sessions.slice(0, limit),
+    sessions: pageWindow(result.sessions, limit),
     offset: 0
   }
 }
@@ -406,8 +458,26 @@ export async function listAllProfileSessions(
 // splices remote profiles per slice (see interceptSessionRequestForRemote).
 export interface SidebarSessionSlice {
   sessions: SessionInfo[]
-  total?: number
-  profile_totals?: Record<string, number>
+  /** Per-profile "the window came back full, more rows exist on disk" flags —
+   *  what pagination needs, without a COUNT(*) per profile DB per refresh. */
+  profiles_truncated?: Record<string, boolean>
+}
+
+/** Which profiles filled their per-profile window in a returned page. The
+ *  legacy per-slice endpoint doesn't report this, so derive it from the rows:
+ *  a profile at (or over) the cap still has more on disk. Pinned rows are
+ *  discounted — they're back-filled past the LIMIT, so counting them fakes a
+ *  full page and leaves a "Load more" that can never resolve. */
+function profilesTruncatedFrom(sessions: SessionInfo[], cap: number): Record<string, boolean> {
+  const counts = new Map<string, number>()
+
+  for (const session of sessions) {
+    const key = session.profile || 'default'
+
+    counts.set(key, (counts.get(key) ?? 0) + (session.pinned ? 0 : 1))
+  }
+
+  return Object.fromEntries([...counts].map(([name, count]) => [name, count >= cap]))
 }
 
 export interface SidebarSessionsResponse {
@@ -480,7 +550,10 @@ async function listSidebarSessionsLegacy(req: SidebarSessionsRequest): Promise<S
   const errors = [...(recents.errors ?? []), ...(cron.errors ?? []), ...(messaging.errors ?? [])]
 
   return {
-    recents: { profile_totals: recents.profile_totals, sessions: recents.sessions, total: recents.total },
+    recents: {
+      profiles_truncated: profilesTruncatedFrom(recents.sessions, req.recentsLimit),
+      sessions: recents.sessions
+    },
     cron: { sessions: cron.sessions },
     messaging: { sessions: messaging.sessions },
     ...(errors.length ? { errors } : {})
@@ -510,7 +583,7 @@ export async function listSidebarSessions(req: SidebarSessionsRequest): Promise<
   let result: SidebarSessionsResponse
 
   try {
-    result = await window.kovaDesktop.api<SidebarSessionsResponse>({
+    result = await window.hermesDesktop.api<SidebarSessionsResponse>({
       path: `/api/profiles/sessions/sidebar?${params.toString()}`,
       timeoutMs: SESSION_LIST_REQUEST_TIMEOUT_MS
     })
@@ -538,7 +611,7 @@ export async function listSidebarSessions(req: SidebarSessionsRequest): Promise<
 // read path. A remote session's row lives only on its remote host, so a mutation
 // that hit the local primary would no-op or 404. Omit for the current/default.
 export function setSessionArchived(id: string, archived: boolean, profile?: string | null): Promise<{ ok: boolean }> {
-  return window.kovaDesktop.api<{ ok: boolean }>({
+  return window.hermesDesktop.api<{ ok: boolean }>({
     ...(profile ? { profile } : {}),
     path: `/api/sessions/${encodeURIComponent(id)}`,
     method: 'PATCH',
@@ -546,8 +619,21 @@ export function setSessionArchived(id: string, archived: boolean, profile?: stri
   })
 }
 
+// Mirror a sidebar pin to the backend "keep" flag so the sessions.auto_archive
+// sweep (which runs backend-side, blind to Desktop localStorage) never hides a
+// pinned chat. Best-effort: the sidebar stays localStorage-driven for its own
+// display; this only feeds the backend policy.
+export function setSessionPinnedRemote(id: string, pinned: boolean, profile?: string | null): Promise<{ ok: boolean }> {
+  return window.hermesDesktop.api<{ ok: boolean }>({
+    ...(profile ? { profile } : {}),
+    path: `/api/sessions/${encodeURIComponent(id)}`,
+    method: 'PATCH',
+    body: { pinned }
+  })
+}
+
 export function searchSessions(query: string): Promise<SessionSearchResponse> {
-  return window.kovaDesktop.api<SessionSearchResponse>({
+  return window.hermesDesktop.api<SessionSearchResponse>({
     path: `/api/sessions/search?q=${encodeURIComponent(query)}`
   })
 }
@@ -559,7 +645,7 @@ export function searchSessions(query: string): Promise<SessionSearchResponse> {
 export function getSession(id: string, profile?: string | null): Promise<SessionInfo> {
   const suffix = profile ? `?profile=${encodeURIComponent(profile)}` : ''
 
-  return window.kovaDesktop.api<SessionInfo>({
+  return window.hermesDesktop.api<SessionInfo>({
     ...(profile ? { profile } : {}),
     path: `/api/sessions/${encodeURIComponent(id)}${suffix}`
   })
@@ -572,14 +658,14 @@ export function getSession(id: string, profile?: string | null): Promise<Session
 export function getSessionMessages(id: string, profile?: string | null): Promise<SessionMessagesResponse> {
   const suffix = profile ? `?profile=${encodeURIComponent(profile)}` : ''
 
-  return window.kovaDesktop.api<SessionMessagesResponse>({
+  return window.hermesDesktop.api<SessionMessagesResponse>({
     ...(profile ? { profile } : {}),
     path: `/api/sessions/${encodeURIComponent(id)}/messages${suffix}`
   })
 }
 
 export function deleteSession(id: string, profile?: string | null): Promise<{ ok: boolean }> {
-  return window.kovaDesktop.api<{ ok: boolean }>({
+  return window.hermesDesktop.api<{ ok: boolean }>({
     ...(profile ? { profile } : {}),
     path: `/api/sessions/${encodeURIComponent(id)}`,
     method: 'DELETE'
@@ -591,7 +677,7 @@ export function renameSession(
   title: string,
   profile?: string | null
 ): Promise<{ ok: boolean; title: string }> {
-  return window.kovaDesktop.api<{ ok: boolean; title: string }>({
+  return window.hermesDesktop.api<{ ok: boolean; title: string }>({
     ...(profile ? { profile } : {}),
     path: `/api/sessions/${encodeURIComponent(id)}`,
     method: 'PATCH',
@@ -600,7 +686,7 @@ export function renameSession(
 }
 
 export function getGlobalModelInfo(): Promise<ModelInfoResponse> {
-  return window.kovaDesktop.api<ModelInfoResponse>({
+  return window.hermesDesktop.api<ModelInfoResponse>({
     ...profileScoped(),
     path: '/api/model/info',
     timeoutMs: STARTUP_REQUEST_TIMEOUT_MS
@@ -608,7 +694,7 @@ export function getGlobalModelInfo(): Promise<ModelInfoResponse> {
 }
 
 export function getStatus(): Promise<StatusResponse> {
-  return window.kovaDesktop.api<StatusResponse>({
+  return window.hermesDesktop.api<StatusResponse>({
     ...profileScoped(),
     path: '/api/status'
   })
@@ -645,44 +731,44 @@ export function getLogs(params: {
 
   const suffix = query.toString()
 
-  return window.kovaDesktop.api<LogsResponse>({
+  return window.hermesDesktop.api<LogsResponse>({
     ...profileScoped(),
     path: suffix ? `/api/logs?${suffix}` : '/api/logs'
   })
 }
 
-export function getKovaConfig(profile?: string): Promise<KovaConfig> {
-  return window.kovaDesktop.api<KovaConfig>({
+export function getHermesConfig(profile?: string): Promise<HermesConfig> {
+  return window.hermesDesktop.api<HermesConfig>({
     ...profileScoped(profile),
     path: '/api/config',
     timeoutMs: STARTUP_REQUEST_TIMEOUT_MS
   })
 }
 
-export function getKovaConfigRecord(): Promise<KovaConfigRecord> {
-  return window.kovaDesktop.api<KovaConfigRecord>({
+export function getHermesConfigRecord(): Promise<HermesConfigRecord> {
+  return window.hermesDesktop.api<HermesConfigRecord>({
     ...profileScoped(),
     path: '/api/config'
   })
 }
 
-export function getKovaConfigDefaults(): Promise<KovaConfigRecord> {
-  return window.kovaDesktop.api<KovaConfigRecord>({
+export function getHermesConfigDefaults(): Promise<HermesConfigRecord> {
+  return window.hermesDesktop.api<HermesConfigRecord>({
     ...profileScoped(),
     path: '/api/config/defaults',
     timeoutMs: STARTUP_REQUEST_TIMEOUT_MS
   })
 }
 
-export function getKovaConfigSchema(): Promise<ConfigSchemaResponse> {
-  return window.kovaDesktop.api<ConfigSchemaResponse>({
+export function getHermesConfigSchema(): Promise<ConfigSchemaResponse> {
+  return window.hermesDesktop.api<ConfigSchemaResponse>({
     ...profileScoped(),
     path: '/api/config/schema'
   })
 }
 
-export function saveKovaConfig(config: KovaConfigRecord): Promise<{ ok: boolean }> {
-  return window.kovaDesktop.api<{ ok: boolean }>({
+export function saveHermesConfig(config: HermesConfigRecord): Promise<{ ok: boolean }> {
+  return window.hermesDesktop.api<{ ok: boolean }>({
     ...profileScoped(),
     path: '/api/config',
     method: 'PUT',
@@ -692,14 +778,14 @@ export function saveKovaConfig(config: KovaConfigRecord): Promise<{ ok: boolean 
 
 // surface=declared serves the curated desktop schema; the dashboard consumes the raw plugin schema.
 export function getMemoryProviderConfig(provider: string): Promise<MemoryProviderConfig> {
-  return window.kovaDesktop.api<MemoryProviderConfig>({
+  return window.hermesDesktop.api<MemoryProviderConfig>({
     ...profileScoped(),
     path: `/api/memory/providers/${encodeURIComponent(provider)}/config?surface=declared`
   })
 }
 
 export function saveMemoryProviderConfig(provider: string, values: Record<string, string>): Promise<{ ok: boolean }> {
-  return window.kovaDesktop.api<{ ok: boolean }>({
+  return window.hermesDesktop.api<{ ok: boolean }>({
     ...profileScoped(),
     path: `/api/memory/providers/${encodeURIComponent(provider)}/config?surface=declared`,
     method: 'PUT',
@@ -708,14 +794,14 @@ export function saveMemoryProviderConfig(provider: string, values: Record<string
 }
 
 export function getEnvVars(): Promise<Record<string, EnvVarInfo>> {
-  return window.kovaDesktop.api<Record<string, EnvVarInfo>>({
+  return window.hermesDesktop.api<Record<string, EnvVarInfo>>({
     ...profileScoped(),
     path: '/api/env'
   })
 }
 
 export function setEnvVar(key: string, value: string): Promise<{ ok: boolean }> {
-  return window.kovaDesktop.api<{ ok: boolean }>({
+  return window.hermesDesktop.api<{ ok: boolean }>({
     ...profileScoped(),
     path: '/api/env',
     method: 'PUT',
@@ -728,7 +814,7 @@ export function validateProviderCredential(
   value: string,
   apiKey?: string
 ): Promise<{ ok: boolean; reachable: boolean; message: string; models?: string[] }> {
-  return window.kovaDesktop.api<{ ok: boolean; reachable: boolean; message: string; models?: string[] }>({
+  return window.hermesDesktop.api<{ ok: boolean; reachable: boolean; message: string; models?: string[] }>({
     ...profileScoped(),
     path: '/api/providers/validate',
     method: 'POST',
@@ -737,13 +823,13 @@ export function validateProviderCredential(
 }
 
 export function getCustomEndpoints(): Promise<CustomEndpointsResponse> {
-  return window.kovaDesktop.api<CustomEndpointsResponse>({
+  return window.hermesDesktop.api<CustomEndpointsResponse>({
     path: '/api/providers/custom-endpoints'
   })
 }
 
 export function saveCustomEndpoint(endpoint: CustomEndpointUpdate): Promise<CustomEndpointsResponse> {
-  return window.kovaDesktop.api<CustomEndpointsResponse>({
+  return window.hermesDesktop.api<CustomEndpointsResponse>({
     path: '/api/providers/custom-endpoints',
     method: 'POST',
     body: endpoint
@@ -751,7 +837,7 @@ export function saveCustomEndpoint(endpoint: CustomEndpointUpdate): Promise<Cust
 }
 
 export function validateCustomEndpoint(endpoint: CustomEndpointUpdate): Promise<CustomEndpointValidationResponse> {
-  return window.kovaDesktop.api<CustomEndpointValidationResponse>({
+  return window.hermesDesktop.api<CustomEndpointValidationResponse>({
     path: '/api/providers/custom-endpoints/validate',
     method: 'POST',
     body: endpoint
@@ -759,21 +845,21 @@ export function validateCustomEndpoint(endpoint: CustomEndpointUpdate): Promise<
 }
 
 export function activateCustomEndpoint(id: string): Promise<{ ok: boolean; provider: string; model: string }> {
-  return window.kovaDesktop.api<{ ok: boolean; provider: string; model: string }>({
+  return window.hermesDesktop.api<{ ok: boolean; provider: string; model: string }>({
     path: `/api/providers/custom-endpoints/${encodeURIComponent(id)}/activate`,
     method: 'POST'
   })
 }
 
 export function deleteCustomEndpoint(id: string): Promise<CustomEndpointsResponse> {
-  return window.kovaDesktop.api<CustomEndpointsResponse>({
+  return window.hermesDesktop.api<CustomEndpointsResponse>({
     path: `/api/providers/custom-endpoints/${encodeURIComponent(id)}`,
     method: 'DELETE'
   })
 }
 
 export function deleteEnvVar(key: string): Promise<{ ok: boolean }> {
-  return window.kovaDesktop.api<{ ok: boolean }>({
+  return window.hermesDesktop.api<{ ok: boolean }>({
     ...profileScoped(),
     path: '/api/env',
     method: 'DELETE',
@@ -782,7 +868,7 @@ export function deleteEnvVar(key: string): Promise<{ ok: boolean }> {
 }
 
 export function revealEnvVar(key: string): Promise<{ key: string; value: string }> {
-  return window.kovaDesktop.api<{ key: string; value: string }>({
+  return window.hermesDesktop.api<{ key: string; value: string }>({
     ...profileScoped(),
     path: '/api/env/reveal',
     method: 'POST',
@@ -791,14 +877,14 @@ export function revealEnvVar(key: string): Promise<{ key: string; value: string 
 }
 
 export function listOAuthProviders(): Promise<OAuthProvidersResponse> {
-  return window.kovaDesktop.api<OAuthProvidersResponse>({
+  return window.hermesDesktop.api<OAuthProvidersResponse>({
     ...profileScoped(),
     path: '/api/providers/oauth'
   })
 }
 
 export function disconnectOAuthProvider(providerId: string): Promise<{ ok: boolean; provider: string }> {
-  return window.kovaDesktop.api<{ ok: boolean; provider: string }>({
+  return window.hermesDesktop.api<{ ok: boolean; provider: string }>({
     ...profileScoped(),
     path: `/api/providers/oauth/${encodeURIComponent(providerId)}`,
     method: 'DELETE'
@@ -806,7 +892,7 @@ export function disconnectOAuthProvider(providerId: string): Promise<{ ok: boole
 }
 
 export function startOAuthLogin(providerId: string): Promise<OAuthStartResponse> {
-  return window.kovaDesktop.api<OAuthStartResponse>({
+  return window.hermesDesktop.api<OAuthStartResponse>({
     ...profileScoped(),
     path: `/api/providers/oauth/${encodeURIComponent(providerId)}/start`,
     method: 'POST',
@@ -815,7 +901,7 @@ export function startOAuthLogin(providerId: string): Promise<OAuthStartResponse>
 }
 
 export function submitOAuthCode(providerId: string, sessionId: string, code: string): Promise<OAuthSubmitResponse> {
-  return window.kovaDesktop.api<OAuthSubmitResponse>({
+  return window.hermesDesktop.api<OAuthSubmitResponse>({
     ...profileScoped(),
     path: `/api/providers/oauth/${encodeURIComponent(providerId)}/submit`,
     method: 'POST',
@@ -824,14 +910,14 @@ export function submitOAuthCode(providerId: string, sessionId: string, code: str
 }
 
 export function pollOAuthSession(providerId: string, sessionId: string): Promise<OAuthPollResponse> {
-  return window.kovaDesktop.api<OAuthPollResponse>({
+  return window.hermesDesktop.api<OAuthPollResponse>({
     ...profileScoped(),
     path: `/api/providers/oauth/${encodeURIComponent(providerId)}/poll/${encodeURIComponent(sessionId)}`
   })
 }
 
 export function cancelOAuthSession(sessionId: string): Promise<{ ok: boolean }> {
-  return window.kovaDesktop.api<{ ok: boolean }>({
+  return window.hermesDesktop.api<{ ok: boolean }>({
     ...profileScoped(),
     path: `/api/providers/oauth/sessions/${encodeURIComponent(sessionId)}`,
     method: 'DELETE'
@@ -841,7 +927,7 @@ export function cancelOAuthSession(sessionId: string): Promise<{ ok: boolean }> 
 // Memory-provider OAuth connect (provider-keyed; 404s for providers without an
 // OAuth flow). Profile-scoped: the grant lands in the active profile's config.
 export function startMemoryProviderOAuth(provider: string): Promise<MemoryProviderOAuthStatus> {
-  return window.kovaDesktop.api<MemoryProviderOAuthStatus>({
+  return window.hermesDesktop.api<MemoryProviderOAuthStatus>({
     ...profileScoped(),
     path: `/api/memory/providers/${encodeURIComponent(provider)}/oauth/start`,
     method: 'POST'
@@ -849,21 +935,21 @@ export function startMemoryProviderOAuth(provider: string): Promise<MemoryProvid
 }
 
 export function getMemoryProviderOAuthStatus(provider: string): Promise<MemoryProviderOAuthStatus> {
-  return window.kovaDesktop.api<MemoryProviderOAuthStatus>({
+  return window.hermesDesktop.api<MemoryProviderOAuthStatus>({
     ...profileScoped(),
     path: `/api/memory/providers/${encodeURIComponent(provider)}/oauth/status`
   })
 }
 
 export function getSkills(): Promise<SkillInfo[]> {
-  return window.kovaDesktop.api<SkillInfo[]>({
+  return window.hermesDesktop.api<SkillInfo[]>({
     ...profileScoped(),
     path: '/api/skills'
   })
 }
 
 export function getStarmapGraph(): Promise<StarmapGraph> {
-  return window.kovaDesktop.api<StarmapGraph>({
+  return window.hermesDesktop.api<StarmapGraph>({
     ...profileScoped(),
     // Backend REST contract — stays /api/learning even though the UI feature is
     // now "star map". Renaming this would break against an un-upgraded backend.
@@ -879,14 +965,14 @@ export interface LearningNodeDetail {
 }
 
 export function getLearningNode(id: string): Promise<LearningNodeDetail> {
-  return window.kovaDesktop.api<LearningNodeDetail>({
+  return window.hermesDesktop.api<LearningNodeDetail>({
     ...profileScoped(),
     path: `/api/learning/node?id=${encodeURIComponent(id)}`
   })
 }
 
 export function deleteLearningNode(id: string): Promise<{ message: string; ok: boolean }> {
-  return window.kovaDesktop.api<{ message: string; ok: boolean }>({
+  return window.hermesDesktop.api<{ message: string; ok: boolean }>({
     ...profileScoped(),
     path: '/api/learning/node',
     method: 'DELETE',
@@ -895,7 +981,7 @@ export function deleteLearningNode(id: string): Promise<{ message: string; ok: b
 }
 
 export function editLearningNode(id: string, content: string): Promise<{ message: string; ok: boolean }> {
-  return window.kovaDesktop.api<{ message: string; ok: boolean }>({
+  return window.hermesDesktop.api<{ message: string; ok: boolean }>({
     ...profileScoped(),
     path: '/api/learning/node',
     method: 'PUT',
@@ -903,8 +989,11 @@ export function editLearningNode(id: string, content: string): Promise<{ message
   })
 }
 
-export function toggleSkill(name: string, enabled: boolean): Promise<{ ok: boolean; name: string; enabled: boolean }> {
-  return window.kovaDesktop.api<{ ok: boolean; name: string; enabled: boolean }>({
+export function setSkillEnabled(
+  name: string,
+  enabled: boolean
+): Promise<{ ok: boolean; name: string; enabled: boolean }> {
+  return window.hermesDesktop.api<{ ok: boolean; name: string; enabled: boolean }>({
     ...profileScoped(),
     path: '/api/skills/toggle',
     method: 'PUT',
@@ -933,7 +1022,7 @@ export interface McpOAuthFlow {
 /** Connect to the server, list its tools, disconnect. Slow (spawns/handshakes
  *  for real) — well past the 15s default fetch timeout. */
 export function testMcpServer(name: string): Promise<McpTestResult> {
-  return window.kovaDesktop.api<McpTestResult>({
+  return window.hermesDesktop.api<McpTestResult>({
     ...profileScoped(),
     path: `/api/mcp/servers/${encodeURIComponent(name)}/test`,
     method: 'POST',
@@ -942,10 +1031,10 @@ export function testMcpServer(name: string): Promise<McpTestResult> {
 }
 
 /** Replace the whole `mcp_servers` map (the mcp.json editor's save). Unlike
- *  `saveKovaConfig`, this REPLACES rather than deep-merges, so deletes,
+ *  `saveHermesConfig`, this REPLACES rather than deep-merges, so deletes,
  *  re-enables (dropping `enabled: false`), and removed nested fields persist. */
 export function saveMcpServers(servers: Record<string, Record<string, unknown>>): Promise<{ ok: boolean }> {
-  return window.kovaDesktop.api<{ ok: boolean }>({
+  return window.hermesDesktop.api<{ ok: boolean }>({
     ...profileScoped(),
     path: '/api/mcp/servers',
     method: 'PUT',
@@ -955,7 +1044,7 @@ export function saveMcpServers(servers: Record<string, Record<string, unknown>>)
 
 /** Start an MCP OAuth flow and return the authorization URL. */
 export function authMcpServer(name: string): Promise<McpOAuthFlow> {
-  return window.kovaDesktop.api<McpOAuthFlow>({
+  return window.hermesDesktop.api<McpOAuthFlow>({
     ...profileScoped(),
     path: `/api/mcp/servers/${encodeURIComponent(name)}/auth`,
     method: 'POST',
@@ -964,24 +1053,24 @@ export function authMcpServer(name: string): Promise<McpOAuthFlow> {
 }
 
 export function getMcpOAuthFlow(flowId: string): Promise<McpOAuthFlow> {
-  return window.kovaDesktop.api<McpOAuthFlow>({
+  return window.hermesDesktop.api<McpOAuthFlow>({
     ...profileScoped(),
     path: `/api/mcp/oauth/flows/${encodeURIComponent(flowId)}`
   })
 }
 
 export function getToolsets(): Promise<ToolsetInfo[]> {
-  return window.kovaDesktop.api<ToolsetInfo[]>({
+  return window.hermesDesktop.api<ToolsetInfo[]>({
     ...profileScoped(),
     path: '/api/tools/toolsets'
   })
 }
 
-export function toggleToolset(
+export function setToolsetEnabled(
   name: string,
   enabled: boolean
 ): Promise<{ ok: boolean; name: string; enabled: boolean }> {
-  return window.kovaDesktop.api<{ ok: boolean; name: string; enabled: boolean }>({
+  return window.hermesDesktop.api<{ ok: boolean; name: string; enabled: boolean }>({
     ...profileScoped(),
     path: `/api/tools/toolsets/${encodeURIComponent(name)}`,
     method: 'PUT',
@@ -990,7 +1079,7 @@ export function toggleToolset(
 }
 
 export function getToolsetConfig(name: string): Promise<ToolsetConfig> {
-  return window.kovaDesktop.api<ToolsetConfig>({
+  return window.hermesDesktop.api<ToolsetConfig>({
     ...profileScoped(),
     path: `/api/tools/toolsets/${encodeURIComponent(name)}/config`
   })
@@ -999,7 +1088,7 @@ export function getToolsetConfig(name: string): Promise<ToolsetConfig> {
 export function getToolsetModels(name: string, provider?: string): Promise<ToolsetModelsResponse> {
   const suffix = provider ? `?provider=${encodeURIComponent(provider)}` : ''
 
-  return window.kovaDesktop.api<ToolsetModelsResponse>({
+  return window.hermesDesktop.api<ToolsetModelsResponse>({
     ...profileScoped(),
     path: `/api/tools/toolsets/${encodeURIComponent(name)}/models${suffix}`
   })
@@ -1010,7 +1099,7 @@ export function selectToolsetModel(
   model: string,
   provider?: string
 ): Promise<{ ok: boolean; name: string; model: string }> {
-  return window.kovaDesktop.api<{ ok: boolean; name: string; model: string }>({
+  return window.hermesDesktop.api<{ ok: boolean; name: string; model: string }>({
     ...profileScoped(),
     path: `/api/tools/toolsets/${encodeURIComponent(name)}/model`,
     method: 'PUT',
@@ -1037,7 +1126,7 @@ export function selectToolsetProvider(
   provider: string,
   capability?: 'search' | 'extract'
 ): Promise<SelectToolsetProviderResponse> {
-  return window.kovaDesktop.api<SelectToolsetProviderResponse>({
+  return window.hermesDesktop.api<SelectToolsetProviderResponse>({
     ...profileScoped(),
     path: `/api/tools/toolsets/${encodeURIComponent(name)}/provider`,
     method: 'PUT',
@@ -1046,7 +1135,7 @@ export function selectToolsetProvider(
 }
 
 export function runToolsetPostSetup(name: string, key: string): Promise<ActionResponse & { key: string }> {
-  return window.kovaDesktop.api<ActionResponse & { key: string }>({
+  return window.hermesDesktop.api<ActionResponse & { key: string }>({
     ...profileScoped(),
     path: `/api/tools/toolsets/${encodeURIComponent(name)}/post-setup`,
     method: 'POST',
@@ -1055,14 +1144,14 @@ export function runToolsetPostSetup(name: string, key: string): Promise<ActionRe
 }
 
 export function getTerminalBackends(): Promise<TerminalBackendsResponse> {
-  return window.kovaDesktop.api<TerminalBackendsResponse>({
+  return window.hermesDesktop.api<TerminalBackendsResponse>({
     ...profileScoped(),
     path: '/api/tools/terminal/backends'
   })
 }
 
 export function selectTerminalBackend(backend: string): Promise<{ ok: boolean; backend: string }> {
-  return window.kovaDesktop.api<{ ok: boolean; backend: string }>({
+  return window.hermesDesktop.api<{ ok: boolean; backend: string }>({
     ...profileScoped(),
     path: '/api/tools/terminal/backend',
     method: 'PUT',
@@ -1071,14 +1160,14 @@ export function selectTerminalBackend(backend: string): Promise<{ ok: boolean; b
 }
 
 export function getComputerUseStatus(): Promise<ComputerUseStatus> {
-  return window.kovaDesktop.api<ComputerUseStatus>({
+  return window.hermesDesktop.api<ComputerUseStatus>({
     ...profileScoped(),
     path: '/api/tools/computer-use/status'
   })
 }
 
 export function grantComputerUsePermissions(): Promise<ActionResponse> {
-  return window.kovaDesktop.api<ActionResponse>({
+  return window.hermesDesktop.api<ActionResponse>({
     ...profileScoped(),
     path: '/api/tools/computer-use/permissions/grant',
     method: 'POST'
@@ -1086,7 +1175,7 @@ export function grantComputerUsePermissions(): Promise<ActionResponse> {
 }
 
 export function getMessagingPlatforms(): Promise<MessagingPlatformsResponse> {
-  return window.kovaDesktop.api<MessagingPlatformsResponse>({
+  return window.hermesDesktop.api<MessagingPlatformsResponse>({
     path: '/api/messaging/platforms'
   })
 }
@@ -1095,7 +1184,7 @@ export function updateMessagingPlatform(
   platformId: string,
   body: MessagingPlatformUpdate
 ): Promise<{ ok: boolean; platform: string }> {
-  return window.kovaDesktop.api<{ ok: boolean; platform: string }>({
+  return window.hermesDesktop.api<{ ok: boolean; platform: string }>({
     path: `/api/messaging/platforms/${encodeURIComponent(platformId)}`,
     method: 'PUT',
     body
@@ -1103,9 +1192,92 @@ export function updateMessagingPlatform(
 }
 
 export function testMessagingPlatform(platformId: string): Promise<MessagingPlatformTestResponse> {
-  return window.kovaDesktop.api<MessagingPlatformTestResponse>({
+  return window.hermesDesktop.api<MessagingPlatformTestResponse>({
     path: `/api/messaging/platforms/${encodeURIComponent(platformId)}/test`,
     method: 'POST'
+  })
+}
+
+// -- Pairing (who may DM the bot) --------------------------------------------
+// Unknown DMers get a one-time code and land in `pending` until an admin
+// approves them. Approval grants on the row's `request_id`, never on the code:
+// the code is the requester's proof that the channel is theirs and is never
+// returned by the API, while an authenticated admin is only ever identifying
+// a row they can already see.
+
+export function getPairing(): Promise<PairingResponse> {
+  return window.hermesDesktop.api<PairingResponse>({
+    ...profileScoped(),
+    path: '/api/pairing'
+  })
+}
+
+export function approvePairing(platform: string, requestId: string): Promise<{ ok: boolean; user: PairingUser }> {
+  return window.hermesDesktop.api<{ ok: boolean; user: PairingUser }>({
+    ...profileScoped(),
+    path: '/api/pairing/approve',
+    method: 'POST',
+    // These endpoints read the profile off the body, not the query string —
+    // `profileScoped()` alone would approve into the wrong profile's store.
+    body: { platform, request_id: requestId, ...profileScoped() }
+  })
+}
+
+export function revokePairing(platform: string, userId: string): Promise<{ ok: boolean }> {
+  return window.hermesDesktop.api<{ ok: boolean }>({
+    ...profileScoped(),
+    path: '/api/pairing/revoke',
+    method: 'POST',
+    body: { platform, user_id: userId, ...profileScoped() }
+  })
+}
+
+// -- Webhooks (subscription CRUD) --------------------------------------------
+// The webhook receiver is its own gateway platform; subscriptions live in a
+// shared JSON store the CLI/dashboard also drive. Enable mutates config and
+// best-effort restarts the gateway; subscription changes hot-reload.
+
+export function getWebhooks(): Promise<WebhooksResponse> {
+  return window.hermesDesktop.api<WebhooksResponse>({
+    ...profileScoped(),
+    path: '/api/webhooks'
+  })
+}
+
+export function enableWebhooks(): Promise<WebhookEnableResponse> {
+  return window.hermesDesktop.api<WebhookEnableResponse>({
+    ...profileScoped(),
+    path: '/api/webhooks/enable',
+    method: 'POST'
+  })
+}
+
+export function createWebhook(body: WebhookCreatePayload): Promise<WebhookCreateResponse> {
+  return window.hermesDesktop.api<WebhookCreateResponse>({
+    ...profileScoped(),
+    path: '/api/webhooks',
+    method: 'POST',
+    body
+  })
+}
+
+export function deleteWebhook(name: string): Promise<{ ok: boolean }> {
+  return window.hermesDesktop.api<{ ok: boolean }>({
+    ...profileScoped(),
+    path: `/api/webhooks/${encodeURIComponent(name)}`,
+    method: 'DELETE'
+  })
+}
+
+export function setWebhookEnabled(
+  name: string,
+  enabled: boolean
+): Promise<{ enabled: boolean; name: string; ok: boolean }> {
+  return window.hermesDesktop.api<{ enabled: boolean; name: string; ok: boolean }>({
+    ...profileScoped(),
+    path: `/api/webhooks/${encodeURIComponent(name)}/enabled`,
+    method: 'PUT',
+    body: { enabled }
   })
 }
 
@@ -1117,7 +1289,7 @@ export function testMessagingPlatform(platformId: string): Promise<MessagingPlat
 export function getCronJobs(profile?: string): Promise<CronJob[]> {
   const suffix = profile ? `?profile=${encodeURIComponent(profile)}` : ''
 
-  return window.kovaDesktop.api<CronJob[]>({
+  return window.hermesDesktop.api<CronJob[]>({
     ...profileScoped(),
     path: `/api/cron/jobs${suffix}`,
     timeoutMs: STARTUP_REQUEST_TIMEOUT_MS
@@ -1125,14 +1297,14 @@ export function getCronJobs(profile?: string): Promise<CronJob[]> {
 }
 
 export function getCronJob(jobId: string): Promise<CronJob> {
-  return window.kovaDesktop.api<CronJob>({
+  return window.hermesDesktop.api<CronJob>({
     ...profileScoped(),
     path: `/api/cron/jobs/${encodeURIComponent(jobId)}`
   })
 }
 
 export async function getCronJobRuns(jobId: string, limit = 20): Promise<SessionInfo[]> {
-  const { runs } = await window.kovaDesktop.api<{ runs: SessionInfo[] }>({
+  const { runs } = await window.hermesDesktop.api<{ runs: SessionInfo[] }>({
     ...profileScoped(),
     path: `/api/cron/jobs/${encodeURIComponent(jobId)}/runs?limit=${limit}`
   })
@@ -1140,8 +1312,20 @@ export async function getCronJobRuns(jobId: string, limit = 20): Promise<Session
   return runs ?? []
 }
 
+// The single source of truth for cron delivery targets (local + configured
+// gateways). Both the manual cron editor and the blueprint dialog use this so
+// they never offer a platform that isn't connected. Mirrors the dashboard.
+export async function getCronDeliveryTargets(): Promise<CronDeliveryTarget[]> {
+  const { targets } = await window.hermesDesktop.api<{ targets: CronDeliveryTarget[] }>({
+    ...profileScoped(),
+    path: '/api/cron/delivery-targets'
+  })
+
+  return targets ?? []
+}
+
 export function createCronJob(body: CronJobCreatePayload): Promise<CronJob> {
-  return window.kovaDesktop.api<CronJob>({
+  return window.hermesDesktop.api<CronJob>({
     ...profileScoped(),
     path: '/api/cron/jobs',
     method: 'POST',
@@ -1150,7 +1334,7 @@ export function createCronJob(body: CronJobCreatePayload): Promise<CronJob> {
 }
 
 export function updateCronJob(jobId: string, updates: CronJobUpdates): Promise<CronJob> {
-  return window.kovaDesktop.api<CronJob>({
+  return window.hermesDesktop.api<CronJob>({
     ...profileScoped(),
     path: `/api/cron/jobs/${encodeURIComponent(jobId)}`,
     method: 'PUT',
@@ -1159,7 +1343,7 @@ export function updateCronJob(jobId: string, updates: CronJobUpdates): Promise<C
 }
 
 export function pauseCronJob(jobId: string): Promise<CronJob> {
-  return window.kovaDesktop.api<CronJob>({
+  return window.hermesDesktop.api<CronJob>({
     ...profileScoped(),
     path: `/api/cron/jobs/${encodeURIComponent(jobId)}/pause`,
     method: 'POST'
@@ -1167,7 +1351,7 @@ export function pauseCronJob(jobId: string): Promise<CronJob> {
 }
 
 export function resumeCronJob(jobId: string): Promise<CronJob> {
-  return window.kovaDesktop.api<CronJob>({
+  return window.hermesDesktop.api<CronJob>({
     ...profileScoped(),
     path: `/api/cron/jobs/${encodeURIComponent(jobId)}/resume`,
     method: 'POST'
@@ -1175,7 +1359,7 @@ export function resumeCronJob(jobId: string): Promise<CronJob> {
 }
 
 export function triggerCronJob(jobId: string): Promise<CronJob> {
-  return window.kovaDesktop.api<CronJob>({
+  return window.hermesDesktop.api<CronJob>({
     ...profileScoped(),
     path: `/api/cron/jobs/${encodeURIComponent(jobId)}/trigger`,
     method: 'POST'
@@ -1183,22 +1367,53 @@ export function triggerCronJob(jobId: string): Promise<CronJob> {
 }
 
 export function deleteCronJob(jobId: string): Promise<{ ok: boolean }> {
-  return window.kovaDesktop.api<{ ok: boolean }>({
+  return window.hermesDesktop.api<{ ok: boolean }>({
     ...profileScoped(),
     path: `/api/cron/jobs/${encodeURIComponent(jobId)}`,
     method: 'DELETE'
   })
 }
 
+// Automation Blueprints — parameterized cron templates the backend serves from
+// cron/blueprint_catalog.py. getAutomationBlueprints returns the gallery
+// (deliver options already rewritten to this machine's configured gateways);
+// instantiateAutomationBlueprint fills the slots and creates a real cron job via
+// the same create_job path as createCronJob.
+//
+// Profile-scoping is intentionally asymmetric: the GET catalog is global (the
+// list endpoint takes no profile — only deliver options are rewritten from the
+// configured gateways), so it carries only the profileScoped() header for
+// routing. instantiate creates a real per-profile job, so it names the target
+// profile explicitly via ?profile=. This mirrors the dashboard's api.ts.
+export function getAutomationBlueprints(): Promise<{ blueprints: AutomationBlueprint[] }> {
+  return window.hermesDesktop.api<{ blueprints: AutomationBlueprint[] }>({
+    ...profileScoped(),
+    path: '/api/cron/blueprints',
+    timeoutMs: STARTUP_REQUEST_TIMEOUT_MS
+  })
+}
+
+export function instantiateAutomationBlueprint(
+  body: { blueprint: string; values: Record<string, string> },
+  profile: string
+): Promise<CronJob> {
+  return window.hermesDesktop.api<CronJob>({
+    ...profileScoped(),
+    path: `/api/cron/blueprints/instantiate?profile=${encodeURIComponent(profile)}`,
+    method: 'POST',
+    body
+  })
+}
+
 export function getProfiles(): Promise<ProfilesResponse> {
-  return window.kovaDesktop.api<ProfilesResponse>({
+  return window.hermesDesktop.api<ProfilesResponse>({
     path: '/api/profiles',
     timeoutMs: STARTUP_REQUEST_TIMEOUT_MS
   })
 }
 
 export function createProfile(body: ProfileCreatePayload): Promise<{ name: string; ok: boolean; path: string }> {
-  return window.kovaDesktop.api<{ name: string; ok: boolean; path: string }>({
+  return window.hermesDesktop.api<{ name: string; ok: boolean; path: string }>({
     path: '/api/profiles',
     method: 'POST',
     body
@@ -1206,7 +1421,7 @@ export function createProfile(body: ProfileCreatePayload): Promise<{ name: strin
 }
 
 export function renameProfile(name: string, newName: string): Promise<{ name: string; ok: boolean; path: string }> {
-  return window.kovaDesktop.api<{ name: string; ok: boolean; path: string }>({
+  return window.hermesDesktop.api<{ name: string; ok: boolean; path: string }>({
     path: `/api/profiles/${encodeURIComponent(name)}`,
     method: 'PATCH',
     body: { new_name: newName }
@@ -1214,20 +1429,20 @@ export function renameProfile(name: string, newName: string): Promise<{ name: st
 }
 
 export function deleteProfile(name: string): Promise<{ ok: boolean; path: string }> {
-  return window.kovaDesktop.api<{ ok: boolean; path: string }>({
+  return window.hermesDesktop.api<{ ok: boolean; path: string }>({
     path: `/api/profiles/${encodeURIComponent(name)}`,
     method: 'DELETE'
   })
 }
 
 export function getProfileSoul(name: string): Promise<ProfileSoul> {
-  return window.kovaDesktop.api<ProfileSoul>({
+  return window.hermesDesktop.api<ProfileSoul>({
     path: `/api/profiles/${encodeURIComponent(name)}/soul`
   })
 }
 
 export function updateProfileSoul(name: string, content: string): Promise<{ ok: boolean }> {
-  return window.kovaDesktop.api<{ ok: boolean }>({
+  return window.hermesDesktop.api<{ ok: boolean }>({
     path: `/api/profiles/${encodeURIComponent(name)}/soul`,
     method: 'PUT',
     body: { content }
@@ -1235,13 +1450,43 @@ export function updateProfileSoul(name: string, content: string): Promise<{ ok: 
 }
 
 export function getProfileSetupCommand(name: string): Promise<ProfileSetupCommand> {
-  return window.kovaDesktop.api<ProfileSetupCommand>({
+  return window.hermesDesktop.api<ProfileSetupCommand>({
     path: `/api/profiles/${encodeURIComponent(name)}/setup-command`
   })
 }
 
+/** Export a profile to a shareable .tar.gz on the backend's filesystem.
+ *  `extraFiles` stages extra root-level files (desktop.json — the appearance/
+ *  interface overlay) into the archive alongside the profile's own artifacts. */
+export function exportProfileArchive(
+  name: string,
+  opts: { extraFiles?: Record<string, string>; output?: string } = {}
+): Promise<{ archive: string; ok: boolean }> {
+  return window.hermesDesktop.api<{ archive: string; ok: boolean }>({
+    path: `/api/profiles/${encodeURIComponent(name)}/export`,
+    method: 'POST',
+    body: { extra_files: opts.extraFiles ?? {}, output: opts.output ?? '' },
+    timeoutMs: STARTUP_REQUEST_TIMEOUT_MS
+  })
+}
+
+/** Import a profile .tar.gz as a new profile. Returns the bundled desktop
+ *  appearance overlay too (when the archive carried one) so the caller can
+ *  apply theme/layout without another round-trip. */
+export function importProfileArchive(
+  archive: string,
+  name?: string
+): Promise<{ desktop: null | ProfileDesktopOverlay; name: string; ok: boolean; path: string }> {
+  return window.hermesDesktop.api<{ desktop: null | ProfileDesktopOverlay; name: string; ok: boolean; path: string }>({
+    path: '/api/profiles/import',
+    method: 'POST',
+    body: { archive, name: name || null },
+    timeoutMs: STARTUP_REQUEST_TIMEOUT_MS
+  })
+}
+
 export function getUsageAnalytics(days = 30): Promise<AnalyticsResponse> {
-  return window.kovaDesktop.api<AnalyticsResponse>({
+  return window.hermesDesktop.api<AnalyticsResponse>({
     ...profileScoped(),
     path: `/api/analytics/usage?days=${Math.max(1, Math.floor(days))}`
   })
@@ -1266,7 +1511,7 @@ export function getGlobalModelOptions(opts?: {
     params.set('explicit_only', '1')
   }
 
-  return window.kovaDesktop.api<ModelOptionsResponse>({
+  return window.hermesDesktop.api<ModelOptionsResponse>({
     ...profileScoped(),
     path: params.size > 0 ? `/api/model/options?${params.toString()}` : '/api/model/options',
     timeoutMs: STARTUP_REQUEST_TIMEOUT_MS
@@ -1284,7 +1529,7 @@ export interface RecommendedDefaultModel {
 // curation `kova model` does — for Nous it honors the free/paid tier so a
 // free user gets a free model instead of a paid default.
 export function getRecommendedDefaultModel(provider: string): Promise<RecommendedDefaultModel> {
-  return window.kovaDesktop.api<RecommendedDefaultModel>({
+  return window.hermesDesktop.api<RecommendedDefaultModel>({
     ...profileScoped(),
     path: `/api/model/recommended-default?provider=${encodeURIComponent(provider)}`
   })
@@ -1294,7 +1539,7 @@ export function setGlobalModel(
   provider: string,
   model: string
 ): Promise<{ ok: boolean; provider: string; model: string }> {
-  return window.kovaDesktop.api<{ ok: boolean; provider: string; model: string }>({
+  return window.hermesDesktop.api<{ ok: boolean; provider: string; model: string }>({
     ...profileScoped(),
     path: '/api/model/set',
     method: 'POST',
@@ -1307,21 +1552,21 @@ export function setGlobalModel(
 }
 
 export function getAuxiliaryModels(): Promise<AuxiliaryModelsResponse> {
-  return window.kovaDesktop.api<AuxiliaryModelsResponse>({
+  return window.hermesDesktop.api<AuxiliaryModelsResponse>({
     ...profileScoped(),
     path: '/api/model/auxiliary'
   })
 }
 
 export function getMoaModels(): Promise<MoaConfigResponse> {
-  return window.kovaDesktop.api<MoaConfigResponse>({
+  return window.hermesDesktop.api<MoaConfigResponse>({
     ...profileScoped(),
     path: '/api/model/moa'
   })
 }
 
 export function saveMoaModels(body: MoaConfigResponse): Promise<MoaConfigResponse & { ok: boolean }> {
-  return window.kovaDesktop.api<MoaConfigResponse & { ok: boolean }>({
+  return window.hermesDesktop.api<MoaConfigResponse & { ok: boolean }>({
     ...profileScoped(),
     path: '/api/model/moa',
     method: 'PUT',
@@ -1330,7 +1575,7 @@ export function saveMoaModels(body: MoaConfigResponse): Promise<MoaConfigRespons
 }
 
 export function setModelAssignment(body: ModelAssignmentRequest): Promise<ModelAssignmentResponse> {
-  return window.kovaDesktop.api<ModelAssignmentResponse>({
+  return window.hermesDesktop.api<ModelAssignmentResponse>({
     ...profileScoped(),
     path: '/api/model/set',
     method: 'POST',
@@ -1339,15 +1584,15 @@ export function setModelAssignment(body: ModelAssignmentRequest): Promise<ModelA
 }
 
 export function restartGateway(): Promise<ActionResponse> {
-  return window.kovaDesktop.api<ActionResponse>({
+  return window.hermesDesktop.api<ActionResponse>({
     ...profileScoped(),
     path: '/api/gateway/restart',
     method: 'POST'
   })
 }
 
-export function updateKova(): Promise<ActionResponse> {
-  return window.kovaDesktop.api<ActionResponse>({
+export function updateHermes(): Promise<ActionResponse> {
+  return window.hermesDesktop.api<ActionResponse>({
     ...profileScoped(),
     path: '/api/kova/update',
     method: 'POST'
@@ -1357,24 +1602,25 @@ export function updateKova(): Promise<ActionResponse> {
 /** Query the connected backend's own update state. In remote mode this is the
  *  authoritative source for the backend's behind-count + "what's changed",
  *  distinct from the Electron client clone's git state. */
-export function checkKovaUpdate(force = false): Promise<BackendUpdateCheckResponse> {
-  return window.kovaDesktop.api<BackendUpdateCheckResponse>({
+export function checkHermesUpdate(force = false): Promise<BackendUpdateCheckResponse> {
+  return window.hermesDesktop.api<BackendUpdateCheckResponse>({
     ...profileScoped(),
     path: `/api/kova/update/check${force ? '?force=true' : ''}`
   })
 }
 
 export function getActionStatus(name: string, lines = 200): Promise<ActionStatusResponse> {
-  return window.kovaDesktop.api<ActionStatusResponse>({
+  return window.hermesDesktop.api<ActionStatusResponse>({
     ...profileScoped(),
     path: `/api/actions/${encodeURIComponent(name)}/status?lines=${Math.max(1, lines)}`
   })
 }
 
 export function transcribeAudio(dataUrl: string, mimeType?: string): Promise<AudioTranscriptionResponse> {
-  return window.kovaDesktop.api<AudioTranscriptionResponse>({
+  return window.hermesDesktop.api<AudioTranscriptionResponse>({
     path: '/api/audio/transcribe',
     method: 'POST',
+    ...profileScoped(),
     body: {
       data_url: dataUrl,
       mime_type: mimeType
@@ -1387,7 +1633,8 @@ export function transcribeAudio(dataUrl: string, mimeType?: string): Promise<Aud
 }
 
 export function speakText(text: string): Promise<AudioSpeakResponse> {
-  return window.kovaDesktop.api<AudioSpeakResponse>({
+  return window.hermesDesktop.api<AudioSpeakResponse>({
+    ...profileScoped(),
     path: '/api/audio/speak',
     method: 'POST',
     body: { text },
@@ -1399,8 +1646,9 @@ export function speakText(text: string): Promise<AudioSpeakResponse> {
 }
 
 export function getElevenLabsVoices(): Promise<ElevenLabsVoicesResponse> {
-  return window.kovaDesktop.api<ElevenLabsVoicesResponse>({
-    path: '/api/audio/elevenlabs/voices'
+  return window.hermesDesktop.api<ElevenLabsVoicesResponse>({
+    path: '/api/audio/elevenlabs/voices',
+    ...profileScoped()
   })
 }
 
@@ -1413,7 +1661,7 @@ export function getElevenLabsVoices(): Promise<ElevenLabsVoicesResponse> {
 const HUB_REQUEST_TIMEOUT_MS = 45_000
 
 export function getSkillHubSources(): Promise<SkillHubSourcesResponse> {
-  return window.kovaDesktop.api<SkillHubSourcesResponse>({
+  return window.hermesDesktop.api<SkillHubSourcesResponse>({
     ...profileScoped(),
     path: '/api/skills/hub/sources',
     timeoutMs: HUB_REQUEST_TIMEOUT_MS
@@ -1423,7 +1671,7 @@ export function getSkillHubSources(): Promise<SkillHubSourcesResponse> {
 export function searchSkillsHub(query: string, source = 'all', limit = 20): Promise<SkillHubSearchResponse> {
   const params = new URLSearchParams({ q: query, source, limit: String(limit) })
 
-  return window.kovaDesktop.api<SkillHubSearchResponse>({
+  return window.hermesDesktop.api<SkillHubSearchResponse>({
     ...profileScoped(),
     path: `/api/skills/hub/search?${params.toString()}`,
     timeoutMs: HUB_REQUEST_TIMEOUT_MS
@@ -1431,7 +1679,7 @@ export function searchSkillsHub(query: string, source = 'all', limit = 20): Prom
 }
 
 export function previewSkillHub(identifier: string): Promise<SkillHubPreview> {
-  return window.kovaDesktop.api<SkillHubPreview>({
+  return window.hermesDesktop.api<SkillHubPreview>({
     ...profileScoped(),
     path: `/api/skills/hub/preview?identifier=${encodeURIComponent(identifier)}`,
     timeoutMs: HUB_REQUEST_TIMEOUT_MS
@@ -1439,7 +1687,7 @@ export function previewSkillHub(identifier: string): Promise<SkillHubPreview> {
 }
 
 export function scanSkillHub(identifier: string): Promise<SkillHubScanResult> {
-  return window.kovaDesktop.api<SkillHubScanResult>({
+  return window.hermesDesktop.api<SkillHubScanResult>({
     ...profileScoped(),
     path: `/api/skills/hub/scan?identifier=${encodeURIComponent(identifier)}`,
     timeoutMs: HUB_REQUEST_TIMEOUT_MS
@@ -1447,7 +1695,7 @@ export function scanSkillHub(identifier: string): Promise<SkillHubScanResult> {
 }
 
 export function installSkillFromHub(identifier: string): Promise<ActionResponse> {
-  return window.kovaDesktop.api<ActionResponse>({
+  return window.hermesDesktop.api<ActionResponse>({
     ...profileScoped(),
     path: '/api/skills/hub/install',
     method: 'POST',
@@ -1456,7 +1704,7 @@ export function installSkillFromHub(identifier: string): Promise<ActionResponse>
 }
 
 export function uninstallSkillFromHub(name: string): Promise<ActionResponse> {
-  return window.kovaDesktop.api<ActionResponse>({
+  return window.hermesDesktop.api<ActionResponse>({
     ...profileScoped(),
     path: '/api/skills/hub/uninstall',
     method: 'POST',
@@ -1465,7 +1713,7 @@ export function uninstallSkillFromHub(name: string): Promise<ActionResponse> {
 }
 
 export function updateSkillsFromHub(): Promise<ActionResponse> {
-  return window.kovaDesktop.api<ActionResponse>({
+  return window.hermesDesktop.api<ActionResponse>({
     ...profileScoped(),
     path: '/api/skills/hub/update',
     method: 'POST',
@@ -1476,18 +1724,18 @@ export function updateSkillsFromHub(): Promise<ActionResponse> {
 // ---------------------------------------------------------------------------
 // MCP servers — structured list / test / enable toggle / catalog (parity with
 // `kova mcp` and the dashboard MCP page). Raw JSON editing stays in
-// config.yaml via saveKovaConfig.
+// config.yaml via saveHermesConfig.
 // ---------------------------------------------------------------------------
 
 export function listMcpServers(): Promise<{ servers: McpServerSummary[] }> {
-  return window.kovaDesktop.api<{ servers: McpServerSummary[] }>({
+  return window.hermesDesktop.api<{ servers: McpServerSummary[] }>({
     ...profileScoped(),
     path: '/api/mcp/servers'
   })
 }
 
 export function setMcpServerEnabled(name: string, enabled: boolean): Promise<{ ok: boolean }> {
-  return window.kovaDesktop.api<{ ok: boolean }>({
+  return window.hermesDesktop.api<{ ok: boolean }>({
     ...profileScoped(),
     path: `/api/mcp/servers/${encodeURIComponent(name)}/enabled`,
     method: 'PUT',
@@ -1496,7 +1744,7 @@ export function setMcpServerEnabled(name: string, enabled: boolean): Promise<{ o
 }
 
 export function getMcpCatalog(): Promise<McpCatalogResponse> {
-  return window.kovaDesktop.api<McpCatalogResponse>({
+  return window.hermesDesktop.api<McpCatalogResponse>({
     ...profileScoped(),
     path: '/api/mcp/catalog'
   })
@@ -1506,7 +1754,7 @@ export function installMcpCatalogEntry(
   name: string,
   env: Record<string, string> = {}
 ): Promise<{ ok: boolean; name?: string; pid?: number; action?: string; background?: boolean }> {
-  return window.kovaDesktop.api<{ ok: boolean; name?: string; pid?: number; action?: string; background?: boolean }>({
+  return window.hermesDesktop.api<{ ok: boolean; name?: string; pid?: number; action?: string; background?: boolean }>({
     ...profileScoped(),
     path: '/api/mcp/catalog/install',
     method: 'POST',
@@ -1520,14 +1768,14 @@ export function installMcpCatalogEntry(
 // ---------------------------------------------------------------------------
 
 export function getMemoryStatus(): Promise<MemoryStatusResponse> {
-  return window.kovaDesktop.api<MemoryStatusResponse>({
+  return window.hermesDesktop.api<MemoryStatusResponse>({
     ...profileScoped(),
     path: '/api/memory'
   })
 }
 
 export function resetMemory(target: 'all' | 'memory' | 'user'): Promise<{ ok: boolean; deleted: string[] }> {
-  return window.kovaDesktop.api<{ ok: boolean; deleted: string[] }>({
+  return window.hermesDesktop.api<{ ok: boolean; deleted: string[] }>({
     ...profileScoped(),
     path: '/api/memory/reset',
     method: 'POST',
@@ -1536,14 +1784,14 @@ export function resetMemory(target: 'all' | 'memory' | 'user'): Promise<{ ok: bo
 }
 
 export function getCuratorStatus(): Promise<CuratorStatusResponse> {
-  return window.kovaDesktop.api<CuratorStatusResponse>({
+  return window.hermesDesktop.api<CuratorStatusResponse>({
     ...profileScoped(),
     path: '/api/curator'
   })
 }
 
 export function setCuratorPaused(paused: boolean): Promise<{ ok: boolean; paused: boolean }> {
-  return window.kovaDesktop.api<{ ok: boolean; paused: boolean }>({
+  return window.hermesDesktop.api<{ ok: boolean; paused: boolean }>({
     ...profileScoped(),
     path: '/api/curator/paused',
     method: 'PUT',
@@ -1552,7 +1800,7 @@ export function setCuratorPaused(paused: boolean): Promise<{ ok: boolean; paused
 }
 
 export function runCurator(): Promise<ActionResponse> {
-  return window.kovaDesktop.api<ActionResponse>({
+  return window.hermesDesktop.api<ActionResponse>({
     ...profileScoped(),
     path: '/api/curator/run',
     method: 'POST',
@@ -1568,15 +1816,15 @@ export function runCurator(): Promise<ActionResponse> {
 // ---------------------------------------------------------------------------
 
 export function runDoctor(): Promise<ActionResponse> {
-  return window.kovaDesktop.api<ActionResponse>({ path: '/api/ops/doctor', method: 'POST', body: {} })
+  return window.hermesDesktop.api<ActionResponse>({ path: '/api/ops/doctor', method: 'POST', body: {} })
 }
 
 export function runSecurityAudit(): Promise<ActionResponse> {
-  return window.kovaDesktop.api<ActionResponse>({ path: '/api/ops/security-audit', method: 'POST', body: {} })
+  return window.hermesDesktop.api<ActionResponse>({ path: '/api/ops/security-audit', method: 'POST', body: {} })
 }
 
 export function runBackup(): Promise<ActionResponse & { archive?: string }> {
-  return window.kovaDesktop.api<ActionResponse & { archive?: string }>({
+  return window.hermesDesktop.api<ActionResponse & { archive?: string }>({
     path: '/api/ops/backup',
     method: 'POST',
     body: {}
@@ -1584,7 +1832,7 @@ export function runBackup(): Promise<ActionResponse & { archive?: string }> {
 }
 
 export function runDebugShare(): Promise<DebugShareResponse> {
-  return window.kovaDesktop.api<DebugShareResponse>({
+  return window.hermesDesktop.api<DebugShareResponse>({
     path: '/api/ops/debug-share',
     method: 'POST',
     body: {},

@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch
 
-from cli import KovaCLI
+from cli import HermesCLI
 
 
 class _InsightsEngineStub:
@@ -18,7 +18,7 @@ class _InsightsEngineStub:
 
 
 def _run_show_insights(command: str):
-    cli_obj = KovaCLI.__new__(KovaCLI)
+    cli_obj = HermesCLI.__new__(HermesCLI)
     db = MagicMock()
     _InsightsEngineStub.calls = []
     with patch("kova_state.SessionDB", return_value=db), \

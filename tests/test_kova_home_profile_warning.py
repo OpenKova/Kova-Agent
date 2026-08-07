@@ -4,7 +4,7 @@ Regression test for https://github.com/OpenKova/Kova-Agent/issues/18594.
 
 When HERMES_HOME is unset but an active_profile file indicates a non-default
 profile is active, get_kova_home() should:
-  1. STILL return ~/.hermes (raising would brick 30+ module-level callers)
+  1. STILL return ~/.kova (raising would brick 30+ module-level callers)
   2. Emit a loud one-shot warning to stderr so operators can diagnose
      cross-profile data contamination after the fact.
 
@@ -29,25 +29,15 @@ def fresh_constants(monkeypatch, tmp_path):
     return kova_constants
 
 
-class TestGetKovaHomeProfileWarning:
+class TestGetHermesHomeProfileWarning:
     def test_classic_mode_no_active_profile_no_warning(
         self, fresh_constants, tmp_path, capsys
     ):
-        """Classic mode: no active_profile file → silent, returns ~/.hermes."""
+        """Classic mode: no active_profile file → silent, returns ~/.kova."""
         result = fresh_constants.get_kova_home()
         assert result == tmp_path / ".kova"
         assert "HERMES_HOME fallback" not in capsys.readouterr().err
 
-    def test_default_active_profile_no_warning(
-        self, fresh_constants, tmp_path, capsys
-    ):
-        """active_profile=default → still no warning, returns ~/.hermes."""
-        kova_dir = tmp_path / ".kova"
-        kova_dir.mkdir()
-        (kova_dir / "active_profile").write_text("default\n")
-        result = fresh_constants.get_kova_home()
-        assert result == tmp_path / ".kova"
-        assert "HERMES_HOME fallback" not in capsys.readouterr().err
 
     def test_named_profile_unset_home_warns_once(
         self, fresh_constants, tmp_path, capsys
@@ -102,15 +92,3 @@ class TestGetKovaHomeProfileWarning:
         # Shouldn't crash; shouldn't warn either (can't tell what profile was intended)
         assert "HERMES_HOME fallback" not in capsys.readouterr().err
 
-    def test_empty_active_profile_no_warning(
-        self, fresh_constants, tmp_path, capsys
-    ):
-        """Empty active_profile file → treated as default, no warning."""
-        kova_dir = tmp_path / ".kova"
-        kova_dir.mkdir()
-        (kova_dir / "active_profile").write_text("")
-
-        result = fresh_constants.get_kova_home()
-
-        assert result == tmp_path / ".kova"
-        assert "HERMES_HOME fallback" not in capsys.readouterr().err

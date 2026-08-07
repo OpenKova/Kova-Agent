@@ -21,7 +21,7 @@ flowchart LR
 Open WebUI connects to Kova Agent's API server just like it would connect to OpenAI. Kova handles the requests with its full toolset — terminal, file operations, web search, memory, skills — and returns the final response.
 
 :::important Runtime location
-The API server is a **Kova Agent runtime**, not a pure LLM proxy. For each request, Kova creates a server-side `AIAgent` on the API-server host. Tool calls run where that API server is running.
+The API server is a **Kova agent runtime**, not a pure LLM proxy. For each request, Kova creates a server-side `AIAgent` on the API-server host. Tool calls run where that API server is running.
 
 For example, if a laptop points Open WebUI or another OpenAI-compatible client at a Kova API server on a remote machine, `pwd`, file tools, browser tools, local MCP tools, and other workspace tools run on the remote API-server host, not on the laptop.
 :::
@@ -37,7 +37,7 @@ kova config set API_SERVER_ENABLED true
 kova config set API_SERVER_KEY your-secret-key
 ```
 
-`kova config set` auto-routes the flag to `config.yaml` and the secret to `~/.hermes/.env`. If the gateway is already running, restart it so the change takes effect:
+`kova config set` auto-routes the flag to `config.yaml` and the secret to `~/.kova/.env`. If the gateway is already running, restart it so the change takes effect:
 
 ```bash
 kova gateway stop && kova gateway
@@ -241,14 +241,14 @@ To run separate Kova instances per user — each with their own config, memory, 
 
 ```bash
 kova profile create alice
-cat >> ~/.hermes/profiles/alice/.env <<EOF
+cat >> ~/.kova/profiles/alice/.env <<EOF
 API_SERVER_ENABLED=true
 API_SERVER_PORT=8650
 API_SERVER_KEY=alice-secret
 EOF
 
 kova profile create bob
-cat >> ~/.hermes/profiles/bob/.env <<EOF
+cat >> ~/.kova/profiles/bob/.env <<EOF
 API_SERVER_ENABLED=true
 API_SERVER_PORT=8651
 API_SERVER_KEY=bob-secret
@@ -271,7 +271,7 @@ In **Admin Settings** → **Connections** → **OpenAI API** → **Manage**, add
 | Alice | `http://host.docker.internal:8650/v1` | `alice-secret` |
 | Bob | `http://host.docker.internal:8651/v1` | `bob-secret` |
 
-The model dropdown will show `alice` and `bob` as distinct models. You can assign models to Open WebUI users via the admin panel, giving each user their own isolated Kova Agent.
+The model dropdown will show `alice` and `bob` as distinct models. You can assign models to Open WebUI users via the admin panel, giving each user their own isolated Kova agent.
 
 :::tip Custom Model Names
 The model name defaults to the profile name. To override it, set `API_SERVER_MODEL_NAME` in the profile's `.env`:

@@ -14,7 +14,8 @@ export type Locale =
   | "ga"
   | "pt"
   | "ru"
-  | "hu";
+  | "hu"
+  | "ar";
 
 export interface Translations {
   // ── Common ──
@@ -148,11 +149,11 @@ export interface Translations {
     starting: string;
     startedInBackground: string;
     stopped: string;
-    updateKova: string;
-    updateKovaConfirmMessage?: string;
-    updateKovaConfirmNow?: string;
-    updateKovaConfirmTitle?: string;
-    updatingKova: string;
+    updateHermes: string;
+    updateHermesConfirmMessage?: string;
+    updateHermesConfirmNow?: string;
+    updateHermesConfirmTitle?: string;
+    updatingHermes: string;
     waitingForOutput: string;
   };
 
@@ -161,8 +162,14 @@ export interface Translations {
     title: string;
     history: string;
     overview: string;
+    filterChats: string;
+    filterAutomation: string;
+    filterAll: string;
+    sourceFilter: string;
+    anySource: string;
     searchPlaceholder: string;
     noSessions: string;
+    noSessionsInFilter: string;
     noMatch: string;
     startConversation: string;
     noMessages: string;

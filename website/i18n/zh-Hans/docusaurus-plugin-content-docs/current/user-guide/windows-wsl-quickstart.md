@@ -100,7 +100,7 @@ wsl --shutdown
 打开 WSL2 shell 后执行：
 
 ```bash
-curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+curl -fsSL https://kova-agent.nousresearch.com/install.sh | bash
 source ~/.bashrc
 kova
 ```
@@ -124,7 +124,7 @@ kova
 
 **经验法则：将所有 Linux 相关内容保留在 Linux 文件系统内。**
 
-- 你的 Kova 安装目录（`~/.hermes/`）—— Linux 侧。安装程序已自动处理。
+- 你的 Kova 安装目录（`~/.kova/`）—— Linux 侧。安装程序已自动处理。
 - 你在 WSL 中开发的 git 仓库 —— Linux 侧（`~/code/...`、`~/projects/...`）。
 - 你的模型、数据集、venv —— Linux 侧。
 

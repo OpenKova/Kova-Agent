@@ -9,7 +9,7 @@ platforms: [linux, macos, windows]
 metadata:
   kova:
     tags: [diagrams, svg, visualization, education, physics, chemistry, engineering]
-    related_skills: [architecture-diagram, excalidraw, generative-widgets]
+    related_skills: [architecture-diagram, excalidraw]
 ---
 
 # Concept Diagrams

@@ -99,9 +99,9 @@ pub fn run() {
     let _guard = paths::init_logging();
 
     let mode = AppMode::from_args(std::env::args().skip(1));
-            // Escape hatch: `--reinstall`/`--repair` forces the installer UI even when
-            // Kova is already installed, so users can re-run setup to repair a broken
-            // install instead of the launcher fast path silently relaunching the app.
+    // Escape hatch: `--reinstall`/`--repair` forces the installer UI even when
+    // Kova is already installed, so users can re-run setup to repair a broken
+    // install instead of the launcher fast path silently relaunching the app.
     let force_setup = force_setup_from_args(std::env::args().skip(1));
     tracing::info!(?mode, force_setup, "Kova installer starting");
 
@@ -113,9 +113,6 @@ pub fn run() {
         .manage(Arc::new(AppState::new(mode)))
         .setup(move |app| {
             use tauri::Manager;
-            // The window starts hidden (`visible: false` in tauri.conf.json) and
-            // the webview sets a white background via CSS before we call show().
-            // This prevents the default blue flash on Windows.
             // Launcher fast path (macOS only): a bare ("Install") launch when
             // Kova is already installed should NOT show the installer or
             // rebuild — it should just open the app, so the /Applications

@@ -46,7 +46,7 @@ python -m pip install -e '.[termux]' -c constraints-termux.txt
 Kova 现已内置 Termux 感知的安装路径：
 
 ```bash
-curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+curl -fsSL https://kova-agent.nousresearch.com/install.sh | bash
 ```
 
 在 Termux 上，安装程序会自动：
@@ -138,7 +138,7 @@ kova
 kova model
 ```
 
-或直接在 `~/.hermes/.env` 中设置密钥。
+或直接在 `~/.kova/.env` 中设置密钥。
 
 ### 稍后重新运行完整的交互式设置向导
 

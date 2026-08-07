@@ -19,37 +19,39 @@ You need at least one way to connect to an LLM. Use `kova model` to switch provi
 | **GitHub Copilot** | `kova model` (OAuth device code flow, `COPILOT_GITHUB_TOKEN`, `GH_TOKEN`, or `gh auth token`) |
 | **GitHub Copilot ACP** | `kova model` (spawns local `copilot --acp --stdio`) |
 | **Anthropic** | `kova model` (Claude Max + extra usage credits via OAuth; also supports Anthropic API key or manual setup-token — see note below) |
-| **OpenRouter** | `OPENROUTER_API_KEY` in `~/.hermes/.env` |
-| **Fireworks AI** | `FIREWORKS_API_KEY` in `~/.hermes/.env` (provider: `fireworks`; aliases: `fireworks-ai`, `fw`) |
-| **NovitaAI** | `NOVITA_API_KEY` in `~/.hermes/.env` (provider: `novita`, 200+ models, Model API, Agent Sandbox, GPU Cloud) |
-| **z.ai / GLM** | `GLM_API_KEY` in `~/.hermes/.env` (provider: `zai`) |
-| **Kimi / Moonshot** | `KIMI_API_KEY` in `~/.hermes/.env` (provider: `kimi-coding`) |
-| **Kimi / Moonshot (China)** | `KIMI_CN_API_KEY` in `~/.hermes/.env` (provider: `kimi-coding-cn`; aliases: `kimi-cn`, `moonshot-cn`) |
-| **Arcee AI** | `ARCEEAI_API_KEY` in `~/.hermes/.env` (provider: `arcee`; aliases: `arcee-ai`, `arceeai`) |
-| **GMI Cloud** | `GMI_API_KEY` in `~/.hermes/.env` (provider: `gmi`; aliases: `gmi-cloud`, `gmicloud`) |
-| **MiniMax** | `MINIMAX_API_KEY` in `~/.hermes/.env` (provider: `minimax`) |
-| **MiniMax China** | `MINIMAX_CN_API_KEY` in `~/.hermes/.env` (provider: `minimax-cn`) |
-| **xAI (Grok) — Responses API** | `XAI_API_KEY` in `~/.hermes/.env` (provider: `xai`) |
+| **OpenRouter** | `OPENROUTER_API_KEY` in `~/.kova/.env` |
+| **Fireworks AI** | `FIREWORKS_API_KEY` in `~/.kova/.env` (provider: `fireworks`; aliases: `fireworks-ai`, `fw`) |
+| **NovitaAI** | `NOVITA_API_KEY` in `~/.kova/.env` (provider: `novita`, 200+ models, Model API, Agent Sandbox, GPU Cloud) |
+| **AI Gateway** | `AI_GATEWAY_API_KEY` in `~/.kova/.env` (provider: `ai-gateway`) |
+| **z.ai / GLM** | `GLM_API_KEY` in `~/.kova/.env` (provider: `zai`) |
+| **Kimi / Moonshot** | `KIMI_API_KEY` in `~/.kova/.env` (provider: `kimi-coding`) |
+| **Kimi / Moonshot (China)** | `KIMI_CN_API_KEY` in `~/.kova/.env` (provider: `kimi-coding-cn`; aliases: `kimi-cn`, `moonshot-cn`) |
+| **Arcee AI** | `ARCEEAI_API_KEY` in `~/.kova/.env` (provider: `arcee`; aliases: `arcee-ai`, `arceeai`) |
+| **GMI Cloud** | `GMI_API_KEY` in `~/.kova/.env` (provider: `gmi`; aliases: `gmi-cloud`, `gmicloud`) |
+| **Actual Computer** | `ACTUAL_API_KEY` in `~/.kova/.env` for the hosted relay, or `ACTUAL_BASE_URL=http://127.0.0.1:8080` for the local daemon — no key needed on loopback (provider: `actual`; aliases: `actual-computer`, `actualcomputer`, `aci`) |
+| **MiniMax** | `MINIMAX_API_KEY` in `~/.kova/.env` (provider: `minimax`) |
+| **MiniMax China** | `MINIMAX_CN_API_KEY` in `~/.kova/.env` (provider: `minimax-cn`) |
+| **xAI (Grok) — Responses API** | `XAI_API_KEY` in `~/.kova/.env` (provider: `xai`) |
 | **xAI Grok OAuth (SuperGrok)** | `kova model` → "xAI Grok OAuth (SuperGrok / Premium+)" — browser login, no API key. See [guide](../guides/xai-grok-oauth.md) |
-| **Qwen Cloud (Alibaba DashScope)** | `DASHSCOPE_API_KEY` in `~/.hermes/.env` (provider: `alibaba`) |
+| **Qwen Cloud (Alibaba DashScope)** | `DASHSCOPE_API_KEY` in `~/.kova/.env` (provider: `alibaba`) |
 | **Alibaba Cloud (Coding Plan)** | `DASHSCOPE_API_KEY` (provider: `alibaba-coding-plan`, alias: `alibaba_coding`) — separate billing SKU, different endpoint |
-| **Kilo Code** | `KILOCODE_API_KEY` in `~/.hermes/.env` (provider: `kilocode`) |
-| **Xiaomi MiMo** | `XIAOMI_API_KEY` in `~/.hermes/.env` (provider: `xiaomi`, aliases: `mimo`, `xiaomi-mimo`) |
-| **Tencent TokenHub** | `TOKENHUB_API_KEY` in `~/.hermes/.env` (provider: `tencent-tokenhub`, aliases: `tencent`, `tokenhub`, `tencentmaas`) |
-| **OpenCode Zen** | `OPENCODE_ZEN_API_KEY` in `~/.hermes/.env` (provider: `opencode-zen`) |
-| **OpenCode Go** | `OPENCODE_GO_API_KEY` in `~/.hermes/.env` (provider: `opencode-go`) |
-| **DeepSeek** | `DEEPSEEK_API_KEY` in `~/.hermes/.env` (provider: `deepseek`) |
-| **Hugging Face** | `HF_TOKEN` in `~/.hermes/.env` (provider: `huggingface`, aliases: `hf`) |
-| **Google / Gemini** | `GOOGLE_API_KEY` (or `GEMINI_API_KEY`) in `~/.hermes/.env` (provider: `gemini`) |
+| **Kilo Code** | `KILOCODE_API_KEY` in `~/.kova/.env` (provider: `kilocode`) |
+| **Xiaomi MiMo** | `XIAOMI_API_KEY` in `~/.kova/.env` (provider: `xiaomi`, aliases: `mimo`, `xiaomi-mimo`) |
+| **Tencent TokenHub** | `TOKENHUB_API_KEY` in `~/.kova/.env` (provider: `tencent-tokenhub`, aliases: `tencent`, `tokenhub`, `tencentmaas`) |
+| **OpenCode Zen** | `OPENCODE_ZEN_API_KEY` in `~/.kova/.env` (provider: `opencode-zen`) |
+| **OpenCode Go** | `OPENCODE_GO_API_KEY` in `~/.kova/.env` (provider: `opencode-go`) |
+| **DeepSeek** | `DEEPSEEK_API_KEY` in `~/.kova/.env` (provider: `deepseek`) |
+| **Hugging Face** | `HF_TOKEN` in `~/.kova/.env` (provider: `huggingface`, aliases: `hf`) |
+| **Google / Gemini** | `GOOGLE_API_KEY` (or `GEMINI_API_KEY`) in `~/.kova/.env` (provider: `gemini`) |
 | **Google Vertex AI** | `kova model` → "Google Vertex AI" (provider: `vertex`; OAuth2 via service-account JSON or ADC, GCP billing) |
-| **OpenAI API (direct)** | `OPENAI_API_KEY` in `~/.hermes/.env` (provider: `openai-api`, optional `OPENAI_BASE_URL`) |
+| **OpenAI API (direct)** | `OPENAI_API_KEY` in `~/.kova/.env` (provider: `openai-api`, optional `OPENAI_BASE_URL`) |
 | **Azure AI Foundry** | `kova model` → "Azure AI Foundry" (provider: `azure-foundry`; uses Azure OpenAI / Foundry endpoint and key) |
 | **AWS Bedrock** | `kova model` → "AWS Bedrock" (provider: `bedrock`; standard AWS credentials chain via boto3) |
-| **NVIDIA Build** | `NVIDIA_API_KEY` in `~/.hermes/.env` (provider: `nvidia`; NIM-hosted models on build.nvidia.com) |
+| **NVIDIA Build** | `NVIDIA_API_KEY` in `~/.kova/.env` (provider: `nvidia`; NIM-hosted models on build.nvidia.com) |
 | **Ollama Cloud** | `kova model` → "Ollama Cloud" (provider: `ollama-cloud`; cloud-hosted Ollama API) |
 | **Qwen OAuth** | `kova model` → "Qwen OAuth" (provider: `qwen-oauth`; browser PKCE login) |
 | **MiniMax OAuth** | `kova model` → "MiniMax (OAuth)" (provider: `minimax-oauth`; browser PKCE login) |
-| **StepFun** | `STEPFUN_API_KEY` in `~/.hermes/.env` (provider: `stepfun`) |
+| **StepFun** | `STEPFUN_API_KEY` in `~/.kova/.env` (provider: `stepfun`) |
 | **LM Studio** | `kova model` → "LM Studio" (provider: `lmstudio`, optional `LM_API_KEY`) |
 | **Custom Endpoint** | `kova model` → choose "Custom endpoint" (saved in `config.yaml`) |
 
@@ -80,7 +82,7 @@ Don't have a subscription yet? Get one at [portal.nousresearch.com/manage-subscr
 
 
 :::info Codex Note
-The OpenAI Codex provider authenticates via device code (open a URL, enter a code). Kova stores the resulting credentials in its own auth store under `~/.hermes/auth.json` and can import existing Codex CLI credentials from `~/.codex/auth.json` when present. No Codex CLI installation is required.
+The OpenAI Codex provider authenticates via device code (open a URL, enter a code). Kova stores the resulting credentials in its own auth store under `~/.kova/auth.json` and can import existing Codex CLI credentials from `~/.codex/auth.json` when present. No Codex CLI installation is required.
 
 If a token refresh fails with a terminal error (HTTP 4xx, `invalid_grant`, revoked grant, etc.), Kova marks the refresh token as dead and stops replaying it so you don't see a flood of identical auth failures. The next request surfaces a typed re-auth message instead. Run `kova auth add openai-codex` (or `kova model` → OpenAI Codex) to start a fresh device-code login; the quarantine clears on the next successful exchange.
 :::
@@ -104,6 +106,32 @@ Kova has **two** model commands that serve different purposes:
 
 If you're trying to switch to a provider you haven't set up yet (e.g. you only have OpenRouter configured and want to use Anthropic), you need `kova model`, not `/model`. Exit your session first (`Ctrl+C` or `/quit`), run `kova model`, complete the provider setup, then start a new session.
 
+
+### Subscription plans: what your plan pays for
+
+Several providers let you sign in to Kova with a **consumer subscription** (Claude Max, ChatGPT, SuperGrok / X Premium+, …) instead of an API key. What that subscription actually pays for — and what it doesn't — differs per provider, and it's the single most common source of billing surprises. The table below is the short version; each provider's own section has the details.
+
+> Cells marked *not currently documented* mean exactly that: Kova docs do not yet specify the behavior. Don't assume — check your provider's billing dashboard, and treat these as open questions.
+
+| Plan / path | Can Kova use it? | What gets consumed | What does NOT get consumed | Common surprise |
+|---|---|---|---|---|
+| **Anthropic — Claude Max + OAuth** | ✅ Yes — `kova model` → Anthropic OAuth. Requires Max **and** purchased extra usage credits | The **extra/overage credits** you've added on top of the Max plan | The **base Max plan allowance** (the usage included in Claude Code by default) | All Kova usage bills as "extra usage" even while your included Max allowance sits untouched |
+| **Anthropic — Claude Pro** | ❌ No — Pro subscribers cannot use the OAuth path | Nothing (path unavailable) | Your Pro subscription | Pro looks like it should work; it doesn't. Use an `ANTHROPIC_API_KEY` instead (pay-per-token, independent of any Claude subscription) |
+| **OpenAI Codex — ChatGPT plan OAuth** | ✅ Yes — `kova model` → OpenAI Codex (ChatGPT OAuth device-code login, uses Codex models) | *Not currently documented* | *Not currently documented* | Docs cover auth and token refresh only; plan-quota semantics are not yet documented |
+| **xAI — SuperGrok / X Premium+ OAuth** | ✅ Yes — browser OAuth, no API key needed | Your **subscription quota** (documented explicitly for X Search: OAuth is preferred over an API key and "uses your subscription quota instead of API spend"). Inference quota semantics beyond that: *not currently documented* | `XAI_API_KEY` / pay-per-token API spend, when OAuth credentials are configured and preferred | `HTTP 403` after a successful login — xAI has restricted OAuth API access to specific SuperGrok tiers despite an active in-app subscription |
+| **Google — Gemini consumer plan (Google AI Pro / Ultra)** | ❌ No documented path — the `gemini` provider is API-key only (`GOOGLE_API_KEY` / `GEMINI_API_KEY`); Vertex AI uses GCP billing | Your **API key's quota** (free tier or billing-enabled Google Cloud project) — *consumer-plan consumption not currently documented* | *Not currently documented* | Free-tier keys can be exhausted after a handful of agent turns, because Kova may make several model calls per user turn |
+
+**Anthropic.** The OAuth path routes as Claude Code against your Anthropic account and **only works on a Claude Max plan with purchased extra usage credits** — the base Max allowance is never consumed by Kova, only the extra/overage credits on top. Claude Pro subscribers cannot use this path; the supported alternative is an `ANTHROPIC_API_KEY`, billed pay-per-token against that key's organization at standard API pricing. See [Anthropic (Native)](#anthropic-native) below.
+
+**OpenAI Codex.** Kova authenticates via ChatGPT device-code OAuth, stores credentials in `~/.kova/auth.json`, and can import existing Codex CLI credentials from `~/.codex/auth.json`. Which ChatGPT plan tiers are eligible, and how Kova usage counts against your plan's Codex limits, are **not currently documented** — the Codex note under [Nous Portal](#nous-portal) covers authentication and token-refresh behavior only.
+
+**xAI (SuperGrok / X Premium+).** Browser OAuth works with either an active SuperGrok subscription or an X Premium+ subscription on the linked X account, and the same bearer token is reused by direct-to-xAI tools (TTS, image gen, video gen, transcription, X Search). If inference returns `HTTP 403` after a successful login, that's a tier/entitlement restriction on xAI's side, not a stale token — the workaround is switching to an `XAI_API_KEY`. See [xAI (Grok)](#xai-grok--responses-api--prompt-caching) below and the [xAI Grok OAuth guide](../guides/xai-grok-oauth.md).
+
+**Google Gemini.** There is currently no way to sign in to Kova with a consumer Gemini subscription — the `gemini` provider takes an API key, and [Google Vertex AI](#google-vertex-ai) bills to your GCP project. A billing-enabled Google Cloud project is recommended for agent use; free-tier quotas are too small for long-running agent sessions. See the [Google Gemini guide](/guides/google-gemini).
+
+:::tip One subscription instead of five
+If you'd rather not track per-provider plan semantics at all, [Nous Portal](#nous-portal) covers 300+ models under a single subscription with one OAuth login.
+:::
 
 ### Anthropic (Native)
 
@@ -132,7 +160,7 @@ kova chat --provider anthropic
 kova chat --provider anthropic  # reads Claude Code credential files automatically
 ```
 
-When you choose Anthropic OAuth through `kova model`, Kova prefers Claude Code's own credential store over copying the token into `~/.hermes/.env`. That keeps refreshable Claude credentials refreshable.
+When you choose Anthropic OAuth through `kova model`, Kova prefers Claude Code's own credential store over copying the token into `~/.kova/.env`. That keeps refreshable Claude credentials refreshable.
 
 Or set it permanently:
 ```yaml
@@ -217,52 +245,52 @@ These providers have built-in support with dedicated provider IDs. Set the API k
 ```bash
 # Fireworks AI
 kova chat --provider fireworks --model accounts/fireworks/models/kimi-k2p6
-# Requires: FIREWORKS_API_KEY in ~/.hermes/.env
+# Requires: FIREWORKS_API_KEY in ~/.kova/.env
 
 # NovitaAI Model API
 kova chat --provider novita --model moonshotai/kimi-k2.5
-# Requires: NOVITA_API_KEY in ~/.hermes/.env
+# Requires: NOVITA_API_KEY in ~/.kova/.env
 
 # z.ai / ZhipuAI GLM
 kova chat --provider zai --model glm-5
-# Requires: GLM_API_KEY in ~/.hermes/.env
+# Requires: GLM_API_KEY in ~/.kova/.env
 
 # Kimi / Moonshot AI (international: api.moonshot.ai)
 kova chat --provider kimi-coding --model kimi-for-coding
-# Requires: KIMI_API_KEY in ~/.hermes/.env
+# Requires: KIMI_API_KEY in ~/.kova/.env
 
 # Kimi / Moonshot AI (China: api.moonshot.cn)
 kova chat --provider kimi-coding-cn --model kimi-k2.5
-# Requires: KIMI_CN_API_KEY in ~/.hermes/.env
+# Requires: KIMI_CN_API_KEY in ~/.kova/.env
 
 # MiniMax (global endpoint)
 kova chat --provider minimax --model MiniMax-M2.7
-# Requires: MINIMAX_API_KEY in ~/.hermes/.env
+# Requires: MINIMAX_API_KEY in ~/.kova/.env
 
 # MiniMax (China endpoint)
 kova chat --provider minimax-cn --model MiniMax-M2.7
-# Requires: MINIMAX_CN_API_KEY in ~/.hermes/.env
+# Requires: MINIMAX_CN_API_KEY in ~/.kova/.env
 
 # Qwen Cloud / DashScope (Qwen models)
 kova chat --provider alibaba --model qwen3.5-plus
-# Requires: DASHSCOPE_API_KEY in ~/.hermes/.env
+# Requires: DASHSCOPE_API_KEY in ~/.kova/.env
 
 # Xiaomi MiMo
 kova chat --provider xiaomi --model mimo-v2-pro
-# Requires: XIAOMI_API_KEY in ~/.hermes/.env
+# Requires: XIAOMI_API_KEY in ~/.kova/.env
 
 # Tencent TokenHub (Hy3 Preview)
 kova chat --provider tencent-tokenhub --model hy3-preview
-# Requires: TOKENHUB_API_KEY in ~/.hermes/.env
+# Requires: TOKENHUB_API_KEY in ~/.kova/.env
 
 # Arcee AI (Trinity models)
 kova chat --provider arcee --model trinity-large-thinking
-# Requires: ARCEEAI_API_KEY in ~/.hermes/.env
+# Requires: ARCEEAI_API_KEY in ~/.kova/.env
 
 # GMI Cloud
 # Use the exact model ID returned by GMI's /v1/models endpoint.
 kova chat --provider gmi --model zai-org/GLM-5.1-FP8
-# Requires: GMI_API_KEY in ~/.hermes/.env
+# Requires: GMI_API_KEY in ~/.kova/.env
 ```
 
 Fireworks uses its native slash-form catalog IDs, such as `accounts/fireworks/models/kimi-k2p6`. Run `kova model`, choose **Fireworks AI**, and select from the live catalog or enter another Fireworks model ID. The default endpoint is `https://api.fireworks.ai/inference/v1`; configure a different endpoint through `model.base_url` in `config.yaml`, not `.env`.
@@ -282,7 +310,7 @@ When using the Z.AI / GLM provider, Kova automatically probes multiple endpoints
 
 ### xAI (Grok) — Responses API + Prompt Caching
 
-xAI is wired through the Responses API (`codex_responses` transport) for automatic reasoning support on Grok 4 models — no `reasoning_effort` parameter needed, the server reasons by default. Set `XAI_API_KEY` in `~/.hermes/.env` and pick xAI in `kova model`, or drop `grok` as a shortcut into `/model grok-4-fast-reasoning`.
+xAI is wired through the Responses API (`codex_responses` transport) for automatic reasoning support on Grok 4 models — no `reasoning_effort` parameter needed, the server reasons by default. Set `XAI_API_KEY` in `~/.kova/.env` and pick xAI in `kova model`, or drop `grok` as a shortcut into `/model grok-4-fast-reasoning`.
 
 SuperGrok and X Premium+ subscribers can sign in with browser OAuth instead of using an API key — pick **xAI Grok OAuth (SuperGrok / Premium+)** in `kova model`, or run `kova auth add xai-oauth`. The same OAuth bearer token is automatically reused by direct-to-xAI tools (TTS, image gen, video gen, transcription). See the [xAI Grok OAuth guide](../guides/xai-grok-oauth.md) for the full flow — and if Kova runs on a remote host, also see [OAuth over SSH / Remote Hosts](../guides/oauth-over-ssh.md) for the required `ssh -L` tunnel.
 
@@ -296,7 +324,7 @@ xAI also ships a dedicated TTS endpoint (`/v1/tts`). Select **xAI TTS** in `kova
 
 ```bash
 kova migrate xai          # preview replacements
-kova migrate xai --apply  # rewrite ~/.hermes/config.yaml in place
+kova migrate xai --apply  # rewrite ~/.kova/config.yaml in place
 ```
 
 **xAI Web Search backend.** When the [Web Search](../user-guide/features/web-search.md) toolset is enabled, `web.backend: xai` routes search through xAI's hosted search endpoint using the same `XAI_API_KEY` / OAuth credentials. No additional setup required if xAI is already configured as a provider.
@@ -308,7 +336,7 @@ kova migrate xai --apply  # rewrite ~/.hermes/config.yaml in place
 ```bash
 # Use any available model
 kova chat --provider novita --model moonshotai/kimi-k2.5
-# Requires: NOVITA_API_KEY in ~/.hermes/.env
+# Requires: NOVITA_API_KEY in ~/.kova/.env
 
 # Short alias
 kova chat --provider novita-ai --model deepseek/deepseek-v3-0324
@@ -386,7 +414,7 @@ Gemini models on Google Cloud Vertex AI via Vertex's OpenAI-compatible endpoint.
 
 ```bash
 # Service account JSON (recommended for servers / gateways)
-echo "VERTEX_CREDENTIALS_PATH=/path/to/service-account.json" >> ~/.hermes/.env
+echo "VERTEX_CREDENTIALS_PATH=/path/to/service-account.json" >> ~/.kova/.env
 # or Application Default Credentials
 gcloud auth application-default login
 
@@ -413,7 +441,7 @@ Alibaba's Qwen Portal with browser-based OAuth login. Pick **Qwen OAuth (Portal)
 kova model
 # → pick "Qwen OAuth (Portal)"
 # → browser opens; sign in with your Alibaba account
-# → confirm — credentials are saved to ~/.hermes/auth.json
+# → confirm — credentials are saved to ~/.kova/auth.json
 
 kova chat   # uses portal.qwen.ai/v1 endpoint
 ```
@@ -457,7 +485,7 @@ MiniMax-M2.7 via browser OAuth login — no API key needed. Pick **MiniMax (OAut
 kova model
 # → pick "MiniMax (OAuth)"
 # → browser opens; sign in with your MiniMax account (global or CN region)
-# → confirm — credentials are saved to ~/.hermes/auth.json
+# → confirm — credentials are saved to ~/.kova/auth.json
 
 kova chat   # uses api.minimax.io/anthropic endpoint
 ```
@@ -482,7 +510,7 @@ Nemotron and other open source models via [build.nvidia.com](https://build.nvidi
 ```bash
 # Cloud (build.nvidia.com)
 kova chat --provider nvidia --model nvidia/nemotron-3-super-120b-a12b
-# Requires: NVIDIA_API_KEY in ~/.hermes/.env
+# Requires: NVIDIA_API_KEY in ~/.kova/.env
 
 # Local NIM endpoint — override base URL
 NVIDIA_BASE_URL=http://localhost:8000/v1 kova chat --provider nvidia --model nvidia/nemotron-3-super-120b-a12b
@@ -508,7 +536,7 @@ Open and reasoning models via [GMI Cloud](https://www.gmicloud.ai/) — OpenAI-c
 ```bash
 # GMI Cloud
 kova chat --provider gmi --model deepseek-ai/DeepSeek-V3.2
-# Requires: GMI_API_KEY in ~/.hermes/.env
+# Requires: GMI_API_KEY in ~/.kova/.env
 ```
 
 Or set it permanently in `config.yaml`:
@@ -520,6 +548,35 @@ model:
 
 The base URL can be overridden with `GMI_BASE_URL` (default: `https://api.gmi-serving.com/v1`).
 
+### Actual Computer
+
+Your own hardware as a private inference cluster via [Actual Computer](https://actual.inc). Two serving modes, both OpenAI-compatible (Kova uses the Responses API transport):
+
+- **Hosted relay** — `https://api.actual.inc`, end-to-end encrypted, routes to *your* cluster. Authenticate with an `ac_` inference key from [actual.inc/user/keys](https://actual.inc/user/keys).
+- **Local daemon** — on-device at `http://127.0.0.1:8080`, fully offline. No API key needed: Kova detects the loopback base URL and authenticates with an internal placeholder automatically.
+
+```bash
+# Hosted relay (ACTUAL_API_KEY in ~/.kova/.env)
+kova chat --provider actual --model <model-id-from-your-cluster>
+
+# Local daemon (ACTUAL_BASE_URL=http://127.0.0.1:8080 in ~/.kova/.env, no key)
+kova chat --provider actual --model <installed-model-name>
+```
+
+Or set it permanently in `config.yaml`:
+```yaml
+model:
+  provider: "actual"
+  default: "<model-id>"
+```
+
+Notes:
+- Model IDs come from your cluster's `GET /v1/models` — discover with `kova model` or `curl -s https://api.actual.inc/v1/models -H "Authorization: Bearer $ACTUAL_API_KEY"`.
+- Bare hosts are normalized: `ACTUAL_BASE_URL=http://127.0.0.1:8080` becomes `http://127.0.0.1:8080/v1` automatically.
+- Reasoning effort is clamped to Actual's supported range (`none/low/medium/high/max`) — a global `xhigh`/`ultra` setting will not 400 requests.
+- Small local models: Kova' full default toolset plus the system prompt can exceed a 32k context window, producing an empty-stream error from llama.cpp-family servers. Restrict the toolset (`-t file,web`) or load the model with a larger context. The optional `actual-setup` skill (`kova skills install official/devops/actual-setup`) covers setup and troubleshooting in detail.
+- Aliases: `actual-computer`, `actualcomputer`, `aci`.
+
 ### StepFun
 
 Step-series models via [StepFun](https://platform.stepfun.com) — OpenAI-compatible API, API key authentication.
@@ -527,7 +584,7 @@ Step-series models via [StepFun](https://platform.stepfun.com) — OpenAI-compat
 ```bash
 # StepFun
 kova chat --provider stepfun --model step-3.5-flash
-# Requires: STEPFUN_API_KEY in ~/.hermes/.env
+# Requires: STEPFUN_API_KEY in ~/.kova/.env
 ```
 
 Or set it permanently in `config.yaml`:
@@ -546,7 +603,7 @@ The base URL can be overridden with `STEPFUN_BASE_URL` (default: `https://api.st
 ```bash
 # Use any available model
 kova chat --provider huggingface --model Qwen/Qwen3.5-397B-A17B
-# Requires: HF_TOKEN in ~/.hermes/.env
+# Requires: HF_TOKEN in ~/.kova/.env
 
 # Short alias
 kova chat --provider hf --model deepseek-ai/DeepSeek-V3.2
@@ -582,7 +639,7 @@ kova model
 
 **Manual config (`config.yaml`):**
 ```yaml
-# In ~/.hermes/config.yaml
+# In ~/.kova/config.yaml
 model:
   default: your-model-name
   provider: custom
@@ -844,7 +901,7 @@ kova model
 # If LM Studio server auth is enabled, enter LM_API_KEY when prompted
 ```
 
-By default, Kova explicitly asks LM Studio to load the selected model with 64K context length before the first request.
+Kova preserves the context of an already-loaded LM Studio instance. For an unloaded model in the default explicit mode, Kova omits `context_length` unless you configured one in Kova, so LM Studio can apply its own model setting. Kova then uses only the context length LM Studio reports after loading.
 
 To change context length in LM Studio:
 
@@ -1118,6 +1175,7 @@ Any service with an OpenAI-compatible API works. Some popular options:
 | [DeepSeek](https://deepseek.com) | `https://api.deepseek.com/v1` | DeepSeek models |
 | [Fireworks AI](https://fireworks.ai) | `https://api.fireworks.ai/inference/v1` | Fast open model hosting |
 | [GMI Cloud](https://www.gmicloud.ai/) | `https://api.gmi-serving.com/v1` | Managed OpenAI-compatible inference |
+| [Actual Computer](https://actual.inc) | `https://api.actual.inc/v1` | Private relay to your own cluster; local daemon at `http://127.0.0.1:8080/v1` |
 | [Cerebras](https://cerebras.ai) | `https://api.cerebras.ai/v1` | Wafer-scale chip inference |
 | [Mistral AI](https://mistral.ai) | `https://api.mistral.ai/v1` | Mistral models |
 | [OpenAI](https://openai.com) | `https://api.openai.com/v1` | Direct OpenAI access |
@@ -1151,7 +1209,7 @@ Set `model.max_tokens` only when you need to limit how long individual responses
 Kova uses a multi-source resolution chain to detect the correct context window for your model and provider:
 
 1. **Config override** — `model.context_length` in config.yaml (highest priority)
-2. **Custom provider per-model** — `custom_providers[].models.<id>.context_length`
+2. **Custom provider per-model** — `providers.<name>.models.<id>.context_length`
 3. **Persistent cache** — previously discovered values (survives restarts)
 4. **Endpoint `/models`** — queries your server's API (local/custom endpoints)
 5. **Anthropic `/v1/models`** — queries Anthropic's API for `max_input_tokens` (API-key users only)
@@ -1174,9 +1232,9 @@ model:
 For custom endpoints, you can also set context length per model:
 
 ```yaml
-custom_providers:
-  - name: "My Local LLM"
-    base_url: "http://localhost:11434/v1"
+providers:
+  my-local-llm:
+    api: "http://localhost:11434/v1"
     models:
       qwen3.5:27b:
         context_length: 64000
@@ -1196,30 +1254,36 @@ custom_providers:
 
 ### Named Custom Providers
 
-If you work with multiple custom endpoints (e.g., a local dev server and a remote GPU server), you can define them as named custom providers in `config.yaml`:
+If you work with multiple custom endpoints (e.g., a local dev server and a remote GPU server), you can define them as named custom providers under the `providers:` dict in `config.yaml`, keyed by provider name:
 
 ```yaml
-custom_providers:
-  - name: local
-    base_url: http://localhost:8080/v1
+providers:
+  local:
+    api: http://localhost:8080/v1
     # api_key omitted — Kova uses "no-key-required" for keyless local servers
-  - name: work
-    base_url: https://gpu-server.internal.corp/v1
+  work:
+    api: https://gpu-server.internal.corp/v1
     key_env: CORP_API_KEY
-    api_mode: chat_completions   # set explicitly by `kova model` → Custom Endpoint wizard; auto-detection still happens as a fallback
-  - name: anthropic-proxy
-    base_url: https://proxy.example.com/anthropic
+    transport: chat_completions   # set explicitly by `kova model` → Custom Endpoint wizard; auto-detection still happens as a fallback
+  anthropic-proxy:
+    api: https://proxy.example.com/anthropic
     key_env: ANTHROPIC_PROXY_KEY
-    api_mode: anthropic_messages  # for Anthropic-compatible proxies
+    transport: anthropic_messages  # for Anthropic-compatible proxies
 ```
+
+Each entry accepts: `api` (the endpoint base URL — `base_url`/`url` are accepted aliases), `name` (optional display name; defaults to the dict key), `key_env` or inline `api_key`, `transport` (`chat_completions` / `anthropic_messages` / `codex_responses`), `default_model`, `models`, `context_length`, `discover_models`, `extra_body`, `extra_headers`, `ssl_ca_cert` / `ssl_verify`, and `enabled: false` to hide an entry without deleting it.
+
+:::note Legacy format
+Older configs used a top-level `custom_providers:` list instead. It still works — Kova reads both — and `kova update` auto-migrates it to the `providers:` dict (config v12). Field names differ slightly in the dict format: legacy `model` is `default_model`, and legacy `api_mode` is `transport`.
+:::
 
 Some OpenAI-compatible endpoints need provider-specific request body fields. Add an `extra_body` map to the matching custom provider and Kova will merge it into each chat-completions request for that endpoint:
 
 ```yaml
-custom_providers:
-  - name: gemma-local
-    base_url: http://localhost:8080/v1
-    model: google/gemma-4-31b-it
+providers:
+  gemma-local:
+    api: http://localhost:8080/v1
+    default_model: google/gemma-4-31b-it
     extra_body:
       enable_thinking: true
       reasoning_effort: high
@@ -1241,7 +1305,7 @@ extra_body:
     enable_thinking: false
 ```
 
-The `kova model` → Custom Endpoint wizard now prompts for `api_mode` explicitly and persists your answer to `config.yaml`. URL-based auto-detection (e.g. `/anthropic` paths → `anthropic_messages`) still happens as a fallback when the field is left blank.
+The `kova model` → Custom Endpoint wizard now prompts for the API mode explicitly and persists your answer to `config.yaml` (as `transport` on the provider entry). URL-based auto-detection (e.g. `/anthropic` paths → `anthropic_messages`) still happens as a fallback when the field is left blank.
 
 **Native vision for custom-provider models.** If your custom endpoint serves a vision-capable model that isn't in models.dev, set `model.supports_vision: true` so Kova routes attached images natively (as `image_url` parts) instead of pre-processing them through `vision_analyze`. Single knob — no need to also set `agent.image_input_mode: native`.
 
@@ -1253,7 +1317,7 @@ model:
   supports_vision: true   # send images natively; otherwise vision_analyze pre-describes them
 ```
 
-The same key is honored on per-named-provider models (`custom_providers[*].models[*].supports_vision`) and accepts standard YAML booleans (`true/false/yes/no/on/off/1/0`).
+The same key is honored on per-named-provider models (`providers.<name>.models.<id>.supports_vision`) and accepts standard YAML booleans (`true/false/yes/no/on/off/1/0`).
 
 Switch between them mid-session with the triple syntax:
 
@@ -1269,19 +1333,19 @@ You can also select named custom providers from the interactive `kova model` men
 
 ### Cookbook: Together AI, Groq, Perplexity
 
-The cloud providers listed in [Other Compatible Providers](#other-compatible-providers) all speak OpenAI's REST dialect, so they wire up the same way under `custom_providers:`. Three worked recipes follow. Each drops into `~/.hermes/config.yaml` and the matching API key goes in `~/.hermes/.env`.
+The cloud providers listed in [Other Compatible Providers](#other-compatible-providers) all speak OpenAI's REST dialect, so they wire up the same way under the `providers:` dict. Three worked recipes follow. Each drops into `~/.kova/config.yaml` and the matching API key goes in `~/.kova/.env`.
 
 #### Together AI
 
 Hosts open-weight models (Llama, MiniMax, Gemma, DeepSeek, Qwen) at prices significantly below first-party APIs. Good default for multi-model fleets.
 
 ```yaml
-# ~/.hermes/config.yaml
-custom_providers:
-  - name: together
-    base_url: https://api.together.xyz/v1
+# ~/.kova/config.yaml
+providers:
+  together:
+    api: https://api.together.xyz/v1
     key_env: TOGETHER_API_KEY
-    # api_mode: chat_completions  # default — no need to set
+    # transport: chat_completions  # default — no need to set
 
 model:
   default: MiniMaxAI/MiniMax-M2.7   # or any model from together.ai/models
@@ -1289,7 +1353,7 @@ model:
 ```
 
 ```bash
-# ~/.hermes/.env
+# ~/.kova/.env
 TOGETHER_API_KEY=your-together-key
 ```
 
@@ -1308,10 +1372,10 @@ Together's `/v1/models` endpoint works, so `kova model` can auto-discover availa
 Ultra-fast inference (~500 tok/s on Llama-3.3-70B). Small catalog but strong for latency-sensitive interactive use.
 
 ```yaml
-# ~/.hermes/config.yaml
-custom_providers:
-  - name: groq
-    base_url: https://api.groq.com/openai/v1
+# ~/.kova/config.yaml
+providers:
+  groq:
+    api: https://api.groq.com/openai/v1
     key_env: GROQ_API_KEY
 
 model:
@@ -1320,7 +1384,7 @@ model:
 ```
 
 ```bash
-# ~/.hermes/.env
+# ~/.kova/.env
 GROQ_API_KEY=your-groq-key
 ```
 
@@ -1329,10 +1393,10 @@ GROQ_API_KEY=your-groq-key
 Useful when you want a model that does live web search and citation automatically. Strict about which models are available — check [perplexity.ai/settings/api](https://www.perplexity.ai/settings/api) for the current list.
 
 ```yaml
-# ~/.hermes/config.yaml
-custom_providers:
-  - name: perplexity
-    base_url: https://api.perplexity.ai
+# ~/.kova/config.yaml
+providers:
+  perplexity:
+    api: https://api.perplexity.ai
     key_env: PERPLEXITY_API_KEY
 
 model:
@@ -1341,7 +1405,7 @@ model:
 ```
 
 ```bash
-# ~/.hermes/.env
+# ~/.kova/.env
 PERPLEXITY_API_KEY=your-perplexity-key
 ```
 
@@ -1350,15 +1414,15 @@ PERPLEXITY_API_KEY=your-perplexity-key
 The three recipes compose — use all of them together and switch per turn with `/model custom:<name>:<model>`:
 
 ```yaml
-custom_providers:
-  - name: together
-    base_url: https://api.together.xyz/v1
+providers:
+  together:
+    api: https://api.together.xyz/v1
     key_env: TOGETHER_API_KEY
-  - name: groq
-    base_url: https://api.groq.com/openai/v1
+  groq:
+    api: https://api.groq.com/openai/v1
     key_env: GROQ_API_KEY
-  - name: perplexity
-    base_url: https://api.perplexity.ai
+  perplexity:
+    api: https://api.perplexity.ai
     key_env: PERPLEXITY_API_KEY
 
 model:
@@ -1369,7 +1433,7 @@ model:
 :::tip Troubleshooting
 - `kova doctor` should print no `Unknown provider` warnings for any of these names after the CLI validator fixes in #15083.
 - If a provider's `/v1/models` endpoint is unreachable (Perplexity is the common one), `kova model` will persist the model with a warning rather than hard-reject — see #15136.
-- To skip `custom_providers:` entirely and use bare `provider: custom` with `CUSTOM_BASE_URL` env var, see #15103.
+- To skip named providers entirely and use bare `provider: custom` with `CUSTOM_BASE_URL` env var, see #15103.
 :::
 
 ---
@@ -1432,7 +1496,7 @@ You can also set both `FIRECRAWL_API_KEY` and `FIRECRAWL_API_URL` if your self-h
 
 ## OpenRouter Provider Routing
 
-When using OpenRouter, you can control how requests are routed across providers. Add a `provider_routing` section to `~/.hermes/config.yaml`:
+When using OpenRouter, you can control how requests are routed across providers. Add a `provider_routing` section to `~/.kova/config.yaml`:
 
 ```yaml
 provider_routing:
@@ -1448,7 +1512,7 @@ provider_routing:
 
 ## OpenRouter Pareto Code Router
 
-OpenRouter ships an experimental coding-model router at `openrouter/pareto-code` that auto-routes requests to the cheapest model meeting a coding-quality bar (ranked by [Artificial Analysis](https://artificialanalysis.ai/)). Pick this model and tune the `min_coding_score` knob in `~/.hermes/config.yaml`:
+OpenRouter ships an experimental coding-model router at `openrouter/pareto-code` that auto-routes requests to the cheapest model meeting a coding-quality bar (ranked by [Artificial Analysis](https://artificialanalysis.ai/)). Pick this model and tune the `min_coding_score` knob in `~/.kova/config.yaml`:
 
 ```yaml
 model:
@@ -1491,7 +1555,7 @@ fallback_model:
 
 When activated, the fallback swaps the model and provider mid-session without losing your conversation. The chain is tried entry-by-entry; activation is one-shot per session.
 
-Supported providers: `openrouter`, `nous`, `novita`, `openai-codex`, `copilot`, `copilot-acp`, `anthropic`, `gemini`, `qwen-oauth`, `huggingface`, `zai`, `kimi-coding`, `kimi-coding-cn`, `minimax`, `minimax-cn`, `minimax-oauth`, `deepseek`, `nvidia`, `xai`, `xai-oauth`, `ollama-cloud`, `bedrock`, `azure-foundry`, `opencode-zen`, `opencode-go`, `kilocode`, `xiaomi`, `arcee`, `gmi`, `stepfun`, `lmstudio`, `alibaba`, `alibaba-coding-plan`, `tencent-tokenhub`, `custom`.
+Supported providers: `openrouter`, `nous`, `novita`, `openai-codex`, `copilot`, `copilot-acp`, `anthropic`, `gemini`, `qwen-oauth`, `huggingface`, `zai`, `kimi-coding`, `kimi-coding-cn`, `minimax`, `minimax-cn`, `minimax-oauth`, `deepseek`, `nvidia`, `xai`, `xai-oauth`, `ollama-cloud`, `bedrock`, `ai-gateway`, `azure-foundry`, `opencode-zen`, `opencode-go`, `kilocode`, `xiaomi`, `arcee`, `gmi`, `actual`, `stepfun`, `lmstudio`, `alibaba`, `alibaba-coding-plan`, `tencent-tokenhub`, `custom`.
 
 :::tip
 Fallback is configured exclusively through `config.yaml` — or interactively via `kova fallback`. For full details on when it triggers, how the chain advances, and how it interacts with auxiliary tasks and delegation, see [Fallback Providers](/user-guide/features/fallback-providers).

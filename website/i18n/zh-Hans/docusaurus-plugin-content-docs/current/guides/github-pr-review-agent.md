@@ -53,7 +53,7 @@ description: "构建一个自动化 AI 代码审查器，监控你的仓库、�
 - **已配置消息通知**（可选）— [Telegram](/user-guide/messaging/telegram) 或 [Discord](/user-guide/messaging/discord)
 
 :::tip 没有消息通知？没关系
-使用 `deliver: "local"` 将审查结果保存到 `~/.hermes/cron/output/`。在接入通知之前用于测试非常方便。
+使用 `deliver: "local"` 将审查结果保存到 `~/.kova/cron/output/`。在接入通知之前用于测试非常方便。
 :::
 
 ---
@@ -69,7 +69,7 @@ kova
 用一个简单命令测试：
 
 ```
-Run: gh pr list --repo NousResearch/kova-agent --state open --limit 3
+Run: gh pr list --repo OpenKova/Kova-Agent --state open --limit 3
 ```
 
 你应该能看到一个开放 PR 的列表。如果成功，就可以继续了。
@@ -84,7 +84,7 @@ Run: gh pr list --repo NousResearch/kova-agent --state open --limit 3
 Review this pull request. Read the diff, check for bugs, security issues,
 and code quality. Be specific about line numbers and quote problematic code.
 
-Run: gh pr diff 3888 --repo NousResearch/kova-agent
+Run: gh pr diff 3888 --repo OpenKova/Kova-Agent
 ```
 
 Kova 将会：
@@ -101,10 +101,10 @@ Kova 将会：
 Skill 为 Kova 提供一致的审查准则，在会话和 cron 运行之间持久保存。没有 skill，审查质量会参差不齐。
 
 ```bash
-mkdir -p ~/.hermes/skills/code-review
+mkdir -p ~/.kova/skills/code-review
 ```
 
-创建 `~/.hermes/skills/code-review/SKILL.md`：
+创建 `~/.kova/skills/code-review/SKILL.md`：
 
 ```markdown
 ---

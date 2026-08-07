@@ -6,7 +6,7 @@ Currently supports:
                           By default, log content is run through
                           ``agent.redact.redact_sensitive_text`` with
                           ``force=True`` before upload so credentials in
-                          ``~/.hermes/logs/*.log`` are not leaked into
+                          ``~/.kova/logs/*.log`` are not leaked into
                           the public paste service. Pass ``--no-redact``
                           to disable.
                           Pass ``--nous`` to upload instead to Nous-internal
@@ -70,7 +70,7 @@ _AUTO_DELETE_SECONDS = 21600
 # ---------------------------------------------------------------------------
 
 def _pending_file() -> Path:
-    """Path to ``~/.hermes/pastes/pending.json``.
+    """Path to ``~/.kova/pastes/pending.json``.
 
     Each entry: ``{"url": "...", "expire_at": <unix_ts>}``.  Scheduled
     DELETEs used to be handled by spawning a detached Python process per
@@ -261,7 +261,7 @@ def _schedule_auto_delete(urls: list[str], delay_seconds: int = _AUTO_DELETE_SEC
     every ``kova debug share`` invocation added ~20 MB of resident Python
     interpreters that never exited until the sleep completed.
 
-    The replacement is stateless: we append to ``~/.hermes/pastes/pending.json``
+    The replacement is stateless: we append to ``~/.kova/pastes/pending.json``
     and the gateway's cron ticker sweeps expired entries once per hour.
     ``kova debug share`` also runs an opportunistic sweep as a fallback
     for CLI-only users.  If neither runs again, paste.rs's own retention
@@ -295,7 +295,7 @@ def _upload_dpaste_com(content: str, expiry_days: int = 7) -> str:
 
     dpaste.com uses multipart form data.
     """
-    boundary = "----KovaDebugBoundary9f3c"
+    boundary = "----HermesDebugBoundary9f3c"
 
     def _field(name: str, value: str) -> str:
         return (
@@ -372,6 +372,35 @@ def _primary_log_path(log_name: str) -> Optional[Path]:
     return (get_kova_home() / "logs" / filename) if filename else None
 
 
+# Logs written by a client process rather than by this backend. When the
+# desktop app talks to a remote/docker/SSH backend, `kova debug share` runs
+# on the *backend* and can never see them — a bare "(file not found)" then
+# reads as "the app logged nothing" and sends triage down a dead end, which is
+# exactly the wrong answer when the client is the thing being debugged.
+_CLIENT_SIDE_LOGS = {
+    "desktop": (
+        "written by Kova Desktop on the machine running the app, not by this "
+        "backend. If the desktop connects to a remote/docker/SSH backend, collect "
+        "it on that client machine"
+    ),
+}
+
+
+def _missing_log_note(log_name: str) -> str:
+    """Explain a missing log instead of stating a bare absence.
+
+    For a client-side log the absence is expected on a remote backend, so the
+    note names the writer and the path to collect by hand.
+    """
+    reason = _CLIENT_SIDE_LOGS.get(log_name)
+    if reason is None:
+        return "(file not found)"
+
+    primary = _primary_log_path(log_name)
+    where = f" — expected at {primary}" if primary else ""
+    return f"(not on this host: {reason}{where})"
+
+
 def _resolve_log_path(log_name: str) -> Optional[Path]:
     """Find the log file for *log_name*, falling back to the .1 rotation.
 
@@ -432,7 +461,11 @@ def _capture_log_snapshot(
     log_path = _resolve_log_path(log_name)
     if log_path is None:
         primary = _primary_log_path(log_name)
-        tail = "(file empty)" if primary and primary.exists() else "(file not found)"
+        tail = (
+            "(file empty)"
+            if primary and primary.exists()
+            else _missing_log_note(log_name)
+        )
         return LogSnapshot(path=None, tail_text=tail, full_text=None)
 
     try:

@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 # Kova-specific metadata that models.dev doesn't provide.
 
 @dataclass(frozen=True)
-class KovaOverlay:
+class HermesOverlay:
     """Kova-specific provider metadata layered on top of models.dev."""
 
     transport: str = "openai_chat"        # openai_chat | anthropic_messages | codex_responses
@@ -43,182 +43,192 @@ class KovaOverlay:
     base_url_env_var: str = ""            # env var for user-custom base URL
 
 
-KOVA_OVERLAYS: Dict[str, KovaOverlay] = {
-    "moa": KovaOverlay(
+KOVA_OVERLAYS: Dict[str, HermesOverlay] = {
+    "moa": HermesOverlay(
         transport="openai_chat",
         auth_type="virtual",
         base_url_override="moa://local",
     ),
-    "openrouter": KovaOverlay(
+    "openrouter": HermesOverlay(
         transport="openai_chat",
         is_aggregator=True,
         base_url_env_var="OPENROUTER_BASE_URL",
     ),
-    "nous": KovaOverlay(
+    "nous": HermesOverlay(
         transport="openai_chat",
         auth_type="oauth_device_code",
         base_url_override="https://inference-api.nousresearch.com/v1",
     ),
-    "openai-codex": KovaOverlay(
+    "openai-codex": HermesOverlay(
         transport="codex_responses",
         auth_type="oauth_external",
         base_url_override="https://chatgpt.com/backend-api/codex",
     ),
-    "openai-api": KovaOverlay(
+    "openai-api": HermesOverlay(
         transport="codex_responses",
         base_url_override="https://api.openai.com/v1",
         base_url_env_var="OPENAI_BASE_URL",
     ),
-    "xai-oauth": KovaOverlay(
+    "xai-oauth": HermesOverlay(
         transport="codex_responses",
         auth_type="oauth_external",
         base_url_override="https://api.x.ai/v1",
         base_url_env_var="XAI_BASE_URL",
     ),
-    "qwen-oauth": KovaOverlay(
+    "qwen-oauth": HermesOverlay(
         transport="openai_chat",
         auth_type="oauth_external",
         base_url_override="https://portal.qwen.ai/v1",
         base_url_env_var="KOVA_QWEN_BASE_URL",
     ),
-    "lmstudio": KovaOverlay(
+    "lmstudio": HermesOverlay(
         transport="openai_chat",
         auth_type="api_key",
         extra_env_vars=("LM_API_KEY",),
         base_url_override="http://127.0.0.1:1234/v1",
         base_url_env_var="LM_BASE_URL",
     ),
-    "copilot-acp": KovaOverlay(
+    "copilot-acp": HermesOverlay(
         transport="codex_responses",
         auth_type="external_process",
         base_url_override="acp://copilot",
         base_url_env_var="COPILOT_ACP_BASE_URL",
     ),
-    "github-copilot": KovaOverlay(
+    "github-copilot": HermesOverlay(
         transport="openai_chat",
         extra_env_vars=("COPILOT_GITHUB_TOKEN", "GH_TOKEN"),
     ),
-    "anthropic": KovaOverlay(
+    "anthropic": HermesOverlay(
         transport="anthropic_messages",
         extra_env_vars=("ANTHROPIC_TOKEN", "CLAUDE_CODE_OAUTH_TOKEN"),
     ),
-    "zai": KovaOverlay(
+    "zai": HermesOverlay(
         transport="openai_chat",
         extra_env_vars=("GLM_API_KEY", "ZAI_API_KEY", "Z_AI_API_KEY"),
         base_url_env_var="GLM_BASE_URL",
     ),
-    "kimi-for-coding": KovaOverlay(
+    "kimi-for-coding": HermesOverlay(
         transport="openai_chat",
         base_url_env_var="KIMI_BASE_URL",
     ),
-    "stepfun": KovaOverlay(
+    "stepfun": HermesOverlay(
         transport="openai_chat",
         extra_env_vars=("STEPFUN_API_KEY",),
         base_url_override="https://api.stepfun.ai/step_plan/v1",
         base_url_env_var="STEPFUN_BASE_URL",
     ),
-    "minimax": KovaOverlay(
+    "minimax": HermesOverlay(
         transport="anthropic_messages",
         base_url_env_var="MINIMAX_BASE_URL",
     ),
-    "minimax-oauth": KovaOverlay(
+    "minimax-oauth": HermesOverlay(
         transport="anthropic_messages",
         auth_type="oauth_external",
         base_url_override="https://api.minimax.io/anthropic",
     ),
-    "minimax-cn": KovaOverlay(
+    "minimax-cn": HermesOverlay(
         transport="anthropic_messages",
         base_url_env_var="MINIMAX_CN_BASE_URL",
     ),
-    "deepseek": KovaOverlay(
+    "deepseek": HermesOverlay(
         transport="openai_chat",
         base_url_env_var="DEEPSEEK_BASE_URL",
     ),
-    "alibaba": KovaOverlay(
+    "alibaba": HermesOverlay(
         transport="openai_chat",
         base_url_env_var="DASHSCOPE_BASE_URL",
     ),
-    "alibaba-coding-plan": KovaOverlay(
+    "alibaba-coding-plan": HermesOverlay(
         transport="openai_chat",
         base_url_env_var="ALIBABA_CODING_PLAN_BASE_URL",
     ),
-    "opencode": KovaOverlay(
+    "vercel": HermesOverlay(
+        transport="openai_chat",
+        is_aggregator=True,
+    ),
+    "opencode": HermesOverlay(
         transport="openai_chat",
         is_aggregator=True,
         base_url_env_var="OPENCODE_ZEN_BASE_URL",
     ),
-    "opencode-go": KovaOverlay(
+    "opencode-go": HermesOverlay(
         transport="openai_chat",
         is_aggregator=True,
         base_url_env_var="OPENCODE_GO_BASE_URL",
     ),
-    "kilo": KovaOverlay(
+    "kilo": HermesOverlay(
         transport="openai_chat",
         is_aggregator=True,
         base_url_env_var="KILOCODE_BASE_URL",
     ),
-    "huggingface": KovaOverlay(
+    "huggingface": HermesOverlay(
         transport="openai_chat",
         is_aggregator=True,
         base_url_env_var="HF_BASE_URL",
     ),
-    "novita": KovaOverlay(
+    "novita": HermesOverlay(
         transport="openai_chat",
         is_aggregator=True,
         base_url_env_var="NOVITA_BASE_URL",
     ),
-    "xai": KovaOverlay(
+    "xai": HermesOverlay(
         transport="codex_responses",
         base_url_override="https://api.x.ai/v1",
         base_url_env_var="XAI_BASE_URL",
     ),
-    "nvidia": KovaOverlay(
+    "nvidia": HermesOverlay(
         transport="openai_chat",
         base_url_override="https://integrate.api.nvidia.com/v1",
         base_url_env_var="NVIDIA_BASE_URL",
     ),
-    "xiaomi": KovaOverlay(
+    "xiaomi": HermesOverlay(
         transport="openai_chat",
         base_url_env_var="XIAOMI_BASE_URL",
     ),
-    "tencent-tokenhub": KovaOverlay(
+    "tencent-tokenhub": HermesOverlay(
         transport="openai_chat",
         base_url_env_var="TOKENHUB_BASE_URL",
     ),
-    "arcee": KovaOverlay(
+    "arcee": HermesOverlay(
         transport="openai_chat",
         base_url_override="https://api.arcee.ai/api/v1",
         base_url_env_var="ARCEE_BASE_URL",
     ),
-    "gmi": KovaOverlay(
+    "gmi": HermesOverlay(
         transport="openai_chat",
         extra_env_vars=("GMI_API_KEY",),
         base_url_override="https://api.gmi-serving.com/v1",
         base_url_env_var="GMI_BASE_URL",
     ),
-    "fireworks": KovaOverlay(
+    "fireworks": HermesOverlay(
         transport="openai_chat",
         extra_env_vars=("FIREWORKS_API_KEY",),
         base_url_override="https://api.fireworks.ai/inference/v1",
     ),
-    "upstage": KovaOverlay(
+    "actual": HermesOverlay(
+        transport="codex_responses",
+        extra_env_vars=("ACTUAL_API_KEY", "ACTUAL_BASE_URL"),
+        base_url_override="https://api.actual.inc/v1",
+        base_url_env_var="ACTUAL_BASE_URL",
+    ),
+    "upstage": HermesOverlay(
         transport="openai_chat",
         extra_env_vars=("UPSTAGE_API_KEY",),
         base_url_override="https://api.upstage.ai/v1",
         base_url_env_var="UPSTAGE_BASE_URL",
     ),
-    "ollama-cloud": KovaOverlay(
+    "ollama-cloud": HermesOverlay(
         transport="openai_chat",
         base_url_override="https://ollama.com/v1",
         base_url_env_var="OLLAMA_BASE_URL",
     ),
     # Azure Foundry: supports both OpenAI-style and Anthropic-style endpoints.
     # The transport is determined at runtime from config.yaml model.api_mode.
-    "azure-foundry": KovaOverlay(
+    "azure-foundry": HermesOverlay(
         transport="openai_chat",  # default; overridden by api_mode in config
         base_url_env_var="AZURE_FOUNDRY_BASE_URL",
     ),
-    "bedrock": KovaOverlay(
+    "bedrock": HermesOverlay(
         transport="bedrock_converse",
         auth_type="aws_sdk",
     ),
@@ -231,7 +241,7 @@ KOVA_OVERLAYS: Dict[str, KovaOverlay] = {
     # custom endpoint instead of "vertex" — losing the provider identity
     # that _refresh_provider_credentials() needs to re-mint an expired
     # OAuth2 token on a 401.
-    "vertex": KovaOverlay(
+    "vertex": HermesOverlay(
         transport="openai_chat",
         auth_type="vertex",
     ),
@@ -309,6 +319,11 @@ ALIASES: Dict[str, str] = {
     "github": "github-copilot",
     "github-copilot-acp": "copilot-acp",
 
+    # vercel (models.dev ID for AI Gateway)
+    "ai-gateway": "vercel",
+    "aigateway": "vercel",
+    "vercel-ai-gateway": "vercel",
+
     # opencode (models.dev ID for OpenCode Zen)
     "opencode-zen": "opencode",
     "zen": "opencode",
@@ -374,6 +389,11 @@ ALIASES: Dict[str, str] = {
     # upstage
     "solar": "upstage",
 
+    # Actual Computer
+    "actual-computer": "actual",
+    "actualcomputer": "actual",
+    "aci": "actual",
+
     # Local server aliases → virtual "local" concept (resolved via user config)
     "lmstudio": "lmstudio",
     "lm-studio": "lmstudio",
@@ -399,6 +419,7 @@ _LABEL_OVERRIDES: Dict[str, str] = {
     "xiaomi": "Xiaomi MiMo",
     "gmi": "GMI Cloud",
     "upstage": "Upstage Solar",
+    "actual": "Actual Computer",
     "tencent-tokenhub": "Tencent TokenHub",
     "lmstudio": "LM Studio",
     "local": "Local endpoint",
@@ -431,7 +452,7 @@ def normalize_provider(name: str) -> str:
     return ALIASES.get(key, key)
 
 
-def get_provider(name: str) -> Optional[ProviderDef]:
+def get_provider(name: str, *, allow_network: bool = True) -> Optional[ProviderDef]:
     """Look up a built-in provider by id or alias.
 
     Resolution order:
@@ -450,7 +471,13 @@ def get_provider(name: str) -> Optional[ProviderDef]:
     # Try to get models.dev data
     try:
         from agent.models_dev import get_provider_info as _mdev_provider
-        mdev_info = _mdev_provider(canonical)
+        # Keep the single-argument call on the default path: test sites
+        # monkeypatch get_provider_info with single-arg lambdas.
+        mdev_info = (
+            _mdev_provider(canonical)
+            if allow_network
+            else _mdev_provider(canonical, allow_network=False)
+        )
     except Exception:
         mdev_info = None
 
@@ -563,6 +590,27 @@ def is_routing_aggregator(provider: str) -> bool:
     return is_aggregator(provider_norm)
 
 
+def is_official_openai_host(base_url: str) -> bool:
+    """True when *base_url* points at OpenAI's official API host family.
+
+    Matches the canonical host (``api.openai.com``) and OpenAI's documented
+    data-residency / regional hosts (``us.api.openai.com``,
+    ``eu.api.openai.com``, and any future ``<region>.api.openai.com``) —
+    those serve the same API surface with the same transport requirements
+    and the same access-scoped ``/v1/models`` listing.
+
+    Hostname-parsed matching only — never substring — so lookalike hosts
+    (``api.openai.com.attacker.test``) and path-segment spoofs
+    (``proxy.test/api.openai.com/v1``) are rejected. A genuine
+    ``*.api.openai.com`` subdomain requires control of openai.com DNS, so
+    the dot-suffix match does not reopen the #32243 spoofing hole.
+    Delegates to ``utils.base_url_host_matches``, which owns the
+    exact-or-dot-suffix hostname contract (userinfo/port stripped,
+    lowercased, trailing dot removed) — one implementation, not two.
+    """
+    return base_url_host_matches(base_url, "api.openai.com")
+
+
 def host_mandated_api_mode(base_url: str = "") -> Optional[str]:
     """Return the wire protocol a specific endpoint *requires*, or None.
 
@@ -590,25 +638,60 @@ def host_mandated_api_mode(base_url: str = "") -> Optional[str]:
         return "anthropic_messages"
     if hostname == "api.anthropic.com" or url_lower.endswith("/anthropic"):
         return "anthropic_messages"
-    if hostname == "api.openai.com":
+    # Official OpenAI host family: canonical + data-residency regional hosts
+    # (us./eu.api.openai.com) all mandate the Responses API for reasoning
+    # models with tools. Shared predicate keeps this lane in lockstep with
+    # catalog filtering and listing authority.
+    if is_official_openai_host(base_url):
         return "codex_responses"
     if hostname.startswith("bedrock-runtime.") and base_url_host_matches(base_url, "amazonaws.com"):
         return "bedrock_converse"
     return None
 
 
-def determine_api_mode(provider: str, base_url: str = "") -> str:
+def nous_api_mode(model: str = "") -> str:
+    """Resolve the wire protocol for a Nous Portal model.
+
+    Portal serves its ``anthropic/*`` catalog on a native Anthropic Messages
+    route (``/v1/messages``) alongside the OpenAI-compatible
+    ``/v1/chat/completions`` used by every other model it proxies.  Claude
+    traffic goes to the native route so it gets Anthropic's own request shape
+    (inner-block ``cache_control`` breakpoints, thinking blocks) instead of the
+    OpenAI-wire translation.
+
+    When *model* is empty/unknown, defaults to ``chat_completions`` — the
+    historical Nous transport — so callers that don't yet know the model
+    stay on the safer OpenAI-compatible path.
+    """
+    if str(model or "").strip().lower().startswith("anthropic/"):
+        return "anthropic_messages"
+    return "chat_completions"
+
+
+def determine_api_mode(provider: str, base_url: str = "", model: str = "") -> str:
     """Determine the API mode (wire protocol) for a provider/endpoint.
 
     Resolution order:
       1. Host-mandated mode (special endpoints that only accept one protocol).
-      2. Known provider → transport → TRANSPORT_TO_API_MODE.
-      3. Direct provider checks (bedrock).
-      4. Default: 'chat_completions'.
+      2. Nous Portal dual-wire (model-derived; overlay alone is openai_chat).
+      3. Known provider → transport → TRANSPORT_TO_API_MODE.
+      4. Direct provider checks (bedrock).
+      5. Default: 'chat_completions'.
+
+    *model* is optional but required for dual-wire providers (Nous) whose
+    transport depends on the catalog id, not just the provider/host.
     """
     mandated = host_mandated_api_mode(base_url)
     if mandated is not None:
         return mandated
+
+    # Nous is dual-wire: anthropic/* → Messages, everything else →
+    # chat_completions. The Kova overlay still advertises openai_chat
+    # (the majority of the Portal catalog), so the transport lookup below
+    # would pin Claude on the wrong wire without this carve-out.
+    provider_norm = (provider or "").strip().lower()
+    if provider_norm in {"nous", "nous-portal"}:
+        return nous_api_mode(model)
 
     pdef = get_provider(provider)
     if pdef is not None:
@@ -662,14 +745,36 @@ def resolve_user_provider(name: str, user_config: Dict[str, Any]) -> Optional[Pr
     )
 
 
-def custom_provider_slug(display_name: str) -> str:
-    """Build a canonical slug for a custom_providers entry.
+def custom_provider_slug(display_name: str, provider_key: str = "") -> str:
+    """Build the stable ``custom:`` identity for a configured provider.
 
-    Matches the convention used by runtime_provider and credential_pool
-    (``custom:<normalized-name>``).  Centralised here so all call-sites
-    produce identical slugs.
+    Keyed ``providers:`` entries keep their config key as the durable
+    identity even when their display name changes. Legacy
+    ``custom_providers:`` entries have no key, so their normalized display
+    name remains the identity.
     """
-    return "custom:" + display_name.strip().lower().replace(" ", "-")
+    identity = str(provider_key or "").strip() or str(display_name or "").strip()
+    normalized = identity.lower().replace(" ", "-")
+    return normalized if normalized.startswith("custom:") else f"custom:{normalized}"
+
+
+def custom_provider_aliases(
+    display_name: str,
+    provider_key: str = "",
+) -> frozenset[str]:
+    """Return every current and legacy identity accepted for one endpoint."""
+    aliases: set[str] = set()
+    for value in (display_name, provider_key):
+        raw = str(value or "").strip().lower()
+        if not raw:
+            continue
+        normalized = raw.replace(" ", "-")
+        aliases.update({raw, normalized, custom_provider_slug(normalized)})
+        if normalized.startswith("custom:"):
+            suffix = normalized.split(":", 1)[1]
+            if suffix:
+                aliases.update({suffix, f"custom:{normalized}"})
+    return frozenset(aliases)
 
 
 def resolve_custom_provider(
@@ -688,7 +793,7 @@ def resolve_custom_provider(
     # from a prior model-switch bug), fall back to the first custom
     # provider entry so existing configs self-heal.  (GH #17478)
     bare_custom_fallback = requested == "custom"
-    first_valid: Optional[Tuple[str, str, Tuple[str, ...]]] = None
+    first_valid: Optional[Tuple[str, str, Tuple[str, ...], str]] = None
 
     for entry in custom_providers:
         if not isinstance(entry, dict):
@@ -705,16 +810,22 @@ def resolve_custom_provider(
             continue
 
         key_env = (entry.get("key_env") or "").strip()
+        provider_key = (entry.get("provider_key") or "").strip()
         env_vars: List[str] = []
         if key_env:
             env_vars.append(key_env)
 
         # Stash the first valid entry for bare-"custom" fallback
         if first_valid is None:
-            first_valid = (display_name, api_url, tuple(env_vars))
+            first_valid = (
+                display_name,
+                api_url,
+                tuple(env_vars),
+                custom_provider_slug(display_name, provider_key),
+            )
 
-        slug = custom_provider_slug(display_name)
-        if requested not in {display_name.lower(), slug}:
+        slug = custom_provider_slug(display_name, provider_key)
+        if requested not in custom_provider_aliases(display_name, provider_key):
             continue
 
         return ProviderDef(
@@ -730,8 +841,7 @@ def resolve_custom_provider(
 
     # Self-heal: bare "custom" matched nothing — return first valid entry
     if bare_custom_fallback and first_valid:
-        dname, aurl, denv = first_valid
-        slug = custom_provider_slug(dname)
+        dname, aurl, denv, slug = first_valid
         return ProviderDef(
             id=slug,
             name=dname,

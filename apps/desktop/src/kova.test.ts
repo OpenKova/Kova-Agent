@@ -10,8 +10,8 @@ import {
   getCronJobs,
   getGlobalModelInfo,
   getGlobalModelOptions,
-  getKovaConfig,
-  getKovaConfigDefaults,
+  getHermesConfig,
+  getHermesConfigDefaults,
   getProfiles,
   getSessionMessages,
   getStatus,
@@ -19,6 +19,7 @@ import {
   listSessions,
   listSidebarSessions,
   resetSidebarBatchCapability,
+  setApiRequestProfile,
   speakText,
   transcribeAudio
 } from './kova'
@@ -37,15 +38,16 @@ describe('Kova REST helpers', () => {
   beforeEach(() => {
     resetSidebarBatchCapability()
     api = vi.fn().mockResolvedValue(emptySessionsResponse)
-    Object.defineProperty(window, 'kovaDesktop', {
+    Object.defineProperty(window, 'hermesDesktop', {
       configurable: true,
       value: { api }
     })
   })
 
   afterEach(() => {
+    setApiRequestProfile(null)
     vi.restoreAllMocks()
-    Reflect.deleteProperty(window, 'kovaDesktop')
+    Reflect.deleteProperty(window, 'hermesDesktop')
   })
 
   it('uses a longer timeout for the single-profile session list', async () => {
@@ -150,8 +152,9 @@ describe('Kova REST helpers', () => {
     // Slices reassembled from the legacy per-slice route with the same
     // scoping: recents on the caller's profile, cron + messaging cross-profile.
     expect(result.recents.sessions.map(s => s.id)).toEqual(['recent-1'])
-    expect(result.recents.total).toBe(7)
-    expect(result.recents.profile_totals).toEqual({ default: 7 })
+    // One row back against a 30-row window: the profile is fully loaded, so
+    // the legacy path must not claim there's another page.
+    expect(result.recents.profiles_truncated).toEqual({ default: false })
     expect(result.cron.sessions.map(s => s.id)).toEqual(['cron-1'])
     expect(result.messaging.sessions.map(s => s.id)).toEqual(['msg-1'])
 
@@ -292,8 +295,8 @@ describe('Kova REST helpers', () => {
     api.mockResolvedValue({})
 
     const bootCalls: [() => Promise<unknown>, string][] = [
-      [getKovaConfig, '/api/config'],
-      [getKovaConfigDefaults, '/api/config/defaults'],
+      [getHermesConfig, '/api/config'],
+      [getHermesConfigDefaults, '/api/config/defaults'],
       [getGlobalModelInfo, '/api/model/info'],
       [() => getGlobalModelOptions(), '/api/model/options?explicit_only=1'],
       [getCronJobs, '/api/cron/jobs']
@@ -336,7 +339,8 @@ describe('Kova REST helpers', () => {
     expect(audioSpeakRequestTimeoutMs('x'.repeat(100_000))).toBe(AUDIO_SPEAK_MAX_REQUEST_TIMEOUT_MS)
   })
 
-  it('uses an extended timeout for blocking TTS synthesis', async () => {
+  it('routes blocking TTS synthesis through the active profile backend', async () => {
+    setApiRequestProfile('rhaegal')
     api.mockResolvedValueOnce({
       data_url: 'data:audio/mpeg;base64,AA==',
       mime_type: 'audio/mpeg',
@@ -355,6 +359,7 @@ describe('Kova REST helpers', () => {
       body: { text: 'Read this aloud' },
       method: 'POST',
       path: '/api/audio/speak',
+      profile: 'rhaegal',
       timeoutMs: AUDIO_SPEAK_MIN_REQUEST_TIMEOUT_MS
     })
   })

@@ -13,7 +13,7 @@ needs, and a profile is just a HERMES_HOME directory — so the dashboard is the
 right home for a full-featured builder, and it can reuse everything that
 already exists.
 
-A profile = a full `~/.hermes/profiles/<name>/` directory with its own:
+A profile = a full `~/.kova/profiles/<name>/` directory with its own:
 - `config.yaml` — holds `model`/`provider`, `mcp_servers`, enabled skills
 - `skills/` — physical SKILL.md files (built-in seed + optional + hub installs)
 - `.env` — secrets

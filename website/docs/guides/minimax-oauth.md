@@ -44,7 +44,7 @@ kova model
 kova
 ```
 
-After the first login, credentials are stored under `~/.hermes/auth.json` and are refreshed automatically before each session.
+After the first login, credentials are stored under `~/.kova/auth.json` and are refreshed automatically before each session.
 
 ## Logging In Manually
 
@@ -59,7 +59,7 @@ kova auth add minimax-oauth
 If your account is on the China platform (`minimaxi.com`), use the API-key-based `minimax-cn` provider instead — `minimax-cn` is registered with `auth_type="api_key"` only (no OAuth flow). Configure `MINIMAX_CN_API_KEY` (and optionally `MINIMAX_CN_BASE_URL`) directly:
 
 ```bash
-echo 'MINIMAX_CN_API_KEY=your-key' >> ~/.hermes/.env
+echo 'MINIMAX_CN_API_KEY=your-key' >> ~/.kova/.env
 ```
 
 ### Remote / headless sessions
@@ -80,7 +80,7 @@ Kova implements a PKCE browser OAuth flow against the MiniMax OAuth endpoints:
 2. It POSTs to `{base_url}/oauth/code` with the challenge and receives a `user_code` and `verification_uri`.
 3. Your browser opens `verification_uri`. If prompted, enter the `user_code`.
 4. Kova polls `{base_url}/oauth/token` until the token arrives (or the deadline passes).
-5. Tokens (`access_token`, `refresh_token`, expiry) are saved to `~/.hermes/auth.json` under the `minimax-oauth` key.
+5. Tokens (`access_token`, `refresh_token`, expiry) are saved to `~/.kova/auth.json` under the `minimax-oauth` key.
 
 Token refresh (standard OAuth `refresh_token` grant) runs automatically at each session start when the access token is within 60 seconds of expiry.
 
@@ -119,7 +119,7 @@ kova config set model.provider minimax-oauth
 
 ## Configuration Reference
 
-After login, `~/.hermes/config.yaml` will contain entries similar to:
+After login, `~/.kova/config.yaml` will contain entries similar to:
 
 ```yaml
 model:
@@ -170,7 +170,7 @@ kova --provider minimax-oauth
 
 Both models support up to 200,000 tokens of context.
 
-`MiniMax-M2.7-highspeed` is also used automatically as the auxiliary model for vision and delegation tasks when `minimax-oauth` is the primary provider.
+`MiniMax-M2.7` is also used automatically as the auxiliary model for vision and delegation tasks when `minimax-oauth` is the primary provider.
 
 ## Troubleshooting
 

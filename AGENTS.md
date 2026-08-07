@@ -1,6 +1,6 @@
 # Kova Agent - Development Guide
 
-Instructions for AI coding assistants and developers working on the Kova-Agent codebase.
+Instructions for AI coding assistants and developers working on the kova-agent codebase.
 
 **Never give up on the right solution.**
 
@@ -128,7 +128,7 @@ conservative at the waist.
   and similar "someone else's product" plugins do NOT land under `plugins/` in
   this repo. They place an ongoing maintenance burden on us to keep them working
   against a fast-moving core, for a backend we don't own. Ship them as a
-  **standalone plugin repo** users install into `~/.hermes/plugins/` (or via a
+  **standalone plugin repo** users install into `~/.kova/plugins/` (or via a
   pip entry point), and promote them in the Nous Research Discord
   (`#plugins-skills-and-skins`). This is a coupling-and-maintenance decision, not
   a quality bar — the plugin can be excellent and still be a close. PRs that add
@@ -194,7 +194,7 @@ Each rung adds more permanent surface than the one above. Choose the highest
    only appears when a prerequisite is configured. Zero footprint otherwise.
    Examples: Home Assistant tools (gated on token), memory-provider tools.
 4. **Plugin** — third-party/niche/user-specific capability that doesn't ship in
-   core. Lives in `~/.hermes/plugins/` or a pip package, discovered at runtime.
+   core. Lives in `~/.kova/plugins/` or a pip package, discovered at runtime.
 5. **MCP server (in the catalog)** — if the capability genuinely needs to be a
    tool (structured I/O the agent invokes) but isn't core-fundamental, prefer
    building it as an MCP server and adding it to the MCP catalog over growing
@@ -210,6 +210,45 @@ backends, providers, notifiers), don't merge them one at a time — design an
 ABC + orchestrator, wrap the existing built-in as the first provider, and turn
 the competing PRs into plugins against that interface.
 
+### Surface capability is a property of the SESSION, never of the process env
+
+A tool that only works because of *who is on the other end of the connection* —
+the desktop app's panes, the in-app browser, message reactions, Projects — must
+resolve its availability from the **session's own source**, not from an env var
+on the backend process.
+
+The client and the backend are separate machines on separate clocks. The
+desktop app can be driving a backend Electron spawned locally, one over SSH,
+one behind a plain URL + token, or Kova Cloud. Only the first two are spawned
+by us and carry `KOVA_DESKTOP=1`. Every env-keyed GUI gate is therefore a
+silent no-op on the other half of the topologies, and the failure is invisible:
+the tool is stripped from the schema before the model ever sees it, on the same
+backend whose platform hint is telling the model it's *"chatting inside the
+Kova desktop app."*
+
+The pattern that works:
+
+- **The toolset is the surface gate.** Keep the tools off `_KOVA_CORE_TOOLS`
+  (nobody else should pay their schema) and put them in a named toolset —
+  `desktop_ui`, `project`. The GUI gateway's `_load_enabled_toolsets(platform)`
+  folds that toolset in when the session's platform says GUI. One resolver,
+  every topology.
+- **`check_fn` answers reachability or user opt-in, not surface.** "Is the
+  renderer bridge wired?", "did the user enable reactions?" — fine. "Was I
+  spawned by Electron?" — not fine. `check_fn` results are also TTL-cached
+  process-wide (`tools/registry.py`), so a per-session answer does not belong
+  there at all: one process serves many sessions.
+- **Ask which identity you actually mean.** `KOVA_DESKTOP=1` legitimately
+  marks *"this backend process was spawned by the app"* — it gates the cron
+  ticker and web-dist handling correctly. It does NOT mean "a GUI is watching",
+  and the embedded terminal pane (`kova --tui` against that same backend) is
+  the standing counterexample.
+
+Same test both ways: if the capability would still make sense with the client
+on another machine, it is session-scoped. Cover it with a test that asserts the
+GUI session gets the tool **with the env var absent** — that's the assertion
+the original gate could never have passed.
+
 ## Development Environment
 
 ```bash
@@ -218,7 +257,7 @@ source .venv/bin/activate   # or: source venv/bin/activate
 ```
 
 `scripts/run_tests.sh` probes `.venv` first, then `venv`, then
-`$HOME/.hermes/hermes-agent/venv` (for worktrees that share a venv with the
+`$HOME/.kova/kova-agent/venv` (for worktrees that share a venv with the
 main checkout).
 
 ## Project Structure
@@ -232,7 +271,7 @@ kova-agent/
 ├── run_agent.py          # AIAgent class — core conversation loop (~12k LOC)
 ├── model_tools.py        # Tool orchestration, discover_builtin_tools(), handle_function_call()
 ├── toolsets.py           # Toolset definitions, _KOVA_CORE_TOOLS list
-├── cli.py                # KovaCLI class — interactive CLI orchestrator (~11k LOC)
+├── cli.py                # HermesCLI class — interactive CLI orchestrator (~11k LOC)
 ├── kova_state.py       # SessionDB — SQLite session store (FTS5 search)
 ├── kova_constants.py   # get_kova_home(), display_kova_home() — profile-aware paths
 ├── kova_logging.py     # setup_logging() — agent.log / errors.log / gateway.log (profile-aware)
@@ -269,8 +308,8 @@ kova-agent/
 └── tests/                # Pytest suite (~17k tests across ~900 files as of May 2026)
 ```
 
-**User config:** `~/.hermes/config.yaml` (settings), `~/.hermes/.env` (API keys only).
-**Logs:** `~/.hermes/logs/` — `agent.log` (INFO+), `errors.log` (WARNING+),
+**User config:** `~/.kova/config.yaml` (settings), `~/.kova/.env` (API keys only).
+**Logs:** `~/.kova/logs/` — `agent.log` (INFO+), `errors.log` (WARNING+),
 `gateway.log` when running the gateway. Profile-aware via `get_kova_home()`.
 Browse with `kova logs [--follow] [--level ...] [--session ...]`.
 
@@ -325,7 +364,7 @@ class AIAgent:
         provider: str = None,
         api_mode: str = None,              # "chat_completions" | "codex_responses" | ...
         model: str = "",                   # empty → resolved from config/provider later
-        max_iterations: int = 90,          # tool-calling iterations (shared with subagents)
+        max_iterations: int = 500,         # tool-calling iterations (shared with subagents)
         enabled_toolsets: list = None,
         disabled_toolsets: list = None,
         quiet_mode: bool = False,
@@ -377,8 +416,8 @@ Reasoning content is stored in `assistant_msg["reasoning"]`.
 - **KawaiiSpinner** (`agent/display.py`) — animated faces during API calls, `┊` activity feed for tool results
 - `load_cli_config()` in cli.py merges hardcoded defaults + user config YAML
 - **Skin engine** (`kova_cli/skin_engine.py`) — data-driven CLI theming; initialized from `display.skin` config key at startup; skins customize banner colors, spinner faces/verbs/wings, tool prefix, response box, branding text
-- `process_command()` is a method on `KovaCLI` — dispatches on canonical command name resolved via `resolve_command()` from the central registry
-- Skill slash commands: `agent/skill_commands.py` scans `~/.hermes/skills/`, injects as **user message** (not system prompt) to preserve prompt caching
+- `process_command()` is a method on `HermesCLI` — dispatches on canonical command name resolved via `resolve_command()` from the central registry
+- Skill slash commands: `agent/skill_commands.py` scans `~/.kova/skills/`, injects as **user message** (not system prompt) to preserve prompt caching
 
 ### Slash Command Registry (`kova_cli/commands.py`)
 
@@ -399,7 +438,7 @@ All slash commands are defined in a central `COMMAND_REGISTRY` list of `CommandD
 CommandDef("mycommand", "Description of what it does", "Session",
            aliases=("mc",), args_hint="[arg]"),
 ```
-2. Add handler in `KovaCLI.process_command()` in `cli.py`:
+2. Add handler in `HermesCLI.process_command()` in `cli.py`:
 ```python
 elif canonical == "mycommand":
     self._handle_mycommand(cmd_original)
@@ -511,8 +550,8 @@ A **separate** chat surface from both the classic CLI and the dashboard's embedd
 Before adding any tool, settle the footprint question first (see "The
 Footprint Ladder" in the Contribution Rubric): most capabilities should NOT
 be core tools. For custom or local-only tools, do **not** edit Kova core.
-Use the plugin route instead: create `~/.hermes/plugins/<name>/plugin.yaml`
-and `~/.hermes/plugins/<name>/__init__.py`, then register tools with
+Use the plugin route instead: create `~/.kova/plugins/<name>/plugin.yaml`
+and `~/.kova/plugins/<name>/__init__.py`, then register tools with
 `ctx.register_tool(...)`. Plugin toolsets are discovered automatically and can be
 enabled or disabled without touching `tools/` or `toolsets.py`.
 
@@ -651,7 +690,7 @@ The skin engine (`kova_cli/skin_engine.py`) provides data-driven CLI visual cust
 
 ```
 kova_cli/skin_engine.py    # SkinConfig dataclass, built-in skins, YAML loader
-~/.hermes/skins/*.yaml       # User-installed custom skins (drop-in)
+~/.kova/skins/*.yaml       # User-installed custom skins (drop-in)
 ```
 
 - `init_skin_from_config()` — called at CLI startup, reads `display.skin` from config
@@ -705,7 +744,7 @@ Add to `_BUILTIN_SKINS` dict in `kova_cli/skin_engine.py`:
 
 ### User skins (YAML)
 
-Users create `~/.hermes/skins/<name>.yaml`:
+Users create `~/.kova/skins/<name>.yaml`:
 
 ```yaml
 name: cyberpunk
@@ -736,11 +775,11 @@ Activate with `/skin cyberpunk` or `display.skin: cyberpunk` in config.yaml.
 
 Kova has two plugin surfaces. Both live under `plugins/` in the repo so
 repo-shipped plugins can be discovered alongside user-installed ones in
-`~/.hermes/plugins/` and pip-installed entry points.
+`~/.kova/plugins/` and pip-installed entry points.
 
 ### General plugins (`kova_cli/plugins.py` + `plugins/<name>/`)
 
-`PluginManager` discovers plugins from `~/.hermes/plugins/`, `./.hermes/plugins/`,
+`PluginManager` discovers plugins from `~/.kova/plugins/`, `./.kova/plugins/`,
 and pip entry points. Each plugin exposes a `register(ctx)` function that
 can:
 
@@ -786,7 +825,7 @@ honcho argparse from `main.py` for exactly this reason.
 **No new in-tree memory providers (policy, May 2026):** the set of
 built-in memory providers under `plugins/memory/` is closed. New memory
 backends must ship as **standalone plugin repos** that users install
-into `~/.hermes/plugins/` (or via pip entry points) — they implement
+into `~/.kova/plugins/` (or via pip entry points) — they implement
 the same `MemoryProvider` ABC, register through the same discovery
 path, and integrate via `kova memory setup` / `post_setup()` without
 landing in this tree. PRs that add a new directory under
@@ -799,7 +838,7 @@ same rule applies beyond memory providers. Plugins that integrate
 someone else's product or project — observability/metrics backends,
 vendor SaaS connectors, analytics dashboards, paid-service tie-ins —
 must ship as **standalone plugin repos** that users install into
-`~/.hermes/plugins/` (or via pip entry points). They register through
+`~/.kova/plugins/` (or via pip entry points). They register through
 the existing plugin discovery path and use the ABCs/hooks/ctx surface
 we expose; nothing special is needed in core. The reason is
 maintenance load: every product we absorb into the tree becomes our
@@ -1019,7 +1058,7 @@ turn but still process-local. For work that must survive process restart, use
 
 Background skill-maintenance system that tracks usage on agent-created
 skills and auto-archives stale ones. Users never lose skills; archives
-go to `~/.hermes/skills/.archive/` and are restorable.
+go to `~/.kova/skills/.archive/` and are restorable.
 
 - **Core:** `agent/curator.py` (review loop, auto-transitions, LLM review
   prompt) + `agent/curator_backup.py` (pre-run tar.gz snapshots).
@@ -1027,7 +1066,7 @@ go to `~/.hermes/skills/.archive/` and are restorable.
   verbs are: `status`, `run`, `pause`, `resume`, `pin`, `unpin`,
   `archive`, `restore`, `prune`, `backup`, `rollback`.
 - **Telemetry:** `tools/skill_usage.py` owns the sidecar
-  `~/.hermes/skills/.usage.json` — per-skill `use_count`, `view_count`,
+  `~/.kova/skills/.usage.json` — per-skill `use_count`, `view_count`,
   `patch_count`, `last_activity_at`, `state` (active / stale /
   archived), `pinned`.
 
@@ -1074,7 +1113,7 @@ Hardening invariants:
   cannot monopolize the scheduler.
 - Catchup window: half the job's period, clamped to 120s–2h.
 - Grace window: 120s for one-shot jobs whose fire time was missed.
-- File lock at `~/.hermes/cron/.tick.lock` prevents duplicate ticks
+- File lock at `~/.kova/cron/.tick.lock` prevents duplicate ticks
   across processes.
 - Cron sessions pass `skip_memory=True` by default; memory providers
   intentionally do not run during cron.
@@ -1170,7 +1209,7 @@ automatically scope to the active profile.
 ### Rules for profile-safe code
 
 1. **Use `get_kova_home()` for all HERMES_HOME paths.** Import from `kova_constants`.
-   NEVER hardcode `~/.hermes` or `Path.home() / ".kova"` in code that reads/writes state.
+   NEVER hardcode `~/.kova` or `Path.home() / ".kova"` in code that reads/writes state.
    ```python
    # GOOD
    from kova_constants import get_kova_home
@@ -1181,14 +1220,14 @@ automatically scope to the active profile.
    ```
 
 2. **Use `display_kova_home()` for user-facing messages.** Import from `kova_constants`.
-   This returns `~/.hermes` for default or `~/.hermes/profiles/<name>` for profiles.
+   This returns `~/.kova` for default or `~/.kova/profiles/<name>` for profiles.
    ```python
    # GOOD
    from kova_constants import display_kova_home
    print(f"Config saved to {display_kova_home()}/config.yaml")
 
    # BAD — shows wrong path for profiles
-   print("Config saved to ~/.hermes/config.yaml")
+   print("Config saved to ~/.kova/config.yaml")
    ```
 
 3. **Module-level constants are fine** — they cache `get_kova_home()` at import time,
@@ -1216,9 +1255,9 @@ automatically scope to the active profile.
 
 ## Known Pitfalls
 
-### DO NOT hardcode `~/.hermes` paths
+### DO NOT hardcode `~/.kova` paths
 Use `get_kova_home()` from `kova_constants` for code paths. Use `display_kova_home()`
-for user-facing print/log messages. Hardcoding `~/.hermes` breaks profiles — each profile
+for user-facing print/log messages. Hardcoding `~/.kova` breaks profiles — each profile
 has its own `HERMES_HOME` directory. This was the source of 5 bugs fixed in PR #3575.
 
 ### DO NOT introduce new `simple_term_menu` usage
@@ -1261,8 +1300,8 @@ Unused code that was never shipped was dead for a reason. Before wiring an
 unused module into a live code path, E2E test the real resolution chain
 with actual imports (not mocks) against a temp `HERMES_HOME`.
 
-### Tests must not write to `~/.hermes/`
-The `_isolate_kova_home` autouse fixture in `tests/conftest.py` redirects `HERMES_HOME` to a temp dir. Never hardcode `~/.hermes/` paths in tests.
+### Tests must not write to `~/.kova/`
+The `_isolate_kova_home` autouse fixture in `tests/conftest.py` redirects `HERMES_HOME` to a temp dir. Never hardcode `~/.kova/` paths in tests.
 
 **Profile tests**: When testing profile features, also mock `Path.home()` so that
 `_get_profiles_root()` and `_get_default_kova_home()` resolve within the temp dir.
@@ -1284,14 +1323,15 @@ def profile_env(tmp_path, monkeypatch):
 ### Python
 **ALWAYS use `scripts/run_tests.sh`** — do not call `pytest` directly. The script enforces
 hermetic environment parity with CI (unset credential vars, TZ=UTC, LANG=C.UTF-8,
-`-n auto` xdist workers, in-tree subprocess-isolation plugin). Direct `pytest`
+per-file subprocess isolation via `scripts/run_tests_parallel.py` — no xdist,
+worker count auto-scaled from CPU count). Direct `pytest`
 on a 16+ core developer machine with API keys set diverges from CI in ways
 that have caused multiple "works locally, fails in CI" incidents (and the reverse).
 
 ```bash
 scripts/run_tests.sh                                  # full suite, CI-parity
 scripts/run_tests.sh tests/gateway/                   # one directory
-scripts/run_tests.sh tests/agent/test_foo.py::test_x  # one test
+scripts/run_tests.sh tests/agent/test_foo.py -k test_x  # one test (file + -k; the runner is file-granular)
 scripts/run_tests.sh -v --tb=long                     # pass-through pytest flags
 ```
 
@@ -1313,7 +1353,7 @@ ContextVars from one test file cannot leak into the next.
 |                     | Without wrapper                             | With wrapper                              |
 | ------------------- | ------------------------------------------- | ----------------------------------------- |
 | Provider API keys   | Whatever is in your env (auto-detects pool) | All env vars except a specific few unset. |
-| HOME / `~/.hermes/` | Your real config+auth.json                  | Temp dir per test                         |
+| HOME / `~/.kova/` | Your real config+auth.json                  | Temp dir per test                         |
 | Timezone            | Local TZ (PDT etc.)                         | UTC                                       |
 | Locale              | Whatever is set                             | C.UTF-8                                   |
 

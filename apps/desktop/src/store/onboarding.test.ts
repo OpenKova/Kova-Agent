@@ -40,7 +40,7 @@ function baseState(overrides: Partial<DesktopOnboardingState> = {}): DesktopOnbo
 }
 
 function installApiMock(api: (request: { path: string }) => Promise<unknown>) {
-  Object.defineProperty(window, 'kovaDesktop', {
+  Object.defineProperty(window, 'hermesDesktop', {
     configurable: true,
     value: { api }
   })

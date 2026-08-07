@@ -5,7 +5,7 @@ Implements ``kova mcp add/remove/list/test/configure`` for interactive
 MCP server lifecycle management (issue #690 Phase 2).
 
 Relies on tools/mcp_tool.py for connection/discovery and keeps
-configuration in ~/.hermes/config.yaml under the ``mcp_servers`` key.
+configuration in ~/.kova/config.yaml under the ``mcp_servers`` key.
 """
 
 import asyncio
@@ -255,7 +255,7 @@ def _resolve_mcp_server_config(config: dict) -> dict:
     """Resolve ``${ENV}`` placeholders in a server config before connecting.
 
     Mirrors ``_load_mcp_config()`` in ``tools/mcp_tool.py``: load
-    ``~/.hermes/.env`` into ``os.environ`` and recursively interpolate any
+    ``~/.kova/.env`` into ``os.environ`` and recursively interpolate any
     ``${VAR}`` placeholders. The CLI builds header templates like
     ``Authorization: Bearer ${MCP_X_API_KEY}`` but the probe path never
     resolved them, so the discovery probe sent the literal placeholder and
@@ -386,8 +386,8 @@ def _oauth_tokens_present(name: str) -> bool:
     initialize/tools-list without auth (so no token was ever acquired).
     """
     try:
-        from tools.mcp_oauth import KovaTokenStorage
-        return KovaTokenStorage(name).has_cached_tokens()
+        from tools.mcp_oauth import HermesTokenStorage
+        return HermesTokenStorage(name).has_cached_tokens()
     except Exception as exc:  # pragma: no cover — defensive
         logger.debug("Could not check OAuth tokens for '%s': %s", name, exc)
         # Be permissive on unexpected errors: don't block a real success.
@@ -490,7 +490,9 @@ def cmd_mcp_add(args):
         oauth_ok = False
         try:
             from tools.mcp_oauth_manager import get_manager
-            oauth_auth = get_manager().get_or_build_provider(name, url, None)
+            oauth_auth = get_manager().get_or_build_provider(
+                name, url, server_config.get("oauth")
+            )
             if oauth_auth:
                 server_config["auth"] = "oauth"
                 _success("OAuth configured (tokens will be acquired on first connection)")
@@ -816,16 +818,24 @@ def _reauth_oauth_server(name: str, server_config: dict) -> bool:
     # an interactive OAuth round-trip. Floor at 315s — the OAuth callback
     # window (300s in mcp_oauth) plus headroom — matching the GUI re-auth
     # path in web_server.py so CLI and dashboard behave identically.
+    #
+    # force_interactive_oauth: `kova mcp login` is *explicitly* user-
+    # initiated even when stdin isn't a TTY (Kova desktop / agent-
+    # spawned terminals). Without this, OAuth refuses before opening a
+    # browser because _is_interactive() only checks sys.stdin.isatty().
     try:
+        from tools.mcp_oauth import force_interactive_oauth
+
         _login_connect_timeout = server_config.get("connect_timeout")
         try:
             _login_connect_timeout = float(_login_connect_timeout)
         except (TypeError, ValueError):
             _login_connect_timeout = 0.0
         _login_connect_timeout = max(_login_connect_timeout, 315.0)
-        tools = _probe_single_server(
-            name, server_config, connect_timeout=_login_connect_timeout
-        )
+        with force_interactive_oauth():
+            tools = _probe_single_server(
+                name, server_config, connect_timeout=_login_connect_timeout
+            )
         # A clean probe is NOT proof of authentication. Some MCP servers
         # (notably Google's official Drive server) serve initialize +
         # tools/list WITHOUT auth, so the probe lists tools even when the
@@ -862,7 +872,15 @@ def _reauth_oauth_server(name: str, server_config: dict) -> bool:
             _success("Authenticated (server reported no tools)")
         return True
     except Exception as exc:
-        _error(f"Authentication failed: {exc}")
+        try:
+            from tools.mcp_oauth import humanize_oauth_registration_error
+
+            humanized = humanize_oauth_registration_error(
+                name, exc, server_url=url
+            )
+        except Exception:
+            humanized = None
+        _error(f"Authentication failed: {humanized or exc}")
         return False
 
 
@@ -986,15 +1004,25 @@ def cmd_mcp_configure(args):
 
     tool_names = [t[0] for t in all_tools]
 
+    # Same matching semantics as runtime registration (tools/mcp_tool.py):
+    # exact names or fnmatch globs.
+    try:
+        from tools.mcp_tool import matches_name_filter
+    except ImportError:  # pragma: no cover — defensive fallback
+        def matches_name_filter(tool_name, patterns):
+            return tool_name in patterns
+
     if include and isinstance(include, list):
-        include_set = set(include)
+        include_set = {str(p) for p in include}
         pre_selected = {
-            i for i, tn in enumerate(tool_names) if tn in include_set
+            i for i, tn in enumerate(tool_names)
+            if matches_name_filter(tn, include_set)
         }
     elif exclude and isinstance(exclude, list):
-        exclude_set = set(exclude)
+        exclude_set = {str(p) for p in exclude}
         pre_selected = {
-            i for i, tn in enumerate(tool_names) if tn not in exclude_set
+            i for i, tn in enumerate(tool_names)
+            if not matches_name_filter(tn, exclude_set)
         }
     else:
         pre_selected = set(range(len(all_tools)))

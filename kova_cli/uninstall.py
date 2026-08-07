@@ -3,7 +3,7 @@ Kova Agent Uninstaller.
 
 Provides options for:
 - Full uninstall: Remove everything including configs and data
-- Keep data: Remove code but keep ~/.hermes/ (configs, sessions, logs)
+- Keep data: Remove code but keep ~/.kova/ (configs, sessions, logs)
 """
 
 import os
@@ -57,7 +57,7 @@ def remove_path_from_shell_configs():
     
     for config_path in configs:
         try:
-            content = config_path.read_text()
+            content = config_path.read_text(encoding="utf-8")
             original_content = content
             
             # Remove lines containing kova-agent or kova PATH entries
@@ -66,7 +66,7 @@ def remove_path_from_shell_configs():
             
             for line in content.split('\n'):
                 # Skip the "# Kova Agent" comment and following line
-                if '# Kova Agent' in line or '# Kova Agent' in line or '# kova-agent' in line:
+                if '# Kova Agent' in line or '# kova-agent' in line:
                     skip_next = True
                     continue
                 if skip_next and ('kova' in line.lower() and 'PATH' in line):
@@ -87,7 +87,20 @@ def remove_path_from_shell_configs():
                 new_content = new_content.replace('\n\n\n', '\n\n')
             
             if new_content != original_content:
-                config_path.write_text(new_content)
+                from utils import atomic_write_text
+
+                # This is the user's own shell rc, not a Kova-owned file, and
+                # nothing in this function backs it up. A bare write_text()
+                # truncates it before the new content lands, so a crash or
+                # SIGINT mid-write leaves the user with an empty or truncated
+                # ~/.zshrc -- and the enclosing `except Exception` downgrades
+                # that to a warning, so the next login just starts a bare
+                # shell. atomic_replace also resolves a symlinked rc file, so a
+                # dotfiles-repo setup keeps the symlink instead of having it
+                # replaced by a regular file. preserve_mode keeps the rc's
+                # permission bits (normally 0644) and owner (sudo-run
+                # uninstalls) instead of mkstemp's 0600/root.
+                atomic_write_text(config_path, new_content, preserve_mode=True)
                 removed_from.append(config_path)
                 
         except Exception as e:
@@ -100,7 +113,11 @@ def remove_wrapper_script():
     """Remove the kova wrapper script if it exists."""
     wrapper_paths = [
         Path.home() / ".local" / "bin" / "kova",
+        Path.home() / ".local" / "bin" / "kova-acp",
+        Path.home() / ".local" / "bin" / "kova-agent",
         Path("/usr/local/bin/kova"),
+        Path("/usr/local/bin/kova-acp"),
+        Path("/usr/local/bin/kova-agent"),
     ]
     
     removed = []
@@ -108,7 +125,7 @@ def remove_wrapper_script():
         if wrapper.exists():
             try:
                 # Check if it's our wrapper (contains kova_cli reference)
-                content = wrapper.read_text()
+                content = wrapper.read_text(encoding="utf-8")
                 if 'kova_cli' in content or 'kova-agent' in content:
                     wrapper.unlink()
                     removed.append(wrapper)
@@ -465,7 +482,7 @@ def _uninstall_profile(profile) -> None:
             subprocess.run(
                 kova_invocation + ["gateway", subcmd],
                 capture_output=True,
-                text=True,
+                text=True, encoding='utf-8', errors='replace',
                 timeout=60,
                 check=False,
             )
@@ -512,7 +529,7 @@ def run_gui_uninstall(args):
 
     print()
     print(color("┌─────────────────────────────────────────────────────────┐", Colors.MAGENTA, Colors.BOLD))
-    print(color("│         ⚕ Kova Chat GUI Uninstaller                    │", Colors.MAGENTA, Colors.BOLD))
+    print(color("│         ⚕ Kova Chat GUI Uninstaller                  │", Colors.MAGENTA, Colors.BOLD))
     print(color("└─────────────────────────────────────────────────────────┘", Colors.MAGENTA, Colors.BOLD))
     print()
 
@@ -569,8 +586,8 @@ def run_uninstall(args):
     Run the uninstall process.
     
     Options:
-    - Full uninstall: removes code + ~/.hermes/ (configs, data, logs)
-    - Keep data: removes code but keeps ~/.hermes/ for future reinstall
+    - Full uninstall: removes code + ~/.kova/ (configs, data, logs)
+    - Keep data: removes code but keeps ~/.kova/ for future reinstall
     """
     project_root = get_project_root()
     kova_home = get_kova_home()
@@ -590,7 +607,7 @@ def run_uninstall(args):
     named_profiles = _discover_named_profiles() if is_default_profile else []
 
     # Non-interactive fast path (``--yes``): no prompts. ``--full`` selects a
-    # full wipe (code + ~/.hermes data); otherwise keep-data. Named profiles
+    # full wipe (code + ~/.kova data); otherwise keep-data. Named profiles
     # are NOT auto-removed here — that's a destructive, surprising default for
     # an unattended run, so it stays opt-in to the interactive flow. This is
     # the path the desktop app's detached cleanup script uses for its
@@ -837,7 +854,7 @@ def _perform_uninstall(
     # We need to be careful here
     try:
         if project_root.exists():
-            # If the install is inside ~/.hermes/, just remove the kova-agent subdir
+            # If the install is inside ~/.kova/, just remove the kova-agent subdir
             if kova_home in project_root.parents or project_root.parent == kova_home:
                 shutil.rmtree(project_root)
                 log_success(f"Removed {project_root}")
@@ -864,7 +881,7 @@ def _perform_uninstall(
         else:
             log_info("No Windows installer artifacts to remove")
     
-    # 5. Optionally remove ~/.hermes/ data directory (and named profiles)
+    # 5. Optionally remove ~/.kova/ data directory (and named profiles)
     if full_uninstall:
         # 5a. Stop and remove each named profile's gateway service and
         #     alias wrapper. The profile HERMES_HOME dirs live under

@@ -11,7 +11,7 @@
  *     installStamp,        // INSTALL_STAMP from main.ts (may be null in dev)
  *     activeRoot,          // ACTIVE_KOVA_ROOT
  *     sourceRepoRoot,      // SOURCE_REPO_ROOT (for dev install.ps1 lookup)
- *     kovaHome,          // HERMES_HOME
+ *     hermesHome,          // HERMES_HOME
  *     logRoot,             // HERMES_HOME/logs
  *     emit: ev => {...}    // event sink (sender.send or similar)
  *   })
@@ -90,7 +90,7 @@ function readExistingPinnedCommit(activeRoot: string | null | undefined): string
   }
 
   try {
-    const raw = fs.readFileSync(path.join(activeRoot, '.hermes-bootstrap-complete'), 'utf8')
+    const raw = fs.readFileSync(path.join(activeRoot, '.kova-bootstrap-complete'), 'utf8')
     const parsed = JSON.parse(raw)
 
     return parsed && isPinnedCommit(parsed.pinnedCommit) ? parsed.pinnedCommit : null
@@ -187,20 +187,20 @@ function resolveLocalInstallScript(sourceRepoRoot) {
   }
 }
 
-function bootstrapCacheDir(kovaHome) {
-  return path.join(kovaHome, 'bootstrap-cache')
+function bootstrapCacheDir(hermesHome) {
+  return path.join(hermesHome, 'bootstrap-cache')
 }
 
 // The install.sh / install.ps1 that ships inside the already-installed agent
-// checkout under ~/.hermes/kova-agent. Used as a last-resort fallback when
+// checkout under ~/.kova/kova-agent. Used as a last-resort fallback when
 // the pinned commit can't be fetched from GitHub (e.g. a locally-built desktop
 // app stamped to an unpushed HEAD).
-function installedAgentInstallScript(kovaHome) {
-  if (!kovaHome) {
+function installedAgentInstallScript(hermesHome) {
+  if (!hermesHome) {
     return null
   }
 
-  const candidate = path.join(kovaHome, 'kova-agent', 'scripts', installScriptName())
+  const candidate = path.join(hermesHome, 'kova-agent', 'scripts', installScriptName())
 
   try {
     fs.accessSync(candidate, fs.constants.R_OK)
@@ -223,8 +223,8 @@ function hasExistingGitCheckout(activeRoot) {
   }
 }
 
-function cachedScriptPath(kovaHome, commit) {
-  return path.join(bootstrapCacheDir(kovaHome), `install-${commit}.${process.platform === 'win32' ? 'ps1' : 'sh'}`)
+function cachedScriptPath(hermesHome, commit) {
+  return path.join(bootstrapCacheDir(hermesHome), `install-${commit}.${process.platform === 'win32' ? 'ps1' : 'sh'}`)
 }
 
 function downloadInstallScript(ref, destPath) {
@@ -233,7 +233,7 @@ function downloadInstallScript(ref, destPath) {
   // ref so local builds can still bootstrap without pretending the all-zero
   // placeholder is a real GitHub commit.
   const scriptName = installScriptName()
-  const url = `https://raw.githubusercontent.com/Kova/kova-agent/${ref}/scripts/${scriptName}`
+  const url = `https://raw.githubusercontent.com/OpenKova/Kova-Agent/${ref}/scripts/${scriptName}`
 
   return new Promise((resolve, reject) => {
     fs.mkdirSync(path.dirname(destPath), { recursive: true })
@@ -317,7 +317,7 @@ function downloadInstallScript(ref, destPath) {
 async function resolveInstallScript({
   installStamp,
   sourceRepoRoot,
-  kovaHome,
+  hermesHome,
   emit,
   _download = downloadInstallScript
 }) {
@@ -344,7 +344,7 @@ async function resolveInstallScript({
     )
   }
 
-  const cached = cachedScriptPath(kovaHome, installRef.cacheKey)
+  const cached = cachedScriptPath(hermesHome, installRef.cacheKey)
   const resolvedCommit = installRef.pinned ? installRef.ref : null
 
   try {
@@ -377,7 +377,7 @@ async function resolveInstallScript({
     // write-build-stamp.mjs fromLocalGit). Fall back to the installer that
     // ships inside the already-installed agent checkout so dev/self-builds can
     // still bootstrap instead of dying with a fatal 404.
-    const installed = installedAgentInstallScript(kovaHome)
+    const installed = installedAgentInstallScript(hermesHome)
 
     if (installed) {
       emit({
@@ -456,7 +456,7 @@ function resolveWindowsPowerShell() {
   return 'powershell.exe'
 }
 
-function spawnPowerShell(scriptPath, args, { emit, stageName, abortSignal, kovaHome }: any = {}) {
+function spawnPowerShell(scriptPath, args, { emit, stageName, abortSignal, hermesHome }: any = {}) {
   return new Promise<any>((resolve, reject) => {
     const ps = process.platform === 'win32' ? resolveWindowsPowerShell() : 'pwsh'
     const fullArgs = ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', scriptPath, ...args]
@@ -470,7 +470,7 @@ function spawnPowerShell(scriptPath, args, { emit, stageName, abortSignal, kovaH
           ...process.env,
           // Pass HERMES_HOME through so install.ps1 respects the caller's
           // choice rather than re-computing the default.
-          HERMES_HOME: kovaHome || process.env.HERMES_HOME || ''
+          HERMES_HOME: hermesHome || process.env.HERMES_HOME || ''
         }
       })
     )
@@ -560,13 +560,13 @@ function spawnPowerShell(scriptPath, args, { emit, stageName, abortSignal, kovaH
   })
 }
 
-function spawnBash(scriptPath, args, { emit, stageName, abortSignal, kovaHome }: any = {}) {
+function spawnBash(scriptPath, args, { emit, stageName, abortSignal, hermesHome }: any = {}) {
   return new Promise<any>((resolve, reject) => {
     const child = spawn('bash', [scriptPath, ...args], {
       stdio: ['ignore', 'pipe', 'pipe'],
       env: {
         ...process.env,
-        HERMES_HOME: kovaHome || process.env.HERMES_HOME || ''
+        HERMES_HOME: hermesHome || process.env.HERMES_HOME || ''
       }
     })
 
@@ -676,8 +676,8 @@ function buildPinArgs(installStamp, { pinCommit = true } = {}) {
   return args
 }
 
-function buildPosixPinArgs({ installStamp, activeRoot, kovaHome, pinCommit = true }) {
-  const args = ['--dir', activeRoot, '--kova-home', kovaHome]
+function buildPosixPinArgs({ installStamp, activeRoot, hermesHome, pinCommit = true }) {
+  const args = ['--dir', activeRoot, '--kova-home', hermesHome]
 
   if (installStamp && installStamp.branch) {
     args.push('--branch', installStamp.branch)
@@ -690,17 +690,17 @@ function buildPosixPinArgs({ installStamp, activeRoot, kovaHome, pinCommit = tru
   return args
 }
 
-async function fetchManifest({ scriptPath, installerKind, emit, kovaHome, activeRoot, installStamp, pinCommit }) {
+async function fetchManifest({ scriptPath, installerKind, emit, hermesHome, activeRoot, installStamp, pinCommit }) {
   const isPosix = installerKind === 'posix'
 
   const args = isPosix
-    ? ['--manifest', ...buildPosixPinArgs({ installStamp, activeRoot, kovaHome, pinCommit })]
+    ? ['--manifest', ...buildPosixPinArgs({ installStamp, activeRoot, hermesHome, pinCommit })]
     : ['-Manifest', ...buildPinArgs(installStamp, { pinCommit })]
 
   const result = await (isPosix ? spawnBash : spawnPowerShell)(scriptPath, args, {
     emit,
     stageName: '__manifest__',
-    kovaHome
+    hermesHome
   })
 
   if (result.code !== 0) {
@@ -757,7 +757,7 @@ async function runStage({
   installerKind,
   stage,
   emit,
-  kovaHome,
+  hermesHome,
   activeRoot,
   abortSignal,
   installStamp,
@@ -774,7 +774,7 @@ async function runStage({
         stage.name,
         '--non-interactive',
         '--json',
-        ...buildPosixPinArgs({ installStamp, activeRoot, kovaHome, pinCommit })
+        ...buildPosixPinArgs({ installStamp, activeRoot, hermesHome, pinCommit })
       ]
     : ['-Stage', stage.name, '-NonInteractive', '-Json', ...buildPinArgs(installStamp, { pinCommit })]
 
@@ -782,7 +782,7 @@ async function runStage({
     emit,
     stageName: stage.name,
     abortSignal,
-    kovaHome
+    hermesHome
   })
 
   const durationMs = Date.now() - startedAt
@@ -861,7 +861,7 @@ async function runBootstrap(opts) {
     installStamp,
     activeRoot,
     sourceRepoRoot,
-    kovaHome,
+    hermesHome,
     logRoot,
     onEvent,
     abortSignal,
@@ -883,7 +883,7 @@ async function runBootstrap(opts) {
     return { ok: false, cancelled: true }
   }
 
-  const runLog = openRunLog(logRoot || path.join(kovaHome, 'logs'))
+  const runLog = openRunLog(logRoot || path.join(hermesHome, 'logs'))
 
   // Tee every event to the runLog AND the caller's onEvent. This gives us a
   // forensic trail per bootstrap run AND lets the renderer subscribe live.
@@ -927,7 +927,7 @@ async function runBootstrap(opts) {
     }
 
     // 1. Resolve the platform installer.
-    const scriptInfo = await resolveInstallScript({ installStamp, sourceRepoRoot, kovaHome, emit })
+    const scriptInfo = await resolveInstallScript({ installStamp, sourceRepoRoot, hermesHome, emit })
     const installerKind = scriptInfo.kind || 'powershell'
 
     // 2. Fetch manifest
@@ -935,7 +935,7 @@ async function runBootstrap(opts) {
       scriptPath: scriptInfo.path,
       installerKind,
       emit,
-      kovaHome,
+      hermesHome,
       activeRoot,
       installStamp,
       pinCommit
@@ -963,7 +963,7 @@ async function runBootstrap(opts) {
         installerKind,
         stage,
         emit,
-        kovaHome,
+        hermesHome,
         activeRoot,
         abortSignal,
         installStamp,

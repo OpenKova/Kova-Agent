@@ -37,7 +37,7 @@ import {
   unpackedDirName
 } from './update-relaunch'
 
-const ROOT = '/home/u/.hermes/kova-agent'
+const ROOT = '/home/u/.kova/kova-agent'
 const UNPACKED = path.join(ROOT, 'apps', 'desktop', 'release', 'linux-unpacked')
 
 // ---------------------------------------------------------------------------
@@ -58,13 +58,13 @@ test('resolveUnpackedRelease returns the dir for a binary UNDER release/<plat>-u
 
 test('resolveUnpackedRelease is null for AppImage / .deb / .rpm / dev / unresolved paths', () => {
   // AppImage mount
-  assert.equal(resolveUnpackedRelease('/tmp/.mount_Kova12345/AppRun', ROOT, 'linux'), null)
+  assert.equal(resolveUnpackedRelease('/tmp/.mount_Hermes12345/AppRun', ROOT, 'linux'), null)
   // .deb / .rpm system install
   assert.equal(resolveUnpackedRelease('/usr/lib/kova/kova', ROOT, 'linux'), null)
   assert.equal(resolveUnpackedRelease('/opt/Kova/kova', ROOT, 'linux'), null)
   // dev electron
   assert.equal(
-    resolveUnpackedRelease('/home/u/.hermes/kova-agent/node_modules/electron/dist/electron', ROOT, 'linux'),
+    resolveUnpackedRelease('/home/u/.kova/kova-agent/node_modules/electron/dist/electron', ROOT, 'linux'),
     null
   )
   // empty / missing
@@ -159,11 +159,11 @@ test('collectRelaunchArgs drops Electron internals, keeps user/launcher args', (
 
 test('collectRelaunchEnv preserves HERMES_HOME + KOVA_DESKTOP_* + sandbox opt-out only', () => {
   const env = {
-    HERMES_HOME: '/home/u/.hermes',
+    HERMES_HOME: '/home/u/.kova',
     KOVA_DESKTOP_REMOTE_URL: 'http://box:9119',
     KOVA_DESKTOP_REMOTE_TOKEN: 'secret',
     KOVA_DESKTOP_KOVA_ROOT: '/home/u/dev/kova',
-    KOVA_DESKTOP_APP_NAME: 'KovaSandbox',
+    KOVA_DESKTOP_APP_NAME: 'HermesSandbox',
     ELECTRON_DISABLE_SANDBOX: '1', // sandbox opt-out — preserved
     PATH: '/usr/bin', // not preserved
     HOME: '/home/u', // not preserved
@@ -171,11 +171,11 @@ test('collectRelaunchEnv preserves HERMES_HOME + KOVA_DESKTOP_* + sandbox opt-ou
   }
 
   assert.deepEqual(collectRelaunchEnv(env), {
-    HERMES_HOME: '/home/u/.hermes',
+    HERMES_HOME: '/home/u/.kova',
     KOVA_DESKTOP_REMOTE_URL: 'http://box:9119',
     KOVA_DESKTOP_REMOTE_TOKEN: 'secret',
     KOVA_DESKTOP_KOVA_ROOT: '/home/u/dev/kova',
-    KOVA_DESKTOP_APP_NAME: 'KovaSandbox',
+    KOVA_DESKTOP_APP_NAME: 'HermesSandbox',
     ELECTRON_DISABLE_SANDBOX: '1'
   })
   assert.deepEqual(collectRelaunchEnv(null), {})
@@ -193,9 +193,9 @@ test('shellQuote neutralizes single quotes and metacharacters', () => {
 test('buildRelaunchScript embeds pid/exec/args/env/cwd and is valid bash', () => {
   const script = buildRelaunchScript({
     pid: 4242,
-    execPath: '/home/u/.hermes/kova-agent/apps/desktop/release/linux-unpacked/Kova',
+    execPath: '/home/u/.kova/kova-agent/apps/desktop/release/linux-unpacked/Kova',
     args: ['kova://open/agent/42', "--note=it's fine"],
-    env: { HERMES_HOME: '/home/u/.hermes', KOVA_DESKTOP_REMOTE_URL: 'http://box:9119' },
+    env: { HERMES_HOME: '/home/u/.kova', KOVA_DESKTOP_REMOTE_URL: 'http://box:9119' },
     cwd: '/home/u/work dir'
   })
 

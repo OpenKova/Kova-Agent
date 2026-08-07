@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { canOpenNewWindow, canOpenSessionWindow, openNewWindow, openSessionInNewWindow } from './windows'
 
-const desktopWindow = window as unknown as { kovaDesktop?: Window['kovaDesktop'] }
-const initialKovaDesktop = desktopWindow.kovaDesktop
+const desktopWindow = window as unknown as { hermesDesktop?: Window['hermesDesktop'] }
+const initialHermesDesktop = desktopWindow.hermesDesktop
 
 const notifyError = vi.fn()
 
@@ -12,13 +12,13 @@ vi.mock('./notifications', () => ({
 }))
 
 function installBridge(
-  openSessionWindow?: Window['kovaDesktop']['openSessionWindow'],
-  openWindow?: Window['kovaDesktop']['openWindow']
+  openSessionWindow?: Window['hermesDesktop']['openSessionWindow'],
+  openWindow?: Window['hermesDesktop']['openWindow']
 ) {
-  desktopWindow.kovaDesktop = {
+  desktopWindow.hermesDesktop = {
     ...(openSessionWindow ? { openSessionWindow } : {}),
     ...(openWindow ? { openWindow } : {})
-  } as unknown as Window['kovaDesktop']
+  } as unknown as Window['hermesDesktop']
 }
 
 beforeEach(() => {
@@ -26,16 +26,16 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  if (initialKovaDesktop) {
-    desktopWindow.kovaDesktop = initialKovaDesktop
+  if (initialHermesDesktop) {
+    desktopWindow.hermesDesktop = initialHermesDesktop
   } else {
-    delete desktopWindow.kovaDesktop
+    delete desktopWindow.hermesDesktop
   }
 })
 
 describe('canOpenSessionWindow', () => {
   it('is false when the desktop bridge is absent', () => {
-    delete desktopWindow.kovaDesktop
+    delete desktopWindow.hermesDesktop
     expect(canOpenSessionWindow()).toBe(false)
   })
 
@@ -62,7 +62,7 @@ describe('openSessionInNewWindow', () => {
   })
 
   it('no-ops gracefully when the bridge is absent (web fallback)', async () => {
-    delete desktopWindow.kovaDesktop
+    delete desktopWindow.hermesDesktop
 
     await openSessionInNewWindow('s1')
 
@@ -108,7 +108,7 @@ describe('openSessionInNewWindow', () => {
 
 describe('canOpenNewWindow', () => {
   it('is false when the desktop bridge is absent', () => {
-    delete desktopWindow.kovaDesktop
+    delete desktopWindow.hermesDesktop
     expect(canOpenNewWindow()).toBe(false)
   })
 
@@ -125,7 +125,7 @@ describe('canOpenNewWindow', () => {
 
 describe('openNewWindow', () => {
   it('no-ops gracefully when the bridge is absent (web fallback)', async () => {
-    delete desktopWindow.kovaDesktop
+    delete desktopWindow.hermesDesktop
 
     await openNewWindow()
 

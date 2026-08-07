@@ -9,10 +9,10 @@ import { connectWindowsRemote } from './windows-remote-lifecycle'
 // your test rig; skipped everywhere else (CI, other machines).
 //   KOVA_WIN_SSH_HOST   ssh alias/host of the Windows box
 //   KOVA_WIN_SSH_USER   remote user
-//   KOVA_WIN_SSH_BIN absolute path to the remote kova.exe under test
+//   KOVA_WIN_SSH_HERMES absolute path to the remote kova.exe under test
 const liveHost = process.env.KOVA_WIN_SSH_HOST || ''
 const liveUser = process.env.KOVA_WIN_SSH_USER || ''
-const configuredKova = process.env.KOVA_WIN_SSH_BIN || ''
+const configuredHermes = process.env.KOVA_WIN_SSH_HERMES || ''
 const ownershipId = '89abcdef0123456789abcdef01234567'
 
 function fetchJson(url, token, path) {
@@ -25,7 +25,7 @@ function fetchJson(url, token, path) {
   })
 }
 
-test.skipIf(!liveHost || !liveUser || !configuredKova)(
+test.skipIf(!liveHost || !liveUser || !configuredHermes)(
   'live Windows remote lifecycle spawns, authenticates, reuses, and cleans exact ownership',
   async () => {
     const ssh = new SshConnection({ host: liveHost, user: liveUser, port: 22, keyPath: '' }, { mux: true })
@@ -35,11 +35,11 @@ test.skipIf(!liveHost || !liveUser || !configuredKova)(
       ssh,
       ownershipId,
       profile: '',
-      remoteKovaPath: configuredKova,
+      remoteHermesPath: configuredHermes,
       pickLocalPort,
       forward: (local, remote) => ssh.forward(local, remote),
       cancelForward: (local, remote) => ssh.cancelForward(local, remote),
-      waitForKova: async (baseUrl, token) => {
+      waitForHermes: async (baseUrl, token) => {
         for (let i = 0; i < 40; i++) {
           try {
             await fetchJson(baseUrl, token, '/api/status')
@@ -81,15 +81,15 @@ test.skipIf(!liveHost || !liveUser || !configuredKova)(
         await ssh.cancelForward(second.localPort, second.remotePort)
       }
 
-      const runtimeScript = `& '${configuredKova.replace('kova.exe', 'python.exe')}' -m kova_cli.windows_ssh_runtime read-lock '${ownershipId}'`
+      const runtimeScript = `& '${configuredHermes.replace('kova.exe', 'python.exe')}' -m kova_cli.windows_ssh_runtime read-lock '${ownershipId}'`
 
       const lock: any = JSON.parse(
         await ssh.exec(`powershell.exe -NoProfile -NonInteractive -Command "${runtimeScript}"`)
       )
 
       if (lock) {
-        const python = configuredKova.replace('kova.exe', 'python.exe')
-        const terminate = `& '${python}' -m kova_cli.windows_ssh_runtime terminate '${lock.pid}' '${lock.creationTimeNs}' '${lock.kovaPath}' '${lock.spawnNonce}'`
+        const python = configuredHermes.replace('kova.exe', 'python.exe')
+        const terminate = `& '${python}' -m kova_cli.windows_ssh_runtime terminate '${lock.pid}' '${lock.creationTimeNs}' '${lock.hermesPath}' '${lock.spawnNonce}'`
         await ssh.exec(`powershell.exe -NoProfile -NonInteractive -Command "${terminate}"`)
         await ssh.exec(
           `powershell.exe -NoProfile -NonInteractive -Command "& '${python}' -m kova_cli.windows_ssh_runtime remove-lock '${ownershipId}'"`
