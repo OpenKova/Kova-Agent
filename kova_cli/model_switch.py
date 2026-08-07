@@ -210,7 +210,7 @@ _KOVA_MODEL_WARNING = (
     "(Claude, GPT, Gemini, DeepSeek, etc.)."
 )
 
-# Match only the real Nous Research Kova 3 / Kova 4 chat families.
+# Match only the real Nous Research Hermes 3 / Kova 4 chat families.
 # The previous substring check (`"kova" in name.lower()`) false-positived on
 # unrelated local Modelfiles like ``kova-brain:qwen3-14b-ctx16k`` that just
 # happen to carry "kova" in their tag but are fully tool-capable.
@@ -220,7 +220,7 @@ _KOVA_MODEL_WARNING = (
 # Negative examples it must NOT match:
 #   kova-brain:qwen3-14b-ctx16k, qwen3:14b, claude-opus-4-6
 _NOUS_KOVA_NON_AGENTIC_RE = re.compile(
-    r"(?:^|[/:])kova[-_ ]?[34](?:[-_.:]|$)",
+    r"(?:^|[/:])(?:hermes|kova)[-_ ]?[34](?:[-_.:]|$)",
     re.IGNORECASE,
 )
 

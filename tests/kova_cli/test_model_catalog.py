@@ -137,7 +137,7 @@ class TestFallbackChain:
     releases (opus 4.8, etc.) never reach the picker.
     """
 
-    PRIMARY = "https://kova-agent.nousresearch.com/docs/api/model-catalog.json"
+    PRIMARY = "https://docs.kova.ai/docs/api/model-catalog.json"
     FALLBACK = (
         "https://raw.githubusercontent.com/OpenKova/Kova-Agent"
         "/main/website/static/api/model-catalog.json"

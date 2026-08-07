@@ -12,7 +12,7 @@ import pytest
     not hasattr(socket, "AF_UNIX"), reason="Unix datagram sockets are unavailable"
 )
 def test_notify_supports_systemd_abstract_socket(monkeypatch):
-    name = "\0hermes-test-notify"
+    name = "\0kova-test-notify"
     receiver = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
     receiver.bind(name)
     receiver.settimeout(1.0)

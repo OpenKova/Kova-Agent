@@ -90,12 +90,12 @@ _DEFAULTS: Dict[str, Any] = {
 
 # Bundled "hey kova" model (tools/wakewords/) — the default, so the wake word
 # works out of the box. Config names in _ALIASES resolve to it, not a built-in.
-_BUNDLED_MODEL_NAME = "hey_hermes"
-_BUNDLED_MODEL_ALIASES = frozenset({"", "hey_hermes", "hey kova", "kova"})
+_BUNDLED_MODEL_NAME = "hey_kova"
+_BUNDLED_MODEL_ALIASES = frozenset({"", "hey_kova", "hey_hermes", "hey kova", "kova"})
 
 
 def _bundled_wakeword_path(framework: str = "onnx") -> str:
-    """Path to the shipped hey_hermes model (.onnx/.tflite) for ``framework``."""
+    """Path to the shipped hey_kova model (.onnx/.tflite) for ``framework``."""
     ext = "tflite" if str(framework).strip().lower() == "tflite" else "onnx"
     return os.path.join(os.path.dirname(__file__), "wakewords", f"{_BUNDLED_MODEL_NAME}.{ext}")
 
@@ -538,7 +538,7 @@ class _OpenWakeWordEngine(_Engine):
                 logger.warning("wake word: no tflite runtime available — falling back to onnx")
                 framework = "onnx"
 
-        # Default (or explicit "hey_hermes") → the bundled model; a built-in name
+        # Default (or explicit "hey_kova") → the bundled model; a built-in name
         # or custom path is used as-is.
         if model_ref.lower() in _BUNDLED_MODEL_ALIASES:
             model_ref = _bundled_wakeword_path(framework)

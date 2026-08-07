@@ -15,8 +15,9 @@ direct shell-level gateway-lifecycle command.  It is enforced at
 tool (which calls ``create_job`` directly, bypassing the CLI layer).
 
 The pattern is intentionally command-shaped: it anchors on a concrete
-command identifier (``kova gateway``, ``launchctl ... kova-gateway``,
-``systemctl ... kova-gateway``, ``pkill`` against the gateway) so it
+command identifier (``kova gateway``/``hermes gateway``,
+``launchctl ... kova-gateway``, ``systemctl ... kova-gateway``, ``pkill``
+against the gateway) so it
 cannot fire on prose.  A cron ``prompt`` is fed to a future LLM, not a
 shell, so an over-broad substring match on English ("Kong API gateway
 autoscaling and restart behavior") would produce a high false-positive
@@ -55,11 +56,14 @@ class GatewayLifecycleBlocked(ValueError):
 # actual shell-command-shaped strings, not on prose.
 _GATEWAY_LIFECYCLE_PATTERN = re.compile(
     r"(?i)"
-    # Branch A: `kova gateway restart|stop` — the canonical foot-gun.
+    # The agent used to be called Hermes and is now Kova. Users running an
+    # older runtime, docs, or scripts may still emit `hermes gateway
+    # restart` / `hermes-gateway`, so the guard matches BOTH identifiers.
+    # Branch A: `kova|hermes gateway restart|stop` — the canonical foot-gun.
     # `start` is intentionally excluded: starting a gateway from inside a
     # gateway is benign (a no-op or "already running" error), and a
     # legitimate cron job might start a sibling profile's gateway.
-    r"(?:kova\s+gateway\s+(?:restart|stop))"
+    r"(?:(?:kova|hermes)\s+gateway\s+(?:restart|stop))"
     # Branch B: launchctl ops on a kova-gateway label. macOS launchd
     # labels look like `ai.kova.gateway` / `kova-gateway`. Requiring the
     # gateway identifier prevents blocking unrelated kova services (e.g.
@@ -72,13 +76,13 @@ _GATEWAY_LIFECYCLE_PATTERN = re.compile(
     # loop instead (#62891) — same foot-gun, indirect shape. Neutral-label
     # submissions that dodge this text anchor are caught separately by
     # `contains_launchctl_submit_command` (execution-aware, label-independent).
-    r"|(?:launchctl\s+(?:kickstart|unload|load|stop|restart|submit|bootstrap)\b[^\n]*\bhermes[.\-]?gateway)"
+    r"|(?:launchctl\s+(?:kickstart|unload|load|stop|restart|submit|bootstrap)\b[^\n]*\b(?:kova|hermes)[.\-]?gateway)"
     # Branch C: systemctl ops on a kova-gateway unit.
-    r"|(?:systemctl\s+(?:-\S+\s+)*(?:restart|stop|start)\b[^\n]*\bhermes[.\-]?gateway)"
+    r"|(?:systemctl\s+(?:-\S+\s+)*(?:restart|stop|start)\b[^\n]*\b(?:kova|hermes)[.\-]?gateway)"
     # Branch D: pkill / kill targeting the kova gateway process. Both
     # token orders because real reproductions show both.
-    r"|(?:p?kill\b[^\n]*\bhermes\b[^\n]*\bgateway)"
-    r"|(?:p?kill\b[^\n]*\bgateway\b[^\n]*\bhermes)"
+    r"|(?:p?kill\b[^\n]*\b(?:kova|hermes)\b[^\n]*\bgateway)"
+    r"|(?:p?kill\b[^\n]*\bgateway\b[^\n]*\b(?:kova|hermes))"
 )
 
 

@@ -1585,11 +1585,11 @@ DEFAULT_CONFIG = {
         "start_new_session": True,    # start a fresh session on wake vs. continue the current one
         "profile_routing": True,      # sherpa only: also listen for every wake-enabled profile's phrase and route the wake to the matching profile
         "openwakeword": {
-            # "hey_hermes" (the bundled, works-out-of-the-box default) OR a
+            # "hey_kova" (the bundled, works-out-of-the-box default) OR a
             # built-in openWakeWord name ("hey_jarvis", "alexa", "hey_mycroft",
             # ...) OR a path to a custom .onnx/.tflite model for another phrase.
             # See the wake-word docs for the custom-model training guide.
-            "model": "hey_hermes",
+            "model": "hey_kova",
             # "" (auto — tflite on macOS ARM64, onnx elsewhere) | "onnx" | "tflite".
             # openWakeWord's onnx backend scores near-zero on macOS ARM64
             # (dscripka/openWakeWord#336), so auto avoids a listener that arms

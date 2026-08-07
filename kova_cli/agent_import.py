@@ -8,7 +8,7 @@ Usage:
     kova import-agent codex --source /path/to/.codex
 
 Follows the OpenClaw migration pattern (``kova claw migrate`` /
-``optional-skills/migration/openclaw-migration/scripts/openclaw_to_hermes.py``):
+``optional-skills/migration/openclaw-migration/scripts/openclaw_to_kova.py``):
 detect → parse → map → apply, with a mandatory preview phase, per-item
 imported/skipped/conflict/error records, and a ``--dry-run`` that writes
 nothing.  The memory-entry merge and allowlist-merge primitives here are
@@ -162,7 +162,7 @@ def dump_yaml_file(path: Path, data: Dict[str, Any]) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Memory-entry primitives (ported from openclaw_to_hermes.py)
+# Memory-entry primitives (ported from openclaw_to_kova.py)
 # ---------------------------------------------------------------------------
 
 def extract_markdown_entries(text: str) -> List[str]:

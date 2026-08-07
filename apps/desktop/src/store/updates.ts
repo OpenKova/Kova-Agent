@@ -13,8 +13,8 @@ import type {
   DesktopUpdateStatus,
   DesktopVersionInfo
 } from '@/global'
-import { checkHermesUpdate, getActionStatus, updateHermes } from '@/kova'
 import { translateNow } from '@/i18n'
+import { checkHermesUpdate, getActionStatus, updateHermes } from '@/kova'
 import { persistString, storedString } from '@/lib/storage'
 import { dismissNotification, notify } from '@/store/notifications'
 import { $connection } from '@/store/session'

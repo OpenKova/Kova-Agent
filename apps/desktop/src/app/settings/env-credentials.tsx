@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
-import { deleteEnvVar, getEnvVars, revealEnvVar, setEnvVar } from '@/kova'
 import { useI18n } from '@/i18n'
+import { deleteEnvVar, getEnvVars, revealEnvVar, setEnvVar } from '@/kova'
 import { type IconComponent } from '@/lib/icons'
 import { notify, notifyError } from '@/store/notifications'
 import type { EnvVarInfo } from '@/types/kova'
