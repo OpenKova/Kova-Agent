@@ -617,8 +617,7 @@ export const en: Translations = {
       profileConnection: profile =>
         `Connection used only when “${profile}” is the active profile. Choose Use default gateway to remove its override.`,
       envOverrideTitle: 'Environment variables are controlling this desktop session.',
-      envOverrideDesc:
-        'Unset KOVA_DESKTOP_REMOTE_URL and KOVA_DESKTOP_REMOTE_TOKEN to use the saved setting below.',
+      envOverrideDesc: 'Unset KOVA_DESKTOP_REMOTE_URL and KOVA_DESKTOP_REMOTE_TOKEN to use the saved setting below.',
       modeTitle: 'Connection mode',
       localTitle: 'Local gateway',
       localDesc: 'Start a private Kova backend on localhost. This is the default and works offline.',
@@ -2248,8 +2247,7 @@ export const en: Translations = {
     installTo: 'Will install to',
     retryAfterRun: 'I’ve run it -- retry',
     setupChoiceTitle: 'Set up Kova Desktop',
-    setupChoiceDesc:
-      'Connect this app to a Kova gateway you already run, or install Kova locally on this computer.',
+    setupChoiceDesc: 'Connect this app to a Kova gateway you already run, or install Kova locally on this computer.',
     connectExistingTitle: 'Connect to existing Kova',
     connectExistingShort: 'Connect existing',
     connectExistingDesc: 'Use a remote backend with a session token or browser sign-in. No local install will start.',
