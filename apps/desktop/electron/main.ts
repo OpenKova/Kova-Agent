@@ -10594,6 +10594,26 @@ ipcMain.handle('kova:requestMicrophoneAccess', async () => {
   return systemPreferences.askForMediaAccess('microphone')
 })
 
+// read_window_below tool: which OS window is directly underneath this one.
+// Metadata only (app, title, bounds) — never pixels. On macOS, other apps'
+// window titles are gated behind the Screen Recording permission; pass titles
+// through only when it is ALREADY granted, and never prompt for it here.
+ipcMain.handle('hermes:window:readBelow', async event => {
+  const win = BrowserWindow.fromWebContents(event.sender)
+
+  if (!win || win.isDestroyed()) {
+    return null
+  }
+
+  const titlesAvailable = IS_MAC
+    ? systemPreferences.getMediaAccessStatus?.('screen') === 'granted'
+    : true
+  const [x, y] = win.getPosition()
+  const [width, height] = win.getSize()
+
+  return readWindowBelow(process.pid, { x, y, width, height }, titlesAvailable)
+})
+
 // Re-route remote-profile session requests to the owning remote backend. Returns
 // `undefined` when not interceptable (caller takes the normal local path), else
 // the response. Reads tag the profile as ?profile=<name>; mutations carry it in
