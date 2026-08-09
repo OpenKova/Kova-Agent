@@ -135,10 +135,10 @@ function AgentPluginRowView({ row }: { row: AgentPluginRow }) {
         <Switch
           aria-label={`${row.status === 'enabled' ? p.disable : p.enable} ${row.name}`}
           checked={row.status === 'enabled'}
-          disabled={busy === row.key}
+          disabled={busy === (row.key ?? row.name)}
           onCheckedChange={on => {
             triggerHaptic('selection')
-            void toggleAgentPlugin(requestGateway, row.key, on, p.agent.toggleFailed(row.name))
+            void toggleAgentPlugin(requestGateway, row, on, p.agent.toggleFailed(row.name))
           }}
         />
       }
@@ -181,7 +181,7 @@ function AgentPluginsSection() {
       row =>
         !needle ||
         row.name.toLowerCase().includes(needle) ||
-        row.key.toLowerCase().includes(needle) ||
+        (row.key ?? '').toLowerCase().includes(needle) ||
         row.description.toLowerCase().includes(needle)
     )
     .sort((a, b) => (SOURCE_ORDER[a.source] ?? 9) - (SOURCE_ORDER[b.source] ?? 9) || a.name.localeCompare(b.name))
