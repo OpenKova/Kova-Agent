@@ -2,7 +2,7 @@
 name: openclaw-migration
 description: Import an OpenClaw setup (memories, skills) into Kova.
 version: 1.0.0
-author: Kova Agent (Nous Research)
+author: Kova Agent (Neural Studio)
 license: MIT
 platforms: [linux, macos, windows]
 metadata:

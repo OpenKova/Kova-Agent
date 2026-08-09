@@ -5,7 +5,7 @@ Prior to this check, the warning fired on any model whose name contained
 local Modelfiles such as ``kova-brain:qwen3-14b-ctx16k`` — a tool-capable
 Qwen3 wrapper that happens to live under the "kova" tag namespace.
 
-``is_nous_kova_non_agentic`` should only match the actual Nous Research
+``is_nous_kova_non_agentic`` should only match the actual Neural Studio
 Hermes-3 / Kova-4 chat family.
 """
 

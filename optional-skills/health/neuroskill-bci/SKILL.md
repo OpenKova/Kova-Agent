@@ -8,7 +8,7 @@ description: >
   running locally.
 platforms: [linux, macos, windows]
 version: 1.0.0
-author: Kova Agent + Nous Research
+author: Kova Agent + Neural Studio
 license: MIT
 metadata:
   kova:
