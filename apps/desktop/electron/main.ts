@@ -211,6 +211,7 @@ import {
 import { formatBlockerMessage, formatProbeFailedMessage, scanVenvBlockers } from './venv-blocker-scan'
 import { fetchMarketplaceThemes, searchMarketplaceThemes } from './vscode-marketplace'
 import { createWakeIndicatorWindowController } from './wake-indicator-window'
+import { createWindowRevealController } from './window-reveal'
 import {
   bindGeometryPersistence,
   computeWindowOptions,
@@ -8757,6 +8758,26 @@ function wireCommonWindowHandlers(win, { zoom = true }: { zoom?: boolean } = {})
     event.preventDefault()
     openExternalUrl(url)
   })
+}
+
+// Every HUD window starts hidden so the renderer's first themed paint lands
+// before it appears. Electron can drop ready-to-show on Linux/Wayland, remote
+// displays, and VMs; fall back after the renderer has loaded.
+function wireWindowReveal(win, { show, onRevealed }: { show?: () => void; onRevealed?: () => void } = {}) {
+  const controller = createWindowRevealController(
+    {
+      isDestroyed: () => win.isDestroyed(),
+      isVisible: () => win.isVisible(),
+      show: show ?? (() => win.show())
+    },
+    { onRevealed }
+  )
+
+  win.once('ready-to-show', controller.reveal)
+  win.webContents.once('did-finish-load', controller.scheduleFallback)
+  win.on('closed', controller.dispose)
+
+  return controller
 }
 
 // Secondary "session windows" — one extra OS window per chat so a user can
