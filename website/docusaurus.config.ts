@@ -205,7 +205,7 @@ const config: Config = {
           items: [
             { label: 'Desktop Download', href: 'https://kova-agent.nousresearch.com/' },
             { label: 'GitHub', href: 'https://github.com/OpenKova/Kova-Agent' },
-            { label: 'Nous Research', href: 'https://nousresearch.com' },
+            { label: 'Neural Studio', href: 'https://nousresearch.com' },
           ],
         },
       ],

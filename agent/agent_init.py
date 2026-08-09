@@ -2556,7 +2556,7 @@ def init_agent(
             _kova_warn = _check_kova_model_warning(agent.model or "")
             if _kova_warn:
                 _user_msg = (
-                    "⚠ Nous Research Kova 3 & 4 models are NOT agentic — they "
+                    "⚠ Neural Studio Kova 3 & 4 models are NOT agentic — they "
                     "lack reliable tool-calling for agent workflows (delegation, "
                     "cron, proactive tools). Consider an agentic model instead "
                     "(Claude, GPT, Gemini, Qwen-Coder, etc.)."

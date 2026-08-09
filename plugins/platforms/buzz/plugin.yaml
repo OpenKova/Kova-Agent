@@ -8,7 +8,7 @@ description: >
   collaboration platform built on Nostr) and relays messages between
   channels/DMs and the Kova agent.  Pure stdlib — shells out to the
   buzz CLI binary (JSON in/out); no Python packages required.
-author: Nous Research
+author: Neural Studio
 # ``requires_env`` entries are surfaced in ``kova config`` UI via the
 # platform-plugin env var injector in ``kova_cli/config.py``.
 requires_env:

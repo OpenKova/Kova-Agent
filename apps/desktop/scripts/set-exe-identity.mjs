@@ -64,8 +64,8 @@ async function stampExeIdentity(exe, desktopRoot = resolve(import.meta.dirname, 
     'version-string': {
       ProductName: 'Kova',
       FileDescription: 'Kova',
-      CompanyName: 'Nous Research',
-      LegalCopyright: 'Copyright (c) 2026 Nous Research'
+      CompanyName: 'Neural Studio',
+      LegalCopyright: 'Copyright (c) 2026 Neural Studio'
     }
   })
 

@@ -40,7 +40,7 @@
     "date": "2026",
     "category": "integrations",
     "headline": "Hindsight Cloud memory, connected",
-    "quote": "Connect your Nous Research Kova Agent to Hindsight Cloud, the best-performing AI Agent memory, in a few easy steps!",
+    "quote": "Connect your Neural Studio Kova Agent to Hindsight Cloud, the best-performing AI Agent memory, in a few easy steps!",
     "size": "sm"
   },
   {
@@ -1008,7 +1008,7 @@
     "date": "2026",
     "category": "integrations",
     "headline": "Firecrawl for scrape/search/browse",
-    "quote": "Kova Agent by Nous Research can now scrape, search, and interact with the web using Firecrawl. Enable it during setup to give Kova the ability.",
+    "quote": "Kova Agent by Neural Studio can now scrape, search, and interact with the web using Firecrawl. Enable it during setup to give Kova the ability.",
     "size": "sm"
   },
   {
@@ -1877,7 +1877,7 @@
     "date": "2026",
     "category": "integrations",
     "headline": "Vessel Browser: agent-native browser born at the Kova hackathon",
-    "quote": "I recently participated in Nous Research's Kova Agent Hackathon, which is where this project was born. Every tool out there assumes a human operator with automation bolted on. I wanted to flip that — make the agent the primary driver and give the human a supervisory role.",
+    "quote": "I recently participated in Neural Studio's Kova Agent Hackathon, which is where this project was born. Every tool out there assumes a human operator with automation bolted on. I wanted to flip that — make the agent the primary driver and give the human a supervisory role.",
     "size": "md"
   },
   {

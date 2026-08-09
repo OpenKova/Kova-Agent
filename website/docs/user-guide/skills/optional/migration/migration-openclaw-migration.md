@@ -17,7 +17,7 @@ Import an OpenClaw setup (memories, skills) into Kova.
 | Source | Optional — install with `kova skills install official/migration/openclaw-migration` |
 | Path | `optional-skills/migration/openclaw-migration` |
 | Version | `1.0.0` |
-| Author | Kova Agent (Nous Research) |
+| Author | Kova Agent (Neural Studio) |
 | License | MIT |
 | Platforms | linux, macos, windows |
 | Tags | `Migration`, `OpenClaw`, `Kova`, `Memory`, `Persona`, `Import` |
