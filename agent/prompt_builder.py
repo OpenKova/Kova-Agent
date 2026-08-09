@@ -700,8 +700,8 @@ STEER_CHANNEL_NOTE += (
 def hud_surface_note(valid_tool_names: "set[str] | None" = None) -> str:
     """Per-turn note for a message typed into the desktop's floating HUD.
 
-    HUD mode is a strip of Hermes floating over another application, so the
-    user is rarely asking about Hermes — they are asking about the thing behind
+    HUD mode is a strip of Kova floating over another application, so the
+    user is rarely asking about Kova — they are asking about the thing behind
     it, and the work they want done usually belongs in that app rather than in
     a surface of our own. Left to itself the model answers from its own
     browser and panes, which is the wrong half of the screen.
@@ -728,7 +728,7 @@ def hud_surface_note(valid_tool_names: "set[str] | None" = None) -> str:
         return ""
 
     sentences = [
-        "[Note: this message came from HUD mode — a small floating Hermes "
+        "[Note: this message came from HUD mode — a small floating Kova "
         "window sitting over whatever the user is actually working in, so an "
         'unqualified "this" or "here" usually means the app behind the HUD '
         "rather than anything inside Kova. read_window_below identifies "
