@@ -210,6 +210,7 @@ import { formatBlockerMessage, formatProbeFailedMessage, scanVenvBlockers } from
 import { fetchMarketplaceThemes, searchMarketplaceThemes } from './vscode-marketplace'
 import { createWakeIndicatorWindowController } from './wake-indicator-window'
 import {
+  bindGeometryPersistence,
   computeWindowOptions,
   debounce,
   sanitizeWindowState,
@@ -2377,7 +2378,7 @@ function persistWindowState() {
   }
 }
 
-// resized/moved fire many times mid-drag on Linux; debounce to one write.
+// move/resize fire many times mid-drag; debounce to one write.
 const schedulePersistWindowState = debounce(persistWindowState, 250)
 
 // Zoom's primary store is a main-process JSON file. The renderer localStorage
@@ -9259,8 +9260,7 @@ function spawnHudWindow(sessionId) {
 
   // Remember where the user parks and sizes it (debounced — these fire many
   // times mid-drag).
-  win.on('moved', schedulePersistHudState)
-  win.on('resized', schedulePersistHudState)
+  bindGeometryPersistence(win, schedulePersistHudState)
 
   win.once('ready-to-show', () => {
     if (win.isDestroyed()) {
@@ -9656,10 +9656,9 @@ function createWindow() {
   mainWindow.on('hide', () => sendWindowStateChanged())
   mainWindow.on('show', () => sendWindowStateChanged())
 
-  // Reopen where the user left off. resized/moved settle once per drag; close is
-  // the cross-platform backstop, flushed synchronously before the window is gone.
-  mainWindow.on('resized', schedulePersistWindowState)
-  mainWindow.on('moved', schedulePersistWindowState)
+  // Reopen where the user left off. close is the backstop, flushed
+  // synchronously before the window is gone.
+  bindGeometryPersistence(mainWindow, schedulePersistWindowState)
   mainWindow.on('maximize', schedulePersistWindowState)
   mainWindow.on('unmaximize', schedulePersistWindowState)
   mainWindow.on('close', () => schedulePersistWindowState.flush())
