@@ -50,25 +50,25 @@ contextBridge.exposeInMainWorld('hermesDesktop', {
   // sized as a floating bar, so it mounts the real composer. Main owns the
   // window; `onChanged` keeps every window's toggle truthful.
   hud: {
-    open: request => ipcRenderer.invoke('hermes:hud:open', request),
-    close: () => ipcRenderer.invoke('hermes:hud:close'),
-    setIgnoreMouse: ignore => ipcRenderer.send('hermes:hud:ignore-mouse', ignore),
-    moveBy: delta => ipcRenderer.send('hermes:hud:move-by', delta),
-    setVibrancy: on => ipcRenderer.invoke('hermes:hud:vibrancy', on),
+    open: request => ipcRenderer.invoke('kova:hud:open', request),
+    close: () => ipcRenderer.invoke('kova:hud:close'),
+    setIgnoreMouse: ignore => ipcRenderer.send('kova:hud:ignore-mouse', ignore),
+    moveBy: delta => ipcRenderer.send('kova:hud:move-by', delta),
+    setVibrancy: on => ipcRenderer.invoke('kova:hud:vibrancy', on),
     // The HUD tells main which session it is on; main hands that back to the
     // app window when the HUD closes, so the app can re-home onto it.
-    setSession: sessionId => ipcRenderer.send('hermes:hud:session', sessionId),
+    setSession: sessionId => ipcRenderer.send('kova:hud:session', sessionId),
     onGoto: callback => {
       const listener = (_event, sessionId) => callback(sessionId)
-      ipcRenderer.on('hermes:hud:goto', listener)
+      ipcRenderer.on('kova:hud:goto', listener)
 
-      return () => ipcRenderer.removeListener('hermes:hud:goto', listener)
+      return () => ipcRenderer.removeListener('kova:hud:goto', listener)
     },
     onChanged: callback => {
       const listener = (_event, state) => callback(state)
-      ipcRenderer.on('hermes:hud:changed', listener)
+      ipcRenderer.on('kova:hud:changed', listener)
 
-      return () => ipcRenderer.removeListener('hermes:hud:changed', listener)
+      return () => ipcRenderer.removeListener('kova:hud:changed', listener)
     },
     // Linux only, and silent elsewhere: where the cursor is, in page
     // coordinates, or null when it has left the window. Stands in for the
@@ -76,9 +76,9 @@ contextBridge.exposeInMainWorld('hermesDesktop', {
     // macOS and Windows but not here.
     onCursor: callback => {
       const listener = (_event, point) => callback(point)
-      ipcRenderer.on('hermes:hud:cursor', listener)
+      ipcRenderer.on('kova:hud:cursor', listener)
 
-      return () => ipcRenderer.removeListener('hermes:hud:cursor', listener)
+      return () => ipcRenderer.removeListener('kova:hud:cursor', listener)
     }
   },
   // Quick Entry: the global-hotkey mini composer window. Main owns the OS

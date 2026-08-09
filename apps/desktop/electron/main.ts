@@ -9072,7 +9072,7 @@ function closePetOverlay() {
 // ── HUD mode ────────────────────────────────────────────────────────────────
 //
 // The chrome-free floating chat: a transparent, frameless, always-on-top
-// window showing only the composer and its scrollback, so Hermes can be driven
+// window showing only the composer and its scrollback, so Kova can be driven
 // while the user works in another app.
 //
 // Unlike the pet overlay / quick entry, this is a FULL app renderer with its
@@ -9196,7 +9196,7 @@ function startHudCursorFeed(win: BrowserWindow) {
     }
 
     last = key
-    win.webContents.send('hermes:hud:cursor', point)
+    win.webContents.send('kova:hud:cursor', point)
   }, HUD_CURSOR_POLL_MS)
 
   win.on('closed', () => clearInterval(timer))
@@ -9264,7 +9264,7 @@ function broadcastHudState(open) {
 
   for (const win of BrowserWindow.getAllWindows()) {
     if (!win.isDestroyed()) {
-      win.webContents.send('hermes:hud:changed', payload)
+      win.webContents.send('kova:hud:changed', payload)
     }
   }
 }
@@ -9397,7 +9397,7 @@ function openHudWindow(sessionId, profile) {
     // conversation in the HUD", and a plain focus leaves the wrong one there.
     if (sessionId && sessionId !== hudSessionId) {
       hudSessionId = sessionId
-      hudWindow.webContents.send('hermes:hud:goto', sessionId)
+      hudWindow.webContents.send('kova:hud:goto', sessionId)
       // Keep every window's idea of where the HUD is pointed in step, so the
       // toggle keeps reading "switch" vs "dismiss" correctly.
       broadcastHudState(true)
@@ -10119,7 +10119,7 @@ ipcMain.handle('kova:hud:open', async (_event, request) => {
 // view, so it frosts the whole rectangle; the HUD's layout leaves no dead
 // margins for that reason, and the renderer only turns it on while the band is
 // showing (idle HUD mode must be the bar and nothing else).
-ipcMain.handle('hermes:hud:vibrancy', (_event, on) => {
+ipcMain.handle('kova:hud:vibrancy', (_event, on) => {
   if (hudWindow && !hudWindow.isDestroyed() && IS_MAC) {
     hudWindow.setVibrancy(on ? 'hud' : null)
   }
@@ -10138,7 +10138,7 @@ ipcMain.on('kova:hud:ignore-mouse', (_event, ignore) => {
   }
 })
 
-ipcMain.on('hermes:hud:move-by', (event, delta) => {
+ipcMain.on('kova:hud:move-by', (event, delta) => {
   if (!hudWindow || hudWindow.isDestroyed() || event.sender !== hudWindow.webContents) {
     return
   }

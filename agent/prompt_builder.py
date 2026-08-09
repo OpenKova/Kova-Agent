@@ -731,7 +731,7 @@ def hud_surface_note(valid_tool_names: "set[str] | None" = None) -> str:
         "[Note: this message came from HUD mode — a small floating Hermes "
         "window sitting over whatever the user is actually working in, so an "
         'unqualified "this" or "here" usually means the app behind the HUD '
-        "rather than anything inside Hermes. read_window_below identifies "
+        "rather than anything inside Kova. read_window_below identifies "
         "that app.",
         "They move the HUD from app to app mid-conversation, so one you "
         "identified on an earlier turn is still a live target: a reference "
