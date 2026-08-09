@@ -150,11 +150,11 @@ async function enumerateViaGetWindows(titlesAvailable: boolean): Promise<Enumera
         : undefined
     )
   } catch {
-    return null
+    return unavailable()
   }
 
   if (!Array.isArray(raw)) {
-    return null
+    return unavailable()
   }
 
   // get-windows documents openWindows() as front-to-back, and macOS/Windows
