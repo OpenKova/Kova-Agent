@@ -9,7 +9,6 @@ import { useLocation } from 'react-router'
 import type { SubmitTextOptions } from '@/app/session/hooks/use-prompt-actions/utils'
 import { Thread } from '@/components/assistant-ui/thread'
 import { TranscriptWindowProvider } from '@/components/assistant-ui/thread/transcript-window'
-import { Backdrop } from '@/components/Backdrop'
 import { COMPOSER_HEART_CONFIG, HeartField } from '@/components/chat/vibe-hearts'
 import { usePaneVisible } from '@/components/pane-shell/pane-visibility'
 import { $sessionTileDragging, $sessionTileEdgeHover } from '@/components/pane-shell/tree/store'
@@ -43,7 +42,7 @@ import {
   sessionPinId,
   shouldMigrateComposerScope
 } from '@/store/session'
-import { isSecondaryWindow, isWatchWindow } from '@/store/windows'
+import { isAuxiliaryWindow, isWatchWindow } from '@/store/windows'
 import type { ModelOptionsResponse } from '@/types/kova'
 
 import { primaryRouteSelectedSessionId, routeSessionId } from '../routes'
@@ -135,7 +134,7 @@ function ChatHeader({
   // Secondary windows (new-session scratch, subagent watch, cmd-click pop-out)
   // are compact side panels — they drop the session-actions header + border
   // entirely. A brand-new draft has nothing to pin/delete/rename either.
-  if (isSecondaryWindow() || (!selectedSessionId && !activeSessionId && !isRoutedSessionView)) {
+  if (isAuxiliaryWindow() || (!selectedSessionId && !activeSessionId && !isRoutedSessionView)) {
     return null
   }
 
@@ -397,7 +396,7 @@ export const ChatView = memo(function ChatView({
   // scratch window, not the full-height empty state.
   const showIntro =
     isPrimary &&
-    !isSecondaryWindow() &&
+    !isAuxiliaryWindow() &&
     freshDraftReady &&
     !isRoutedSessionView &&
     !selectedSessionId &&
@@ -502,41 +501,40 @@ export const ChatView = memo(function ChatView({
   const overlayKind: DragKind = dragKind === 'files' ? 'files' : sessionDragging && !sessionEdgeHover ? 'session' : null
 
   return (
-    <div
-      className={cn(
-        'relative isolate flex h-full min-w-0 flex-col overflow-hidden bg-(--ui-chat-surface-background)',
-        className
-      )}
-      data-chat-surface=""
-      data-composer-target={composerScope.target}
-      data-session-anchor={sessionAnchor}
-    >
-      <Backdrop />
-      {/* Tiles get their chrome from the layout zone (chip strip); the modal
-          prompt overlays stay active-session-scoped in the primary surface. */}
-      {isPrimary && (
-        <ChatHeader
-          activeSessionId={activeSessionId}
-          isRoutedSessionView={isRoutedSessionView}
-          onDeleteSelectedSession={onDeleteSelectedSession}
-          onToggleSelectedPin={onToggleSelectedPin}
-          selectedSessionId={selectedSessionId}
-        />
-      )}
-
-      {/* Mounted for the primary AND every tile, each scoped to its own session
-          so a tiled/background session's blocking prompt surfaces instead of
-          stalling to timeout. */}
-      <PromptOverlays sessionId={activeSessionId} />
-
-      <ChatRuntimeBoundary
-        busy={busy}
-        onCancel={haltRun}
-        onEdit={onEdit}
-        onReload={onReload}
-        onThreadMessagesChange={onThreadMessagesChange}
-        suppressMessages={routeSessionMismatch}
+      <div
+        className={cn(
+          'relative isolate flex h-full min-w-0 flex-col overflow-hidden bg-(--ui-chat-surface-background)',
+          className
+        )}
+        data-chat-surface=""
+        data-composer-target={composerScope.target}
+        data-session-anchor={sessionAnchor}
       >
+        {/* Tiles get their chrome from the layout zone (chip strip); the modal
+            prompt overlays stay active-session-scoped in the primary surface. */}
+        {isPrimary && (
+          <ChatHeader
+            activeSessionId={activeSessionId}
+            isRoutedSessionView={isRoutedSessionView}
+            onDeleteSelectedSession={onDeleteSelectedSession}
+            onToggleSelectedPin={onToggleSelectedPin}
+            selectedSessionId={selectedSessionId}
+          />
+        )}
+
+        {/* Mounted for the primary AND every tile, each scoped to its own session
+            so a tiled/background session's blocking prompt surfaces instead of
+            stalling to timeout. */}
+        <PromptOverlays sessionId={activeSessionId} />
+
+        <ChatRuntimeBoundary
+          busy={busy}
+          onCancel={haltRun}
+          onEdit={onEdit}
+          onReload={onReload}
+          onThreadMessagesChange={onThreadMessagesChange}
+          suppressMessages={routeSessionMismatch}
+        >
         <div
           className="relative min-h-0 max-w-full flex-1 overflow-hidden bg-(--ui-chat-surface-background) contain-[layout_paint]"
           data-slot="composer-bounds"

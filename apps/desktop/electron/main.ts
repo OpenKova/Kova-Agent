@@ -134,6 +134,8 @@ import {
   resolveTimeoutMs,
   TEXT_PREVIEW_SOURCE_MAX_BYTES
 } from './hardening'
+import { cursorPointInWindow } from './hud-cursor'
+import { buildHudWindowUrl } from './hud-url'
 import { createLinkTitleWindow, guardLinkTitleSession, readLinkTitleWindowTitle } from './link-title-window'
 import { ensureMainWindow } from './main-window-lifecycle'
 import {
@@ -209,7 +211,9 @@ import {
 import { formatBlockerMessage, formatProbeFailedMessage, scanVenvBlockers } from './venv-blocker-scan'
 import { fetchMarketplaceThemes, searchMarketplaceThemes } from './vscode-marketplace'
 import { createWakeIndicatorWindowController } from './wake-indicator-window'
+import { createWindowRevealController } from './window-reveal'
 import {
+  bindGeometryPersistence,
   computeWindowOptions,
   debounce,
   sanitizeWindowState,
@@ -2377,7 +2381,7 @@ function persistWindowState() {
   }
 }
 
-// resized/moved fire many times mid-drag on Linux; debounce to one write.
+// move/resize fire many times mid-drag; debounce to one write.
 const schedulePersistWindowState = debounce(persistWindowState, 250)
 
 // Zoom's primary store is a main-process JSON file. The renderer localStorage
@@ -8756,6 +8760,26 @@ function wireCommonWindowHandlers(win, { zoom = true }: { zoom?: boolean } = {})
   })
 }
 
+// Every HUD window starts hidden so the renderer's first themed paint lands
+// before it appears. Electron can drop ready-to-show on Linux/Wayland, remote
+// displays, and VMs; fall back after the renderer has loaded.
+function wireWindowReveal(win, { show, onRevealed }: { show?: () => void; onRevealed?: () => void } = {}) {
+  const controller = createWindowRevealController(
+    {
+      isDestroyed: () => win.isDestroyed(),
+      isVisible: () => win.isVisible(),
+      show: show ?? (() => win.show())
+    },
+    { onRevealed }
+  )
+
+  win.once('ready-to-show', controller.reveal)
+  win.webContents.once('did-finish-load', controller.scheduleFallback)
+  win.on('closed', controller.dispose)
+
+  return controller
+}
+
 // Secondary "session windows" — one extra OS window per chat so a user can
 // work with multiple chats side by side. The registry guarantees one window
 // per sessionId (re-opening focuses the existing window) and self-cleans on
@@ -9066,6 +9090,372 @@ function closePetOverlay() {
   petOverlayWindow = null
 }
 
+// ── HUD mode ────────────────────────────────────────────────────────────────
+//
+// The chrome-free floating chat: a transparent, frameless, always-on-top
+// window showing only the composer and its scrollback, so Kova can be driven
+// while the user works in another app.
+//
+// Unlike the pet overlay / quick entry, this is a FULL app renderer with its
+// own gateway — the same thing createInstanceWindow() spawns, reshaped. That
+// is deliberate: the HUD renders the real chat surface, so its composer is the
+// app's composer (slash commands, attachments, queue, voice) instead of a
+// lookalike that drifts. Entering HUD mode hides the main window; leaving
+// restores it.
+let hudWindow = null
+
+// Whether the main window was visible when HUD mode was entered, so exiting
+// puts the desktop back as it was rather than raising a window the user had
+// already minimized.
+let hudRestoreMainWindow = false
+
+// The session the HUD is currently on, reported by its renderer whenever the
+// selection changes. Leaving HUD mode is a HANDOFF, not just a window close:
+// the gateway binds a session's event stream to exactly one socket, so the
+// turn the HUD started is streaming to the HUD's socket and the app window
+// hears nothing. The app has to re-resume that session to take the stream
+// back, and it can only do that if it knows which session to ask for — the
+// HUD may have switched sessions, or started a new one the app has never
+// seen. Main is the only party that outlives the HUD's renderer, so it holds
+// the id and hands it over in the close broadcast.
+let hudSessionId = null
+
+// The profile the live HUD renderer booted against (rides hudUrl's query
+// string). A renderer adopts its backend once at boot, so a retarget onto a
+// session from a DIFFERENT profile cannot be a same-window `goto` — the HUD
+// must be respawned against the new profile's backend (see openHudWindow).
+let hudProfile = null
+
+// A wide, short bar parked near the bottom of the active display — the shape
+// of a game chat frame, and where one belongs. Defaults only: once the user
+// moves or resizes the HUD, hud-state.json wins (same pattern as the main
+// window's window-state.json).
+const HUD_WIDTH = 620
+const HUD_HEIGHT = 320
+const HUD_BOTTOM_MARGIN = 72
+const HUD_STATE_PATH = path.join(app.getPath('userData'), 'hud-state.json')
+
+function readHudState() {
+  try {
+    const raw = JSON.parse(fs.readFileSync(HUD_STATE_PATH, 'utf8'))
+
+    if (
+      [raw?.x, raw?.y, raw?.width, raw?.height].every(v => Number.isFinite(v)) &&
+      raw.width >= 380 &&
+      raw.height >= 160
+    ) {
+      return raw
+    }
+  } catch {
+    // First run / unreadable — fall through to defaults.
+  }
+
+  return null
+}
+
+function persistHudState() {
+  if (!hudWindow || hudWindow.isDestroyed()) {
+    return
+  }
+
+  try {
+    const { x, y, width, height } = hudWindow.getNormalBounds()
+    fs.mkdirSync(path.dirname(HUD_STATE_PATH), { recursive: true })
+    writeFileAtomic(HUD_STATE_PATH, JSON.stringify({ x, y, width, height }, null, 2))
+  } catch (err) {
+    rememberLog(`[hud-state] persist failed: ${err?.message || err}`)
+  }
+}
+
+const schedulePersistHudState = debounce(persistHudState, 250)
+
+// How often Linux gets told where the cursor is. Fast enough that the bar is
+// solid before a click lands after the pointer arrives, cheap enough to leave
+// running for as long as the HUD is open — it is one `getCursorScreenPoint()`
+// and, when the answer has not changed, nothing else.
+const HUD_CURSOR_POLL_MS = 60
+
+/**
+ * Feed the HUD renderer the cursor position on Linux.
+ *
+ * Everywhere else the renderer learns this from mousemove, which keeps arriving
+ * while the window ignores the mouse because we pass `{ forward: true }`. That
+ * option is macOS/Windows only. Without it a Linux HUD stops hearing the
+ * pointer the moment it turns click-through, so it can never notice the pointer
+ * coming back and stays transparent — the bar is there, and clicking it hits
+ * whatever is behind. Main can still see the cursor, so it says so.
+ *
+ * Deliberately the same decision, just a different source for one input: the
+ * renderer runs its usual hit test on the point it is handed. Re-deciding
+ * anything here would put a second, drifting copy of the click-through rules in
+ * the main process.
+ */
+function startHudCursorFeed(win: BrowserWindow) {
+  if (process.platform !== 'linux') {
+    return
+  }
+
+  let last: string | null = null
+
+  const timer = setInterval(() => {
+    if (win.isDestroyed() || !win.isVisible()) {
+      return
+    }
+
+    const point = cursorPointInWindow(
+      screen.getCursorScreenPoint(),
+      win.getBounds(),
+      win.webContents.getZoomFactor()
+    )
+    // Off-window is a real answer (it is what hands the mouse back), so it is
+    // sent — once. Only an unchanged answer is dropped, to keep an idle cursor
+    // from waking the renderer 16 times a second.
+    const key = point ? `${Math.round(point.x)},${Math.round(point.y)}` : 'out'
+
+    if (key === last) {
+      return
+    }
+
+    last = key
+    win.webContents.send('kova:hud:cursor', point)
+  }, HUD_CURSOR_POLL_MS)
+
+  win.on('closed', () => clearInterval(timer))
+}
+
+function hudBounds() {
+  // Remembered spot first — validated against the LIVE displays so a HUD
+  // parked on an unplugged monitor comes back on-screen instead of lost.
+  const saved = readHudState()
+
+  if (saved) {
+    const onScreen = screen.getAllDisplays().some(d => {
+      const a = d.workArea
+
+      return (
+        saved.x < a.x + a.width - 40 &&
+        saved.x + saved.width > a.x + 40 &&
+        saved.y < a.y + a.height - 40 &&
+        saved.y + saved.height > a.y + 40
+      )
+    })
+
+    if (onScreen) {
+      return saved
+    }
+  }
+
+  const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint())
+  const area = display?.workArea
+
+  if (!area) {
+    return { width: HUD_WIDTH, height: HUD_HEIGHT, x: undefined, y: undefined }
+  }
+
+  const width = Math.min(HUD_WIDTH, area.width)
+  const height = Math.min(HUD_HEIGHT, area.height)
+
+  return {
+    width,
+    height,
+    x: Math.round(area.x + (area.width - width) / 2),
+    y: Math.round(Math.max(area.y, area.y + area.height - height - HUD_BOTTOM_MARGIN))
+  }
+}
+
+function hudUrl(sessionId, profile) {
+  // The profile rides the query string next to `win=hud` (BEFORE the '#', so
+  // HashRouter never sees it). The HUD renderer's gateway boot reads it and
+  // adopts that backend instead of the primary — without it, a HUD opened on a
+  // non-primary profile's conversation resolves the session id against the
+  // wrong backend and falls back to the default profile's last session.
+  return buildHudWindowUrl(sessionId, {
+    devServer: DEV_SERVER,
+    profile,
+    rendererIndexPath: DEV_SERVER ? undefined : resolveRendererIndex()
+  })
+}
+
+// Tell every window whether the HUD is up, so a toggle in any of them reads
+// the truth even when the HUD is closed from its own side (⌘W / its exit row).
+// Carries the HUD's session so the app window can re-home onto it on the way
+// out (see hudSessionId).
+function broadcastHudState(open) {
+  const payload = { open, sessionId: hudSessionId }
+
+  for (const win of BrowserWindow.getAllWindows()) {
+    if (!win.isDestroyed()) {
+      win.webContents.send('kova:hud:changed', payload)
+    }
+  }
+}
+
+function spawnHudWindow(sessionId, profile) {
+  const win = new BrowserWindow({
+    ...hudBounds(),
+    minWidth: 380,
+    minHeight: 160,
+    frame: false,
+    transparent: true,
+    resizable: true,
+    movable: true,
+    minimizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    // Same rationale as the pet overlay: on Windows/Linux keep the helper out
+    // of the taskbar/alt-tab list; on macOS use an NSPanel so the frameless
+    // window never becomes the app's cmd-tab anchor.
+    skipTaskbar: !IS_MAC,
+    hasShadow: false,
+    alwaysOnTop: true,
+    type: IS_MAC ? 'panel' : undefined,
+    // Clips the vibrancy layer to the HUD's silhouette rather than a hard
+    // rectangle — the frost stops where the window's corners do.
+    roundedCorners: true,
+    // Vibrancy must keep rendering while the window is BLURRED: streaming under
+    // another app is the whole feature, and the default 'followWindow' kills
+    // the frost the moment something else takes focus.
+    visualEffectState: 'active',
+    hiddenInMissionControl: IS_MAC,
+    show: false,
+    backgroundColor: '#00000000',
+    // The full chat webPreferences — this window streams a real transcript, so
+    // it needs everything a chat window needs (preload bridge, autoplay for
+    // voice, the shared throttling contract).
+    webPreferences: chatWindowWebPreferences(PRELOAD_PATH)
+  })
+
+  win.setAlwaysOnTop(true, IS_MAC ? 'floating' : 'screen-saver')
+  win.setHiddenInMissionControl?.(true)
+
+  try {
+    win.setVisibleOnAllWorkspaces(
+      true,
+      IS_MAC ? { visibleOnFullScreen: true, skipTransformProcessType: true } : undefined
+    )
+  } catch {
+    // Not supported everywhere — best effort.
+  }
+
+  // Streaming into a window that is ALWAYS blurred (the user is in another
+  // app) is the entire feature, so it gets the same stream-aware unthrottling
+  // every chat window does.
+  streamThrottle.register(win)
+  wireCommonWindowHandlers(win, zoomWiringForWindowKind('chat'))
+
+  // Remember where the user parks and sizes it (debounced — these fire many
+  // times mid-drag).
+  bindGeometryPersistence(win, schedulePersistHudState)
+
+  startHudCursorFeed(win)
+
+  wireWindowReveal(win, {
+    show: () => {
+      win.show()
+      win.focus()
+    },
+    onRevealed: () => {
+      // Step the app aside: the HUD IS the surface now.
+      if (hudRestoreMainWindow && mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.hide()
+      }
+    }
+  })
+
+  win.on('closed', () => {
+    if (hudWindow === win) {
+      hudWindow = null
+    }
+
+    // Closed from its own side (⌘W) — put the app back so the user is never
+    // left with no surface, and correct every window's toggle.
+    restoreMainWindowFromHud()
+    broadcastHudState(false)
+  })
+
+  loadWindowUrl(win, hudUrl(sessionId, profile), 'HUD')
+
+  return win
+}
+
+// Put the app window back the way HUD mode found it.
+function restoreMainWindowFromHud() {
+  if (!hudRestoreMainWindow) {
+    return
+  }
+
+  hudRestoreMainWindow = false
+
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.show()
+  }
+}
+
+function openHudWindow(sessionId, profile) {
+  const profileKey = typeof profile === 'string' && profile.trim() ? profile.trim() : null
+
+  if (hudWindow && !hudWindow.isDestroyed()) {
+    // Pointed at another PROFILE: the live renderer is bound to the old
+    // profile's backend, and a renderer adopts its backend exactly once at
+    // boot — an in-place goto would resolve the id against the wrong backend
+    // (the #82285 fallback). Respawn against the right one.
+    if (profileKey && hudProfile !== profileKey) {
+      const win = hudWindow
+      hudWindow = null
+      win.removeAllListeners('closed')
+      win.destroy()
+
+      hudSessionId = sessionId || null
+      hudProfile = profileKey
+      hudWindow = spawnHudWindow(sessionId, profileKey)
+      broadcastHudState(true)
+
+      return hudWindow
+    }
+
+    // Already up, but pointed somewhere else — switch it rather than just
+    // raising it. Asking for HUD mode from another tab means "put THIS
+    // conversation in the HUD", and a plain focus leaves the wrong one there.
+    if (sessionId && sessionId !== hudSessionId) {
+      hudSessionId = sessionId
+      hudWindow.webContents.send('kova:hud:goto', sessionId)
+      // Keep every window's idea of where the HUD is pointed in step, so the
+      // toggle keeps reading "switch" vs "dismiss" correctly.
+      broadcastHudState(true)
+    }
+
+    focusWindow(hudWindow)
+
+    return hudWindow
+  }
+
+  hudRestoreMainWindow = Boolean(mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible())
+  hudSessionId = sessionId || null
+  hudProfile = profileKey
+  hudWindow = spawnHudWindow(sessionId, profileKey)
+  broadcastHudState(true)
+
+  return hudWindow
+}
+
+function closeHudWindow() {
+  const win = hudWindow
+  hudWindow = null
+
+  if (win && !win.isDestroyed()) {
+    // Null'd first so the 'closed' handler doesn't broadcast a second time.
+    win.removeAllListeners('closed')
+    win.close()
+  }
+
+  restoreMainWindowFromHud()
+  broadcastHudState(false)
+
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    focusWindow(mainWindow)
+  }
+}
+
 // ── Quick Entry ─────────────────────────────────────────────────────────────
 //
 // A global shortcut summons a small frameless always-on-top composer from
@@ -9373,10 +9763,9 @@ function createWindow() {
   mainWindow.on('hide', () => sendWindowStateChanged())
   mainWindow.on('show', () => sendWindowStateChanged())
 
-  // Reopen where the user left off. resized/moved settle once per drag; close is
-  // the cross-platform backstop, flushed synchronously before the window is gone.
-  mainWindow.on('resized', schedulePersistWindowState)
-  mainWindow.on('moved', schedulePersistWindowState)
+  // Reopen where the user left off. close is the backstop, flushed
+  // synchronously before the window is gone.
+  bindGeometryPersistence(mainWindow, schedulePersistWindowState)
   mainWindow.on('maximize', schedulePersistWindowState)
   mainWindow.on('unmaximize', schedulePersistWindowState)
   mainWindow.on('close', () => schedulePersistWindowState.flush())
@@ -9733,6 +10122,71 @@ ipcMain.on('kova:pet-overlay:control', (_event, payload) => {
   }
 
   mainWindow.webContents.send('kova:pet-overlay:control', payload)
+})
+
+// --- HUD mode (chrome-free floating chat) -----------------------------------
+ipcMain.handle('kova:hud:open', async (_event, request) => {
+  openHudWindow(
+    typeof request?.sessionId === 'string' ? request.sessionId : null,
+    typeof request?.profile === 'string' ? request.profile : null
+  )
+
+  return { ok: true }
+})
+
+// Real frosted glass behind the band — the thing CSS backdrop-filter cannot do,
+// because Chromium composites a transparent window's page against nothing and
+// the desktop is not in its backdrop root. Vibrancy IS the window's content
+// view, so it frosts the whole rectangle; the HUD's layout leaves no dead
+// margins for that reason, and the renderer only turns it on while the band is
+// showing (idle HUD mode must be the bar and nothing else).
+ipcMain.handle('kova:hud:vibrancy', (_event, on) => {
+  if (hudWindow && !hudWindow.isDestroyed() && IS_MAC) {
+    hudWindow.setVibrancy(on ? 'hud' : null)
+  }
+
+  return { ok: true }
+})
+
+// Let clicks fall through the HUD wherever it isn't really there. An
+// always-on-top window eats every click inside its rectangle, and most of that
+// rectangle is a faded-out band over whatever the user is actually working in.
+// `forward` keeps mousemove flowing so the renderer can re-arm when the cursor
+// reaches the bar.
+ipcMain.on('kova:hud:ignore-mouse', (_event, ignore) => {
+  if (hudWindow && !hudWindow.isDestroyed()) {
+    hudWindow.setIgnoreMouseEvents(Boolean(ignore), { forward: true })
+  }
+})
+
+ipcMain.on('kova:hud:move-by', (event, delta) => {
+  if (!hudWindow || hudWindow.isDestroyed() || event.sender !== hudWindow.webContents) {
+    return
+  }
+
+  const dx = Number(delta?.x)
+  const dy = Number(delta?.y)
+
+  if (!Number.isFinite(dx) || !Number.isFinite(dy)) {
+    return
+  }
+
+  const [x, y] = hudWindow.getPosition()
+
+  hudWindow.setPosition(Math.round(x + dx), Math.round(y + dy))
+})
+
+// The HUD renderer reporting which session it is on, so the close broadcast
+// can hand it back to the app window (see hudSessionId).
+ipcMain.on('kova:hud:session', (event, sessionId) => {
+  if (hudWindow && !hudWindow.isDestroyed() && event.sender === hudWindow.webContents) {
+    hudSessionId = typeof sessionId === 'string' && sessionId ? sessionId : null
+  }
+})
+ipcMain.handle('kova:hud:close', async () => {
+  closeHudWindow()
+
+  return { ok: true }
 })
 ipcMain.handle('kova:bootstrap:reset', async () => {
   // Renderer's "Reload and retry" path. Clear the latched failure and
@@ -12025,6 +12479,17 @@ app.on('before-quit', event => {
   // pet can't keep the process alive or float over a quit app.
   closePetOverlay()
   wakeIndicatorController.close()
+
+  // Same for the HUD — an always-on-top panel outliving the app would leave a
+  // floating composer with nothing behind it. Close it directly rather than via
+  // closeHudWindow(): that also re-shows the main window, which is wrong on the
+  // way out (and `hudRestoreMainWindow` may still be armed from entering HUD).
+  if (hudWindow && !hudWindow.isDestroyed()) {
+    hudWindow.removeAllListeners('closed')
+    hudWindow.destroy()
+  }
+
+  hudWindow = null
 
   // Same for the Quick Entry composer — and release its global accelerator so a
   // quitting Kova never keeps another app's chord hostage.

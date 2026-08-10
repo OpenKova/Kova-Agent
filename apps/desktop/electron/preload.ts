@@ -46,6 +46,41 @@ contextBridge.exposeInMainWorld('hermesDesktop', {
       return () => ipcRenderer.removeListener('kova:pet-overlay:control', listener)
     }
   },
+  // HUD mode: the chrome-free floating chat. A full app renderer (own gateway)
+  // sized as a floating bar, so it mounts the real composer. Main owns the
+  // window; `onChanged` keeps every window's toggle truthful.
+  hud: {
+    open: request => ipcRenderer.invoke('kova:hud:open', request),
+    close: () => ipcRenderer.invoke('kova:hud:close'),
+    setIgnoreMouse: ignore => ipcRenderer.send('kova:hud:ignore-mouse', ignore),
+    moveBy: delta => ipcRenderer.send('kova:hud:move-by', delta),
+    setVibrancy: on => ipcRenderer.invoke('kova:hud:vibrancy', on),
+    // The HUD tells main which session it is on; main hands that back to the
+    // app window when the HUD closes, so the app can re-home onto it.
+    setSession: sessionId => ipcRenderer.send('kova:hud:session', sessionId),
+    onGoto: callback => {
+      const listener = (_event, sessionId) => callback(sessionId)
+      ipcRenderer.on('kova:hud:goto', listener)
+
+      return () => ipcRenderer.removeListener('kova:hud:goto', listener)
+    },
+    onChanged: callback => {
+      const listener = (_event, state) => callback(state)
+      ipcRenderer.on('kova:hud:changed', listener)
+
+      return () => ipcRenderer.removeListener('kova:hud:changed', listener)
+    },
+    // Linux only, and silent elsewhere: where the cursor is, in page
+    // coordinates, or null when it has left the window. Stands in for the
+    // mousemove that `setIgnoreMouseEvents(true, { forward: true })` delivers on
+    // macOS and Windows but not here.
+    onCursor: callback => {
+      const listener = (_event, point) => callback(point)
+      ipcRenderer.on('kova:hud:cursor', listener)
+
+      return () => ipcRenderer.removeListener('kova:hud:cursor', listener)
+    }
+  },
   // Quick Entry: the global-hotkey mini composer window. Main owns the OS
   // shortcut + the persisted preference; the quick window only captures text
   // and hands it back, and the primary renderer submits it through the normal
