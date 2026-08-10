@@ -4298,7 +4298,7 @@ def test_prompt_submit_refuses_empty_truncation_without_confirm(monkeypatch):
     replaced = []
 
     class _FakeDB:
-        def replace_messages(self, key, messages):
+        def replace_messages(self, key, messages, active_only=False, archive_dropped=False):
             replaced.append((key, list(messages)))
 
     history = [
