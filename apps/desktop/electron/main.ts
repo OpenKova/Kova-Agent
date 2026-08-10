@@ -3096,14 +3096,17 @@ async function applyUpdates(opts = {}) {
       )
     }
 
+    // Try the repo-owned PowerShell hand-off first; fall back to the staged
+    // updater binary when the script is missing (old checkouts, Windows
+    // installer users, etc).
+    const scriptHandoff = resolveUpdateScriptHandoff(updateRoot)
+
     if (scriptHandoff) {
-      // A bare detached+hidden powershell spawn silently dies before -File
-      // processing (console-subsystem init failure — see
-      // wrapHandoffForDetachedConsole). Route through `cmd start` so the
-      // script gets its own minimized console and survives our exit. The
-      // wrapper cmd.exe exits immediately, so child.pid is NOT the script's
-      // pid — the script claims the update marker itself with its own $PID
-      // as its first action, and a relaunched Desktop parks on that.
+      // Route PowerShell through `cmd start` so the script survives a
+      // detached+hidden spawn (the wrapper cmd.exe exits immediately, so
+      // child.pid is NOT the script's pid — the script claims the marker
+      // itself with its own $PID). Falls back to the staged updater on
+      // errors below.
       const wrapped = wrapHandoffForDetachedConsole(scriptHandoff, [
         '-InstallRoot',
         updateRoot,
@@ -3126,13 +3129,6 @@ async function applyUpdates(opts = {}) {
         stdio: 'ignore'
       })
 
-      // Bridge marker: child.pid is the short-lived cmd.exe WRAPPER, not the
-      // script (see wrapHandoffForDetachedConsole). Write it anyway to cover
-      // the first moments of the hand-off — the script's step 0 overwrites it
-      // with its own live $PID, and if the script never starts the wrapper's
-      // dead pid makes the marker read as stale and self-delete (no wedge).
-      // The `kova update` child adopts the SCRIPT's claim via
-      // update_lock.py's process-ancestry rule; no mtime heuristics needed.
       if (Number.isInteger(child.pid)) {
         writeUpdateMarker(HERMES_HOME, child.pid)
       }
@@ -3152,21 +3148,6 @@ async function applyUpdates(opts = {}) {
         stdio: 'ignore'
       })
 
-      // Write the update-in-progress marker IMMEDIATELY — before the 2.5s
-      // quit dwell. The Tauri updater won't write its own marker for several
-      // seconds (window init + manifest), and during that gap our renderer
-      // can reconnect and spawn a fresh backend that re-locks .pyd files in
-      // the venv. By writing the marker ourselves the renderer's
-      // waitForUpdateToFinish() gate sees a live update and parks instead.
-      // The updater overwrites this with its own PID later; same format.
-      //
-      // SKIPPED for pre-#74782 staged updaters: those have no self-PID
-      // exclusion, so they read this very marker as a foreign live owner and
-      // abort with "Another Hermes update is already running (PID <itself>)" —
-      // an unbreakable loop, because the update that would replace the stale
-      // binary is the one being refused. Losing the anti-respawn hardening is
-      // strictly better than never updating again, and the updater still writes
-      // its own marker moments later.
       if (Number.isInteger(child.pid) && stagedUpdaterSupportsPrewrittenMarker(updater)) {
         writeUpdateMarker(HERMES_HOME, child.pid)
       } else if (Number.isInteger(child.pid)) {
@@ -9322,6 +9303,7 @@ function startHudCursorFeed(win: BrowserWindow) {
       win.getBounds(),
       win.webContents.getZoomFactor()
     )
+
     // Off-window is a real answer (it is what hands the mouse back), so it is
     // sent — once. Only an unchanged answer is dropped, to keep an idle cursor
     // from waking the renderer 16 times a second.
