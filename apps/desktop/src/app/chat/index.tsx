@@ -501,40 +501,40 @@ export const ChatView = memo(function ChatView({
   const overlayKind: DragKind = dragKind === 'files' ? 'files' : sessionDragging && !sessionEdgeHover ? 'session' : null
 
   return (
-      <div
-        className={cn(
-          'relative isolate flex h-full min-w-0 flex-col overflow-hidden bg-(--ui-chat-surface-background)',
-          className
-        )}
-        data-chat-surface=""
-        data-composer-target={composerScope.target}
-        data-session-anchor={sessionAnchor}
-      >
-        {/* Tiles get their chrome from the layout zone (chip strip); the modal
+    <div
+      className={cn(
+        'relative isolate flex h-full min-w-0 flex-col overflow-hidden bg-(--ui-chat-surface-background)',
+        className
+      )}
+      data-chat-surface=""
+      data-composer-target={composerScope.target}
+      data-session-anchor={sessionAnchor}
+    >
+      {/* Tiles get their chrome from the layout zone (chip strip); the modal
             prompt overlays stay active-session-scoped in the primary surface. */}
-        {isPrimary && (
-          <ChatHeader
-            activeSessionId={activeSessionId}
-            isRoutedSessionView={isRoutedSessionView}
-            onDeleteSelectedSession={onDeleteSelectedSession}
-            onToggleSelectedPin={onToggleSelectedPin}
-            selectedSessionId={selectedSessionId}
-          />
-        )}
+      {isPrimary && (
+        <ChatHeader
+          activeSessionId={activeSessionId}
+          isRoutedSessionView={isRoutedSessionView}
+          onDeleteSelectedSession={onDeleteSelectedSession}
+          onToggleSelectedPin={onToggleSelectedPin}
+          selectedSessionId={selectedSessionId}
+        />
+      )}
 
-        {/* Mounted for the primary AND every tile, each scoped to its own session
+      {/* Mounted for the primary AND every tile, each scoped to its own session
             so a tiled/background session's blocking prompt surfaces instead of
             stalling to timeout. */}
-        <PromptOverlays sessionId={activeSessionId} />
+      <PromptOverlays sessionId={activeSessionId} />
 
-        <ChatRuntimeBoundary
-          busy={busy}
-          onCancel={haltRun}
-          onEdit={onEdit}
-          onReload={onReload}
-          onThreadMessagesChange={onThreadMessagesChange}
-          suppressMessages={routeSessionMismatch}
-        >
+      <ChatRuntimeBoundary
+        busy={busy}
+        onCancel={haltRun}
+        onEdit={onEdit}
+        onReload={onReload}
+        onThreadMessagesChange={onThreadMessagesChange}
+        suppressMessages={routeSessionMismatch}
+      >
         <div
           className="relative min-h-0 max-w-full flex-1 overflow-hidden bg-(--ui-chat-surface-background) contain-[layout_paint]"
           data-slot="composer-bounds"

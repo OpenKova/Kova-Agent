@@ -121,6 +121,7 @@ import {
   removeWorktree,
   switchBranch
 } from './git-worktree-ops'
+import { readAndConsumeHandoffResult } from './handoff-result'
 import {
   ATTACHMENT_UPLOAD_DEFAULT_MAX_BYTES,
   clampDataUrlReadMaxMb,
@@ -205,8 +206,10 @@ import {
 import { isOfficialSshRemote, OFFICIAL_REPO_HTTPS_URL } from './update-remote'
 import {
   resolveStagedUpdaterBinary,
+  resolveUpdateScriptHandoff,
   spawnUpdaterProcess,
-  stagedUpdaterSupportsPrewrittenMarker
+  stagedUpdaterSupportsPrewrittenMarker,
+  wrapHandoffForDetachedConsole
 } from './updater-process'
 import { formatBlockerMessage, formatProbeFailedMessage, scanVenvBlockers } from './venv-blocker-scan'
 import { fetchMarketplaceThemes, searchMarketplaceThemes } from './vscode-marketplace'
@@ -1801,6 +1804,28 @@ async function waitForUpdateToFinish() {
     timeoutMs: UPDATE_WAIT_TIMEOUT_MS
   })
 
+  // The detached hand-off script (scripts/desktop-update.ps1) runs hidden;
+  // its result file is the ONLY way the user learns a detached update
+  // failed. Consume it exactly once, here, right where boot passes the
+  // update gate — success gets a log line, failure gets a real dialog
+  // (previously a failed detached update was indistinguishable from
+  // "nothing happened").
+  try {
+    const result = readAndConsumeHandoffResult(HERMES_HOME)
+
+    if (result && result.ok) {
+      rememberLog(`[updates] detached update finished OK (branch ${result.branch})`)
+    } else if (result) {
+      rememberLog(`[updates] detached update FAILED (exit ${result.exitCode}): ${result.message}`)
+      dialog.showErrorBox(
+        'Hermes update did not finish',
+        `${result.message}\n\nDetails: ${path.join(HERMES_HOME, 'logs', 'desktop-update-handoff.log')}`
+      )
+    }
+  } catch (err) {
+    rememberLog(`[updates] could not read hand-off result: ${err.message}`)
+  }
+
   if (outcome === 'clear') {
     return false
   }
@@ -2901,35 +2926,45 @@ async function applyUpdates(opts = {}) {
     if (!updater) {
       // No staged updater binary — this is a CLI-installed user (they ran
       // `kova desktop`, never the Tauri installer that self-copies
-      // kova-setup.exe into HERMES_HOME). They DO have a working `kova`
-      // on PATH / in the venv, so the correct path is the one-liner in their
-      // native medium. We show the EXACT command, branch-pinned to the
-      // checkout they're on — bare `kova update` defaults to main and would
-      // silently switch a bb/gui (or any non-main) install off-branch. Mirror
-      // the GUI button's contract: append --branch <current> for non-main
-      // checkouts, keep it bare for main so the card stays clean.
+      // kova-setup.exe into HERMES_HOME). On Windows the repo hand-off
+      // script serves them just as well as installer users — it only needs
+      // PowerShell and the checkout — so fall through to the normal hand-off
+      // when the script exists. Only when the checkout predates the script do
+      // we surface the manual one-liner.
       const updateRoot = resolveUpdateRoot()
-      let command = 'kova update'
 
-      try {
-        const head = await runGit(['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: updateRoot })
-        const current = (head.stdout || '').trim()
+      if (!resolveUpdateScriptHandoff(updateRoot)) {
+        // They DO have a working `kova` on PATH / in the venv, so the
+        // correct path is the one-liner in their native medium. We show the
+        // EXACT command, branch-pinned to the checkout they're on — bare
+        // `kova update` defaults to main and would silently switch a
+        // bb/gui (or any non-main) install off-branch. Mirror the GUI
+        // button's contract: append --branch <current> for non-main
+        // checkouts, keep it bare for main so the card stays clean.
+        let command = 'kova update'
 
-        if (head.code === 0 && current && current !== 'HEAD') {
-          const branch = await resolveHealedBranch(updateRoot, current)
+        try {
+          const head = await runGit(['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: updateRoot })
+          const current = (head.stdout || '').trim()
 
-          if (branch !== 'main') {
-            command = `kova update --branch ${branch}`
+          if (head.code === 0 && current && current !== 'HEAD') {
+            const branch = await resolveHealedBranch(updateRoot, current)
+
+            if (branch !== 'main') {
+              command = `kova update --branch ${branch}`
+            }
           }
+        } catch {
+          // Best-effort: fall back to bare `kova update` if branch detection fails.
         }
-      } catch {
-        // Best-effort: fall back to bare `kova update` if branch detection fails.
+
+        rememberLog(`[updates] no staged updater; surfacing manual \`${command}\` for CLI install at ${updateRoot}`)
+        emitUpdateProgress({ stage: 'manual', message: command, percent: null })
+
+        return { ok: true, manual: true, command, kovaRoot: updateRoot }
       }
 
-      rememberLog(`[updates] no staged updater; surfacing manual \`${command}\` for CLI install at ${updateRoot}`)
-      emitUpdateProgress({ stage: 'manual', message: command, percent: null })
-
-      return { ok: true, manual: true, command, hermesRoot: updateRoot }
+      rememberLog('[updates] no staged updater; using repo hand-off script for CLI install')
     }
 
     const handoffConflict = updateHandoffConflict(HERMES_HOME)
@@ -3027,7 +3062,7 @@ async function applyUpdates(opts = {}) {
 
     // Detached so the updater outlives this process — it needs us GONE before
     // `kova update` will run (the venv shim is locked while we live).
-    const child = spawnUpdaterProcess(updater, updaterArgs, {
+    let child = spawnUpdaterProcess(updater, updaterArgs, {
       cwd: HERMES_HOME,
       env: {
         ...process.env,
@@ -3061,7 +3096,68 @@ async function applyUpdates(opts = {}) {
       )
     }
 
-    rememberLog(`[updates] launched updater: ${updater} ${updaterArgs.join(' ')}; exiting desktop to release venv shim`)
+    // Try the repo-owned PowerShell hand-off first; fall back to the staged
+    // updater binary when the script is missing (old checkouts, Windows
+    // installer users, etc).
+    const scriptHandoff = resolveUpdateScriptHandoff(updateRoot)
+
+    if (scriptHandoff) {
+      // Route PowerShell through `cmd start` so the script survives a
+      // detached+hidden spawn (the wrapper cmd.exe exits immediately, so
+      // child.pid is NOT the script's pid — the script claims the marker
+      // itself with its own $PID). Falls back to the staged updater on
+      // errors below.
+      const wrapped = wrapHandoffForDetachedConsole(scriptHandoff, [
+        '-InstallRoot',
+        updateRoot,
+        '-Branch',
+        branch,
+        '-DesktopPid',
+        String(process.pid),
+        '-RelaunchExe',
+        process.execPath
+      ])
+
+      child = spawnUpdaterProcess(wrapped.command, wrapped.args, {
+        cwd: HERMES_HOME,
+        env: {
+          ...process.env,
+          HERMES_HOME,
+          PATH: pathWithHermesManagedNode(venvBin)
+        },
+        detached: true,
+        stdio: 'ignore'
+      })
+
+      if (Number.isInteger(child.pid)) {
+        writeUpdateMarker(HERMES_HOME, child.pid)
+      }
+
+      rememberLog(
+        `[updates] launched repo hand-off script: ${scriptHandoff.scriptPath} (branch ${branch}); exiting desktop to release venv shim`
+      )
+    } else {
+      child = spawnUpdaterProcess(updater, updaterArgs, {
+        cwd: HERMES_HOME,
+        env: {
+          ...process.env,
+          HERMES_HOME,
+          PATH: pathWithHermesManagedNode(venvBin)
+        },
+        detached: true,
+        stdio: 'ignore'
+      })
+
+      if (Number.isInteger(child.pid) && stagedUpdaterSupportsPrewrittenMarker(updater)) {
+        writeUpdateMarker(HERMES_HOME, child.pid)
+      } else if (Number.isInteger(child.pid)) {
+        rememberLog(
+          `[updates] skipping marker pre-write: staged updater predates self-adopt (${updater}); it would refuse its own claim`
+        )
+      }
+
+      rememberLog(`[updates] launched updater: ${updater} ${updaterArgs.join(' ')}; exiting desktop to release venv shim`)
+    }
 
     // Linger on the "updating — don't reopen" overlay long enough for the user
     // to actually read it (and to bridge the gap until the updater's own window
@@ -9207,6 +9303,7 @@ function startHudCursorFeed(win: BrowserWindow) {
       win.getBounds(),
       win.webContents.getZoomFactor()
     )
+
     // Off-window is a real answer (it is what hands the mouse back), so it is
     // sent — once. Only an unchanged answer is dropped, to keep an idle cursor
     // from waking the renderer 16 times a second.
