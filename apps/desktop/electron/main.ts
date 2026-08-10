@@ -2926,38 +2926,42 @@ async function applyUpdates(opts = {}) {
     if (!updater) {
       // No staged updater binary — this is a CLI-installed user (they ran
       // `kova desktop`, never the Tauri installer that self-copies
-      // kova-setup.exe into HERMES_HOME). They DO have a working `kova`
-      // on PATH / in the venv, so the correct path is the one-liner in their
-      // native medium. We show the EXACT command, branch-pinned to the
-      // checkout they're on — bare `kova update` defaults to main and would
-      // silently switch a bb/gui (or any non-main) install off-branch. Mirror
-      // the GUI button's contract: append --branch <current> for non-main
-      // checkouts, keep it bare for main so the card stays clean.
+      // kova-setup.exe into HERMES_HOME). On Windows the repo hand-off
+      // script serves them just as well as installer users — it only needs
+      // PowerShell and the checkout — so fall through to the normal hand-off
+      // when the script exists. Only when the checkout predates the script do
+      // we surface the manual one-liner.
       const updateRoot = resolveUpdateRoot()
-      let command = 'kova update'
 
       if (!resolveUpdateScriptHandoff(updateRoot)) {
-        // They DO have a working `hermes` on PATH / in the venv, so the
+        // They DO have a working `kova` on PATH / in the venv, so the
         // correct path is the one-liner in their native medium. We show the
         // EXACT command, branch-pinned to the checkout they're on — bare
-        // `hermes update` defaults to main and would silently switch a
+        // `kova update` defaults to main and would silently switch a
         // bb/gui (or any non-main) install off-branch. Mirror the GUI
         // button's contract: append --branch <current> for non-main
         // checkouts, keep it bare for main so the card stays clean.
-        let command = 'hermes update'
+        let command = 'kova update'
 
         try {
           const head = await runGit(['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: updateRoot })
           const current = (head.stdout || '').trim()
 
-          if (branch !== 'main') {
-            command = `kova update --branch ${branch}`
+          if (head.code === 0 && current && current !== 'HEAD') {
+            const branch = await resolveHealedBranch(updateRoot, current)
+
+            if (branch !== 'main') {
+              command = `kova update --branch ${branch}`
+            }
           }
         } catch {
-          // Best-effort: fall back to bare `hermes update` if branch detection fails.
+          // Best-effort: fall back to bare `kova update` if branch detection fails.
         }
-      } catch {
-        // Best-effort: fall back to bare `kova update` if branch detection fails.
+
+        rememberLog(`[updates] no staged updater; surfacing manual \`${command}\` for CLI install at ${updateRoot}`)
+        emitUpdateProgress({ stage: 'manual', message: command, percent: null })
+
+        return { ok: true, manual: true, command, kovaRoot: updateRoot }
       }
 
       rememberLog('[updates] no staged updater; using repo hand-off script for CLI install')
@@ -3058,7 +3062,7 @@ async function applyUpdates(opts = {}) {
 
     // Detached so the updater outlives this process — it needs us GONE before
     // `kova update` will run (the venv shim is locked while we live).
-    const child = spawnUpdaterProcess(updater, updaterArgs, {
+    let child = spawnUpdaterProcess(updater, updaterArgs, {
       cwd: HERMES_HOME,
       env: {
         ...process.env,
@@ -3127,7 +3131,7 @@ async function applyUpdates(opts = {}) {
       // the first moments of the hand-off — the script's step 0 overwrites it
       // with its own live $PID, and if the script never starts the wrapper's
       // dead pid makes the marker read as stale and self-delete (no wedge).
-      // The `hermes update` child adopts the SCRIPT's claim via
+      // The `kova update` child adopts the SCRIPT's claim via
       // update_lock.py's process-ancestry rule; no mtime heuristics needed.
       if (Number.isInteger(child.pid)) {
         writeUpdateMarker(HERMES_HOME, child.pid)
