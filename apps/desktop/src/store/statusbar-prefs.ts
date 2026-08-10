@@ -3,11 +3,14 @@ import { Codecs, persistentAtom } from '@/lib/persisted'
 const STATUSBAR_HIDDEN_STORAGE_KEY = 'kova.desktop.statusbarHidden'
 const STATUSBAR_VISIBLE_STORAGE_KEY = 'kova.desktop.statusbarVisible'
 
-// Whole-bar visibility, VS Code's `workbench.statusBar.visible`. Off by default
-// — the bar is opt-in. Hiding it unmounts the bar (its 15s status poll goes with
-// it), so the way back is the `view.toggleStatusbar` keybind or the ⌘K row,
-// never the bar itself.
-export const $statusbarVisible = persistentAtom(STATUSBAR_VISIBLE_STORAGE_KEY, false, Codecs.bool)
+// Whole-bar visibility, VS Code's `workbench.statusBar.visible`. On by default
+// — the bar carries the live update pill, connection state, gateway health,
+// and per-turn session readouts, all of which the user expects to see without
+// hunting for a toggle. Users who want it gone use the `view.toggleStatusbar`
+// keybind (⌘K row works too); hiding it unmounts the bar (its 15s status poll
+// goes with it), so the bar is the only way back. Existing users who already
+// chose hide keep their preference — `persistentAtom` stores the opt-out.
+export const $statusbarVisible = persistentAtom(STATUSBAR_VISIBLE_STORAGE_KEY, true, Codecs.bool)
 
 export function toggleStatusbarVisible() {
   $statusbarVisible.set(!$statusbarVisible.get())
