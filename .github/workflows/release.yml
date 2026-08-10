@@ -1,0 +1,122 @@
+name: Release
+
+# Cuts a GitHub Release every time a feat: or fix: commit lands on main,
+# AND bumps the version in apps/desktop/package.json, kova_cli/__init__.py,
+# and pyproject.toml by 0.0.1 patch, so the desktop auto-updater sees real
+# releases and the version drift bug from #41 never recurs.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/desktop/package.json'
+      - 'kova_cli/__init__.py'
+      - 'pyproject.toml'
+      - '.github/workflows/release.yml'
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version bump (patch, minor, major)"
+        required: false
+        default: "patch"
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Bump version
+        id: bump
+        run: |
+          set -euo pipefail
+          BUMP="${{ inputs.bump || 'patch' }}"
+          OLD=$(python -c "import tomllib;print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          IFS=. read -r MAJOR MINOR PATCH <<< "$OLD"
+          case "$BUMP" in
+            major) MAJOR=$((MAJOR+1)); MINOR=0; PATCH=0 ;;
+            minor) MINOR=$((MINOR+1)); PATCH=0 ;;
+            patch) PATCH=$((PATCH+1)) ;;
+          esac
+          NEW="$MAJOR.$MINOR.$PATCH"
+          echo "old=$OLD"
+          echo "new=$NEW"
+          echo "version=$NEW" >> "$GITHUB_OUTPUT"
+
+      - name: Write new versions
+        run: |
+          python << 'PY'
+          import os, re, json, tomllib
+          from pathlib import Path
+          root = Path('.')
+          new = "${{ steps.bump.outputs.version }}"
+          # 1) pyproject.toml
+          pp = root / 'pyproject.toml'
+          pp.write_text(re.sub(r'version = "[^"]+"', f'version = "{new}"', pp.read_text(), count=1))
+          # 2) kova_cli/__init__.py
+          cli = root / 'kova_cli' / '__init__.py'
+          cli.write_text(re.sub(r'__version__ = "[^"]+"', f'__version__ = "{new}"', cli.read_text(), count=1))
+          # 3) apps/desktop/package.json
+          pkg = root / 'apps' / 'desktop' / 'package.json'
+          data = json.loads(pkg.read_text())
+          data['version'] = new
+          pkg.write_text(json.dumps(data, indent=2) + '\n')
+          print(f'Wrote version {new}')
+          PY
+          git diff --stat
+
+      - name: Commit + push bumped versions
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps/desktop/package.json kova_cli/__init__.py pyproject.toml
+          git commit -m "chore(release): bump version to ${{ steps.bump.outputs.version }}"
+          git push
+
+      - name: Collect changelog since last release
+        id: changelog
+        run: |
+          python << 'PY'
+          import subprocess, os
+          # Get the most recent tag (skip if none)
+          tag = subprocess.check_output(['git','describe','--tags','--abbrev=0'], text=True).strip()
+          range_ = f"{tag}..HEAD"
+          print(f"Using range: {range_}")
+          log = subprocess.check_output(['git','log',range_,'--no-merges','--format=%s'], text=True)
+          entries = [l.strip() for l in log.split("\n") if l.strip()]
+          body = "\n".join(f"- {e}" for e in entries)
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f"body<<EOT\n{body}\nEOT\n")
+          PY
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.bump.outputs.version }}
+          name: Kova Agent v${{ steps.bump.outputs.version }}
+          body: |
+            ## Changes since last release
+
+            ${{ steps.changelog.outputs.body }}
+          fail_on_unmatched_files: true
+          draft: false
+          prerelease: false
