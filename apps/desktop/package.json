@@ -2,7 +2,7 @@
   "name": "kova",
   "productName": "Kova",
   "private": true,
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Native desktop shell for Kova Agent.",
   "author": "Kova AI",
   "type": "module",
