@@ -142,6 +142,7 @@ contextBridge.exposeInMainWorld('hermesDesktop', {
   api: request => ipcRenderer.invoke('kova:api', request),
   notify: payload => ipcRenderer.invoke('kova:notify', payload),
   requestMicrophoneAccess: () => ipcRenderer.invoke('kova:requestMicrophoneAccess'),
+  readWindowBelow: () => ipcRenderer.invoke('kova:window:readBelow'),
   readFileDataUrl: filePath => ipcRenderer.invoke('kova:readFileDataUrl', filePath),
   readFileDataUrlForAttach: filePath => ipcRenderer.invoke('kova:readFileDataUrlForAttach', filePath),
   dataUrlReadMax: {
