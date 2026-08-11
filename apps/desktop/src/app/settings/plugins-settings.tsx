@@ -204,7 +204,11 @@ function AgentPluginsSection() {
     .sort((a, b) => (SOURCE_ORDER[a.source] ?? 9) - (SOURCE_ORDER[b.source] ?? 9) || a.name.localeCompare(b.name))
 
   return (
-    <SettingsSection icon={Package} meta={status === 'ready' ? p.count(sorted.length) : undefined} title={p.agent.title}>
+    <SettingsSection
+      icon={Package}
+      meta={status === 'ready' ? p.count(sorted.length) : undefined}
+      title={p.agent.title}
+    >
       <p className="mb-2 text-[length:var(--conversation-caption-font-size)] text-(--ui-text-tertiary)">
         {p.agent.blurb}
       </p>
