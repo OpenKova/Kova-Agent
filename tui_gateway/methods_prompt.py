@@ -225,7 +225,7 @@ def _(rid, params: dict) -> dict:
             # Fail closed: refuse the turn and leave memory/DB unchanged.
             if (db := _get_db()) is not None:
                 try:
-                    db.replace_messages(session["session_key"], truncated)
+                    db.replace_messages(session["session_key"], truncated, active_only=True, archive_dropped=True)
                 except Exception as exc:
                     logger.error(
                         "prompt.submit: replace_messages failed for session %s "

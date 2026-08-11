@@ -484,12 +484,13 @@ class SessionManager:
                 # rows exist, replace ONLY the live (active=1) set and leave the
                 # archived turns untouched; otherwise the destructive replace is
                 # safe (fresh create/fork with no archived history to lose).
-                try:
-                    has_archived = db.has_archived_messages(state.session_id)
-                except Exception:
-                    has_archived = False
+                # Use the archive-preserving rewind mode so the replaced
+                # turns stay readable via include_inactive=True rather than
+                # being DELETEd. Archive rows already exist on disk for
+                # compacted histories; this preserve-and-active-only-merge
+                # keeps them intact.
                 db.replace_messages(
-                    state.session_id, state.history, active_only=has_archived
+                    state.session_id, state.history, active_only=True, archive_dropped=True
                 )
         except Exception:
             logger.warning("Failed to persist ACP session %s", state.session_id, exc_info=True)
