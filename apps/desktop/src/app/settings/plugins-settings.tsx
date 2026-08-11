@@ -29,18 +29,21 @@ import { EmptyState, ListRowSkeleton, Pill, SettingsContent, SettingsSection } f
 
 const KIND_ORDER: Record<PluginRecord['kind'], number> = { disk: 0, runtime: 1, bundled: 2 }
 
-// User-installed plugins first, bundled last — mirrors `hermes plugins list`.
+// User-installed plugins first, bundled last — mirrors `kova plugins list`.
 const SOURCE_ORDER: Record<string, number> = { user: 0, git: 0, project: 1, entrypoint: 2, bundled: 3 }
 
 // Plugin categories (by registry key prefix) that other surfaces own — same
 // curation stance as desktop-slash-commands.ts. dashboard_auth/* only matters
-// to `hermes dashboard`; model-providers/* are configured in Settings →
+// to `kova dashboard`; model-providers/* are configured in Settings →
 // Models; platforms/* are managed from Messaging. The plugin switch is not
 // the user-facing control for any of them, so listing them here is noise.
 const HIDDEN_KEY_PREFIXES = ['dashboard_auth/', 'model-providers/', 'platforms/']
 
-const isDesktopRelevant = (row: AgentPluginRow) =>
-  !HIDDEN_KEY_PREFIXES.some(prefix => row.key.startsWith(prefix))
+const isDesktopRelevant = (row: AgentPluginRow) => {
+  const key = row.key
+
+  return !key || !HIDDEN_KEY_PREFIXES.some(prefix => key.startsWith(prefix))
+}
 
 const agentPluginRowKey = (row: AgentPluginRow) =>
   row.key ?? [row.name, row.source, row.version, row.description].join('\0')
@@ -73,7 +76,7 @@ async function revealPluginsDir() {
   }
 }
 
-// Agent plugins live under the BACKEND's hermes home (profile-aware), so the
+// Agent plugins live under the BACKEND's kova home (profile-aware), so the
 // path comes from the gateway — not from the renderer's local HERMES_HOME.
 // Callers gate on a local connection: openDir mkdir-creates the path, which
 // must never happen for a directory that belongs to a remote box.
